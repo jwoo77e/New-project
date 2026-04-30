@@ -1,0 +1,939 @@
+import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import {
+  Activity,
+  Building2,
+  CalendarRange,
+  CircleDollarSign,
+  Download,
+  FileSpreadsheet,
+  Gauge,
+  LineChart,
+  PieChart as PieChartIcon,
+  Search,
+  TrendingUp,
+  Upload,
+  WalletCards,
+} from "lucide-react";
+import {
+  Bar,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Legend,
+  Line,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import {
+  initialDashboardData,
+  type DashboardData,
+  type MonthlyActual,
+  type SourceMeta,
+  type TransactionCost,
+} from "./data/aiCostData";
+import { dashboardDataFromExcel } from "./lib/excelDashboard";
+
+type ViewKey = "monthly" | "department" | "detail";
+
+type ForecastPoint = {
+  month: string;
+  label: string;
+  amount: number;
+  lower: number;
+  upper: number;
+};
+
+type MetricTone = "teal" | "green" | "amber" | "coral" | "steel";
+
+const chartColors = ["#0f8b8d", "#e85d4f", "#c58612", "#2f8f46"];
+
+const numberFormat = new Intl.NumberFormat("ko-KR");
+
+function formatWon(value: number) {
+  return `${numberFormat.format(Math.round(value))}원`;
+}
+
+function formatManWon(value: number) {
+  return `${numberFormat.format(Math.round(value / 10000))}만원`;
+}
+
+function formatAxisWon(value: number | string) {
+  return `${numberFormat.format(Math.round(Number(value) / 10000))}만`;
+}
+
+function formatRate(value: number, signed = false) {
+  const prefix = signed && value > 0 ? "+" : "";
+  return `${prefix}${value.toFixed(1)}%`;
+}
+
+function buildForecast(monthlyActuals: MonthlyActual[]): ForecastPoint[] {
+  if (monthlyActuals.length === 0) {
+    return [];
+  }
+
+  const points = monthlyActuals.map((item, index) => ({
+    x: index + 1,
+    y: item.amount,
+  }));
+  const avgX = points.reduce((sum, point) => sum + point.x, 0) / points.length;
+  const avgY = points.reduce((sum, point) => sum + point.y, 0) / points.length;
+  const numerator = points.reduce((sum, point) => sum + (point.x - avgX) * (point.y - avgY), 0);
+  const denominator = points.reduce((sum, point) => sum + (point.x - avgX) ** 2, 0);
+  const slope = denominator === 0 ? 0 : numerator / denominator;
+  const intercept = avgY - slope * avgX;
+  const lastMonth = monthlyActuals[monthlyActuals.length - 1].month;
+
+  return [1, 2, 3].map((monthOffset, index) => {
+    const x = monthlyActuals.length + index + 1;
+    const month = addMonths(lastMonth, monthOffset);
+    const amount = Math.max(0, intercept + slope * x);
+    return {
+      month,
+      label: monthLabel(month),
+      amount: Math.round(amount),
+      lower: Math.round(amount * 0.85),
+      upper: Math.round(amount * 1.15),
+    };
+  });
+}
+
+function addMonths(month: string, offset: number) {
+  const year = Number(month.slice(0, 4));
+  const zeroBasedMonth = Number(month.slice(5, 7)) - 1;
+  const date = new Date(year, zeroBasedMonth + offset, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function monthLabel(month: string) {
+  return `${Number(month.slice(5, 7))}월`;
+}
+
+function monthRangeLabel(items: Array<{ month: string }>) {
+  if (items.length === 0) return "월별";
+  return `${monthLabel(items[0].month)}-${monthLabel(items[items.length - 1].month)}`;
+}
+
+function forecastMethodLabel(monthlyActuals: MonthlyActual[]) {
+  return `${monthRangeLabel(monthlyActuals)} 월별 실적 단순 선형 추세`;
+}
+
+function App() {
+  const [activeView, setActiveView] = useState<ViewKey>("monthly");
+  const [query, setQuery] = useState("");
+  const [toast, setToast] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [dashboardData, setDashboardData] = useState<DashboardData>(initialDashboardData);
+
+  const {
+    sourceMeta,
+    monthlyActuals,
+    forecastAdjustments,
+    departmentCosts,
+    categoryCosts,
+    vendorCosts,
+    topTransactions,
+  } = dashboardData;
+
+  const adjustmentByMonth = useMemo(
+    () => new Map(forecastAdjustments.map((item) => [item.month, item])),
+    [forecastAdjustments],
+  );
+  const forecastBasisActuals = useMemo(
+    () =>
+      monthlyActuals.map((item) => {
+        const adjustment = adjustmentByMonth.get(item.month)?.amount ?? 0;
+        return {
+          ...item,
+          amount: Math.max(0, item.amount - adjustment),
+        };
+      }),
+    [adjustmentByMonth, monthlyActuals],
+  );
+
+  const forecast = useMemo(() => buildForecast(forecastBasisActuals), [forecastBasisActuals]);
+  const forecastTotal = forecast.reduce((sum, item) => sum + item.amount, 0);
+  const adjustmentTotal = forecastAdjustments.reduce((sum, item) => sum + item.amount, 0);
+  const forecastBasisTotal = forecastBasisActuals.reduce((sum, item) => sum + item.amount, 0);
+  const lastActual = monthlyActuals[monthlyActuals.length - 1];
+  const previousActual = monthlyActuals[monthlyActuals.length - 2];
+  const lastMoM =
+    previousActual && previousActual.amount > 0
+      ? ((lastActual.amount - previousActual.amount) / previousActual.amount) * 100
+      : 0;
+  const forecastGrowth =
+    forecastBasisTotal > 0
+      ? ((forecastTotal - forecastBasisTotal) / forecastBasisTotal) * 100
+      : 0;
+  const overFixedPlan = sourceMeta.totalActual - sourceMeta.expectedQuarterFixed;
+  const priorYearRate =
+    sourceMeta.priorYearTotal > 0 ? (sourceMeta.totalActual / sourceMeta.priorYearTotal) * 100 : 0;
+  const commonDepartment = departmentCosts[0] ?? {
+    total: 0,
+    name: "-",
+  };
+  const commonDepartmentShare =
+    sourceMeta.totalActual > 0 ? (commonDepartment.total / sourceMeta.totalActual) * 100 : 0;
+  const actualRange = monthRangeLabel(monthlyActuals);
+  const forecastRange = monthRangeLabel(forecast);
+
+  const monthlySeries = [
+    ...monthlyActuals.map((item) => ({
+      label: item.label,
+      actual: item.amount,
+      forecast: null,
+      forecastBasis: forecastBasisActuals.find((basis) => basis.month === item.month)?.amount ?? item.amount,
+      adjustment: adjustmentByMonth.get(item.month)?.amount ?? 0,
+      fixedPlan: sourceMeta.expectedMonthlyFixed,
+      transactions: item.transactions,
+      status: "실적",
+    })),
+    ...forecast.map((item) => ({
+      label: item.label,
+      actual: null,
+      forecast: item.amount,
+      forecastBasis: null,
+      adjustment: null,
+      fixedPlan: sourceMeta.expectedMonthlyFixed,
+      transactions: null,
+      status: "예측",
+    })),
+  ];
+
+  const filteredTransactions = topTransactions.filter((row) => {
+    const text = [row.date, row.department, row.item, row.vendor, row.category]
+      .join(" ")
+      .toLowerCase();
+    return text.includes(query.trim().toLowerCase());
+  });
+
+  const handleUpload = async (file: File | null) => {
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const nextData = await dashboardDataFromExcel(file);
+      setDashboardData(nextData);
+      setQuery("");
+      setActiveView("monthly");
+      setToast(`${nextData.sourceMeta.fileName} 기준으로 대시보드를 업데이트했습니다.`);
+      window.setTimeout(() => setToast(""), 2800);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "엑셀 파일을 읽지 못했습니다.";
+      setToast(message);
+      window.setTimeout(() => setToast(""), 3600);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const exportSnapshot = () => {
+    const snapshot = {
+      source: sourceMeta,
+      monthlyActuals,
+      forecastAdjustments,
+      forecastBasisActuals,
+      forecast,
+      departmentCosts,
+      categoryCosts,
+      vendorCosts,
+      generatedAt: new Date().toISOString(),
+      forecastMethod: `${forecastMethodLabel(forecastBasisActuals)} - 개발/데모용 구글 API 일시 비용 제외`,
+    };
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "ai-cost-dashboard-snapshot.json";
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setToast("엑셀 기반 비용 스냅샷을 내보냈습니다.");
+    window.setTimeout(() => setToast(""), 2400);
+  };
+
+  return (
+    <main className="app-shell">
+      <header className="topbar">
+        <div className="brand-block">
+          <div className="brand-mark" aria-hidden="true">
+            <Gauge size={24} />
+          </div>
+          <div>
+            <h1>AI 관련 비용 대시보드</h1>
+            <p>
+              {sourceMeta.period} · 원천 {sourceMeta.sourceSheet} {sourceMeta.recordCount}건
+            </p>
+          </div>
+        </div>
+        <div className="top-actions">
+          <div className="source-chip" title={sourceMeta.fileName}>
+            <FileSpreadsheet size={17} />
+            엑셀 원천 반영
+          </div>
+          <label className="upload-button">
+            <Upload size={17} />
+            {isUploading ? "읽는 중" : "엑셀 업로드"}
+            <input
+              accept=".xlsx"
+              type="file"
+              onChange={(event) => {
+                void handleUpload(event.currentTarget.files?.[0] ?? null);
+                event.currentTarget.value = "";
+              }}
+            />
+          </label>
+          <button className="command-button" type="button" onClick={exportSnapshot}>
+            <Download size={17} />
+            내보내기
+          </button>
+        </div>
+      </header>
+
+      <nav className="view-tabs" aria-label="대시보드 보기">
+        <button
+          className={activeView === "monthly" ? "is-active" : ""}
+          type="button"
+          onClick={() => setActiveView("monthly")}
+        >
+          <LineChart size={17} />
+          월별/예측
+        </button>
+        <button
+          className={activeView === "department" ? "is-active" : ""}
+          type="button"
+          onClick={() => setActiveView("department")}
+        >
+          <Building2 size={17} />
+          부서별
+        </button>
+        <button
+          className={activeView === "detail" ? "is-active" : ""}
+          type="button"
+          onClick={() => setActiveView("detail")}
+        >
+          <PieChartIcon size={17} />
+          상세
+        </button>
+      </nav>
+
+      <section className="metric-grid" aria-label="핵심 비용 지표">
+        <MetricCard
+          icon={<CircleDollarSign size={21} />}
+          label={`${actualRange} 누적 비용`}
+          tone="teal"
+          value={formatManWon(sourceMeta.totalActual)}
+          footer={`${formatWon(sourceMeta.totalActual)} · ${sourceMeta.recordCount}건`}
+        />
+        <MetricCard
+          icon={<TrendingUp size={21} />}
+          label={`${lastActual.label} 비용`}
+          tone="coral"
+          value={formatManWon(lastActual.amount)}
+          footer={`전월 대비 ${formatRate(lastMoM, true)}`}
+        />
+        <MetricCard
+          icon={<CalendarRange size={21} />}
+          label={`${forecastRange} 예측`}
+          tone="amber"
+          value={formatManWon(forecastTotal)}
+          footer={`구글 API 일시비용 ${formatManWon(adjustmentTotal)} 제외`}
+        />
+        <MetricCard
+          icon={<WalletCards size={21} />}
+          label="2025년 연간 대비"
+          tone="steel"
+          value={formatRate(priorYearRate)}
+          footer={`2025년 전체 ${formatManWon(sourceMeta.priorYearTotal)}`}
+        />
+      </section>
+
+      {activeView === "monthly" && (
+        <MonthlyView
+          monthlySeries={monthlySeries}
+          forecast={forecast}
+          forecastAdjustments={forecastAdjustments}
+          forecastBasisActuals={forecastBasisActuals}
+          forecastBasisTotal={forecastBasisTotal}
+          forecastGrowth={forecastGrowth}
+          overFixedPlan={overFixedPlan}
+          forecastTotal={forecastTotal}
+          sourceMeta={sourceMeta}
+          monthlyActuals={monthlyActuals}
+        />
+      )}
+
+      {activeView === "department" && (
+        <DepartmentView
+          commonDepartmentShare={commonDepartmentShare}
+          commonDepartmentTotal={commonDepartment.total}
+          departmentCosts={departmentCosts}
+          monthlyActuals={monthlyActuals}
+          sourceMeta={sourceMeta}
+        />
+      )}
+
+      {activeView === "detail" && (
+        <DetailView
+          categoryCosts={categoryCosts}
+          filteredTransactions={filteredTransactions}
+          query={query}
+          setQuery={setQuery}
+          vendorCosts={vendorCosts}
+        />
+      )}
+
+      {toast && <div className="toast">{toast}</div>}
+    </main>
+  );
+}
+
+function MonthlyView({
+  forecast,
+  forecastAdjustments,
+  forecastBasisActuals,
+  forecastBasisTotal,
+  forecastGrowth,
+  forecastTotal,
+  monthlyActuals,
+  monthlySeries,
+  overFixedPlan,
+  sourceMeta,
+}: {
+  forecast: ForecastPoint[];
+  forecastAdjustments: DashboardData["forecastAdjustments"];
+  forecastBasisActuals: MonthlyActual[];
+  forecastBasisTotal: number;
+  forecastGrowth: number;
+  forecastTotal: number;
+  monthlyActuals: MonthlyActual[];
+  monthlySeries: Array<{
+    label: string;
+    actual: number | null;
+    forecast: number | null;
+    forecastBasis: number | null;
+    adjustment: number | null;
+    fixedPlan: number;
+    transactions: number | null;
+    status: string;
+  }>;
+  overFixedPlan: number;
+  sourceMeta: SourceMeta;
+}) {
+  const actualRange = monthRangeLabel(monthlyActuals);
+  const forecastRange = monthRangeLabel(forecast);
+  const adjustmentTotal = forecastAdjustments.reduce((sum, item) => sum + item.amount, 0);
+
+  return (
+    <div className="content-grid monthly-view">
+      <section className="panel panel-large">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Monthly Spend</span>
+            <h2>월별 비용과 {forecastRange} 예측</h2>
+          </div>
+          <span className="state-pill warning">선형 추세 예측</span>
+        </div>
+        <div className="chart-frame">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={monthlySeries} margin={{ top: 12, right: 18, left: 0, bottom: 0 }}>
+              <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} />
+              <YAxis tickFormatter={formatAxisWon} tickLine={false} axisLine={false} width={64} />
+              <Tooltip formatter={(value) => formatWon(Number(value))} />
+              <Legend />
+              <Bar dataKey="actual" name="실적" fill="#0f8b8d" radius={[5, 5, 0, 0]} />
+              <Bar dataKey="forecast" name="예측" fill="#c58612" radius={[5, 5, 0, 0]} />
+              <Line
+                dataKey="forecastBasis"
+                name="예측 기준"
+                stroke="#e85d4f"
+                strokeWidth={2}
+                dot={{ r: 3 }}
+              />
+              <Line
+                dataKey="fixedPlan"
+                name="월정액 기준"
+                stroke="#5f6f8c"
+                strokeDasharray="6 4"
+                strokeWidth={2}
+                dot={false}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Adjustment</span>
+            <h2>예측 보정</h2>
+          </div>
+        </div>
+        <div className="forecast-list">
+          {monthlyActuals.map((item) => {
+            const adjustment = forecastAdjustments.find((entry) => entry.month === item.month);
+            const basis = forecastBasisActuals.find((entry) => entry.month === item.month);
+            return (
+              <article className="forecast-row" key={item.month}>
+                <div>
+                  <strong>{item.label}</strong>
+                  <span>{adjustment?.reason ?? "보정 없음"}</span>
+                </div>
+                <b>{formatManWon(adjustment?.amount ?? 0)}</b>
+                <small>예측 기준 {formatManWon(basis?.amount ?? item.amount)}</small>
+              </article>
+            );
+          })}
+        </div>
+        <div className="insight-box">
+          <Activity size={18} />
+          <div>
+            <strong>일시 비용 {formatManWon(adjustmentTotal)} 제외</strong>
+            <span>실제 지출은 유지하고, 개발/데모용 구글 API 상승분만 예측 산식에서 제외했습니다.</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Forecast</span>
+            <h2>예측 요약</h2>
+          </div>
+        </div>
+        <div className="forecast-list">
+          {forecast.map((item) => (
+            <article className="forecast-row" key={item.month}>
+              <div>
+                <strong>{item.label}</strong>
+                <span>
+                  범위 {formatManWon(item.lower)} - {formatManWon(item.upper)}
+                </span>
+              </div>
+              <b>{formatManWon(item.amount)}</b>
+            </article>
+          ))}
+        </div>
+        <div className="insight-box">
+          <Activity size={18} />
+          <div>
+            <strong>
+              {forecastRange} 합계 {formatManWon(forecastTotal)}
+            </strong>
+            <span>
+              보정 기준 {formatManWon(forecastBasisTotal)} 대비 {formatRate(forecastGrowth, true)}입니다.
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Plan Gap</span>
+            <h2>월정액 기준 대비</h2>
+          </div>
+        </div>
+        <div className="plan-stack">
+          <GaugeRow
+            label={`${actualRange} 월정액 기준`}
+            max={sourceMeta.totalActual}
+            tone="steel"
+            value={sourceMeta.expectedQuarterFixed}
+          />
+          <GaugeRow
+            label="실제 누적 비용"
+            max={sourceMeta.totalActual}
+            tone="teal"
+            value={sourceMeta.totalActual}
+          />
+          <div className="rule-row">
+            <span>초과 비용</span>
+            <strong>{formatManWon(overFixedPlan)}</strong>
+          </div>
+          <div className="rule-row">
+            <span>실제/기준 배율</span>
+            <strong>{(sourceMeta.totalActual / sourceMeta.expectedQuarterFixed).toFixed(2)}x</strong>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Actual & Forecast</span>
+            <h2>월별 비용 테이블</h2>
+          </div>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>월</th>
+                <th>구분</th>
+                <th>실제 비용</th>
+                <th>예측 제외</th>
+                <th>예측 기준</th>
+                <th>건수</th>
+                <th>월정액 기준</th>
+                <th>차이</th>
+              </tr>
+            </thead>
+            <tbody>
+              {monthlySeries.map((row) => {
+                const value = row.actual ?? row.forecast ?? 0;
+                return (
+                  <tr key={row.label}>
+                    <td>{row.label}</td>
+                    <td>
+                      <span className={`run-status ${row.status}`}>{row.status}</span>
+                    </td>
+                    <td>{formatWon(value)}</td>
+                    <td>{row.adjustment === null ? "-" : formatWon(row.adjustment)}</td>
+                    <td>{row.forecastBasis === null ? "-" : formatWon(row.forecastBasis)}</td>
+                    <td>{row.transactions ?? "-"}</td>
+                    <td>{formatWon(row.fixedPlan)}</td>
+                    <td>{formatWon((row.forecastBasis ?? value) - row.fixedPlan)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function DepartmentView({
+  commonDepartmentShare,
+  commonDepartmentTotal,
+  departmentCosts,
+  monthlyActuals,
+  sourceMeta,
+}: {
+  commonDepartmentShare: number;
+  commonDepartmentTotal: number;
+  departmentCosts: DashboardData["departmentCosts"];
+  monthlyActuals: MonthlyActual[];
+  sourceMeta: SourceMeta;
+}) {
+  const activeDepartments = departmentCosts.filter((item) => item.total > 0);
+  const departmentChartData = activeDepartments.map((item) => ({
+    name: item.name.replace("(공용)", "").replace("(단독)", ""),
+    total: item.total,
+  }));
+  const monthStackData = monthlyActuals.map((month) => ({
+    month: month.label,
+    monthKey: month.month,
+  }));
+
+  return (
+    <div className="content-grid department-view">
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Departments</span>
+            <h2>부서별 누적 비용</h2>
+          </div>
+          <span className="state-pill warning">공용 집중</span>
+        </div>
+        <div className="bar-frame">
+          <div className="comparison-bars">
+            {departmentChartData.map((item, index) => {
+              const max = departmentChartData[0].total;
+              return (
+                <div className="comparison-bar" key={item.name}>
+                  <div className="comparison-track">
+                    <span
+                      style={{
+                        height: `${Math.max((item.total / max) * 100, 2)}%`,
+                        background: chartColors[index % chartColors.length],
+                      }}
+                    />
+                  </div>
+                  <strong>{formatManWon(item.total)}</strong>
+                  <small>{item.name}</small>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Monthly Mix</span>
+            <h2>월별 부서 구성</h2>
+          </div>
+        </div>
+        <div className="bar-frame">
+          <div className="stacked-months">
+            {monthStackData.map((month) => {
+              const total = activeDepartments.reduce(
+                (sum, item) => sum + Number(item.monthly[month.monthKey] ?? 0),
+                0,
+              );
+              return (
+                <article className="stacked-month" key={month.month}>
+                  <div className="stacked-month-head">
+                    <strong>{month.month}</strong>
+                    <span>{formatWon(total)}</span>
+                  </div>
+                  <div className="stacked-track">
+                    {activeDepartments.map((item, index) => {
+                      const value = Number(item.monthly[month.monthKey] ?? 0);
+                      return (
+                        <span
+                          key={item.name}
+                          style={{
+                            width: `${total ? (value / total) * 100 : 0}%`,
+                            background: chartColors[index % chartColors.length],
+                          }}
+                          title={`${item.name}: ${formatWon(value)}`}
+                        />
+                      );
+                    })}
+                  </div>
+                </article>
+              );
+            })}
+            <div className="stacked-legend">
+              {activeDepartments.map((item, index) => (
+                <span key={item.name}>
+                  <i style={{ background: chartColors[index % chartColors.length] }} />
+                  {item.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Cost Ownership</span>
+            <h2>부서별 사용 현황</h2>
+          </div>
+          <span className="state-pill ok">
+            공용 {formatManWon(commonDepartmentTotal)} · {formatRate(commonDepartmentShare)}
+          </span>
+        </div>
+        <div className="department-list">
+          {departmentCosts.map((item) => {
+            const share = sourceMeta.totalActual ? (item.total / sourceMeta.totalActual) * 100 : 0;
+            return (
+              <article className="department-row" key={item.name}>
+                <div>
+                  <strong>{item.name}</strong>
+                  <span>
+                    원천명 {item.sourceName} · {item.transactions}건
+                  </span>
+                  <small>{item.ownerNote}</small>
+                </div>
+                <div className="department-meter" aria-label={`${item.name} 비용 점유율`}>
+                  <span style={{ width: `${Math.min(share, 100)}%` }} />
+                </div>
+                <div className="department-numbers">
+                  <strong>{formatWon(item.total)}</strong>
+                  <span>{formatRate(share)}</span>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function DetailView({
+  categoryCosts,
+  filteredTransactions,
+  query,
+  setQuery,
+  vendorCosts,
+}: {
+  categoryCosts: DashboardData["categoryCosts"];
+  filteredTransactions: TransactionCost[];
+  query: string;
+  setQuery: (value: string) => void;
+  vendorCosts: DashboardData["vendorCosts"];
+}) {
+  return (
+    <div className="content-grid detail-view">
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Tools</span>
+            <h2>AI 도구/분류별 비용</h2>
+          </div>
+        </div>
+        <div className="pie-layout">
+          <div className="pie-frame">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={categoryCosts}
+                  dataKey="amount"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={62}
+                  outerRadius={92}
+                  paddingAngle={2}
+                >
+                  {categoryCosts.map((entry) => (
+                    <Cell fill={entry.color} key={entry.name} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => formatWon(Number(value))} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="category-list">
+            {categoryCosts.map((item) => (
+              <div className="category-row" key={item.name}>
+                <span className="category-dot" style={{ background: item.color }} />
+                <strong>{item.name}</strong>
+                <b>{formatManWon(item.amount)}</b>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Vendors</span>
+            <h2>거래처 상위</h2>
+          </div>
+        </div>
+        <div className="vendor-list">
+          {vendorCosts.map((item) => {
+            const share = (item.amount / vendorCosts[0].amount) * 100;
+            return (
+              <article className="vendor-row" key={item.name}>
+                <div>
+                  <strong>{item.name}</strong>
+                  <span>{formatWon(item.amount)}</span>
+                </div>
+                <div className="vendor-meter" aria-label={`${item.name} 비용 규모`}>
+                  <span style={{ width: `${share}%` }} />
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Transactions</span>
+            <h2>고액 거래 내역</h2>
+          </div>
+          <label className="search-box">
+            <Search size={17} />
+            <input
+              placeholder="부서, 품명, 거래처"
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>일자</th>
+                <th>부서</th>
+                <th>품명</th>
+                <th>거래처</th>
+                <th>분류</th>
+                <th>금액</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTransactions.map((row) => (
+                <tr key={`${row.date}-${row.item}-${row.amount}`}>
+                  <td>{row.date}</td>
+                  <td>{row.department}</td>
+                  <td>
+                    <strong>{row.item}</strong>
+                  </td>
+                  <td>{row.vendor}</td>
+                  <td>{row.category}</td>
+                  <td>{formatWon(row.amount)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function MetricCard({
+  footer,
+  icon,
+  label,
+  tone,
+  value,
+}: {
+  footer: string;
+  icon: ReactNode;
+  label: string;
+  tone: MetricTone;
+  value: string;
+}) {
+  return (
+    <article className={`metric-card ${tone}`}>
+      <div className="metric-icon">{icon}</div>
+      <div>
+        <span>{label}</span>
+        <strong>{value}</strong>
+        <small>{footer}</small>
+      </div>
+    </article>
+  );
+}
+
+function GaugeRow({
+  label,
+  max,
+  tone,
+  value,
+}: {
+  label: string;
+  max: number;
+  tone: "teal" | "steel";
+  value: number;
+}) {
+  const rate = Math.min((value / max) * 100, 100);
+  return (
+    <div className="gauge-row">
+      <div>
+        <span>{label}</span>
+        <strong>{formatManWon(value)}</strong>
+      </div>
+      <div className={`gauge-track ${tone}`}>
+        <span style={{ width: `${rate}%` }} />
+      </div>
+    </div>
+  );
+}
+
+export default App;
