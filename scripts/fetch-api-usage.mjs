@@ -2,20 +2,15 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { createSign } from "node:crypto";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const rootDir = process.cwd();
-const envPath = path.join(rootDir, ".env.local");
-const days = parseDays(process.argv.find((arg) => arg.startsWith("--days=")) ?? "--days=7");
-const now = new Date();
-const endingAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
-const startingAt = new Date(endingAt.getTime() - days * 24 * 60 * 60 * 1000);
-const dayBuckets = makeDayBuckets(startingAt, days);
-
-const env = {
-  ...process.env,
-  ...(await readLocalEnv(envPath)),
-};
-const outputPaths = getOutputPaths(env);
+let rootDir = process.cwd();
+let envPath = path.join(rootDir, ".env.local");
+let days = 7;
+let now = new Date();
+let endingAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+let startingAt = new Date(endingAt.getTime() - days * 24 * 60 * 60 * 1000);
+let dayBuckets = makeDayBuckets(startingAt, days);
 
 const providerColors = {
   OpenAI: "#0f8b8d",
@@ -48,55 +43,101 @@ const geminiInputTokenMetricTypes = [
 
 const geminiOutputTokenMetricTypes = ["generativelanguage.googleapis.com/generate_content_usage_output_token_count"];
 
-const [openai, gemini, claude] = await Promise.all([
-  collectOpenAI(env.OPENAI_ADMIN_KEY),
-  collectGemini(env.GEMINI_API_KEY, env),
-  collectClaude(env.ANTHROPIC_ADMIN_API_KEY),
-]);
-
-const providers = [openai.provider, gemini.provider, claude.provider];
-const dailyUsage = dayBuckets.map((bucket) => {
-  const openaiDay = openai.daily.get(bucket.date) ?? emptyDaily();
-  const geminiDay = gemini.daily.get(bucket.date) ?? emptyDaily();
-  const claudeDay = claude.daily.get(bucket.date) ?? emptyDaily();
-
+export async function loadApiUsageEnv({ targetRootDir = process.cwd(), includeLocalEnv = true } = {}) {
+  const localEnvPath = path.join(targetRootDir, ".env.local");
   return {
-    date: bucket.date,
-    label: bucket.label,
-    openaiRequests: openaiDay.requests,
-    geminiRequests: geminiDay.requests,
-    claudeRequests: claudeDay.requests,
-    openaiTokens: openaiDay.tokens,
-    geminiTokens: geminiDay.tokens,
-    claudeTokens: claudeDay.tokens,
-    totalTokens: openaiDay.tokens + geminiDay.tokens + claudeDay.tokens,
-    costUsd: roundMoney(openaiDay.costUsd + geminiDay.costUsd + claudeDay.costUsd),
+    ...process.env,
+    ...(includeLocalEnv ? await readLocalEnv(localEnvPath) : {}),
   };
-});
-
-const snapshot = {
-  source: {
-    name: "생성형 AI API 사용 현황",
-    period: `최근 ${days}일`,
-    generatedAt: formatKoreanTimestamp(now),
-    mode: "로컬 수집 스냅샷",
-  },
-  providers,
-  dailyUsage,
-  models: [...openai.models, ...gemini.models, ...claude.models].sort((a, b) => b.costUsd - a.costUsd),
-  keyHealth: [openai.keyHealth, gemini.keyHealth, claude.keyHealth],
-};
-
-for (const outputPath of outputPaths) {
-  await mkdir(path.dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, `${JSON.stringify(snapshot, null, 2)}\n`);
 }
 
-console.log(`Wrote ${outputPaths.map((outputPath) => path.relative(rootDir, outputPath)).join(", ")}`);
-for (const provider of providers) {
-  console.log(
-    `${provider.provider}: ${provider.status} · ${provider.requests.toLocaleString("en-US")} requests · ${provider.costUsd.toFixed(2)} USD · ${provider.note}`,
-  );
+export async function collectApiUsage({
+  env = process.env,
+  targetRootDir = process.cwd(),
+  requestedDays = 7,
+  collectedAt = new Date(),
+  mode = "런타임 API 수집",
+} = {}) {
+  configureRuntime({ targetRootDir, requestedDays, collectedAt });
+
+  const [openai, gemini, claude] = await Promise.all([
+    collectOpenAI(env.OPENAI_ADMIN_KEY),
+    collectGemini(env.GEMINI_API_KEY, env),
+    collectClaude(env.ANTHROPIC_ADMIN_API_KEY),
+  ]);
+
+  const providers = [openai.provider, gemini.provider, claude.provider];
+  const dailyUsage = dayBuckets.map((bucket) => {
+    const openaiDay = openai.daily.get(bucket.date) ?? emptyDaily();
+    const geminiDay = gemini.daily.get(bucket.date) ?? emptyDaily();
+    const claudeDay = claude.daily.get(bucket.date) ?? emptyDaily();
+
+    return {
+      date: bucket.date,
+      label: bucket.label,
+      openaiRequests: openaiDay.requests,
+      geminiRequests: geminiDay.requests,
+      claudeRequests: claudeDay.requests,
+      openaiTokens: openaiDay.tokens,
+      geminiTokens: geminiDay.tokens,
+      claudeTokens: claudeDay.tokens,
+      totalTokens: openaiDay.tokens + geminiDay.tokens + claudeDay.tokens,
+      costUsd: roundMoney(openaiDay.costUsd + geminiDay.costUsd + claudeDay.costUsd),
+    };
+  });
+
+  return {
+    source: {
+      name: "생성형 AI API 사용 현황",
+      period: `최근 ${days}일`,
+      generatedAt: formatKoreanTimestamp(now),
+      mode,
+    },
+    providers,
+    dailyUsage,
+    models: [...openai.models, ...gemini.models, ...claude.models].sort((a, b) => b.costUsd - a.costUsd),
+    keyHealth: [openai.keyHealth, gemini.keyHealth, claude.keyHealth],
+  };
+}
+
+export async function writeApiUsageSnapshot(snapshot, env = process.env) {
+  const outputPaths = getOutputPaths(env);
+  for (const outputPath of outputPaths) {
+    await mkdir(path.dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, `${JSON.stringify(snapshot, null, 2)}\n`);
+  }
+  return outputPaths;
+}
+
+async function runCli() {
+  const requestedDays = parseDays(process.argv.find((arg) => arg.startsWith("--days=")) ?? "--days=7");
+  configureRuntime({ targetRootDir: process.cwd(), requestedDays, collectedAt: new Date() });
+  const env = await loadApiUsageEnv({ targetRootDir: rootDir });
+  const snapshot = await collectApiUsage({
+    env,
+    targetRootDir: rootDir,
+    requestedDays,
+    collectedAt: now,
+    mode: "로컬 수집 스냅샷",
+  });
+  const outputPaths = await writeApiUsageSnapshot(snapshot, env);
+
+  console.log(`Wrote ${outputPaths.map((outputPath) => path.relative(rootDir, outputPath)).join(", ")}`);
+  for (const provider of snapshot.providers) {
+    console.log(
+      `${provider.provider}: ${provider.status} · ${provider.requests.toLocaleString("en-US")} requests · ${provider.costUsd.toFixed(2)} USD · ${provider.note}`,
+    );
+  }
+}
+
+function configureRuntime({ targetRootDir = process.cwd(), requestedDays = 7, collectedAt = new Date() } = {}) {
+  rootDir = targetRootDir;
+  envPath = path.join(rootDir, ".env.local");
+  days = parseDays(requestedDays);
+  now = collectedAt;
+  endingAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+  startingAt = new Date(endingAt.getTime() - days * 24 * 60 * 60 * 1000);
+  dayBuckets = makeDayBuckets(startingAt, days);
 }
 
 async function collectOpenAI(apiKey) {
@@ -902,7 +943,8 @@ function toDateKey(date) {
 }
 
 function parseDays(arg) {
-  const value = Number(arg.split("=")[1]);
+  const rawValue = typeof arg === "string" ? (arg.includes("=") ? arg.split("=").at(-1) : arg) : arg;
+  const value = Number(rawValue);
   if (!Number.isFinite(value) || value < 1 || value > 31) return 7;
   return Math.round(value);
 }
@@ -923,4 +965,8 @@ function shortenError(error) {
 
 function isIgnorableMonitoringMetricError(error) {
   return /metric|descriptor|not found|unknown|invalid/i.test(String(error ?? ""));
+}
+
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+  await runCli();
 }

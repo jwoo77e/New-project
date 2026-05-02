@@ -208,20 +208,25 @@ function App() {
 
   useEffect(() => {
     let isMounted = true;
+    const snapshotUrls = ["/api/api-usage", `${import.meta.env.BASE_URL}api-usage-snapshot.local.json`];
 
-    fetch(`${import.meta.env.BASE_URL}api-usage-snapshot.local.json`, { cache: "no-store" })
-      .then((response) => {
-        if (!response.ok) return null;
-        return response.json() as Promise<unknown>;
-      })
-      .then((data) => {
-        if (isMounted && isApiUsageData(data)) {
-          setApiUsageData(data);
+    async function loadApiUsageData() {
+      for (const url of snapshotUrls) {
+        try {
+          const response = await fetch(url, { cache: "no-store" });
+          if (!response.ok) continue;
+          const data: unknown = await response.json();
+          if (isApiUsageData(data)) {
+            if (isMounted) setApiUsageData(data);
+            return;
+          }
+        } catch {
+          // The runtime API is optional for static deployments; try the next source.
         }
-      })
-      .catch(() => {
-        // The local snapshot is optional; the dashboard falls back to sample data.
-      });
+      }
+    }
+
+    void loadApiUsageData();
 
     return () => {
       isMounted = false;

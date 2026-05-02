@@ -9,6 +9,7 @@
     "build": "tsc && vite build",
     "postbuild": "npm run collect:api-usage",
     "preview": "vite preview --host 0.0.0.0",
+    "start": "node server.mjs",
     "test": "vitest run"
   },
   "dependencies": {
