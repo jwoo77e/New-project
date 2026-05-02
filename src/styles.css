@@ -53,6 +53,11 @@ button {
   border: 0;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
 .app-shell {
   width: min(1480px, 100%);
   min-height: 100vh;

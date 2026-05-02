@@ -10,6 +10,7 @@ import {
   Gauge,
   LineChart,
   PieChart as PieChartIcon,
+  RotateCcw,
   Search,
   TrendingUp,
   Upload,
@@ -36,6 +37,11 @@ import {
   type SourceMeta,
   type TransactionCost,
 } from "./data/aiCostData";
+import {
+  clearStoredDashboardData,
+  loadStoredDashboardData,
+  saveStoredDashboardData,
+} from "./lib/dashboardStorage";
 import { dashboardDataFromExcel } from "./lib/excelDashboard";
 
 type ViewKey = "monthly" | "department" | "detail";
@@ -53,6 +59,14 @@ type MetricTone = "teal" | "green" | "amber" | "coral" | "steel";
 const chartColors = ["#0f8b8d", "#e85d4f", "#c58612", "#2f8f46"];
 
 const numberFormat = new Intl.NumberFormat("ko-KR");
+
+function loadInitialDashboardState() {
+  const storedData = loadStoredDashboardData();
+  return {
+    data: storedData ?? initialDashboardData,
+    isStoredData: Boolean(storedData),
+  };
+}
 
 function formatWon(value: number) {
   return `${numberFormat.format(Math.round(value))}원`;
@@ -123,11 +137,13 @@ function forecastMethodLabel(monthlyActuals: MonthlyActual[]) {
 }
 
 function App() {
+  const [initialState] = useState(loadInitialDashboardState);
   const [activeView, setActiveView] = useState<ViewKey>("monthly");
   const [query, setQuery] = useState("");
   const [toast, setToast] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [dashboardData, setDashboardData] = useState<DashboardData>(initialDashboardData);
+  const [dashboardData, setDashboardData] = useState<DashboardData>(initialState.data);
+  const [isStoredData, setIsStoredData] = useState(initialState.isStoredData);
 
   const {
     sourceMeta,
@@ -217,10 +233,16 @@ function App() {
     setIsUploading(true);
     try {
       const nextData = await dashboardDataFromExcel(file);
+      const saved = saveStoredDashboardData(nextData);
       setDashboardData(nextData);
+      setIsStoredData(saved);
       setQuery("");
       setActiveView("monthly");
-      setToast(`${nextData.sourceMeta.fileName} 기준으로 대시보드를 업데이트했습니다.`);
+      setToast(
+        saved
+          ? `${nextData.sourceMeta.fileName} 기준으로 업데이트하고 저장했습니다.`
+          : `${nextData.sourceMeta.fileName} 기준으로 업데이트했습니다. 브라우저 저장은 실패했습니다.`,
+      );
       window.setTimeout(() => setToast(""), 2800);
     } catch (error) {
       const message = error instanceof Error ? error.message : "엑셀 파일을 읽지 못했습니다.";
@@ -229,6 +251,16 @@ function App() {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const resetDashboard = () => {
+    clearStoredDashboardData();
+    setDashboardData(initialDashboardData);
+    setIsStoredData(false);
+    setQuery("");
+    setActiveView("monthly");
+    setToast("기본 대시보드 데이터로 초기화했습니다.");
+    window.setTimeout(() => setToast(""), 2400);
   };
 
   const exportSnapshot = () => {
@@ -274,7 +306,7 @@ function App() {
         <div className="top-actions">
           <div className="source-chip" title={sourceMeta.fileName}>
             <FileSpreadsheet size={17} />
-            엑셀 원천 반영
+            {isStoredData ? "저장된 업로드 데이터" : "기본 원천 데이터"}
           </div>
           <label className="upload-button">
             <Upload size={17} />
@@ -291,6 +323,16 @@ function App() {
           <button className="command-button" type="button" onClick={exportSnapshot}>
             <Download size={17} />
             내보내기
+          </button>
+          <button
+            className="command-button"
+            disabled={!isStoredData}
+            title={isStoredData ? "기본 데이터로 되돌리기" : "저장된 업로드 데이터가 없습니다."}
+            type="button"
+            onClick={resetDashboard}
+          >
+            <RotateCcw size={17} />
+            초기화
           </button>
         </div>
       </header>
