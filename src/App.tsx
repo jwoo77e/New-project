@@ -67,6 +67,16 @@ type ForecastPoint = {
 
 type MetricTone = "teal" | "green" | "amber" | "coral" | "steel";
 
+type RobustRunRateForecast = {
+  measuredDays: number;
+  total: number;
+  recurringDaily: number;
+  monthlyRecurring: number;
+  oneTime: number;
+  outlierDays: number;
+  upperFence: number;
+};
+
 const chartColors = ["#0f8b8d", "#e85d4f", "#c58612", "#2f8f46"];
 const API_FORECAST_MONTH_DAYS = 30.4;
 const API_FORECAST_USD_TO_KRW = 1400;
@@ -200,6 +210,54 @@ function forecastMethodLabel(monthlyActuals: MonthlyActual[]) {
   return `${monthRangeLabel(monthlyActuals)} 월별 실적 단순 선형 추세`;
 }
 
+function quantile(sortedValues: number[], percentile: number) {
+  if (sortedValues.length === 0) return 0;
+  const position = (sortedValues.length - 1) * percentile;
+  const lowerIndex = Math.floor(position);
+  const upperIndex = Math.ceil(position);
+  const weight = position - lowerIndex;
+  return sortedValues[lowerIndex] * (1 - weight) + sortedValues[upperIndex] * weight;
+}
+
+function buildRobustRunRateForecast(values: number[], monthDays = API_FORECAST_MONTH_DAYS): RobustRunRateForecast {
+  const cleanedValues = values.map((value) => Math.max(0, Number.isFinite(value) ? value : 0));
+  const measuredDays = Math.max(1, cleanedValues.length);
+  if (cleanedValues.length === 0) {
+    return {
+      measuredDays,
+      total: 0,
+      recurringDaily: 0,
+      monthlyRecurring: 0,
+      oneTime: 0,
+      outlierDays: 0,
+      upperFence: 0,
+    };
+  }
+
+  const sortedValues = [...cleanedValues].sort((a, b) => a - b);
+  const median = quantile(sortedValues, 0.5);
+  const q1 = quantile(sortedValues, 0.25);
+  const q3 = quantile(sortedValues, 0.75);
+  const iqr = q3 - q1;
+  const iqrFence = iqr > 0 ? q3 + iqr * 1.5 : median;
+  const medianFence = median > 0 ? median * 2 : 0;
+  const upperFence = Math.max(median, iqrFence, medianFence);
+  const cappedValues = cleanedValues.map((value) => Math.min(value, upperFence));
+  const total = cleanedValues.reduce((sum, value) => sum + value, 0);
+  const cappedTotal = cappedValues.reduce((sum, value) => sum + value, 0);
+  const recurringDaily = cappedTotal / measuredDays;
+
+  return {
+    measuredDays,
+    total,
+    recurringDaily,
+    monthlyRecurring: recurringDaily * monthDays,
+    oneTime: Math.max(0, total - cappedTotal),
+    outlierDays: cleanedValues.filter((value) => value > upperFence).length,
+    upperFence,
+  };
+}
+
 function App() {
   const [initialState] = useState(loadInitialDashboardState);
   const [activeView, setActiveView] = useState<ViewKey>("monthly");
@@ -324,20 +382,32 @@ function App() {
     };
   }, [apiUsageData]);
   const apiForecast = useMemo(() => {
-    const measuredDays = Math.max(1, apiUsageData.dailyUsage.length);
-    const dailyCostUsd = apiTotals.totalCostUsd / measuredDays;
-    const monthlyCostUsd = dailyCostUsd * API_FORECAST_MONTH_DAYS;
+    const costRunRate = buildRobustRunRateForecast(apiUsageData.dailyUsage.map((item) => item.costUsd));
+    const tokenRunRate = buildRobustRunRateForecast(apiUsageData.dailyUsage.map((item) => item.totalTokens));
+    const requestRunRate = buildRobustRunRateForecast(
+      apiUsageData.dailyUsage.map((item) => item.openaiRequests + item.geminiRequests + item.claudeRequests),
+    );
+    const monthlyCostUsd = costRunRate.monthlyRecurring;
     const monthlyCostKrw = Math.round(monthlyCostUsd * API_FORECAST_USD_TO_KRW);
 
     return {
-      measuredDays,
-      dailyCostUsd,
+      measuredDays: costRunRate.measuredDays,
+      dailyCostUsd: costRunRate.recurringDaily,
       monthlyCostUsd,
       monthlyCostKrw,
+      oneTimeCostUsd: costRunRate.oneTime,
+      costOutlierDays: costRunRate.outlierDays,
+      costUpperFenceUsd: costRunRate.upperFence,
+      monthlyTokens: Math.round(tokenRunRate.monthlyRecurring),
+      oneTimeTokens: Math.round(tokenRunRate.oneTime),
+      tokenOutlierDays: tokenRunRate.outlierDays,
+      monthlyRequests: Math.round(requestRunRate.monthlyRecurring),
+      oneTimeRequests: Math.round(requestRunRate.oneTime),
+      requestOutlierDays: requestRunRate.outlierDays,
       usdToKrwRate: API_FORECAST_USD_TO_KRW,
       monthDays: API_FORECAST_MONTH_DAYS,
     };
-  }, [apiTotals.totalCostUsd, apiUsageData.dailyUsage.length]);
+  }, [apiUsageData.dailyUsage]);
   const apiAdjustedForecast = useMemo(
     () =>
       forecast.map((item) => ({
@@ -586,7 +656,7 @@ function App() {
             label={`${forecastRange} API 반영 예측`}
             tone="amber"
             value={formatManWon(apiAdjustedForecastTotal)}
-            footer={`기존 ${formatManWon(forecastTotal)} + API ${formatManWon(apiForecast.monthlyCostKrw)}/월`}
+            footer={`기존 ${formatManWon(forecastTotal)} + 반복 API ${formatManWon(apiForecast.monthlyCostKrw)}/월`}
           />
           <MetricCard
             icon={<WalletCards size={21} />}
@@ -671,6 +741,15 @@ function MonthlyView({
     dailyCostUsd: number;
     monthlyCostUsd: number;
     monthlyCostKrw: number;
+    oneTimeCostUsd: number;
+    costOutlierDays: number;
+    costUpperFenceUsd: number;
+    monthlyTokens: number;
+    oneTimeTokens: number;
+    tokenOutlierDays: number;
+    monthlyRequests: number;
+    oneTimeRequests: number;
+    requestOutlierDays: number;
     usdToKrwRate: number;
     monthDays: number;
   };
@@ -812,7 +891,7 @@ function MonthlyView({
               {forecastRange} API 반영 합계 {formatManWon(apiAdjustedForecastTotal)}
             </strong>
             <span>
-              기존 예측 {formatManWon(forecastTotal)}에 API 월환산 {formatManWon(apiForecast.monthlyCostKrw)}을
+              기존 예측 {formatManWon(forecastTotal)}에 반복 API 월환산 {formatManWon(apiForecast.monthlyCostKrw)}을
               {" "}
               {forecast.length}개월 더했습니다.
             </span>
@@ -821,8 +900,13 @@ function MonthlyView({
               {formatRate(apiAdjustedForecastGrowth, true)}
             </span>
             <span>
-              최근 {apiForecast.measuredDays}일 API 비용 {formatUsd(apiForecast.dailyCostUsd * apiForecast.measuredDays)} ·
-              월환산 {formatUsd(apiForecast.monthlyCostUsd)} · USD 1 = {numberFormat.format(apiForecast.usdToKrwRate)}원 가정
+              최근 {apiForecast.measuredDays}일 중 이상치 {apiForecast.costOutlierDays}일의 초과분{" "}
+              {formatUsd(apiForecast.oneTimeCostUsd)}은 월 반복 비용에서 제외했습니다.
+            </span>
+            <span>
+              반복 사용량 월환산 {formatTokens(apiForecast.monthlyTokens)} 토큰 · 요청{" "}
+              {numberFormat.format(apiForecast.monthlyRequests)}건 · USD 1 ={" "}
+              {numberFormat.format(apiForecast.usdToKrwRate)}원 가정
             </span>
           </div>
         </div>
