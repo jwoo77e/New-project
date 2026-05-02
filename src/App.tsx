@@ -70,6 +70,8 @@ type MetricTone = "teal" | "green" | "amber" | "coral" | "steel";
 const chartColors = ["#0f8b8d", "#e85d4f", "#c58612", "#2f8f46"];
 const API_FORECAST_MONTH_DAYS = 30.4;
 const API_FORECAST_USD_TO_KRW = 1400;
+const VIEW_ROTATION_INTERVAL_MS = 12000;
+const viewRotationOrder: ViewKey[] = ["monthly", "department", "detail", "api"];
 
 const numberFormat = new Intl.NumberFormat("ko-KR");
 
@@ -233,6 +235,20 @@ function App() {
     return () => {
       isMounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    const rotationTimer = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+
+      setActiveView((currentView) => {
+        const currentIndex = viewRotationOrder.indexOf(currentView);
+        const nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % viewRotationOrder.length;
+        return viewRotationOrder[nextIndex];
+      });
+    }, VIEW_ROTATION_INTERVAL_MS);
+
+    return () => window.clearInterval(rotationTimer);
   }, []);
 
   const {
