@@ -381,7 +381,29 @@ function App() {
       activeKeys,
     };
   }, [apiUsageData]);
+  const isApiUsageCollected = apiUsageData.source.generatedAt !== initialApiUsageData.source.generatedAt;
   const apiForecast = useMemo(() => {
+    if (!isApiUsageCollected) {
+      return {
+        isReady: false,
+        measuredDays: 0,
+        dailyCostUsd: 0,
+        monthlyCostUsd: 0,
+        monthlyCostKrw: 0,
+        oneTimeCostUsd: 0,
+        costOutlierDays: 0,
+        costUpperFenceUsd: 0,
+        monthlyTokens: 0,
+        oneTimeTokens: 0,
+        tokenOutlierDays: 0,
+        monthlyRequests: 0,
+        oneTimeRequests: 0,
+        requestOutlierDays: 0,
+        usdToKrwRate: API_FORECAST_USD_TO_KRW,
+        monthDays: API_FORECAST_MONTH_DAYS,
+      };
+    }
+
     const costRunRate = buildRobustRunRateForecast(apiUsageData.dailyUsage.map((item) => item.costUsd));
     const tokenRunRate = buildRobustRunRateForecast(apiUsageData.dailyUsage.map((item) => item.totalTokens));
     const requestRunRate = buildRobustRunRateForecast(
@@ -391,6 +413,7 @@ function App() {
     const monthlyCostKrw = Math.round(monthlyCostUsd * API_FORECAST_USD_TO_KRW);
 
     return {
+      isReady: true,
       measuredDays: costRunRate.measuredDays,
       dailyCostUsd: costRunRate.recurringDaily,
       monthlyCostUsd,
@@ -407,7 +430,7 @@ function App() {
       usdToKrwRate: API_FORECAST_USD_TO_KRW,
       monthDays: API_FORECAST_MONTH_DAYS,
     };
-  }, [apiUsageData.dailyUsage]);
+  }, [apiUsageData.dailyUsage, isApiUsageCollected]);
   const apiAdjustedForecast = useMemo(
     () =>
       forecast.map((item) => ({
@@ -737,6 +760,7 @@ function MonthlyView({
   apiAdjustedForecastGrowth: number;
   apiAdjustedForecastTotal: number;
   apiForecast: {
+    isReady: boolean;
     measuredDays: number;
     dailyCostUsd: number;
     monthlyCostUsd: number;
@@ -899,15 +923,21 @@ function MonthlyView({
               API 추가분 합계 {formatManWon(apiForecastAddedTotal)} · 보정 기준 대비{" "}
               {formatRate(apiAdjustedForecastGrowth, true)}
             </span>
-            <span>
-              최근 {apiForecast.measuredDays}일 중 이상치 {apiForecast.costOutlierDays}일의 초과분{" "}
-              {formatUsd(apiForecast.oneTimeCostUsd)}은 월 반복 비용에서 제외했습니다.
-            </span>
-            <span>
-              반복 사용량 월환산 {formatTokens(apiForecast.monthlyTokens)} 토큰 · 요청{" "}
-              {numberFormat.format(apiForecast.monthlyRequests)}건 · USD 1 ={" "}
-              {numberFormat.format(apiForecast.usdToKrwRate)}원 가정
-            </span>
+            {apiForecast.isReady ? (
+              <>
+                <span>
+                  최근 {apiForecast.measuredDays}일 중 이상치 {apiForecast.costOutlierDays}일의 초과분{" "}
+                  {formatUsd(apiForecast.oneTimeCostUsd)}은 월 반복 비용에서 제외했습니다.
+                </span>
+                <span>
+                  반복 사용량 월환산 {formatTokens(apiForecast.monthlyTokens)} 토큰 · 요청{" "}
+                  {numberFormat.format(apiForecast.monthlyRequests)}건 · USD 1 ={" "}
+                  {numberFormat.format(apiForecast.usdToKrwRate)}원 가정
+                </span>
+              </>
+            ) : (
+              <span>API 사용량 수집이 끝나면 반복 비용과 사용량을 예측에 반영합니다.</span>
+            )}
           </div>
         </div>
       </section>
