@@ -205,6 +205,11 @@ async function collectGemini(apiKey, env) {
   }
 
   const usage = monitoring.usage;
+  const billingCosts = await collectGeminiBillingCosts(env);
+  const costByToken =
+    billingCosts.ok && usage.inputTokens + usage.outputTokens > 0
+      ? billingCosts.totalCostUsd / (usage.inputTokens + usage.outputTokens)
+      : 0;
   const usageModels = [...usage.models.values()]
     .map((model) => ({
       provider: providerName,
@@ -212,15 +217,18 @@ async function collectGemini(apiKey, env) {
       requests: model.requests,
       inputTokens: model.inputTokens,
       outputTokens: model.outputTokens,
-      costUsd: 0,
+      costUsd: roundMoney((model.inputTokens + model.outputTokens) * costByToken),
       avgLatencyMs: 0,
       errorRate: 0,
     }))
     .sort((a, b) => b.inputTokens + b.outputTokens + b.requests - (a.inputTokens + a.outputTokens + a.requests));
   const hasUsage = usage.totalRequests > 0 || usage.inputTokens + usage.outputTokens > 0;
+  const billingNote = billingCosts.ok
+    ? "BigQuery Billing 비용 수집 완료"
+    : `BigQuery Billing 미수집: ${shortenError(billingCosts.error)}`;
   const note = hasUsage
-    ? "Cloud Monitoring 사용량 수집 완료. 비용은 Billing export 테이블 생성 후 수집 가능"
-    : "Cloud Monitoring 조회 완료, 최근 사용량 없음. 비용은 Billing export 테이블 생성 후 수집 가능";
+    ? `Cloud Monitoring 사용량 수집 완료. ${billingNote}`
+    : `Cloud Monitoring 조회 완료, 최근 사용량 없음. ${billingNote}`;
 
   return {
     provider: makeProvider({
@@ -229,19 +237,21 @@ async function collectGemini(apiKey, env) {
       requests: usage.totalRequests,
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
-      costUsd: 0,
+      costUsd: billingCosts.ok ? billingCosts.totalCostUsd : 0,
       activeKeys: 1,
       status: hasUsage ? "정상" : "주의",
       note,
     }),
-    daily: mergeDaily(usage.daily, new Map()),
+    daily: mergeDaily(usage.daily, billingCosts.ok ? billingCosts.dailyCosts : new Map()),
     models: usageModels.length > 0 ? usageModels : catalogModels,
     keyHealth: makeKeyHealth(providerName, {
       name: "gemini-prod",
       scope: `generative language, monitoring (${monitoring.projectId})`,
       requests: usage.totalRequests,
       status: "정상",
-      note: "Cloud Monitoring 인증 성공. 비용은 BigQuery 테이블 생성 후 수집 가능",
+      note: billingCosts.ok
+        ? "Cloud Monitoring 및 BigQuery Billing 인증 성공"
+        : `Cloud Monitoring 인증 성공. ${shortenError(billingCosts.error)}`,
     }),
   };
 }
@@ -419,6 +429,90 @@ async function collectGeminiMonitoring(env) {
   }
 }
 
+async function collectGeminiBillingCosts(env) {
+  try {
+    const billingProjectId = env.GOOGLE_BILLING_BQ_PROJECT_ID;
+    const datasetId = env.GOOGLE_BILLING_BQ_DATASET;
+    const tableId = env.GOOGLE_BILLING_BQ_TABLE;
+    if (!billingProjectId || !datasetId || !tableId) {
+      return { ok: false, error: "GOOGLE_BILLING_BQ_PROJECT_ID/DATASET/TABLE 중 비어 있는 값이 있습니다." };
+    }
+
+    const accessToken = await getGoogleAccessToken(env);
+    const tableRef = `${bigQueryIdentifier(billingProjectId)}.${bigQueryIdentifier(datasetId)}.${bigQueryIdentifier(tableId)}`;
+    const projectFilter = env.GOOGLE_CLOUD_PROJECT_ID ? "AND project.id = @projectId" : "";
+    const query = `
+      SELECT
+        DATE(usage_start_time) AS usage_date,
+        SUM(cost + IFNULL((SELECT SUM(credit.amount) FROM UNNEST(credits) AS credit), 0)) AS cost
+      FROM \`${tableRef}\`
+      WHERE usage_start_time >= @startingAt
+        AND usage_start_time < @endingAt
+        ${projectFilter}
+        AND (
+          LOWER(service.description) LIKE '%gemini%'
+          OR LOWER(service.description) LIKE '%generative language%'
+          OR LOWER(sku.description) LIKE '%gemini%'
+          OR LOWER(sku.description) LIKE '%generative language%'
+          OR LOWER(sku.description) LIKE '%generative ai%'
+        )
+      GROUP BY usage_date
+      ORDER BY usage_date`;
+    const queryParameters = [
+      {
+        name: "startingAt",
+        parameterType: { type: "TIMESTAMP" },
+        parameterValue: { value: startingAt.toISOString() },
+      },
+      {
+        name: "endingAt",
+        parameterType: { type: "TIMESTAMP" },
+        parameterValue: { value: endingAt.toISOString() },
+      },
+    ];
+    if (env.GOOGLE_CLOUD_PROJECT_ID) {
+      queryParameters.push({
+        name: "projectId",
+        parameterType: { type: "STRING" },
+        parameterValue: { value: env.GOOGLE_CLOUD_PROJECT_ID },
+      });
+    }
+
+    const queryResult = await getJson(`https://bigquery.googleapis.com/bigquery/v2/projects/${billingProjectId}/queries`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        query,
+        useLegacySql: false,
+        parameterMode: "NAMED",
+        queryParameters,
+      }),
+    });
+    if (!queryResult.ok) {
+      return { ok: false, error: queryResult.error };
+    }
+
+    const dailyCosts = new Map();
+    let totalCostUsd = 0;
+    const fields = queryResult.data.schema?.fields ?? [];
+    for (const row of queryResult.data.rows ?? []) {
+      const values = Object.fromEntries(row.f.map((cell, index) => [fields[index]?.name, cell.v]));
+      const date = stringValue(values.usage_date, "");
+      const cost = roundMoney(numberValue(values.cost));
+      if (!date) continue;
+      dailyCosts.set(date, roundMoney((dailyCosts.get(date) ?? 0) + cost));
+      totalCostUsd += cost;
+    }
+
+    return { ok: true, totalCostUsd: roundMoney(totalCostUsd), dailyCosts };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
 async function addGoogleMonitoringMetricUsage({ projectId, accessToken, metricType, usage, valueType }) {
   const series = await listGoogleMonitoringTimeSeries(projectId, accessToken, metricType);
   for (const timeSeries of series) {
@@ -541,6 +635,13 @@ function parseServiceAccountJson(text, sourceName) {
 
 function base64Url(value) {
   return Buffer.from(value).toString("base64url");
+}
+
+function bigQueryIdentifier(value) {
+  if (!/^[A-Za-z0-9_-]+$/.test(value)) {
+    throw new Error(`BigQuery 식별자 형식이 올바르지 않습니다: ${value}`);
+  }
+  return value.replace(/`/g, "");
 }
 
 function addUsage(usage, date, model, requests, inputTokens, outputTokens) {
