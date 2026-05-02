@@ -199,7 +199,7 @@ function App() {
   useEffect(() => {
     let isMounted = true;
 
-    fetch("/api-usage-snapshot.local.json", { cache: "no-store" })
+    fetch(`${import.meta.env.BASE_URL}api-usage-snapshot.local.json`, { cache: "no-store" })
       .then((response) => {
         if (!response.ok) return null;
         return response.json() as Promise<unknown>;

@@ -4,7 +4,6 @@ import path from "node:path";
 
 const rootDir = process.cwd();
 const envPath = path.join(rootDir, ".env.local");
-const outputPath = path.join(rootDir, "public", "api-usage-snapshot.local.json");
 const days = parseDays(process.argv.find((arg) => arg.startsWith("--days=")) ?? "--days=7");
 const now = new Date();
 const endingAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
@@ -15,6 +14,7 @@ const env = {
   ...process.env,
   ...(await readLocalEnv(envPath)),
 };
+const outputPaths = getOutputPaths(env);
 
 const providerColors = {
   OpenAI: "#0f8b8d",
@@ -58,10 +58,12 @@ const snapshot = {
   keyHealth: [openai.keyHealth, gemini.keyHealth, claude.keyHealth],
 };
 
-await mkdir(path.dirname(outputPath), { recursive: true });
-await writeFile(outputPath, `${JSON.stringify(snapshot, null, 2)}\n`);
+for (const outputPath of outputPaths) {
+  await mkdir(path.dirname(outputPath), { recursive: true });
+  await writeFile(outputPath, `${JSON.stringify(snapshot, null, 2)}\n`);
+}
 
-console.log(`Wrote ${path.relative(rootDir, outputPath)}`);
+console.log(`Wrote ${outputPaths.map((outputPath) => path.relative(rootDir, outputPath)).join(", ")}`);
 for (const provider of providers) {
   console.log(
     `${provider.provider}: ${provider.status} · ${provider.requests.toLocaleString("en-US")} requests · ${provider.costUsd.toFixed(2)} USD · ${provider.note}`,
@@ -468,6 +470,21 @@ async function readLocalEnv(filePath) {
     entries[key] = value;
   }
   return entries;
+}
+
+function getOutputPaths(env) {
+  const snapshotFileName = "api-usage-snapshot.local.json";
+  const paths = [path.join(rootDir, "public", snapshotFileName)];
+
+  if (existsSync(path.join(rootDir, "dist"))) {
+    paths.push(path.join(rootDir, "dist", snapshotFileName));
+  }
+
+  if (env.API_USAGE_OUTPUT_PATH) {
+    paths.push(path.resolve(rootDir, env.API_USAGE_OUTPUT_PATH));
+  }
+
+  return [...new Set(paths)];
 }
 
 function bucketItems(payload) {
