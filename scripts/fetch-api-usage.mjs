@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { createSign } from "node:crypto";
 import path from "node:path";
 
 const rootDir = process.cwd();
@@ -22,9 +23,32 @@ const providerColors = {
   Claude: "#5f6f8c",
 };
 
+const geminiRequestMetricTypes = [
+  "generativelanguage.googleapis.com/quota/generate_content_free_tier_requests/usage",
+  "generativelanguage.googleapis.com/quota/generate_content_paid_tier_requests/usage",
+  "generativelanguage.googleapis.com/quota/generate_content_paid_tier_2_requests/usage",
+  "generativelanguage.googleapis.com/quota/generate_content_paid_tier_3_requests/usage",
+  "generativelanguage.googleapis.com/quota/generate_requests_per_model/usage",
+  "generativelanguage.googleapis.com/quota/embed_content_free_tier_requests/usage",
+  "generativelanguage.googleapis.com/quota/embed_content_paid_tier_requests/usage",
+  "generativelanguage.googleapis.com/quota/embed_content_paid_tier_2_requests/usage",
+  "generativelanguage.googleapis.com/quota/embed_content_paid_tier_3_requests/usage",
+];
+
+const geminiInputTokenMetricTypes = [
+  "generativelanguage.googleapis.com/quota/generate_content_free_tier_input_token_count/usage",
+  "generativelanguage.googleapis.com/quota/generate_content_paid_tier_input_token_count/usage",
+  "generativelanguage.googleapis.com/quota/generate_content_paid_tier_2_input_token_count/usage",
+  "generativelanguage.googleapis.com/quota/generate_content_paid_tier_3_input_token_count/usage",
+  "generativelanguage.googleapis.com/quota/embed_content_free_tier_tokens/usage",
+  "generativelanguage.googleapis.com/quota/embed_content_paid_tier_tokens/usage",
+  "generativelanguage.googleapis.com/quota/embed_content_paid_tier_2_tokens/usage",
+  "generativelanguage.googleapis.com/quota/embed_content_paid_tier_3_tokens/usage",
+];
+
 const [openai, gemini, claude] = await Promise.all([
   collectOpenAI(env.OPENAI_ADMIN_KEY),
-  collectGemini(env.GEMINI_API_KEY),
+  collectGemini(env.GEMINI_API_KEY, env),
   collectClaude(env.ANTHROPIC_ADMIN_API_KEY),
 ]);
 
@@ -138,7 +162,7 @@ async function collectOpenAI(apiKey) {
   };
 }
 
-async function collectGemini(apiKey) {
+async function collectGemini(apiKey, env) {
   const providerName = "Gemini";
   if (!apiKey) return missingProvider(providerName, "GEMINI_API_KEY가 없습니다.");
 
@@ -150,26 +174,72 @@ async function collectGemini(apiKey) {
     return errorProvider(providerName, "Gemini 키 확인 실패", modelsResult.error);
   }
 
+  const catalogModels = parseGeminiModels(modelsResult.data);
+  const monitoring = await collectGeminiMonitoring(env);
+
+  if (!monitoring.ok) {
+    return {
+      provider: makeProvider({
+        provider: providerName,
+        label: "Gemini API",
+        requests: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        costUsd: 0,
+        activeKeys: 1,
+        status: "주의",
+        note: `API 키 확인됨. Cloud Monitoring 미수집: ${shortenError(monitoring.error)}`,
+      }),
+      daily: new Map(dayBuckets.map((bucket) => [bucket.date, emptyDaily()])),
+      models: catalogModels,
+      keyHealth: makeKeyHealth(providerName, {
+        name: "gemini-prod",
+        scope: "generative language, monitoring",
+        requests: 0,
+        status: "확인필요",
+        note: shortenError(monitoring.error),
+      }),
+    };
+  }
+
+  const usage = monitoring.usage;
+  const usageModels = [...usage.models.values()]
+    .map((model) => ({
+      provider: providerName,
+      model: model.model,
+      requests: model.requests,
+      inputTokens: model.inputTokens,
+      outputTokens: model.outputTokens,
+      costUsd: 0,
+      avgLatencyMs: 0,
+      errorRate: 0,
+    }))
+    .sort((a, b) => b.inputTokens + b.outputTokens + b.requests - (a.inputTokens + a.outputTokens + a.requests));
+  const hasUsage = usage.totalRequests > 0 || usage.inputTokens + usage.outputTokens > 0;
+  const note = hasUsage
+    ? "Cloud Monitoring 사용량 수집 완료. 비용은 Billing export 테이블 생성 후 수집 가능"
+    : "Cloud Monitoring 조회 완료, 최근 사용량 없음. 비용은 Billing export 테이블 생성 후 수집 가능";
+
   return {
     provider: makeProvider({
       provider: providerName,
       label: "Gemini API",
-      requests: 0,
-      inputTokens: 0,
-      outputTokens: 0,
+      requests: usage.totalRequests,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
       costUsd: 0,
       activeKeys: 1,
-      status: "주의",
-      note: "API 키 확인됨. 사용량/과금은 Cloud Billing 또는 AI Studio 대조 필요",
+      status: hasUsage ? "정상" : "주의",
+      note,
     }),
-    daily: new Map(dayBuckets.map((bucket) => [bucket.date, emptyDaily()])),
-    models: parseGeminiModels(modelsResult.data),
+    daily: mergeDaily(usage.daily, new Map()),
+    models: usageModels.length > 0 ? usageModels : catalogModels,
     keyHealth: makeKeyHealth(providerName, {
       name: "gemini-prod",
-      scope: "generative language",
-      requests: 0,
+      scope: `generative language, monitoring (${monitoring.projectId})`,
+      requests: usage.totalRequests,
       status: "정상",
-      note: "키 유효성 확인됨. 비용 수집은 GCP Billing 연동 필요",
+      note: "Cloud Monitoring 인증 성공. 비용은 BigQuery 테이블 생성 후 수집 가능",
     }),
   };
 }
@@ -320,6 +390,150 @@ function parseGeminiModels(payload) {
     avgLatencyMs: 0,
     errorRate: 0,
   }));
+}
+
+async function collectGeminiMonitoring(env) {
+  try {
+    const projectId = env.GOOGLE_CLOUD_PROJECT_ID ?? env.GOOGLE_CLOUD_PROJECT;
+    if (!projectId) {
+      return { ok: false, error: "GOOGLE_CLOUD_PROJECT_ID가 없습니다." };
+    }
+
+    const accessToken = await getGoogleAccessToken(env);
+    const usage = emptyUsage();
+    for (const metricType of geminiRequestMetricTypes) {
+      await addGoogleMonitoringMetricUsage({ projectId, accessToken, metricType, usage, valueType: "requests" });
+    }
+    for (const metricType of geminiInputTokenMetricTypes) {
+      await addGoogleMonitoringMetricUsage({ projectId, accessToken, metricType, usage, valueType: "inputTokens" });
+    }
+
+    return { ok: true, projectId, usage };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+async function addGoogleMonitoringMetricUsage({ projectId, accessToken, metricType, usage, valueType }) {
+  const series = await listGoogleMonitoringTimeSeries(projectId, accessToken, metricType);
+  for (const timeSeries of series) {
+    const model = stringValue(timeSeries.metric?.labels?.model, "Gemini total").replace(/^models\//, "");
+    for (const point of timeSeries.points ?? []) {
+      const date = dateFromTimeSeriesPoint(point);
+      const value = pointValue(point);
+      if (valueType === "requests") {
+        addUsage(usage, date, model, value, 0, 0);
+      } else {
+        addUsage(usage, date, model, 0, value, 0);
+      }
+    }
+  }
+}
+
+async function listGoogleMonitoringTimeSeries(projectId, accessToken, metricType) {
+  const allSeries = [];
+  let pageToken = "";
+
+  do {
+    const url = new URL(`https://monitoring.googleapis.com/v3/projects/${projectId}/timeSeries`);
+    url.searchParams.set("filter", `metric.type = "${metricType}"`);
+    url.searchParams.set("interval.startTime", startingAt.toISOString());
+    url.searchParams.set("interval.endTime", endingAt.toISOString());
+    url.searchParams.set("aggregation.alignmentPeriod", "86400s");
+    url.searchParams.set("aggregation.perSeriesAligner", "ALIGN_SUM");
+    url.searchParams.set("aggregation.crossSeriesReducer", "REDUCE_SUM");
+    url.searchParams.append("aggregation.groupByFields", "metric.label.model");
+    url.searchParams.set("view", "FULL");
+    if (pageToken) url.searchParams.set("pageToken", pageToken);
+
+    const result = await getJson(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (!result.ok) {
+      if (isIgnorableMonitoringMetricError(result.error)) return [];
+      throw new Error(`Cloud Monitoring 조회 실패 (${metricType}): ${result.error}`);
+    }
+
+    allSeries.push(...(result.data.timeSeries ?? []));
+    pageToken = result.data.nextPageToken ?? "";
+  } while (pageToken);
+
+  return allSeries;
+}
+
+async function getGoogleAccessToken(env) {
+  const serviceAccount = await readGoogleServiceAccount(env);
+  const tokenUri = serviceAccount.token_uri ?? "https://oauth2.googleapis.com/token";
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const assertionBody = [
+    base64Url(JSON.stringify({ alg: "RS256", typ: "JWT" })),
+    base64Url(
+      JSON.stringify({
+        iss: serviceAccount.client_email,
+        scope: "https://www.googleapis.com/auth/cloud-platform",
+        aud: tokenUri,
+        iat: nowSeconds,
+        exp: nowSeconds + 3600,
+      }),
+    ),
+  ].join(".");
+  const signature = createSign("RSA-SHA256").update(assertionBody).sign(serviceAccount.private_key, "base64url");
+  const tokenResult = await getJson(tokenUri, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion: `${assertionBody}.${signature}`,
+    }),
+  });
+
+  if (!tokenResult.ok) {
+    throw new Error(`Google 서비스 계정 토큰 발급 실패: ${tokenResult.error}`);
+  }
+
+  return tokenResult.data.access_token;
+}
+
+async function readGoogleServiceAccount(env) {
+  const rawJson = env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (rawJson) {
+    return parseServiceAccountJson(rawJson, "GOOGLE_SERVICE_ACCOUNT_JSON");
+  }
+
+  const base64Json = env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64;
+  if (base64Json) {
+    try {
+      return parseServiceAccountJson(Buffer.from(base64Json, "base64").toString("utf8"), "GOOGLE_SERVICE_ACCOUNT_JSON_BASE64");
+    } catch (error) {
+      try {
+        return parseServiceAccountJson(base64Json, "GOOGLE_SERVICE_ACCOUNT_JSON_BASE64");
+      } catch {
+        throw new Error(
+          "GOOGLE_SERVICE_ACCOUNT_JSON_BASE64가 서비스 계정 JSON으로 해석되지 않습니다. service-account.json 전체를 base64로 변환해 넣어주세요.",
+        );
+      }
+    }
+  }
+
+  if (env.GOOGLE_APPLICATION_CREDENTIALS) {
+    const credentialsPath = path.resolve(rootDir, env.GOOGLE_APPLICATION_CREDENTIALS);
+    if (!existsSync(credentialsPath)) {
+      throw new Error(`GOOGLE_APPLICATION_CREDENTIALS 파일을 찾을 수 없습니다: ${credentialsPath}`);
+    }
+    return parseServiceAccountJson(await readFile(credentialsPath, "utf8"), "GOOGLE_APPLICATION_CREDENTIALS");
+  }
+
+  throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 또는 GOOGLE_APPLICATION_CREDENTIALS가 없습니다.");
+}
+
+function parseServiceAccountJson(text, sourceName) {
+  const serviceAccount = JSON.parse(text);
+  if (!serviceAccount.client_email || !serviceAccount.private_key) {
+    throw new Error(`${sourceName}에 client_email/private_key가 없습니다.`);
+  }
+  return serviceAccount;
+}
+
+function base64Url(value) {
+  return Buffer.from(value).toString("base64url");
 }
 
 function addUsage(usage, date, model, requests, inputTokens, outputTokens) {
@@ -511,6 +725,16 @@ function dateFromBucket(bucket) {
   return toDateKey(startingAt);
 }
 
+function dateFromTimeSeriesPoint(point) {
+  const raw = point?.interval?.startTime ?? point?.interval?.endTime;
+  if (!raw) return toDateKey(startingAt);
+  const date = new Date(raw);
+  if (point?.interval?.endTime && !point?.interval?.startTime) {
+    date.setMilliseconds(date.getMilliseconds() - 1);
+  }
+  return toDateKey(date);
+}
+
 function makeDayBuckets(startDate, count) {
   return Array.from({ length: count }, (_, index) => {
     const date = new Date(startDate.getTime() + index * 24 * 60 * 60 * 1000);
@@ -552,6 +776,11 @@ function numberValue(value) {
   return Number.isFinite(number) ? number : 0;
 }
 
+function pointValue(point) {
+  const value = point?.value ?? {};
+  return numberValue(value.int64Value ?? value.doubleValue ?? value.stringValue);
+}
+
 function stringValue(value, fallback) {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
 }
@@ -582,4 +811,8 @@ function formatKoreanTimestamp(date) {
 
 function shortenError(error) {
   return String(error ?? "알 수 없는 오류").replace(/\s+/g, " ").slice(0, 120);
+}
+
+function isIgnorableMonitoringMetricError(error) {
+  return /metric|descriptor|not found|unknown|invalid/i.test(String(error ?? ""));
 }
