@@ -68,6 +68,8 @@ type ForecastPoint = {
 type MetricTone = "teal" | "green" | "amber" | "coral" | "steel";
 
 const chartColors = ["#0f8b8d", "#e85d4f", "#c58612", "#2f8f46"];
+const API_FORECAST_MONTH_DAYS = 30.4;
+const API_FORECAST_USD_TO_KRW = 1400;
 
 const numberFormat = new Intl.NumberFormat("ko-KR");
 
@@ -261,17 +263,12 @@ function App() {
 
   const forecast = useMemo(() => buildForecast(forecastBasisActuals), [forecastBasisActuals]);
   const forecastTotal = forecast.reduce((sum, item) => sum + item.amount, 0);
-  const adjustmentTotal = forecastAdjustments.reduce((sum, item) => sum + item.amount, 0);
   const forecastBasisTotal = forecastBasisActuals.reduce((sum, item) => sum + item.amount, 0);
   const lastActual = monthlyActuals[monthlyActuals.length - 1];
   const previousActual = monthlyActuals[monthlyActuals.length - 2];
   const lastMoM =
     previousActual && previousActual.amount > 0
       ? ((lastActual.amount - previousActual.amount) / previousActual.amount) * 100
-      : 0;
-  const forecastGrowth =
-    forecastBasisTotal > 0
-      ? ((forecastTotal - forecastBasisTotal) / forecastBasisTotal) * 100
       : 0;
   const overFixedPlan = sourceMeta.totalActual - sourceMeta.expectedQuarterFixed;
   const priorYearRate =
@@ -310,12 +307,42 @@ function App() {
       activeKeys,
     };
   }, [apiUsageData]);
+  const apiForecast = useMemo(() => {
+    const measuredDays = Math.max(1, apiUsageData.dailyUsage.length);
+    const dailyCostUsd = apiTotals.totalCostUsd / measuredDays;
+    const monthlyCostUsd = dailyCostUsd * API_FORECAST_MONTH_DAYS;
+    const monthlyCostKrw = Math.round(monthlyCostUsd * API_FORECAST_USD_TO_KRW);
+
+    return {
+      measuredDays,
+      dailyCostUsd,
+      monthlyCostUsd,
+      monthlyCostKrw,
+      usdToKrwRate: API_FORECAST_USD_TO_KRW,
+      monthDays: API_FORECAST_MONTH_DAYS,
+    };
+  }, [apiTotals.totalCostUsd, apiUsageData.dailyUsage.length]);
+  const apiAdjustedForecast = useMemo(
+    () =>
+      forecast.map((item) => ({
+        ...item,
+        apiUsageKrw: apiForecast.monthlyCostKrw,
+        totalWithApi: item.amount + apiForecast.monthlyCostKrw,
+      })),
+    [apiForecast.monthlyCostKrw, forecast],
+  );
+  const apiAdjustedForecastTotal = apiAdjustedForecast.reduce((sum, item) => sum + item.totalWithApi, 0);
+  const apiForecastAddedTotal = apiForecast.monthlyCostKrw * forecast.length;
+  const apiAdjustedForecastGrowth =
+    forecastBasisTotal > 0 ? ((apiAdjustedForecastTotal - forecastBasisTotal) / forecastBasisTotal) * 100 : 0;
 
   const monthlySeries = [
     ...monthlyActuals.map((item) => ({
       label: item.label,
       actual: item.amount,
       forecast: null,
+      apiUsageForecast: null,
+      forecastWithApi: null,
       forecastBasis: forecastBasisActuals.find((basis) => basis.month === item.month)?.amount ?? item.amount,
       adjustment: adjustmentByMonth.get(item.month)?.amount ?? 0,
       fixedPlan: sourceMeta.expectedMonthlyFixed,
@@ -326,6 +353,8 @@ function App() {
       label: item.label,
       actual: null,
       forecast: item.amount,
+      apiUsageForecast: apiForecast.monthlyCostKrw,
+      forecastWithApi: item.amount + apiForecast.monthlyCostKrw,
       forecastBasis: null,
       adjustment: null,
       fixedPlan: sourceMeta.expectedMonthlyFixed,
@@ -388,8 +417,10 @@ function App() {
       categoryCosts,
       vendorCosts,
       apiUsageData,
+      apiForecast,
+      apiAdjustedForecast,
       generatedAt: new Date().toISOString(),
-      forecastMethod: `${forecastMethodLabel(forecastBasisActuals)} - 개발/데모용 구글 API 일시 비용 제외`,
+      forecastMethod: `${forecastMethodLabel(forecastBasisActuals)} - 개발/데모용 구글 API 일시 비용 제외 후 최근 API 비용 월환산 반영`,
     };
     const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
       type: "application/json",
@@ -508,7 +539,7 @@ function App() {
             label="추정 API 비용"
             tone="amber"
             value={formatUsd(apiTotals.totalCostUsd)}
-            footer="배포/빌드 시점 수집"
+            footer={apiUsageData.source.mode}
           />
           <MetricCard
             icon={<KeyRound size={21} />}
@@ -536,10 +567,10 @@ function App() {
           />
           <MetricCard
             icon={<CalendarRange size={21} />}
-            label={`${forecastRange} 예측`}
+            label={`${forecastRange} API 반영 예측`}
             tone="amber"
-            value={formatManWon(forecastTotal)}
-            footer={`구글 API 일시비용 ${formatManWon(adjustmentTotal)} 제외`}
+            value={formatManWon(apiAdjustedForecastTotal)}
+            footer={`기존 ${formatManWon(forecastTotal)} + API ${formatManWon(apiForecast.monthlyCostKrw)}/월`}
           />
           <MetricCard
             icon={<WalletCards size={21} />}
@@ -555,10 +586,13 @@ function App() {
         <MonthlyView
           monthlySeries={monthlySeries}
           forecast={forecast}
+          apiAdjustedForecast={apiAdjustedForecast}
+          apiAdjustedForecastGrowth={apiAdjustedForecastGrowth}
+          apiAdjustedForecastTotal={apiAdjustedForecastTotal}
+          apiForecast={apiForecast}
+          apiForecastAddedTotal={apiForecastAddedTotal}
           forecastAdjustments={forecastAdjustments}
           forecastBasisActuals={forecastBasisActuals}
-          forecastBasisTotal={forecastBasisTotal}
-          forecastGrowth={forecastGrowth}
           overFixedPlan={overFixedPlan}
           forecastTotal={forecastTotal}
           sourceMeta={sourceMeta}
@@ -594,28 +628,48 @@ function App() {
 }
 
 function MonthlyView({
+  apiAdjustedForecast,
+  apiAdjustedForecastGrowth,
+  apiAdjustedForecastTotal,
+  apiForecast,
+  apiForecastAddedTotal,
   forecast,
   forecastAdjustments,
   forecastBasisActuals,
-  forecastBasisTotal,
-  forecastGrowth,
   forecastTotal,
   monthlyActuals,
   monthlySeries,
   overFixedPlan,
   sourceMeta,
 }: {
+  apiAdjustedForecast: Array<
+    ForecastPoint & {
+      apiUsageKrw: number;
+      totalWithApi: number;
+    }
+  >;
+  apiAdjustedForecastGrowth: number;
+  apiAdjustedForecastTotal: number;
+  apiForecast: {
+    measuredDays: number;
+    dailyCostUsd: number;
+    monthlyCostUsd: number;
+    monthlyCostKrw: number;
+    usdToKrwRate: number;
+    monthDays: number;
+  };
+  apiForecastAddedTotal: number;
   forecast: ForecastPoint[];
   forecastAdjustments: DashboardData["forecastAdjustments"];
   forecastBasisActuals: MonthlyActual[];
-  forecastBasisTotal: number;
-  forecastGrowth: number;
   forecastTotal: number;
   monthlyActuals: MonthlyActual[];
   monthlySeries: Array<{
     label: string;
     actual: number | null;
     forecast: number | null;
+    apiUsageForecast: number | null;
+    forecastWithApi: number | null;
     forecastBasis: number | null;
     adjustment: number | null;
     fixedPlan: number;
@@ -648,7 +702,21 @@ function MonthlyView({
               <Tooltip formatter={(value) => formatWon(Number(value))} />
               <Legend />
               <Bar dataKey="actual" name="실적" fill="#0f8b8d" radius={[5, 5, 0, 0]} />
-              <Bar dataKey="forecast" name="예측" fill="#c58612" radius={[5, 5, 0, 0]} />
+              <Bar dataKey="forecast" name="기존 예측" stackId="forecast" fill="#c58612" radius={[5, 5, 0, 0]} />
+              <Bar
+                dataKey="apiUsageForecast"
+                name="API 월환산"
+                stackId="forecast"
+                fill="#2f8f46"
+                radius={[5, 5, 0, 0]}
+              />
+              <Line
+                dataKey="forecastWithApi"
+                name="API 반영 예측"
+                stroke="#2f8f46"
+                strokeWidth={2}
+                dot={{ r: 3 }}
+              />
               <Line
                 dataKey="forecastBasis"
                 name="예측 기준"
@@ -709,15 +777,15 @@ function MonthlyView({
           </div>
         </div>
         <div className="forecast-list">
-          {forecast.map((item) => (
+          {apiAdjustedForecast.map((item) => (
             <article className="forecast-row" key={item.month}>
               <div>
                 <strong>{item.label}</strong>
                 <span>
-                  범위 {formatManWon(item.lower)} - {formatManWon(item.upper)}
+                  기존 {formatManWon(item.amount)} · API {formatManWon(item.apiUsageKrw)} 반영
                 </span>
               </div>
-              <b>{formatManWon(item.amount)}</b>
+              <b>{formatManWon(item.totalWithApi)}</b>
             </article>
           ))}
         </div>
@@ -725,10 +793,20 @@ function MonthlyView({
           <Activity size={18} />
           <div>
             <strong>
-              {forecastRange} 합계 {formatManWon(forecastTotal)}
+              {forecastRange} API 반영 합계 {formatManWon(apiAdjustedForecastTotal)}
             </strong>
             <span>
-              보정 기준 {formatManWon(forecastBasisTotal)} 대비 {formatRate(forecastGrowth, true)}입니다.
+              기존 예측 {formatManWon(forecastTotal)}에 API 월환산 {formatManWon(apiForecast.monthlyCostKrw)}을
+              {" "}
+              {forecast.length}개월 더했습니다.
+            </span>
+            <span>
+              API 추가분 합계 {formatManWon(apiForecastAddedTotal)} · 보정 기준 대비{" "}
+              {formatRate(apiAdjustedForecastGrowth, true)}
+            </span>
+            <span>
+              최근 {apiForecast.measuredDays}일 API 비용 {formatUsd(apiForecast.dailyCostUsd * apiForecast.measuredDays)} ·
+              월환산 {formatUsd(apiForecast.monthlyCostUsd)} · USD 1 = {numberFormat.format(apiForecast.usdToKrwRate)}원 가정
             </span>
           </div>
         </div>
@@ -781,6 +859,8 @@ function MonthlyView({
                 <th>실제 비용</th>
                 <th>예측 제외</th>
                 <th>예측 기준</th>
+                <th>API 월환산</th>
+                <th>API 반영 예측</th>
                 <th>건수</th>
                 <th>월정액 기준</th>
                 <th>차이</th>
@@ -789,6 +869,7 @@ function MonthlyView({
             <tbody>
               {monthlySeries.map((row) => {
                 const value = row.actual ?? row.forecast ?? 0;
+                const comparisonValue = row.forecastWithApi ?? row.forecastBasis ?? value;
                 return (
                   <tr key={row.label}>
                     <td>{row.label}</td>
@@ -798,9 +879,11 @@ function MonthlyView({
                     <td>{formatWon(value)}</td>
                     <td>{row.adjustment === null ? "-" : formatWon(row.adjustment)}</td>
                     <td>{row.forecastBasis === null ? "-" : formatWon(row.forecastBasis)}</td>
+                    <td>{row.apiUsageForecast === null ? "-" : formatWon(row.apiUsageForecast)}</td>
+                    <td>{row.forecastWithApi === null ? "-" : formatWon(row.forecastWithApi)}</td>
                     <td>{row.transactions ?? "-"}</td>
                     <td>{formatWon(row.fixedPlan)}</td>
-                    <td>{formatWon((row.forecastBasis ?? value) - row.fixedPlan)}</td>
+                    <td>{formatWon(comparisonValue - row.fixedPlan)}</td>
                   </tr>
                 );
               })}
