@@ -1,17 +1,21 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
   Activity,
+  Bot,
   Building2,
   CalendarRange,
   CircleDollarSign,
+  Cpu,
   Download,
   FileSpreadsheet,
   Gauge,
+  KeyRound,
   LineChart,
   PieChart as PieChartIcon,
   RotateCcw,
   Search,
+  ShieldCheck,
   TrendingUp,
   Upload,
   WalletCards,
@@ -31,6 +35,13 @@ import {
   YAxis,
 } from "recharts";
 import {
+  initialApiUsageData,
+  isApiUsageData,
+  type ApiKeyStatusValue,
+  type ApiProviderStatus,
+  type ApiUsageData,
+} from "./data/apiUsageData";
+import {
   initialDashboardData,
   type DashboardData,
   type MonthlyActual,
@@ -44,7 +55,7 @@ import {
 } from "./lib/dashboardStorage";
 import { dashboardDataFromExcel } from "./lib/excelDashboard";
 
-type ViewKey = "monthly" | "department" | "detail";
+type ViewKey = "monthly" | "department" | "detail" | "api";
 
 type ForecastPoint = {
   month: string;
@@ -83,6 +94,45 @@ function formatAxisWon(value: number | string) {
 function formatRate(value: number, signed = false) {
   const prefix = signed && value > 0 ? "+" : "";
   return `${prefix}${value.toFixed(1)}%`;
+}
+
+function formatUsd(value: number) {
+  return `$${value.toLocaleString("en-US", {
+    maximumFractionDigits: value >= 100 ? 0 : 1,
+    minimumFractionDigits: value >= 100 ? 0 : 1,
+  })}`;
+}
+
+function formatTokens(value: number) {
+  if (value >= 1000000) {
+    return `${(value / 1000000).toFixed(1)}M`;
+  }
+
+  if (value >= 1000) {
+    return `${Math.round(value / 1000)}K`;
+  }
+
+  return numberFormat.format(value);
+}
+
+function formatLatency(value: number) {
+  return value >= 1000 ? `${(value / 1000).toFixed(1)}s` : `${Math.round(value)}ms`;
+}
+
+function formatRequestAxis(value: number | string) {
+  return `${numberFormat.format(Math.round(Number(value) / 1000))}k`;
+}
+
+function apiStatusTone(status: ApiProviderStatus) {
+  if (status === "정상") return "ok";
+  if (status === "주의") return "warning";
+  return "neutral";
+}
+
+function keyStatusTone(status: ApiKeyStatusValue) {
+  if (status === "정상") return "ok";
+  if (status === "교체권장") return "warning";
+  return "neutral";
 }
 
 function buildForecast(monthlyActuals: MonthlyActual[]): ForecastPoint[] {
@@ -144,6 +194,29 @@ function App() {
   const [isUploading, setIsUploading] = useState(false);
   const [dashboardData, setDashboardData] = useState<DashboardData>(initialState.data);
   const [isStoredData, setIsStoredData] = useState(initialState.isStoredData);
+  const [apiUsageData, setApiUsageData] = useState<ApiUsageData>(initialApiUsageData);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch("/api-usage-snapshot.local.json", { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) return null;
+        return response.json() as Promise<unknown>;
+      })
+      .then((data) => {
+        if (isMounted && isApiUsageData(data)) {
+          setApiUsageData(data);
+        }
+      })
+      .catch(() => {
+        // The local snapshot is optional; the dashboard falls back to sample data.
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const {
     sourceMeta,
@@ -196,6 +269,32 @@ function App() {
     sourceMeta.totalActual > 0 ? (commonDepartment.total / sourceMeta.totalActual) * 100 : 0;
   const actualRange = monthRangeLabel(monthlyActuals);
   const forecastRange = monthRangeLabel(forecast);
+  const apiTotals = useMemo(() => {
+    const totalRequests = apiUsageData.providers.reduce((sum, item) => sum + item.requests, 0);
+    const totalTokens = apiUsageData.providers.reduce(
+      (sum, item) => sum + item.inputTokens + item.outputTokens,
+      0,
+    );
+    const totalCostUsd = apiUsageData.providers.reduce((sum, item) => sum + item.costUsd, 0);
+    const weightedErrors = apiUsageData.providers.reduce(
+      (sum, item) => sum + item.errorRate * item.requests,
+      0,
+    );
+    const weightedLatency = apiUsageData.providers.reduce(
+      (sum, item) => sum + item.avgLatencyMs * item.requests,
+      0,
+    );
+    const activeKeys = apiUsageData.providers.reduce((sum, item) => sum + item.activeKeys, 0);
+
+    return {
+      totalRequests,
+      totalTokens,
+      totalCostUsd,
+      avgErrorRate: totalRequests ? weightedErrors / totalRequests : 0,
+      avgLatencyMs: totalRequests ? weightedLatency / totalRequests : 0,
+      activeKeys,
+    };
+  }, [apiUsageData]);
 
   const monthlySeries = [
     ...monthlyActuals.map((item) => ({
@@ -273,6 +372,7 @@ function App() {
       departmentCosts,
       categoryCosts,
       vendorCosts,
+      apiUsageData,
       generatedAt: new Date().toISOString(),
       forecastMethod: `${forecastMethodLabel(forecastBasisActuals)} - 개발/데모용 구글 API 일시 비용 제외`,
     };
@@ -362,38 +462,79 @@ function App() {
           <PieChartIcon size={17} />
           상세
         </button>
+        <button
+          className={activeView === "api" ? "is-active" : ""}
+          type="button"
+          onClick={() => setActiveView("api")}
+        >
+          <Bot size={17} />
+          API 사용
+        </button>
       </nav>
 
-      <section className="metric-grid" aria-label="핵심 비용 지표">
-        <MetricCard
-          icon={<CircleDollarSign size={21} />}
-          label={`${actualRange} 누적 비용`}
-          tone="teal"
-          value={formatManWon(sourceMeta.totalActual)}
-          footer={`${formatWon(sourceMeta.totalActual)} · ${sourceMeta.recordCount}건`}
-        />
-        <MetricCard
-          icon={<TrendingUp size={21} />}
-          label={`${lastActual.label} 비용`}
-          tone="coral"
-          value={formatManWon(lastActual.amount)}
-          footer={`전월 대비 ${formatRate(lastMoM, true)}`}
-        />
-        <MetricCard
-          icon={<CalendarRange size={21} />}
-          label={`${forecastRange} 예측`}
-          tone="amber"
-          value={formatManWon(forecastTotal)}
-          footer={`구글 API 일시비용 ${formatManWon(adjustmentTotal)} 제외`}
-        />
-        <MetricCard
-          icon={<WalletCards size={21} />}
-          label="2025년 연간 대비"
-          tone="steel"
-          value={formatRate(priorYearRate)}
-          footer={`2025년 전체 ${formatManWon(sourceMeta.priorYearTotal)}`}
-        />
-      </section>
+      {activeView === "api" ? (
+        <section className="metric-grid" aria-label="API 사용 핵심 지표">
+          <MetricCard
+            icon={<Bot size={21} />}
+            label={`${apiUsageData.source.period} API 요청`}
+            tone="teal"
+            value={`${numberFormat.format(apiTotals.totalRequests)}건`}
+            footer={`OpenAI · Gemini · Claude`}
+          />
+          <MetricCard
+            icon={<Cpu size={21} />}
+            label="입출력 토큰"
+            tone="green"
+            value={formatTokens(apiTotals.totalTokens)}
+            footer={`평균 응답 ${formatLatency(apiTotals.avgLatencyMs)}`}
+          />
+          <MetricCard
+            icon={<CircleDollarSign size={21} />}
+            label="추정 API 비용"
+            tone="amber"
+            value={formatUsd(apiTotals.totalCostUsd)}
+            footer="수집기 연결 대기"
+          />
+          <MetricCard
+            icon={<KeyRound size={21} />}
+            label="활성 키/오류율"
+            tone="steel"
+            value={`${apiTotals.activeKeys}개`}
+            footer={`가중 오류율 ${formatRate(apiTotals.avgErrorRate)}`}
+          />
+        </section>
+      ) : (
+        <section className="metric-grid" aria-label="핵심 비용 지표">
+          <MetricCard
+            icon={<CircleDollarSign size={21} />}
+            label={`${actualRange} 누적 비용`}
+            tone="teal"
+            value={formatManWon(sourceMeta.totalActual)}
+            footer={`${formatWon(sourceMeta.totalActual)} · ${sourceMeta.recordCount}건`}
+          />
+          <MetricCard
+            icon={<TrendingUp size={21} />}
+            label={`${lastActual.label} 비용`}
+            tone="coral"
+            value={formatManWon(lastActual.amount)}
+            footer={`전월 대비 ${formatRate(lastMoM, true)}`}
+          />
+          <MetricCard
+            icon={<CalendarRange size={21} />}
+            label={`${forecastRange} 예측`}
+            tone="amber"
+            value={formatManWon(forecastTotal)}
+            footer={`구글 API 일시비용 ${formatManWon(adjustmentTotal)} 제외`}
+          />
+          <MetricCard
+            icon={<WalletCards size={21} />}
+            label="2025년 연간 대비"
+            tone="steel"
+            value={formatRate(priorYearRate)}
+            footer={`2025년 전체 ${formatManWon(sourceMeta.priorYearTotal)}`}
+          />
+        </section>
+      )}
 
       {activeView === "monthly" && (
         <MonthlyView
@@ -429,6 +570,8 @@ function App() {
           vendorCosts={vendorCosts}
         />
       )}
+
+      {activeView === "api" && <ApiUsageView apiUsageData={apiUsageData} />}
 
       {toast && <div className="toast">{toast}</div>}
     </main>
@@ -928,6 +1071,203 @@ function DetailView({
   );
 }
 
+function ApiUsageView({ apiUsageData }: { apiUsageData: ApiUsageData }) {
+  const totalCost = apiUsageData.providers.reduce((sum, item) => sum + item.costUsd, 0);
+  const totalRequests = apiUsageData.providers.reduce((sum, item) => sum + item.requests, 0);
+  const highestCostProvider = [...apiUsageData.providers].sort((a, b) => b.costUsd - a.costUsd)[0];
+  const highestRequestDay = [...apiUsageData.dailyUsage].sort(
+    (a, b) =>
+      b.openaiRequests +
+      b.geminiRequests +
+      b.claudeRequests -
+      (a.openaiRequests + a.geminiRequests + a.claudeRequests),
+  )[0];
+
+  return (
+    <div className="content-grid api-view">
+      <section className="panel panel-large">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">API Usage</span>
+            <h2>{apiUsageData.source.period} 요청량과 비용</h2>
+          </div>
+          <span className="state-pill neutral">{apiUsageData.source.generatedAt}</span>
+        </div>
+        <div className="chart-frame">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={apiUsageData.dailyUsage} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} />
+              <YAxis
+                yAxisId="requests"
+                tickFormatter={formatRequestAxis}
+                tickLine={false}
+                axisLine={false}
+                width={58}
+              />
+              <YAxis
+                yAxisId="cost"
+                orientation="right"
+                tickFormatter={(value) => formatUsd(Number(value))}
+                tickLine={false}
+                axisLine={false}
+                width={54}
+              />
+              <Tooltip
+                formatter={(value, name) =>
+                  name === "비용"
+                    ? [formatUsd(Number(value)), name]
+                    : [`${numberFormat.format(Number(value))}건`, name]
+                }
+              />
+              <Legend />
+              <Bar yAxisId="requests" dataKey="openaiRequests" name="OpenAI" fill="#0f8b8d" radius={[4, 4, 0, 0]} />
+              <Bar yAxisId="requests" dataKey="geminiRequests" name="Gemini" fill="#c58612" radius={[4, 4, 0, 0]} />
+              <Bar yAxisId="requests" dataKey="claudeRequests" name="Claude" fill="#5f6f8c" radius={[4, 4, 0, 0]} />
+              <Line
+                yAxisId="cost"
+                dataKey="costUsd"
+                name="비용"
+                stroke="#e85d4f"
+                strokeWidth={2}
+                dot={{ r: 3 }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Providers</span>
+            <h2>공급자별 상태</h2>
+          </div>
+        </div>
+        <div className="api-provider-list">
+          {apiUsageData.providers.map((provider) => (
+            <article className="api-provider-card" key={provider.provider}>
+              <div className="api-provider-head">
+                <span className="category-dot" style={{ background: provider.color }} />
+                <strong>{provider.label}</strong>
+                <span className={`state-pill ${apiStatusTone(provider.status)}`}>{provider.status}</span>
+              </div>
+              <div className="api-provider-stats">
+                <span>{numberFormat.format(provider.requests)}건</span>
+                <span>{formatTokens(provider.inputTokens + provider.outputTokens)} tokens</span>
+                <span>{formatUsd(provider.costUsd)}</span>
+              </div>
+              <MeterRow
+                color={provider.color}
+                label="쿼터 사용률"
+                value={provider.quotaUsedRate}
+                valueLabel={formatRate(provider.quotaUsedRate)}
+              />
+              <small>{provider.note}</small>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="panel panel-wide api-summary-panel">
+        <div className="api-summary-item">
+          <span>총 요청</span>
+          <strong>{numberFormat.format(totalRequests)}건</strong>
+        </div>
+        <div className="api-summary-item">
+          <span>총 비용</span>
+          <strong>{formatUsd(totalCost)}</strong>
+        </div>
+        <div className="api-summary-item">
+          <span>최대 비용 공급자</span>
+          <strong>{highestCostProvider.provider}</strong>
+        </div>
+        <div className="api-summary-item">
+          <span>최대 요청일</span>
+          <strong>{highestRequestDay.label}</strong>
+        </div>
+      </section>
+
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Models</span>
+            <h2>모델별 사용량</h2>
+          </div>
+          <span className="state-pill neutral">비용 추정</span>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>공급자</th>
+                <th>모델</th>
+                <th>요청</th>
+                <th>입력 토큰</th>
+                <th>출력 토큰</th>
+                <th>비용</th>
+                <th>응답</th>
+                <th>오류율</th>
+              </tr>
+            </thead>
+            <tbody>
+              {apiUsageData.models.map((row) => (
+                <tr key={`${row.provider}-${row.model}`}>
+                  <td>{row.provider}</td>
+                  <td>
+                    <strong>{row.model}</strong>
+                  </td>
+                  <td>{numberFormat.format(row.requests)}</td>
+                  <td>{formatTokens(row.inputTokens)}</td>
+                  <td>{formatTokens(row.outputTokens)}</td>
+                  <td>{formatUsd(row.costUsd)}</td>
+                  <td>{formatLatency(row.avgLatencyMs)}</td>
+                  <td>{formatRate(row.errorRate)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Keys</span>
+            <h2>API 키 상태</h2>
+          </div>
+          <span className="state-pill neutral">브라우저 미저장</span>
+        </div>
+        <div className="key-health-grid">
+          {apiUsageData.keyHealth.map((key) => (
+            <article className="key-health-card" key={`${key.provider}-${key.name}`}>
+              <div>
+                <strong>{key.name}</strong>
+                <span>
+                  {key.provider} · {key.scope}
+                </span>
+              </div>
+              <div>
+                <span>요청 {numberFormat.format(key.requests)}건</span>
+                <span>마지막 사용 {key.lastUsed}</span>
+              </div>
+              <span className={`state-pill ${keyStatusTone(key.status)}`}>{key.status}</span>
+              <small>{key.note}</small>
+            </article>
+          ))}
+        </div>
+        <div className="insight-box">
+          <ShieldCheck size={18} />
+          <div>
+            <strong>키는 클라이언트 번들에 포함하지 않음</strong>
+            <span>실제 수집 단계에서는 서버 또는 로컬 스크립트의 환경변수에서만 읽도록 분리합니다.</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function MetricCard({
   footer,
   icon,
@@ -950,6 +1290,30 @@ function MetricCard({
         <small>{footer}</small>
       </div>
     </article>
+  );
+}
+
+function MeterRow({
+  color,
+  label,
+  value,
+  valueLabel,
+}: {
+  color: string;
+  label: string;
+  value: number;
+  valueLabel: string;
+}) {
+  return (
+    <div className="gauge-row">
+      <div>
+        <span>{label}</span>
+        <strong>{valueLabel}</strong>
+      </div>
+      <div className="gauge-track">
+        <span style={{ width: `${Math.min(value, 100)}%`, background: color }} />
+      </div>
+    </div>
   );
 }
 

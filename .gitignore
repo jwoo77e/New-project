@@ -4,3 +4,4 @@ output/playwright/
 .playwright-cli/
 .DS_Store
 *.local
+*.local.json
