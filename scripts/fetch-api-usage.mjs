@@ -46,6 +46,8 @@ const geminiInputTokenMetricTypes = [
   "generativelanguage.googleapis.com/quota/embed_content_paid_tier_3_tokens/usage",
 ];
 
+const geminiOutputTokenMetricTypes = ["generativelanguage.googleapis.com/generate_content_usage_output_token_count"];
+
 const [openai, gemini, claude] = await Promise.all([
   collectOpenAI(env.OPENAI_ADMIN_KEY),
   collectGemini(env.GEMINI_API_KEY, env),
@@ -407,6 +409,9 @@ async function collectGeminiMonitoring(env) {
     for (const metricType of geminiInputTokenMetricTypes) {
       await addGoogleMonitoringMetricUsage({ projectId, accessToken, metricType, usage, valueType: "inputTokens" });
     }
+    for (const metricType of geminiOutputTokenMetricTypes) {
+      await addGoogleMonitoringMetricUsage({ projectId, accessToken, metricType, usage, valueType: "outputTokens" });
+    }
 
     return { ok: true, projectId, usage };
   } catch (error) {
@@ -423,8 +428,10 @@ async function addGoogleMonitoringMetricUsage({ projectId, accessToken, metricTy
       const value = pointValue(point);
       if (valueType === "requests") {
         addUsage(usage, date, model, value, 0, 0);
-      } else {
+      } else if (valueType === "inputTokens") {
         addUsage(usage, date, model, 0, value, 0);
+      } else {
+        addUsage(usage, date, model, 0, 0, value);
       }
     }
   }
