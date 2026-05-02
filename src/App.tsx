@@ -119,8 +119,18 @@ function formatLatency(value: number) {
   return value >= 1000 ? `${(value / 1000).toFixed(1)}s` : `${Math.round(value)}ms`;
 }
 
-function formatRequestAxis(value: number | string) {
-  return `${numberFormat.format(Math.round(Number(value) / 1000))}k`;
+function formatTokenAxis(value: number | string) {
+  return formatTokens(Number(value));
+}
+
+function formatRequestCount(requests: number, tokens = 0) {
+  if (requests === 0 && tokens > 0) return "요청수 미제공";
+  return `${numberFormat.format(requests)}건`;
+}
+
+function formatKeyRequestCount(requests: number, tokens = 0) {
+  if (requests === 0 && tokens > 0) return "요청수 미제공";
+  return `요청 ${numberFormat.format(requests)}건`;
 }
 
 function apiStatusTone(status: ApiProviderStatus) {
@@ -476,24 +486,24 @@ function App() {
         <section className="metric-grid" aria-label="API 사용 핵심 지표">
           <MetricCard
             icon={<Bot size={21} />}
-            label={`${apiUsageData.source.period} API 요청`}
+            label={`${apiUsageData.source.period} API 토큰`}
             tone="teal"
-            value={`${numberFormat.format(apiTotals.totalRequests)}건`}
+            value={formatTokens(apiTotals.totalTokens)}
             footer={`OpenAI · Gemini · Claude`}
           />
           <MetricCard
             icon={<Cpu size={21} />}
-            label="입출력 토큰"
+            label="수집된 요청"
             tone="green"
-            value={formatTokens(apiTotals.totalTokens)}
-            footer={`평균 응답 ${formatLatency(apiTotals.avgLatencyMs)}`}
+            value={`${numberFormat.format(apiTotals.totalRequests)}건`}
+            footer="Claude는 요청 수 미제공"
           />
           <MetricCard
             icon={<CircleDollarSign size={21} />}
             label="추정 API 비용"
             tone="amber"
             value={formatUsd(apiTotals.totalCostUsd)}
-            footer="수집기 연결 대기"
+            footer="배포/빌드 시점 수집"
           />
           <MetricCard
             icon={<KeyRound size={21} />}
@@ -1073,15 +1083,12 @@ function DetailView({
 
 function ApiUsageView({ apiUsageData }: { apiUsageData: ApiUsageData }) {
   const totalCost = apiUsageData.providers.reduce((sum, item) => sum + item.costUsd, 0);
-  const totalRequests = apiUsageData.providers.reduce((sum, item) => sum + item.requests, 0);
+  const totalTokens = apiUsageData.providers.reduce((sum, item) => sum + item.inputTokens + item.outputTokens, 0);
   const highestCostProvider = [...apiUsageData.providers].sort((a, b) => b.costUsd - a.costUsd)[0];
-  const highestRequestDay = [...apiUsageData.dailyUsage].sort(
-    (a, b) =>
-      b.openaiRequests +
-      b.geminiRequests +
-      b.claudeRequests -
-      (a.openaiRequests + a.geminiRequests + a.claudeRequests),
-  )[0];
+  const highestTokenDay = [...apiUsageData.dailyUsage].sort((a, b) => b.totalTokens - a.totalTokens)[0];
+  const providerTokens = new Map(
+    apiUsageData.providers.map((provider) => [provider.provider, provider.inputTokens + provider.outputTokens]),
+  );
 
   return (
     <div className="content-grid api-view">
@@ -1089,7 +1096,7 @@ function ApiUsageView({ apiUsageData }: { apiUsageData: ApiUsageData }) {
         <div className="panel-header">
           <div>
             <span className="eyebrow">API Usage</span>
-            <h2>{apiUsageData.source.period} 요청량과 비용</h2>
+            <h2>{apiUsageData.source.period} 토큰 사용량과 비용</h2>
           </div>
           <span className="state-pill neutral">{apiUsageData.source.generatedAt}</span>
         </div>
@@ -1099,8 +1106,8 @@ function ApiUsageView({ apiUsageData }: { apiUsageData: ApiUsageData }) {
               <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
               <XAxis dataKey="label" tickLine={false} axisLine={false} />
               <YAxis
-                yAxisId="requests"
-                tickFormatter={formatRequestAxis}
+                yAxisId="tokens"
+                tickFormatter={formatTokenAxis}
                 tickLine={false}
                 axisLine={false}
                 width={58}
@@ -1117,13 +1124,13 @@ function ApiUsageView({ apiUsageData }: { apiUsageData: ApiUsageData }) {
                 formatter={(value, name) =>
                   name === "비용"
                     ? [formatUsd(Number(value)), name]
-                    : [`${numberFormat.format(Number(value))}건`, name]
+                    : [`${formatTokens(Number(value))} 토큰`, name]
                 }
               />
               <Legend />
-              <Bar yAxisId="requests" dataKey="openaiRequests" name="OpenAI" fill="#0f8b8d" radius={[4, 4, 0, 0]} />
-              <Bar yAxisId="requests" dataKey="geminiRequests" name="Gemini" fill="#c58612" radius={[4, 4, 0, 0]} />
-              <Bar yAxisId="requests" dataKey="claudeRequests" name="Claude" fill="#5f6f8c" radius={[4, 4, 0, 0]} />
+              <Bar yAxisId="tokens" dataKey="openaiTokens" name="OpenAI 토큰" fill="#0f8b8d" radius={[4, 4, 0, 0]} />
+              <Bar yAxisId="tokens" dataKey="geminiTokens" name="Gemini 토큰" fill="#c58612" radius={[4, 4, 0, 0]} />
+              <Bar yAxisId="tokens" dataKey="claudeTokens" name="Claude 토큰" fill="#5f6f8c" radius={[4, 4, 0, 0]} />
               <Line
                 yAxisId="cost"
                 dataKey="costUsd"
@@ -1153,8 +1160,8 @@ function ApiUsageView({ apiUsageData }: { apiUsageData: ApiUsageData }) {
                 <span className={`state-pill ${apiStatusTone(provider.status)}`}>{provider.status}</span>
               </div>
               <div className="api-provider-stats">
-                <span>{numberFormat.format(provider.requests)}건</span>
-                <span>{formatTokens(provider.inputTokens + provider.outputTokens)} tokens</span>
+                <span>{formatTokens(provider.inputTokens + provider.outputTokens)} 토큰</span>
+                <span>{formatRequestCount(provider.requests, provider.inputTokens + provider.outputTokens)}</span>
                 <span>{formatUsd(provider.costUsd)}</span>
               </div>
               <MeterRow
@@ -1171,8 +1178,8 @@ function ApiUsageView({ apiUsageData }: { apiUsageData: ApiUsageData }) {
 
       <section className="panel panel-wide api-summary-panel">
         <div className="api-summary-item">
-          <span>총 요청</span>
-          <strong>{numberFormat.format(totalRequests)}건</strong>
+          <span>총 토큰</span>
+          <strong>{formatTokens(totalTokens)}</strong>
         </div>
         <div className="api-summary-item">
           <span>총 비용</span>
@@ -1183,8 +1190,8 @@ function ApiUsageView({ apiUsageData }: { apiUsageData: ApiUsageData }) {
           <strong>{highestCostProvider.provider}</strong>
         </div>
         <div className="api-summary-item">
-          <span>최대 요청일</span>
-          <strong>{highestRequestDay.label}</strong>
+          <span>최대 사용일</span>
+          <strong>{highestTokenDay.label}</strong>
         </div>
       </section>
 
@@ -1217,7 +1224,7 @@ function ApiUsageView({ apiUsageData }: { apiUsageData: ApiUsageData }) {
                   <td>
                     <strong>{row.model}</strong>
                   </td>
-                  <td>{numberFormat.format(row.requests)}</td>
+                  <td>{formatRequestCount(row.requests, row.inputTokens + row.outputTokens)}</td>
                   <td>{formatTokens(row.inputTokens)}</td>
                   <td>{formatTokens(row.outputTokens)}</td>
                   <td>{formatUsd(row.costUsd)}</td>
@@ -1248,7 +1255,7 @@ function ApiUsageView({ apiUsageData }: { apiUsageData: ApiUsageData }) {
                 </span>
               </div>
               <div>
-                <span>요청 {numberFormat.format(key.requests)}건</span>
+                <span>{formatKeyRequestCount(key.requests, providerTokens.get(key.provider) ?? 0)}</span>
                 <span>마지막 사용 {key.lastUsed}</span>
               </div>
               <span className={`state-pill ${keyStatusTone(key.status)}`}>{key.status}</span>

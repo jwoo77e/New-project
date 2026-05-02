@@ -25,6 +25,9 @@ export type ApiDailyUsage = {
   openaiRequests: number;
   geminiRequests: number;
   claudeRequests: number;
+  openaiTokens: number;
+  geminiTokens: number;
+  claudeTokens: number;
   totalTokens: number;
   costUsd: number;
 };
@@ -127,6 +130,9 @@ export const initialApiUsageData: ApiUsageData = {
       openaiRequests: 2180,
       geminiRequests: 980,
       claudeRequests: 620,
+      openaiTokens: 1650000,
+      geminiTokens: 1050000,
+      claudeTokens: 910000,
       totalTokens: 3610000,
       costUsd: 38.2,
     },
@@ -136,6 +142,9 @@ export const initialApiUsageData: ApiUsageData = {
       openaiRequests: 2410,
       geminiRequests: 1160,
       claudeRequests: 690,
+      openaiTokens: 1900000,
+      geminiTokens: 1280000,
+      claudeTokens: 980000,
       totalTokens: 4160000,
       costUsd: 43.7,
     },
@@ -145,6 +154,9 @@ export const initialApiUsageData: ApiUsageData = {
       openaiRequests: 1960,
       geminiRequests: 920,
       claudeRequests: 510,
+      openaiTokens: 1500000,
+      geminiTokens: 970000,
+      claudeTokens: 820000,
       totalTokens: 3290000,
       costUsd: 34.6,
     },
@@ -154,6 +166,9 @@ export const initialApiUsageData: ApiUsageData = {
       openaiRequests: 2090,
       geminiRequests: 1040,
       claudeRequests: 560,
+      openaiTokens: 1580000,
+      geminiTokens: 1020000,
+      claudeTokens: 870000,
       totalTokens: 3470000,
       costUsd: 36.4,
     },
@@ -163,6 +178,9 @@ export const initialApiUsageData: ApiUsageData = {
       openaiRequests: 2860,
       geminiRequests: 1510,
       claudeRequests: 760,
+      openaiTokens: 2280000,
+      geminiTokens: 1510000,
+      claudeTokens: 1130000,
       totalTokens: 4920000,
       costUsd: 54.1,
     },
@@ -172,6 +190,9 @@ export const initialApiUsageData: ApiUsageData = {
       openaiRequests: 3290,
       geminiRequests: 1840,
       claudeRequests: 920,
+      openaiTokens: 2590000,
+      geminiTokens: 1780000,
+      claudeTokens: 1260000,
       totalTokens: 5630000,
       costUsd: 63.5,
     },
@@ -181,6 +202,9 @@ export const initialApiUsageData: ApiUsageData = {
       openaiRequests: 3630,
       geminiRequests: 2180,
       claudeRequests: 1150,
+      openaiTokens: 3070000,
+      geminiTokens: 2050000,
+      claudeTokens: 1520000,
       totalTokens: 6640000,
       costUsd: 66.2,
     },

@@ -40,6 +40,9 @@ const dailyUsage = dayBuckets.map((bucket) => {
     openaiRequests: openaiDay.requests,
     geminiRequests: geminiDay.requests,
     claudeRequests: claudeDay.requests,
+    openaiTokens: openaiDay.tokens,
+    geminiTokens: geminiDay.tokens,
+    claudeTokens: claudeDay.tokens,
     totalTokens: openaiDay.tokens + geminiDay.tokens + claudeDay.tokens,
     costUsd: roundMoney(openaiDay.costUsd + geminiDay.costUsd + claudeDay.costUsd),
   };
