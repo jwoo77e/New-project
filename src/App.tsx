@@ -77,11 +77,23 @@ type RobustRunRateForecast = {
   upperFence: number;
 };
 
+type ClaudePlanForecast = {
+  applies: boolean;
+  monthlyUsd: number;
+  monthlyKrw: number;
+};
+
 const chartColors = ["#0f8b8d", "#e85d4f", "#c58612", "#2f8f46"];
 const API_FORECAST_MONTH_DAYS = 30.4;
 const API_FORECAST_USD_TO_KRW = 1400;
 const VIEW_ROTATION_INTERVAL_MS = 12000;
 const viewRotationOrder: ViewKey[] = ["monthly", "department", "detail", "api"];
+const CLAUDE_PLAN_START_MONTH = "2026-05";
+const claudePlannedSubscriptions = [
+  { label: "Team Premium", quantity: 3, unitUsd: 125 },
+  { label: "Team Standard", quantity: 6, unitUsd: 25 },
+  { label: "Max 5x 추가", quantity: 1, unitUsd: 100 },
+];
 
 const numberFormat = new Intl.NumberFormat("ko-KR");
 
@@ -258,6 +270,23 @@ function buildRobustRunRateForecast(values: number[], monthDays = API_FORECAST_M
   };
 }
 
+function buildClaudePlanForecast(month: string): ClaudePlanForecast {
+  if (month < CLAUDE_PLAN_START_MONTH) {
+    return {
+      applies: false,
+      monthlyUsd: 0,
+      monthlyKrw: 0,
+    };
+  }
+
+  const monthlyUsd = claudePlannedSubscriptions.reduce((sum, item) => sum + item.quantity * item.unitUsd, 0);
+  return {
+    applies: true,
+    monthlyUsd,
+    monthlyKrw: Math.round(monthlyUsd * API_FORECAST_USD_TO_KRW),
+  };
+}
+
 function App() {
   const [initialState] = useState(loadInitialDashboardState);
   const [activeView, setActiveView] = useState<ViewKey>("monthly");
@@ -431,17 +460,28 @@ function App() {
       monthDays: API_FORECAST_MONTH_DAYS,
     };
   }, [apiUsageData.dailyUsage, isApiUsageCollected]);
+  const claudePlanMonthlyUsd = claudePlannedSubscriptions.reduce((sum, item) => sum + item.quantity * item.unitUsd, 0);
+  const claudePlanMonthlyKrw = Math.round(claudePlanMonthlyUsd * API_FORECAST_USD_TO_KRW);
+  const claudePlanSubscriptionSummary = claudePlannedSubscriptions
+    .map((item) => `${item.label} ${item.quantity}`)
+    .join(" · ");
   const apiAdjustedForecast = useMemo(
     () =>
-      forecast.map((item) => ({
-        ...item,
-        apiUsageKrw: apiForecast.monthlyCostKrw,
-        totalWithApi: item.amount + apiForecast.monthlyCostKrw,
-      })),
+      forecast.map((item) => {
+        const claudePlan = buildClaudePlanForecast(item.month);
+        return {
+          ...item,
+          apiUsageKrw: apiForecast.monthlyCostKrw,
+          claudePlanKrw: claudePlan.monthlyKrw,
+          claudePlanUsd: claudePlan.monthlyUsd,
+          totalWithApi: item.amount + apiForecast.monthlyCostKrw + claudePlan.monthlyKrw,
+        };
+      }),
     [apiForecast.monthlyCostKrw, forecast],
   );
   const apiAdjustedForecastTotal = apiAdjustedForecast.reduce((sum, item) => sum + item.totalWithApi, 0);
   const apiForecastAddedTotal = apiForecast.monthlyCostKrw * forecast.length;
+  const claudePlanForecastTotal = apiAdjustedForecast.reduce((sum, item) => sum + item.claudePlanKrw, 0);
   const apiAdjustedForecastGrowth =
     forecastBasisTotal > 0 ? ((apiAdjustedForecastTotal - forecastBasisTotal) / forecastBasisTotal) * 100 : 0;
 
@@ -451,6 +491,7 @@ function App() {
       actual: item.amount,
       forecast: null,
       apiUsageForecast: null,
+      claudePlanForecast: null,
       forecastWithApi: null,
       forecastBasis: forecastBasisActuals.find((basis) => basis.month === item.month)?.amount ?? item.amount,
       adjustment: adjustmentByMonth.get(item.month)?.amount ?? 0,
@@ -463,7 +504,8 @@ function App() {
       actual: null,
       forecast: item.amount,
       apiUsageForecast: apiForecast.monthlyCostKrw,
-      forecastWithApi: item.amount + apiForecast.monthlyCostKrw,
+      claudePlanForecast: buildClaudePlanForecast(item.month).monthlyKrw,
+      forecastWithApi: item.amount + apiForecast.monthlyCostKrw + buildClaudePlanForecast(item.month).monthlyKrw,
       forecastBasis: null,
       adjustment: null,
       fixedPlan: sourceMeta.expectedMonthlyFixed,
@@ -528,8 +570,14 @@ function App() {
       apiUsageData,
       apiForecast,
       apiAdjustedForecast,
+      claudePlan: {
+        startMonth: CLAUDE_PLAN_START_MONTH,
+        items: claudePlannedSubscriptions,
+        monthlyUsd: claudePlanMonthlyUsd,
+        monthlyKrw: claudePlanMonthlyKrw,
+      },
       generatedAt: new Date().toISOString(),
-      forecastMethod: `${forecastMethodLabel(forecastBasisActuals)} - 개발/데모용 구글 API 일시 비용 제외 후 최근 API 비용 월환산 반영`,
+      forecastMethod: `${forecastMethodLabel(forecastBasisActuals)} - 개발/데모용 구글 API 일시 비용 제외 후 반복 API 비용과 5월 Claude 구독 증액 반영`,
     };
     const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
       type: "application/json",
@@ -676,10 +724,10 @@ function App() {
           />
           <MetricCard
             icon={<CalendarRange size={21} />}
-            label={`${forecastRange} API 반영 예측`}
+            label={`${forecastRange} API/구독 반영 예측`}
             tone="amber"
             value={formatManWon(apiAdjustedForecastTotal)}
-            footer={`기존 ${formatManWon(forecastTotal)} + 반복 API ${formatManWon(apiForecast.monthlyCostKrw)}/월`}
+            footer={`반복 API ${formatManWon(apiForecast.monthlyCostKrw)}/월 · Claude 증액 ${formatManWon(claudePlanMonthlyKrw)}/월`}
           />
           <MetricCard
             icon={<WalletCards size={21} />}
@@ -700,6 +748,10 @@ function App() {
           apiAdjustedForecastTotal={apiAdjustedForecastTotal}
           apiForecast={apiForecast}
           apiForecastAddedTotal={apiForecastAddedTotal}
+          claudePlanForecastTotal={claudePlanForecastTotal}
+          claudePlanMonthlyKrw={claudePlanMonthlyKrw}
+          claudePlanMonthlyUsd={claudePlanMonthlyUsd}
+          claudePlanSubscriptionSummary={claudePlanSubscriptionSummary}
           forecastAdjustments={forecastAdjustments}
           forecastBasisActuals={forecastBasisActuals}
           overFixedPlan={overFixedPlan}
@@ -742,6 +794,10 @@ function MonthlyView({
   apiAdjustedForecastTotal,
   apiForecast,
   apiForecastAddedTotal,
+  claudePlanForecastTotal,
+  claudePlanMonthlyKrw,
+  claudePlanMonthlyUsd,
+  claudePlanSubscriptionSummary,
   forecast,
   forecastAdjustments,
   forecastBasisActuals,
@@ -754,6 +810,8 @@ function MonthlyView({
   apiAdjustedForecast: Array<
     ForecastPoint & {
       apiUsageKrw: number;
+      claudePlanKrw: number;
+      claudePlanUsd: number;
       totalWithApi: number;
     }
   >;
@@ -778,6 +836,10 @@ function MonthlyView({
     monthDays: number;
   };
   apiForecastAddedTotal: number;
+  claudePlanForecastTotal: number;
+  claudePlanMonthlyKrw: number;
+  claudePlanMonthlyUsd: number;
+  claudePlanSubscriptionSummary: string;
   forecast: ForecastPoint[];
   forecastAdjustments: DashboardData["forecastAdjustments"];
   forecastBasisActuals: MonthlyActual[];
@@ -788,6 +850,7 @@ function MonthlyView({
     actual: number | null;
     forecast: number | null;
     apiUsageForecast: number | null;
+    claudePlanForecast: number | null;
     forecastWithApi: number | null;
     forecastBasis: number | null;
     adjustment: number | null;
@@ -829,9 +892,16 @@ function MonthlyView({
                 fill="#2f8f46"
                 radius={[5, 5, 0, 0]}
               />
+              <Bar
+                dataKey="claudePlanForecast"
+                name="Claude 구독 증액"
+                stackId="forecast"
+                fill="#5f6f8c"
+                radius={[5, 5, 0, 0]}
+              />
               <Line
                 dataKey="forecastWithApi"
-                name="API 반영 예측"
+                name="API/구독 반영 예측"
                 stroke="#2f8f46"
                 strokeWidth={2}
                 dot={{ r: 3 }}
@@ -901,7 +971,8 @@ function MonthlyView({
               <div>
                 <strong>{item.label}</strong>
                 <span>
-                  기존 {formatManWon(item.amount)} · API {formatManWon(item.apiUsageKrw)} 반영
+                  기존 {formatManWon(item.amount)} · API {formatManWon(item.apiUsageKrw)} · Claude 구독{" "}
+                  {formatManWon(item.claudePlanKrw)}
                 </span>
               </div>
               <b>{formatManWon(item.totalWithApi)}</b>
@@ -912,16 +983,21 @@ function MonthlyView({
           <Activity size={18} />
           <div>
             <strong>
-              {forecastRange} API 반영 합계 {formatManWon(apiAdjustedForecastTotal)}
+              {forecastRange} API/구독 반영 합계 {formatManWon(apiAdjustedForecastTotal)}
             </strong>
             <span>
               기존 예측 {formatManWon(forecastTotal)}에 반복 API 월환산 {formatManWon(apiForecast.monthlyCostKrw)}을
               {" "}
-              {forecast.length}개월 더했습니다.
+              {forecast.length}개월 더하고, {CLAUDE_PLAN_START_MONTH}부터 Claude 확정 구독 증액을 반영했습니다.
             </span>
             <span>
-              API 추가분 합계 {formatManWon(apiForecastAddedTotal)} · 보정 기준 대비{" "}
+              API 추가분 {formatManWon(apiForecastAddedTotal)} · Claude 구독 추가분{" "}
+              {formatManWon(claudePlanForecastTotal)} · 보정 기준 대비{" "}
               {formatRate(apiAdjustedForecastGrowth, true)}
+            </span>
+            <span>
+              Claude 증액 {formatUsd(claudePlanMonthlyUsd)}/월 · {formatManWon(claudePlanMonthlyKrw)}/월 ·{" "}
+              {claudePlanSubscriptionSummary}
             </span>
             {apiForecast.isReady ? (
               <>
@@ -990,7 +1066,8 @@ function MonthlyView({
                 <th>예측 제외</th>
                 <th>예측 기준</th>
                 <th>API 월환산</th>
-                <th>API 반영 예측</th>
+                <th>Claude 구독</th>
+                <th>API/구독 반영</th>
                 <th>건수</th>
                 <th>월정액 기준</th>
                 <th>차이</th>
@@ -1010,6 +1087,7 @@ function MonthlyView({
                     <td>{row.adjustment === null ? "-" : formatWon(row.adjustment)}</td>
                     <td>{row.forecastBasis === null ? "-" : formatWon(row.forecastBasis)}</td>
                     <td>{row.apiUsageForecast === null ? "-" : formatWon(row.apiUsageForecast)}</td>
+                    <td>{row.claudePlanForecast === null ? "-" : formatWon(row.claudePlanForecast)}</td>
                     <td>{row.forecastWithApi === null ? "-" : formatWon(row.forecastWithApi)}</td>
                     <td>{row.transactions ?? "-"}</td>
                     <td>{formatWon(row.fixedPlan)}</td>
