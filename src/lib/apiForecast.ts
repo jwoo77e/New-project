@@ -57,6 +57,7 @@ type ApiUsageForecastOptions = {
 
 const MIN_RECURRING_COST_SAMPLE_DAYS = 4;
 const HIGH_DAILY_COST_BURST_USD = 25;
+const MIN_RECENT_HIGH_COST_STREAK_DAYS = 2;
 
 const providerConfigs: Array<{
   provider: ApiProviderName;
@@ -133,12 +134,14 @@ export function buildApiUsageRunRateForecast(
   if (dailyUsage.length === 0) return emptyApiUsageRunRateForecast(options);
 
   const labels = dailyUsage.map((item) => item.label || item.date);
+  const dates = dailyUsage.map((item) => item.date);
   const providers = providerConfigs.map(({ provider, costKey, tokensKey, requestsKey }) => {
     const cost = buildMetricRunRateForecast(
       dailyUsage.map((item) => numberValue(item[costKey])),
       labels,
       options.monthDays,
       "cost",
+      dates,
     );
     const tokens = buildMetricRunRateForecast(
       dailyUsage.map((item) => numberValue(item[tokensKey])),
@@ -199,11 +202,37 @@ export function buildApiUsageRunRateForecast(
   };
 }
 
+export function buildApiUsageRunRateForecastsByMonth(
+  dailyUsage: ApiDailyUsage[],
+  options: Pick<ApiUsageForecastOptions, "usdToKrwRate">,
+) {
+  const groupedUsage = new Map<string, ApiDailyUsage[]>();
+
+  dailyUsage.forEach((item) => {
+    if (!isIsoDate(item.date)) return;
+    const month = item.date.slice(0, 7);
+    groupedUsage.set(month, [...(groupedUsage.get(month) ?? []), item]);
+  });
+
+  return new Map(
+    [...groupedUsage.entries()]
+      .sort(([leftMonth], [rightMonth]) => leftMonth.localeCompare(rightMonth))
+      .map(([month, usage]) => [
+        month,
+        buildApiUsageRunRateForecast(usage, {
+          usdToKrwRate: options.usdToKrwRate,
+          monthDays: daysInMonth(month),
+        }),
+      ]),
+  );
+}
+
 function buildMetricRunRateForecast(
   rawValues: number[],
   labels: string[],
   monthDays: number,
   mode: "cost" | "usage",
+  dates?: string[],
 ): MetricRunRateForecast {
   const values = rawValues.map((value) => Math.max(0, Number.isFinite(value) ? value : 0));
   const measuredDays = Math.max(1, values.length);
@@ -229,6 +258,9 @@ function buildMetricRunRateForecast(
   }
 
   if (mode === "cost" && nonZeroValues.length < MIN_RECURRING_COST_SAMPLE_DAYS) {
+    const recentRunRate = buildRecentMonthCostRunRateForecast(values, labels, dates, measuredDays, total, monthDays);
+    if (recentRunRate) return recentRunRate;
+
     return buildSparseCostRunRateForecast(values, labels, measuredDays, total, monthDays);
   }
 
@@ -265,6 +297,61 @@ function buildMetricRunRateForecast(
     outlierDays: outlierLabels.length,
     outlierLabels,
     upperFence,
+  };
+}
+
+function buildRecentMonthCostRunRateForecast(
+  values: number[],
+  labels: string[],
+  dates: string[] | undefined,
+  measuredDays: number,
+  total: number,
+  monthDays: number,
+): MetricRunRateForecast | null {
+  if (!dates || dates.length !== values.length) return null;
+
+  const entries = values
+    .map((value, index) => ({
+      date: dates[index],
+      label: labels[index],
+      value,
+    }))
+    .filter((entry) => isIsoDate(entry.date))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  if (entries.length === 0) return null;
+
+  const latestDate = entries[entries.length - 1].date;
+  const latestMonth = latestDate.slice(0, 7);
+  const latestMonthEntries = entries.filter((entry) => entry.date.startsWith(latestMonth));
+  const latestEntry = latestMonthEntries[latestMonthEntries.length - 1];
+  if (!latestEntry || latestEntry.value < HIGH_DAILY_COST_BURST_USD) return null;
+
+  let highCostStreak = 0;
+  let expectedDate = latestEntry.date;
+  for (let index = latestMonthEntries.length - 1; index >= 0; index -= 1) {
+    const entry = latestMonthEntries[index];
+    if (entry.date !== expectedDate || entry.value < HIGH_DAILY_COST_BURST_USD) break;
+    highCostStreak += 1;
+    expectedDate = shiftIsoDate(expectedDate, -1);
+  }
+
+  if (highCostStreak < MIN_RECENT_HIGH_COST_STREAK_DAYS) return null;
+
+  const latestMonthTotal = latestMonthEntries.reduce((sum, entry) => sum + entry.value, 0);
+  const recurringDaily = latestMonthTotal / latestMonthEntries.length;
+  const previousMonthOneTimeEntries = entries.filter(
+    (entry) => !entry.date.startsWith(latestMonth) && entry.value > 0,
+  );
+
+  return {
+    measuredDays,
+    total,
+    recurringDaily,
+    monthlyRecurring: recurringDaily * monthDays,
+    oneTime: previousMonthOneTimeEntries.reduce((sum, entry) => sum + entry.value, 0),
+    outlierDays: previousMonthOneTimeEntries.length,
+    outlierLabels: previousMonthOneTimeEntries.map((entry) => entry.label),
+    upperFence: 0,
   };
 }
 
@@ -353,6 +440,22 @@ function quantile(sortedValues: number[], percentile: number) {
 function numberValue(value: unknown) {
   const number = Number(value);
   return Number.isFinite(number) ? number : 0;
+}
+
+function isIsoDate(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function shiftIsoDate(value: string, offsetDays: number) {
+  const date = new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + offsetDays);
+  return date.toISOString().slice(0, 10);
+}
+
+function daysInMonth(month: string) {
+  const year = Number(month.slice(0, 4));
+  const oneBasedMonth = Number(month.slice(5, 7));
+  return new Date(Date.UTC(year, oneBasedMonth, 0)).getUTCDate();
 }
 
 function uniqueLabels(labels: string[]) {

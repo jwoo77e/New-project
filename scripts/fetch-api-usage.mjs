@@ -268,7 +268,7 @@ async function collectGemini(apiKey, env) {
     .sort((a, b) => b.inputTokens + b.outputTokens + b.requests - (a.inputTokens + a.outputTokens + a.requests));
   const hasUsage = usage.totalRequests > 0 || usage.inputTokens + usage.outputTokens > 0;
   const billingNote = billingCosts.ok
-    ? "BigQuery Billing 비용 수집 완료"
+    ? `BigQuery Billing 비용 수집 완료 (${billingCosts.projectFilterLabel})`
     : `BigQuery Billing 미수집: ${shortenError(billingCosts.error)}`;
   const note = hasUsage
     ? `Cloud Monitoring 사용량 수집 완료. ${billingNote}`
@@ -484,15 +484,18 @@ async function collectGeminiBillingCosts(env) {
 
     const accessToken = await getGoogleAccessToken(env);
     const tableRef = `${bigQueryIdentifier(billingProjectId)}.${bigQueryIdentifier(datasetId)}.${bigQueryIdentifier(tableId)}`;
-    const projectFilter = env.GOOGLE_CLOUD_PROJECT_ID ? "AND project.id = @projectId" : "";
+    const projectFilter = buildGeminiBillingProjectFilter(env);
     const query = `
       SELECT
         DATE(usage_start_time) AS usage_date,
-        SUM(cost + IFNULL((SELECT SUM(credit.amount) FROM UNNEST(credits) AS credit), 0)) AS cost
+        SUM(
+          (cost + IFNULL((SELECT SUM(credit.amount) FROM UNNEST(credits) AS credit), 0)) /
+          COALESCE(NULLIF(currency_conversion_rate, 0), 1)
+        ) AS cost
       FROM \`${tableRef}\`
       WHERE usage_start_time >= @startingAt
         AND usage_start_time < @endingAt
-        ${projectFilter}
+        ${projectFilter.sql}
         AND (
           LOWER(service.description) LIKE '%gemini%'
           OR LOWER(service.description) LIKE '%generative language%'
@@ -514,13 +517,7 @@ async function collectGeminiBillingCosts(env) {
         parameterValue: { value: endingAt.toISOString() },
       },
     ];
-    if (env.GOOGLE_CLOUD_PROJECT_ID) {
-      queryParameters.push({
-        name: "projectId",
-        parameterType: { type: "STRING" },
-        parameterValue: { value: env.GOOGLE_CLOUD_PROJECT_ID },
-      });
-    }
+    queryParameters.push(...projectFilter.queryParameters);
 
     const queryResult = await getJson(`https://bigquery.googleapis.com/bigquery/v2/projects/${billingProjectId}/queries`, {
       method: "POST",
@@ -551,10 +548,158 @@ async function collectGeminiBillingCosts(env) {
       totalCostUsd += cost;
     }
 
-    return { ok: true, totalCostUsd: roundMoney(totalCostUsd), dailyCosts };
+    return { ok: true, totalCostUsd: roundMoney(totalCostUsd), dailyCosts, projectFilterLabel: projectFilter.label };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
+}
+
+export function resolveGeminiBillingUsageProjectIds(env) {
+  const rawValue =
+    env.GOOGLE_BILLING_USAGE_PROJECT_IDS ??
+    env.GOOGLE_BILLING_BQ_USAGE_PROJECT_IDS ??
+    env.GOOGLE_CLOUD_PROJECT_IDS ??
+    env.GOOGLE_CLOUD_PROJECT_ID ??
+    env.GOOGLE_CLOUD_PROJECT ??
+    "";
+  const trimmed = String(rawValue).trim();
+
+  if (!trimmed) return [];
+  if (trimmed === "*") return ["*"];
+
+  return [
+    ...new Set(
+      trimmed
+        .split(/[,\s]+/)
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  ];
+}
+
+export function buildGeminiBillingProjectFilter(env) {
+  const projectIds = resolveGeminiBillingUsageProjectIds(env);
+
+  if (projectIds.length === 0 || projectIds.includes("*")) {
+    return {
+      sql: "",
+      queryParameters: [],
+      label: "전체 사용 프로젝트",
+    };
+  }
+
+  if (projectIds.length === 1) {
+    return {
+      sql: "AND project.id = @usageProjectId",
+      queryParameters: [
+        {
+          name: "usageProjectId",
+          parameterType: { type: "STRING" },
+          parameterValue: { value: projectIds[0] },
+        },
+      ],
+      label: `사용 프로젝트 ${projectIds[0]}`,
+    };
+  }
+
+  return {
+    sql: "AND project.id IN UNNEST(@usageProjectIds)",
+    queryParameters: [
+      {
+        name: "usageProjectIds",
+        parameterType: { type: "ARRAY", arrayType: { type: "STRING" } },
+        parameterValue: {
+          arrayValues: projectIds.map((projectId) => ({ value: projectId })),
+        },
+      },
+    ],
+    label: `사용 프로젝트 ${projectIds.length}개`,
+  };
+}
+
+export async function collectBillingCostBreakdown(
+  env,
+  { startingDate = "2026-05-02", endingDate = "2026-05-05", limit = 30 } = {},
+) {
+  const billingProjectId = env.GOOGLE_BILLING_BQ_PROJECT_ID;
+  const datasetId = env.GOOGLE_BILLING_BQ_DATASET;
+  const tableId = env.GOOGLE_BILLING_BQ_TABLE;
+  if (!billingProjectId || !datasetId || !tableId) {
+    throw new Error("GOOGLE_BILLING_BQ_PROJECT_ID/DATASET/TABLE 중 비어 있는 값이 있습니다.");
+  }
+
+  const accessToken = await getGoogleAccessToken(env);
+  const tableRef = `${bigQueryIdentifier(billingProjectId)}.${bigQueryIdentifier(datasetId)}.${bigQueryIdentifier(tableId)}`;
+  const projectFilter = buildGeminiBillingProjectFilter(env);
+  const query = `
+    SELECT
+      DATE(usage_start_time) AS usage_date,
+      project.id AS project_id,
+      ANY_VALUE(currency) AS currency,
+      service.description AS service,
+      sku.description AS sku,
+      SUM(cost + IFNULL((SELECT SUM(credit.amount) FROM UNNEST(credits) AS credit), 0)) AS billing_currency_cost,
+      SUM(
+        (cost + IFNULL((SELECT SUM(credit.amount) FROM UNNEST(credits) AS credit), 0)) /
+        COALESCE(NULLIF(currency_conversion_rate, 0), 1)
+      ) AS cost_usd
+    FROM \`${tableRef}\`
+    WHERE usage_start_time >= @startingAt
+      AND usage_start_time < @endingAt
+      ${projectFilter.sql}
+    GROUP BY usage_date, project_id, service, sku
+    HAVING ABS(billing_currency_cost) > 0
+    ORDER BY billing_currency_cost DESC
+    LIMIT @limit`;
+  const queryParameters = [
+    {
+      name: "startingAt",
+      parameterType: { type: "TIMESTAMP" },
+      parameterValue: { value: `${startingDate}T00:00:00.000Z` },
+    },
+    {
+      name: "endingAt",
+      parameterType: { type: "TIMESTAMP" },
+      parameterValue: { value: `${endingDate}T00:00:00.000Z` },
+    },
+    {
+      name: "limit",
+      parameterType: { type: "INT64" },
+      parameterValue: { value: String(limit) },
+    },
+    ...projectFilter.queryParameters,
+  ];
+
+  const queryResult = await getJson(`https://bigquery.googleapis.com/bigquery/v2/projects/${billingProjectId}/queries`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      query,
+      useLegacySql: false,
+      parameterMode: "NAMED",
+      queryParameters,
+    }),
+  });
+  if (!queryResult.ok) {
+    throw new Error(queryResult.error);
+  }
+
+  const fields = queryResult.data.schema?.fields ?? [];
+  return (queryResult.data.rows ?? []).map((row) => {
+    const values = Object.fromEntries(row.f.map((cell, index) => [fields[index]?.name, cell.v]));
+    return {
+      date: stringValue(values.usage_date, ""),
+      projectId: stringValue(values.project_id, ""),
+      currency: stringValue(values.currency, ""),
+      service: stringValue(values.service, ""),
+      sku: stringValue(values.sku, ""),
+      billingCurrencyCost: roundMoney(numberValue(values.billing_currency_cost)),
+      costUsd: roundMoney(numberValue(values.cost_usd)),
+    };
+  });
 }
 
 async function addGoogleMonitoringMetricUsage({ projectId, accessToken, metricType, usage, valueType }) {

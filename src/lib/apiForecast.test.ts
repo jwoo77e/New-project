@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildApiUsageRunRateForecast } from "./apiForecast";
+import { buildApiUsageRunRateForecast, buildApiUsageRunRateForecastsByMonth } from "./apiForecast";
 import type { ApiDailyUsage } from "../data/apiUsageData";
 
 const options = {
@@ -93,10 +93,14 @@ describe("buildApiUsageRunRateForecast", () => {
     expect(claude?.monthlyCostUsd).toBeCloseTo((2 / 7) * options.monthDays, 5);
   });
 
-  it("does not multiply a short Gemini billing burst into every forecast month", () => {
+  it("reflects a sustained current-month Gemini billing run in the monthly forecast", () => {
     const geminiCosts = [0, 0, 0, 0, 159.79, 374.04, 410.91];
+    const dates = ["2026-04-28", "2026-04-29", "2026-04-30", "2026-05-01", "2026-05-02", "2026-05-03", "2026-05-04"];
+    const labels = ["4/28", "4/29", "4/30", "5/1", "5/2", "5/3", "5/4"];
     const dailyUsage = geminiCosts.map((geminiCostUsd, index) =>
       day(index, {
+        date: dates[index],
+        label: labels[index],
         openaiCostUsd: 0,
         openaiTokens: 0,
         openaiRequests: 0,
@@ -110,11 +114,67 @@ describe("buildApiUsageRunRateForecast", () => {
 
     const forecast = buildApiUsageRunRateForecast(dailyUsage, options);
     const gemini = forecast.providers.find((provider) => provider.provider === "Gemini");
+    const mayAverage = (159.79 + 374.04 + 410.91) / 4;
+
+    expect(gemini?.monthlyCostUsd).toBeCloseTo(mayAverage * options.monthDays, 5);
+    expect(gemini?.oneTimeCostUsd).toBe(0);
+    expect(gemini?.costOutlierDays).toBe(0);
+    expect(forecast.monthlyCostUsd).toBeCloseTo(mayAverage * options.monthDays, 5);
+  });
+
+  it("keeps a stale short Gemini billing burst out of the recurring forecast", () => {
+    const geminiCosts = [159.79, 374.04, 410.91, 0, 0, 0, 0];
+    const dailyUsage = geminiCosts.map((geminiCostUsd, index) =>
+      day(index, {
+        openaiCostUsd: 0,
+        openaiTokens: 0,
+        openaiRequests: 0,
+        geminiCostUsd,
+        geminiTokens: index <= 2 ? 420000 : 0,
+        geminiRequests: index <= 2 ? 80 : 0,
+        totalTokens: index <= 2 ? 420000 : 0,
+        costUsd: geminiCostUsd,
+      }),
+    );
+
+    const forecast = buildApiUsageRunRateForecast(dailyUsage, options);
+    const gemini = forecast.providers.find((provider) => provider.provider === "Gemini");
 
     expect(gemini?.monthlyCostUsd).toBe(0);
     expect(gemini?.oneTimeCostUsd).toBeCloseTo(944.74, 5);
     expect(gemini?.costOutlierDays).toBe(3);
     expect(forecast.monthlyCostUsd).toBe(0);
+  });
+
+  it("builds separate API forecasts for each measured month", () => {
+    const dates = ["2026-04-29", "2026-04-30", "2026-05-01", "2026-05-02", "2026-05-03", "2026-05-04"];
+    const geminiCosts = [0, 0, 0, 159.79, 374.04, 410.91];
+    const dailyUsage = dates.map((date, index) =>
+      day(index, {
+        date,
+        label: `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`,
+        openaiCostUsd: 0,
+        openaiTokens: 0,
+        openaiRequests: 0,
+        geminiCostUsd: geminiCosts[index],
+        geminiTokens: geminiCosts[index] > 0 ? 420000 : 0,
+        geminiRequests: geminiCosts[index] > 0 ? 80 : 0,
+        totalTokens: geminiCosts[index] > 0 ? 420000 : 0,
+        costUsd: geminiCosts[index],
+      }),
+    );
+
+    const forecastsByMonth = buildApiUsageRunRateForecastsByMonth(dailyUsage, {
+      usdToKrwRate: options.usdToKrwRate,
+    });
+    const april = forecastsByMonth.get("2026-04");
+    const may = forecastsByMonth.get("2026-05");
+    const mayAverage = (159.79 + 374.04 + 410.91) / 4;
+
+    expect([...forecastsByMonth.keys()]).toEqual(["2026-04", "2026-05"]);
+    expect(april?.monthlyCostUsd).toBe(0);
+    expect(may?.monthlyCostUsd).toBeCloseTo(mayAverage * 31, 5);
+    expect(may?.monthlyCostKrw).toBe(Math.round((mayAverage * 31) * options.usdToKrwRate));
   });
 
   it("forecasts provider token and request usage with one-off spikes capped separately", () => {
