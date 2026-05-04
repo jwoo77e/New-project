@@ -89,8 +89,32 @@ describe("buildApiUsageRunRateForecast", () => {
     const claude = forecast.providers.find((provider) => provider.provider === "Claude");
 
     expect(claude?.costOutlierDays).toBe(1);
-    expect(claude?.oneTimeCostUsd).toBe(294);
-    expect(claude?.monthlyCostUsd).toBeCloseTo((8 / 7) * options.monthDays, 5);
+    expect(claude?.oneTimeCostUsd).toBe(300);
+    expect(claude?.monthlyCostUsd).toBeCloseTo((2 / 7) * options.monthDays, 5);
+  });
+
+  it("does not multiply a short Gemini billing burst into every forecast month", () => {
+    const geminiCosts = [0, 0, 0, 0, 159.79, 374.04, 410.91];
+    const dailyUsage = geminiCosts.map((geminiCostUsd, index) =>
+      day(index, {
+        openaiCostUsd: 0,
+        openaiTokens: 0,
+        openaiRequests: 0,
+        geminiCostUsd,
+        geminiTokens: index >= 4 ? 420000 : 0,
+        geminiRequests: index >= 4 ? 80 : 0,
+        totalTokens: index >= 4 ? 420000 : 0,
+        costUsd: geminiCostUsd,
+      }),
+    );
+
+    const forecast = buildApiUsageRunRateForecast(dailyUsage, options);
+    const gemini = forecast.providers.find((provider) => provider.provider === "Gemini");
+
+    expect(gemini?.monthlyCostUsd).toBe(0);
+    expect(gemini?.oneTimeCostUsd).toBeCloseTo(944.74, 5);
+    expect(gemini?.costOutlierDays).toBe(3);
+    expect(forecast.monthlyCostUsd).toBe(0);
   });
 
   it("forecasts provider token and request usage with one-off spikes capped separately", () => {

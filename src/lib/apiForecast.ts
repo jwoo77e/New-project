@@ -55,6 +55,9 @@ type ApiUsageForecastOptions = {
   usdToKrwRate: number;
 };
 
+const MIN_RECURRING_COST_SAMPLE_DAYS = 4;
+const HIGH_DAILY_COST_BURST_USD = 25;
+
 const providerConfigs: Array<{
   provider: ApiProviderName;
   costKey: keyof Pick<ApiDailyUsage, "openaiCostUsd" | "geminiCostUsd" | "claudeCostUsd">;
@@ -225,6 +228,10 @@ function buildMetricRunRateForecast(
     };
   }
 
+  if (mode === "cost" && nonZeroValues.length < MIN_RECURRING_COST_SAMPLE_DAYS) {
+    return buildSparseCostRunRateForecast(values, labels, measuredDays, total, monthDays);
+  }
+
   const sortedNonZeroValues = [...nonZeroValues].sort((a, b) => a - b);
   const median = quantile(sortedNonZeroValues, 0.5);
   const q1 = quantile(sortedNonZeroValues, 0.25);
@@ -258,6 +265,46 @@ function buildMetricRunRateForecast(
     outlierDays: outlierLabels.length,
     outlierLabels,
     upperFence,
+  };
+}
+
+function buildSparseCostRunRateForecast(
+  values: number[],
+  labels: string[],
+  measuredDays: number,
+  total: number,
+  monthDays: number,
+): MetricRunRateForecast {
+  const nonZeroValues = values.filter((value) => value > 0);
+  const baseline = Math.min(...nonZeroValues);
+  const ordinaryUpperFence = baseline >= HIGH_DAILY_COST_BURST_USD ? 0 : baseline * 3;
+  const outlierLabels: string[] = [];
+  let recurringTotal = 0;
+  let oneTime = 0;
+
+  values.forEach((value, index) => {
+    if (value <= 0) return;
+
+    if (ordinaryUpperFence > 0 && value <= ordinaryUpperFence) {
+      recurringTotal += value;
+      return;
+    }
+
+    outlierLabels.push(labels[index]);
+    oneTime += value;
+  });
+
+  const recurringDaily = recurringTotal / measuredDays;
+
+  return {
+    measuredDays,
+    total,
+    recurringDaily,
+    monthlyRecurring: recurringDaily * monthDays,
+    oneTime,
+    outlierDays: outlierLabels.length,
+    outlierLabels,
+    upperFence: ordinaryUpperFence,
   };
 }
 
