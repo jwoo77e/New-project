@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildGeminiBillingProjectFilter,
+  resolveGeminiMonitoringProjectIds,
   resolveGeminiBillingUsageProjectIds,
 } from "./fetch-api-usage.mjs";
 
@@ -50,5 +51,29 @@ describe("Gemini billing project filters", () => {
     expect(filter.sql).toBe("");
     expect(filter.queryParameters).toEqual([]);
     expect(filter.label).toBe("전체 사용 프로젝트");
+  });
+
+  it("uses billing project ids for Gemini Cloud Monitoring when no monitoring-specific list is set", () => {
+    expect(resolveGeminiMonitoringProjectIds({
+      GOOGLE_CLOUD_PROJECT_ID: "zeroby-two",
+      GOOGLE_BILLING_USAGE_PROJECT_IDS: "zeroby-two,riskzero-cloud",
+    })).toEqual(["zeroby-two", "riskzero-cloud"]);
+  });
+
+  it("lets Gemini Cloud Monitoring use an explicit project list", () => {
+    expect(resolveGeminiMonitoringProjectIds({
+      GOOGLE_CLOUD_PROJECT_ID: "zeroby-two",
+      GOOGLE_BILLING_USAGE_PROJECT_IDS: "zeroby-two,riskzero-cloud",
+      GOOGLE_MONITORING_PROJECT_IDS: "riskzero-cloud,analytics-project",
+    })).toEqual(["riskzero-cloud", "analytics-project"]);
+  });
+
+  it("ignores display names that are not valid Google Cloud project ids", () => {
+    expect(resolveGeminiBillingUsageProjectIds({
+      GOOGLE_BILLING_USAGE_PROJECT_IDS: "zeroby-two,RiskZero Cloud,riskzero-cloud",
+    })).toEqual(["zeroby-two", "riskzero-cloud"]);
+    expect(resolveGeminiMonitoringProjectIds({
+      GOOGLE_BILLING_USAGE_PROJECT_IDS: "zeroby-two,RiskZero Cloud,riskzero-cloud",
+    })).toEqual(["zeroby-two", "riskzero-cloud"]);
   });
 });

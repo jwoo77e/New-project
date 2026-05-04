@@ -271,8 +271,8 @@ async function collectGemini(apiKey, env) {
     ? `BigQuery Billing 비용 수집 완료 (${billingCosts.projectFilterLabel})`
     : `BigQuery Billing 미수집: ${shortenError(billingCosts.error)}`;
   const note = hasUsage
-    ? `Cloud Monitoring 사용량 수집 완료. ${billingNote}`
-    : `Cloud Monitoring 조회 완료, 최근 사용량 없음. ${billingNote}`;
+    ? `Cloud Monitoring 사용량 수집 완료 (${monitoring.projectLabel}). ${billingNote}`
+    : `Cloud Monitoring 조회 완료 (${monitoring.projectLabel}), 최근 사용량 없음. ${billingNote}`;
 
   return {
     provider: makeProvider({
@@ -290,7 +290,7 @@ async function collectGemini(apiKey, env) {
     models: usageModels.length > 0 ? usageModels : catalogModels,
     keyHealth: makeKeyHealth(providerName, {
       name: "gemini-prod",
-      scope: `generative language, monitoring (${monitoring.projectId})`,
+      scope: `generative language, monitoring (${monitoring.projectLabel})`,
       requests: usage.totalRequests,
       status: "정상",
       note: billingCosts.ok
@@ -450,24 +450,26 @@ function parseGeminiModels(payload) {
 
 async function collectGeminiMonitoring(env) {
   try {
-    const projectId = env.GOOGLE_CLOUD_PROJECT_ID ?? env.GOOGLE_CLOUD_PROJECT;
-    if (!projectId) {
-      return { ok: false, error: "GOOGLE_CLOUD_PROJECT_ID가 없습니다." };
+    const projectIds = resolveGeminiMonitoringProjectIds(env);
+    if (projectIds.length === 0) {
+      return { ok: false, error: "GOOGLE_MONITORING_PROJECT_IDS 또는 GOOGLE_CLOUD_PROJECT_ID가 없습니다." };
     }
 
     const accessToken = await getGoogleAccessToken(env);
     const usage = emptyUsage();
-    for (const metricType of geminiRequestMetricTypes) {
-      await addGoogleMonitoringMetricUsage({ projectId, accessToken, metricType, usage, valueType: "requests" });
-    }
-    for (const metricType of geminiInputTokenMetricTypes) {
-      await addGoogleMonitoringMetricUsage({ projectId, accessToken, metricType, usage, valueType: "inputTokens" });
-    }
-    for (const metricType of geminiOutputTokenMetricTypes) {
-      await addGoogleMonitoringMetricUsage({ projectId, accessToken, metricType, usage, valueType: "outputTokens" });
+    for (const projectId of projectIds) {
+      for (const metricType of geminiRequestMetricTypes) {
+        await addGoogleMonitoringMetricUsage({ projectId, accessToken, metricType, usage, valueType: "requests" });
+      }
+      for (const metricType of geminiInputTokenMetricTypes) {
+        await addGoogleMonitoringMetricUsage({ projectId, accessToken, metricType, usage, valueType: "inputTokens" });
+      }
+      for (const metricType of geminiOutputTokenMetricTypes) {
+        await addGoogleMonitoringMetricUsage({ projectId, accessToken, metricType, usage, valueType: "outputTokens" });
+      }
     }
 
-    return { ok: true, projectId, usage };
+    return { ok: true, projectIds, projectLabel: projectIds.length === 1 ? projectIds[0] : `${projectIds.length} projects`, usage };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
@@ -567,14 +569,21 @@ export function resolveGeminiBillingUsageProjectIds(env) {
   if (!trimmed) return [];
   if (trimmed === "*") return ["*"];
 
-  return [
-    ...new Set(
-      trimmed
-        .split(/[,\s]+/)
-        .map((item) => item.trim())
-        .filter(Boolean),
-    ),
-  ];
+  return parseProjectIdList(trimmed);
+}
+
+export function resolveGeminiMonitoringProjectIds(env) {
+  const explicitValue =
+    env.GOOGLE_MONITORING_PROJECT_IDS ??
+    env.GOOGLE_GEMINI_MONITORING_PROJECT_IDS ??
+    env.GOOGLE_CLOUD_MONITORING_PROJECT_IDS;
+  const explicitProjectIds = parseProjectIdList(explicitValue);
+  if (explicitProjectIds.length > 0) return explicitProjectIds.filter((projectId) => projectId !== "*");
+
+  const billingProjectIds = resolveGeminiBillingUsageProjectIds(env);
+  if (billingProjectIds.length > 0 && !billingProjectIds.includes("*")) return billingProjectIds;
+
+  return parseProjectIdList(env.GOOGLE_CLOUD_PROJECT_ID ?? env.GOOGLE_CLOUD_PROJECT);
 }
 
 export function buildGeminiBillingProjectFilter(env) {
@@ -615,6 +624,25 @@ export function buildGeminiBillingProjectFilter(env) {
     ],
     label: `사용 프로젝트 ${projectIds.length}개`,
   };
+}
+
+function parseProjectIdList(value) {
+  const trimmed = String(value ?? "").trim();
+  if (!trimmed) return [];
+  if (trimmed === "*") return ["*"];
+
+  return [
+    ...new Set(
+      trimmed
+        .split(/[,\s]+/)
+        .map((item) => item.trim())
+        .filter(isValidGoogleProjectId),
+    ),
+  ];
+}
+
+function isValidGoogleProjectId(value) {
+  return /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(value);
 }
 
 export async function collectBillingCostBreakdown(
