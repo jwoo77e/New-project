@@ -72,16 +72,12 @@ type ForecastPoint = {
 
 type MetricTone = "teal" | "green" | "amber" | "coral" | "steel";
 
-type ClaudePlanForecast = {
+type OperatingPlanForecast = {
   applies: boolean;
-  monthlyUsd: number;
-  monthlyKrw: number;
-};
-
-type SubscriptionSavingsForecast = {
-  applies: boolean;
-  monthlyUsd: number;
-  monthlyKrw: number;
+  subscriptionUsd: number;
+  subscriptionKrw: number;
+  apiKrw: number;
+  totalKrw: number;
 };
 
 const chartColors = ["#0f8b8d", "#e85d4f", "#c58612", "#2f8f46"];
@@ -89,13 +85,17 @@ const API_FORECAST_MONTH_DAYS = 30.4;
 const API_FORECAST_USD_TO_KRW = 1400;
 const VIEW_ROTATION_INTERVAL_MS = 12000;
 const viewRotationOrder: ViewKey[] = ["monthly", "department", "detail", "api"];
-const CLAUDE_PLAN_START_MONTH = "2026-05";
-const SUBSCRIPTION_SAVINGS_START_MONTH = "2026-05";
-const subscriptionSavingsMonthlyUsd = 375.36;
-const claudePlannedSubscriptions = [
-  { label: "Team Premium", quantity: 3, unitUsd: 125 },
-  { label: "Team Standard", quantity: 6, unitUsd: 25 },
-  { label: "Max 5x 추가", quantity: 1, unitUsd: 100 },
+const OPERATING_PLAN_START_MONTH = "2026-05";
+const OPERATING_PLAN_USD_TO_KRW = 1485;
+const OPERATING_PLAN_API_BUDGET_KRW = 280000;
+const operatingPlanSubscriptions = [
+  { label: "ChatGPT Pro", quantity: 2, unitUsd: 220 },
+  { label: "Claude Max 5x", quantity: 1, unitUsd: 110 },
+  { label: "Gemini Pro", quantity: 9, unitUsd: 15.12 },
+  { label: "Genspark Pro", quantity: 2, unitUsd: 275 },
+  { label: "Gamma AI Pro", quantity: 1, unitUsd: 25 },
+  { label: "Claude Team Premium", quantity: 3, unitUsd: 137.5 },
+  { label: "Claude Team Standard", quantity: 6, unitUsd: 27.5 },
 ];
 
 const numberFormat = new Intl.NumberFormat("ko-KR");
@@ -114,10 +114,6 @@ function formatWon(value: number) {
 
 function formatManWon(value: number) {
   return `${numberFormat.format(Math.round(value / 10000))}만원`;
-}
-
-function formatSavingsManWon(value: number) {
-  return value > 0 ? `-${formatManWon(value)}` : formatManWon(0);
 }
 
 function formatAxisWon(value: number | string) {
@@ -248,36 +244,27 @@ function forecastMethodLabel(monthlyActuals: MonthlyActual[]) {
   return `${monthRangeLabel(monthlyActuals)} 월별 실적 단순 선형 추세`;
 }
 
-function buildClaudePlanForecast(month: string): ClaudePlanForecast {
-  if (month < CLAUDE_PLAN_START_MONTH) {
+function buildOperatingPlanForecast(month: string, recurringApiKrw: number): OperatingPlanForecast {
+  if (month < OPERATING_PLAN_START_MONTH) {
     return {
       applies: false,
-      monthlyUsd: 0,
-      monthlyKrw: 0,
+      subscriptionUsd: 0,
+      subscriptionKrw: 0,
+      apiKrw: 0,
+      totalKrw: 0,
     };
   }
 
-  const monthlyUsd = claudePlannedSubscriptions.reduce((sum, item) => sum + item.quantity * item.unitUsd, 0);
-  return {
-    applies: true,
-    monthlyUsd,
-    monthlyKrw: Math.round(monthlyUsd * API_FORECAST_USD_TO_KRW),
-  };
-}
-
-function buildSubscriptionSavingsForecast(month: string): SubscriptionSavingsForecast {
-  if (month < SUBSCRIPTION_SAVINGS_START_MONTH) {
-    return {
-      applies: false,
-      monthlyUsd: 0,
-      monthlyKrw: 0,
-    };
-  }
+  const subscriptionUsd = operatingPlanSubscriptions.reduce((sum, item) => sum + item.quantity * item.unitUsd, 0);
+  const subscriptionKrw = Math.round(subscriptionUsd * OPERATING_PLAN_USD_TO_KRW);
+  const apiKrw = Math.max(recurringApiKrw, OPERATING_PLAN_API_BUDGET_KRW);
 
   return {
     applies: true,
-    monthlyUsd: subscriptionSavingsMonthlyUsd,
-    monthlyKrw: Math.round(subscriptionSavingsMonthlyUsd * API_FORECAST_USD_TO_KRW),
+    subscriptionUsd,
+    subscriptionKrw,
+    apiKrw,
+    totalKrw: subscriptionKrw + apiKrw,
   };
 }
 
@@ -416,36 +403,37 @@ function App() {
       monthDays: API_FORECAST_MONTH_DAYS,
     });
   }, [apiUsageData.dailyUsage, isApiUsageCollected]);
-  const claudePlanMonthlyUsd = claudePlannedSubscriptions.reduce((sum, item) => sum + item.quantity * item.unitUsd, 0);
-  const claudePlanMonthlyKrw = Math.round(claudePlanMonthlyUsd * API_FORECAST_USD_TO_KRW);
-  const claudePlanSubscriptionSummary = claudePlannedSubscriptions
+  const operatingPlanSubscriptionUsd = operatingPlanSubscriptions.reduce(
+    (sum, item) => sum + item.quantity * item.unitUsd,
+    0,
+  );
+  const operatingPlanSubscriptionKrw = Math.round(operatingPlanSubscriptionUsd * OPERATING_PLAN_USD_TO_KRW);
+  const operatingPlanSubscriptionSummary = operatingPlanSubscriptions
     .map((item) => `${item.label} ${item.quantity}`)
     .join(" · ");
-  const subscriptionSavingsMonthlyKrw = Math.round(subscriptionSavingsMonthlyUsd * API_FORECAST_USD_TO_KRW);
   const apiAdjustedForecast = useMemo(
     () =>
       forecast.map((item) => {
-        const claudePlan = buildClaudePlanForecast(item.month);
-        const subscriptionSavings = buildSubscriptionSavingsForecast(item.month);
+        const operatingPlan = buildOperatingPlanForecast(item.month, apiForecast.monthlyCostKrw);
+        const apiUsageKrw = operatingPlan.applies ? operatingPlan.apiKrw : apiForecast.monthlyCostKrw;
+        const baseForecastKrw = operatingPlan.applies ? operatingPlan.subscriptionKrw : item.amount;
+
         return {
           ...item,
-          apiUsageKrw: apiForecast.monthlyCostKrw,
-          claudePlanKrw: claudePlan.monthlyKrw,
-          claudePlanUsd: claudePlan.monthlyUsd,
-          subscriptionSavingsKrw: subscriptionSavings.monthlyKrw,
-          subscriptionSavingsUsd: subscriptionSavings.monthlyUsd,
-          totalWithApi: item.amount + apiForecast.monthlyCostKrw + claudePlan.monthlyKrw - subscriptionSavings.monthlyKrw,
+          apiUsageKrw,
+          baseForecastKrw,
+          operatingPlanKrw: operatingPlan.subscriptionKrw,
+          operatingPlanUsd: operatingPlan.subscriptionUsd,
+          isOperatingPlan: operatingPlan.applies,
+          totalWithApi: operatingPlan.applies ? operatingPlan.totalKrw : item.amount + apiUsageKrw,
         };
       }),
     [apiForecast.monthlyCostKrw, forecast],
   );
   const apiAdjustedForecastTotal = apiAdjustedForecast.reduce((sum, item) => sum + item.totalWithApi, 0);
-  const apiForecastAddedTotal = apiForecast.monthlyCostKrw * forecast.length;
-  const claudePlanForecastTotal = apiAdjustedForecast.reduce((sum, item) => sum + item.claudePlanKrw, 0);
-  const subscriptionSavingsForecastTotal = apiAdjustedForecast.reduce(
-    (sum, item) => sum + item.subscriptionSavingsKrw,
-    0,
-  );
+  const apiForecastAddedTotal = apiAdjustedForecast.reduce((sum, item) => sum + item.apiUsageKrw, 0);
+  const operatingPlanForecastTotal = apiAdjustedForecast.reduce((sum, item) => sum + item.operatingPlanKrw, 0);
+  const operatingPlanMonths = apiAdjustedForecast.filter((item) => item.isOperatingPlan).length;
   const apiAdjustedForecastGrowth =
     forecastBasisTotal > 0 ? ((apiAdjustedForecastTotal - forecastBasisTotal) / forecastBasisTotal) * 100 : 0;
 
@@ -454,9 +442,8 @@ function App() {
       label: item.label,
       actual: item.amount,
       forecast: null,
+      operatingPlanForecast: null,
       apiUsageForecast: null,
-      claudePlanForecast: null,
-      subscriptionSavingsForecast: null,
       forecastWithApi: null,
       forecastBasis: forecastBasisActuals.find((basis) => basis.month === item.month)?.amount ?? item.amount,
       adjustment: adjustmentByMonth.get(item.month)?.amount ?? 0,
@@ -465,20 +452,19 @@ function App() {
       status: "실적",
     })),
     ...forecast.map((item) => {
-      const claudePlan = buildClaudePlanForecast(item.month);
-      const subscriptionSavings = buildSubscriptionSavingsForecast(item.month);
+      const operatingPlan = buildOperatingPlanForecast(item.month, apiForecast.monthlyCostKrw);
+      const apiUsageKrw = operatingPlan.applies ? operatingPlan.apiKrw : apiForecast.monthlyCostKrw;
 
       return {
         label: item.label,
         actual: null,
-        forecast: item.amount,
-        apiUsageForecast: apiForecast.monthlyCostKrw,
-        claudePlanForecast: claudePlan.monthlyKrw,
-        subscriptionSavingsForecast: subscriptionSavings.monthlyKrw > 0 ? -subscriptionSavings.monthlyKrw : 0,
-        forecastWithApi: item.amount + apiForecast.monthlyCostKrw + claudePlan.monthlyKrw - subscriptionSavings.monthlyKrw,
+        forecast: operatingPlan.applies ? null : item.amount,
+        operatingPlanForecast: operatingPlan.applies ? operatingPlan.subscriptionKrw : null,
+        apiUsageForecast: apiUsageKrw,
+        forecastWithApi: operatingPlan.applies ? operatingPlan.totalKrw : item.amount + apiUsageKrw,
         forecastBasis: null,
         adjustment: null,
-        fixedPlan: sourceMeta.expectedMonthlyFixed,
+        fixedPlan: operatingPlan.applies ? operatingPlan.totalKrw : sourceMeta.expectedMonthlyFixed,
         transactions: null,
         status: "예측",
       };
@@ -541,20 +527,17 @@ function App() {
       apiUsageData,
       apiForecast,
       apiAdjustedForecast,
-      claudePlan: {
-        startMonth: CLAUDE_PLAN_START_MONTH,
-        items: claudePlannedSubscriptions,
-        monthlyUsd: claudePlanMonthlyUsd,
-        monthlyKrw: claudePlanMonthlyKrw,
-      },
-      subscriptionSavings: {
-        startMonth: SUBSCRIPTION_SAVINGS_START_MONTH,
-        monthlyUsd: subscriptionSavingsMonthlyUsd,
-        monthlyKrw: subscriptionSavingsMonthlyKrw,
-        forecastTotalKrw: subscriptionSavingsForecastTotal,
+      operatingPlan: {
+        startMonth: OPERATING_PLAN_START_MONTH,
+        subscriptions: operatingPlanSubscriptions,
+        subscriptionUsd: operatingPlanSubscriptionUsd,
+        subscriptionKrw: operatingPlanSubscriptionKrw,
+        apiBudgetKrw: OPERATING_PLAN_API_BUDGET_KRW,
+        usdToKrwRate: OPERATING_PLAN_USD_TO_KRW,
+        forecastTotalKrw: operatingPlanForecastTotal,
       },
       generatedAt: new Date().toISOString(),
-      forecastMethod: `${forecastMethodLabel(forecastBasisActuals)} - 개발/데모용 구글 API 일시 비용 제외 후 반복 API 비용, 5월 Claude 구독 증액, 5월 구독 절감 효과 반영`,
+      forecastMethod: `${forecastMethodLabel(forecastBasisActuals)} - 5월 이후는 정액제 운영계획 구독 기준과 API 예산/월환산 비용으로 대체`,
     };
     const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
       type: "application/json",
@@ -704,7 +687,7 @@ function App() {
             label={`${forecastRange} API/구독 반영 예측`}
             tone="amber"
             value={formatManWon(apiAdjustedForecastTotal)}
-            footer={`반복 API ${formatManWon(apiForecast.monthlyCostKrw)}/월 · 구독 순증 ${formatManWon(claudePlanMonthlyKrw - subscriptionSavingsMonthlyKrw)}/월`}
+            footer={`5월 이후 운영계획 ${formatManWon(operatingPlanSubscriptionKrw)}/월 · API 예산 ${formatManWon(OPERATING_PLAN_API_BUDGET_KRW)}/월`}
           />
           <MetricCard
             icon={<WalletCards size={21} />}
@@ -725,13 +708,11 @@ function App() {
           apiAdjustedForecastTotal={apiAdjustedForecastTotal}
           apiForecast={apiForecast}
           apiForecastAddedTotal={apiForecastAddedTotal}
-          claudePlanForecastTotal={claudePlanForecastTotal}
-          claudePlanMonthlyKrw={claudePlanMonthlyKrw}
-          claudePlanMonthlyUsd={claudePlanMonthlyUsd}
-          claudePlanSubscriptionSummary={claudePlanSubscriptionSummary}
-          subscriptionSavingsForecastTotal={subscriptionSavingsForecastTotal}
-          subscriptionSavingsMonthlyKrw={subscriptionSavingsMonthlyKrw}
-          subscriptionSavingsMonthlyUsd={subscriptionSavingsMonthlyUsd}
+          operatingPlanForecastTotal={operatingPlanForecastTotal}
+          operatingPlanMonths={operatingPlanMonths}
+          operatingPlanSubscriptionKrw={operatingPlanSubscriptionKrw}
+          operatingPlanSubscriptionSummary={operatingPlanSubscriptionSummary}
+          operatingPlanSubscriptionUsd={operatingPlanSubscriptionUsd}
           forecastAdjustments={forecastAdjustments}
           forecastBasisActuals={forecastBasisActuals}
           overFixedPlan={overFixedPlan}
@@ -774,13 +755,11 @@ function MonthlyView({
   apiAdjustedForecastTotal,
   apiForecast,
   apiForecastAddedTotal,
-  claudePlanForecastTotal,
-  claudePlanMonthlyKrw,
-  claudePlanMonthlyUsd,
-  claudePlanSubscriptionSummary,
-  subscriptionSavingsForecastTotal,
-  subscriptionSavingsMonthlyKrw,
-  subscriptionSavingsMonthlyUsd,
+  operatingPlanForecastTotal,
+  operatingPlanMonths,
+  operatingPlanSubscriptionKrw,
+  operatingPlanSubscriptionSummary,
+  operatingPlanSubscriptionUsd,
   forecast,
   forecastAdjustments,
   forecastBasisActuals,
@@ -793,10 +772,10 @@ function MonthlyView({
   apiAdjustedForecast: Array<
     ForecastPoint & {
       apiUsageKrw: number;
-      claudePlanKrw: number;
-      claudePlanUsd: number;
-      subscriptionSavingsKrw: number;
-      subscriptionSavingsUsd: number;
+      baseForecastKrw: number;
+      operatingPlanKrw: number;
+      operatingPlanUsd: number;
+      isOperatingPlan: boolean;
       totalWithApi: number;
     }
   >;
@@ -804,13 +783,11 @@ function MonthlyView({
   apiAdjustedForecastTotal: number;
   apiForecast: ApiUsageRunRateForecast;
   apiForecastAddedTotal: number;
-  claudePlanForecastTotal: number;
-  claudePlanMonthlyKrw: number;
-  claudePlanMonthlyUsd: number;
-  claudePlanSubscriptionSummary: string;
-  subscriptionSavingsForecastTotal: number;
-  subscriptionSavingsMonthlyKrw: number;
-  subscriptionSavingsMonthlyUsd: number;
+  operatingPlanForecastTotal: number;
+  operatingPlanMonths: number;
+  operatingPlanSubscriptionKrw: number;
+  operatingPlanSubscriptionSummary: string;
+  operatingPlanSubscriptionUsd: number;
   forecast: ForecastPoint[];
   forecastAdjustments: DashboardData["forecastAdjustments"];
   forecastBasisActuals: MonthlyActual[];
@@ -820,9 +797,8 @@ function MonthlyView({
     label: string;
     actual: number | null;
     forecast: number | null;
+    operatingPlanForecast: number | null;
     apiUsageForecast: number | null;
-    claudePlanForecast: number | null;
-    subscriptionSavingsForecast: number | null;
     forecastWithApi: number | null;
     forecastBasis: number | null;
     adjustment: number | null;
@@ -859,24 +835,17 @@ function MonthlyView({
               <Bar dataKey="actual" name="실적" fill="#0f8b8d" radius={[5, 5, 0, 0]} />
               <Bar dataKey="forecast" name="기존 예측" stackId="forecast" fill="#c58612" radius={[5, 5, 0, 0]} />
               <Bar
-                dataKey="apiUsageForecast"
-                name="API 월환산"
-                stackId="forecast"
-                fill="#2f8f46"
-                radius={[5, 5, 0, 0]}
-              />
-              <Bar
-                dataKey="claudePlanForecast"
-                name="Claude 구독 증액"
+                dataKey="operatingPlanForecast"
+                name="운영계획 구독"
                 stackId="forecast"
                 fill="#5f6f8c"
                 radius={[5, 5, 0, 0]}
               />
               <Bar
-                dataKey="subscriptionSavingsForecast"
-                name="구독 절감"
+                dataKey="apiUsageForecast"
+                name="API 월환산/예산"
                 stackId="forecast"
-                fill="#e85d4f"
+                fill="#2f8f46"
                 radius={[5, 5, 0, 0]}
               />
               <Line
@@ -950,10 +919,16 @@ function MonthlyView({
             <article className="forecast-row" key={item.month}>
               <div>
                 <strong>{item.label}</strong>
-                <span>
-                  기존 {formatManWon(item.amount)} · API {formatManWon(item.apiUsageKrw)} · Claude 구독{" "}
-                  {formatManWon(item.claudePlanKrw)} · 구독 절감 {formatSavingsManWon(item.subscriptionSavingsKrw)}
-                </span>
+                {item.isOperatingPlan ? (
+                  <span>
+                    운영계획 구독 {formatManWon(item.operatingPlanKrw)} · API 월환산/예산{" "}
+                    {formatManWon(item.apiUsageKrw)}
+                  </span>
+                ) : (
+                  <span>
+                    기존 {formatManWon(item.amount)} · API 월환산 {formatManWon(item.apiUsageKrw)}
+                  </span>
+                )}
               </div>
               <b>{formatManWon(item.totalWithApi)}</b>
             </article>
@@ -966,24 +941,20 @@ function MonthlyView({
               {forecastRange} API/구독 반영 합계 {formatManWon(apiAdjustedForecastTotal)}
             </strong>
             <span>
-              기존 예측 {formatManWon(forecastTotal)}에 반복 API 월환산 {formatManWon(apiForecast.monthlyCostKrw)}을
-              {" "}
-              {forecast.length}개월 더하고, {CLAUDE_PLAN_START_MONTH}부터 Claude 확정 구독 증액과 구독 절감 효과를
-              반영했습니다.
+              {OPERATING_PLAN_START_MONTH}부터는 기존 선형 예측에 증감분을 더하지 않고, 정액제 운영계획 구독{" "}
+              {formatManWon(operatingPlanSubscriptionKrw)}과 API 예산/월환산 비용을 기준으로 계산합니다.
             </span>
             <span>
-              API 추가분 {formatManWon(apiForecastAddedTotal)} · Claude 구독 추가분{" "}
-              {formatManWon(claudePlanForecastTotal)} · 구독 절감 {formatSavingsManWon(subscriptionSavingsForecastTotal)} ·
-              보정 기준 대비{" "}
+              API 반영분 {formatManWon(apiForecastAddedTotal)} · 운영계획 구독 반영분{" "}
+              {formatManWon(operatingPlanForecastTotal)} · 운영계획 적용월 {operatingPlanMonths}개월 · 보정 기준 대비{" "}
               {formatRate(apiAdjustedForecastGrowth, true)}
             </span>
             <span>
-              Claude 증액 {formatUsd(claudePlanMonthlyUsd)}/월 · {formatManWon(claudePlanMonthlyKrw)}/월 ·{" "}
-              {claudePlanSubscriptionSummary}
+              운영계획 구독 {formatPreciseUsd(operatingPlanSubscriptionUsd)}/월 · 환율{" "}
+              {numberFormat.format(OPERATING_PLAN_USD_TO_KRW)}원 · API 예산 {formatManWon(OPERATING_PLAN_API_BUDGET_KRW)}/월
             </span>
             <span>
-              구독 절감 {formatPreciseUsd(subscriptionSavingsMonthlyUsd)}/월 ·{" "}
-              {formatSavingsManWon(subscriptionSavingsMonthlyKrw)}/월 · {SUBSCRIPTION_SAVINGS_START_MONTH}부터 반영
+              구성: {operatingPlanSubscriptionSummary}
             </span>
             {apiForecast.isReady ? (
               <>
@@ -1052,9 +1023,8 @@ function MonthlyView({
                 <th>실제 비용</th>
                 <th>예측 제외</th>
                 <th>예측 기준</th>
-                <th>API 월환산</th>
-                <th>Claude 구독</th>
-                <th>구독 절감</th>
+                <th>운영계획 구독</th>
+                <th>API 월환산/예산</th>
                 <th>API/구독 반영</th>
                 <th>건수</th>
                 <th>월정액 기준</th>
@@ -1063,7 +1033,7 @@ function MonthlyView({
             </thead>
             <tbody>
               {monthlySeries.map((row) => {
-                const value = row.actual ?? row.forecast ?? 0;
+                const value = row.actual ?? row.forecast ?? row.operatingPlanForecast ?? 0;
                 const comparisonValue = row.forecastWithApi ?? row.forecastBasis ?? value;
                 return (
                   <tr key={row.label}>
@@ -1074,9 +1044,8 @@ function MonthlyView({
                     <td>{formatWon(value)}</td>
                     <td>{row.adjustment === null ? "-" : formatWon(row.adjustment)}</td>
                     <td>{row.forecastBasis === null ? "-" : formatWon(row.forecastBasis)}</td>
+                    <td>{row.operatingPlanForecast === null ? "-" : formatWon(row.operatingPlanForecast)}</td>
                     <td>{row.apiUsageForecast === null ? "-" : formatWon(row.apiUsageForecast)}</td>
-                    <td>{row.claudePlanForecast === null ? "-" : formatWon(row.claudePlanForecast)}</td>
-                    <td>{row.subscriptionSavingsForecast === null ? "-" : formatWon(row.subscriptionSavingsForecast)}</td>
                     <td>{row.forecastWithApi === null ? "-" : formatWon(row.forecastWithApi)}</td>
                     <td>{row.transactions ?? "-"}</td>
                     <td>{formatWon(row.fixedPlan)}</td>
