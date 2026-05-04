@@ -29,6 +29,9 @@ export type ApiDailyUsage = {
   geminiTokens: number;
   claudeTokens: number;
   totalTokens: number;
+  openaiCostUsd: number;
+  geminiCostUsd: number;
+  claudeCostUsd: number;
   costUsd: number;
 };
 
@@ -134,6 +137,9 @@ export const initialApiUsageData: ApiUsageData = {
       geminiTokens: 1050000,
       claudeTokens: 910000,
       totalTokens: 3610000,
+      openaiCostUsd: 14.8,
+      geminiCostUsd: 7.2,
+      claudeCostUsd: 16.2,
       costUsd: 38.2,
     },
     {
@@ -146,6 +152,9 @@ export const initialApiUsageData: ApiUsageData = {
       geminiTokens: 1280000,
       claudeTokens: 980000,
       totalTokens: 4160000,
+      openaiCostUsd: 16.4,
+      geminiCostUsd: 8.1,
+      claudeCostUsd: 19.2,
       costUsd: 43.7,
     },
     {
@@ -158,6 +167,9 @@ export const initialApiUsageData: ApiUsageData = {
       geminiTokens: 970000,
       claudeTokens: 820000,
       totalTokens: 3290000,
+      openaiCostUsd: 13.1,
+      geminiCostUsd: 6.5,
+      claudeCostUsd: 15.0,
       costUsd: 34.6,
     },
     {
@@ -170,6 +182,9 @@ export const initialApiUsageData: ApiUsageData = {
       geminiTokens: 1020000,
       claudeTokens: 870000,
       totalTokens: 3470000,
+      openaiCostUsd: 13.7,
+      geminiCostUsd: 6.9,
+      claudeCostUsd: 15.8,
       costUsd: 36.4,
     },
     {
@@ -182,6 +197,9 @@ export const initialApiUsageData: ApiUsageData = {
       geminiTokens: 1510000,
       claudeTokens: 1130000,
       totalTokens: 4920000,
+      openaiCostUsd: 20.2,
+      geminiCostUsd: 9.8,
+      claudeCostUsd: 24.1,
       costUsd: 54.1,
     },
     {
@@ -194,6 +212,9 @@ export const initialApiUsageData: ApiUsageData = {
       geminiTokens: 1780000,
       claudeTokens: 1260000,
       totalTokens: 5630000,
+      openaiCostUsd: 23.8,
+      geminiCostUsd: 11.0,
+      claudeCostUsd: 28.7,
       costUsd: 63.5,
     },
     {
@@ -206,6 +227,9 @@ export const initialApiUsageData: ApiUsageData = {
       geminiTokens: 2050000,
       claudeTokens: 1520000,
       totalTokens: 6640000,
+      openaiCostUsd: 24.9,
+      geminiCostUsd: 11.3,
+      claudeCostUsd: 30.0,
       costUsd: 66.2,
     },
   ],

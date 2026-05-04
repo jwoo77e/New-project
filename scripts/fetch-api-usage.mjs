@@ -82,6 +82,9 @@ export async function collectApiUsage({
       geminiTokens: geminiDay.tokens,
       claudeTokens: claudeDay.tokens,
       totalTokens: openaiDay.tokens + geminiDay.tokens + claudeDay.tokens,
+      openaiCostUsd: openaiDay.costUsd,
+      geminiCostUsd: geminiDay.costUsd,
+      claudeCostUsd: claudeDay.costUsd,
       costUsd: roundMoney(openaiDay.costUsd + geminiDay.costUsd + claudeDay.costUsd),
     };
   });
