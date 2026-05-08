@@ -18,6 +18,8 @@ import {
   ShieldCheck,
   TrendingUp,
   Upload,
+  UserCheck,
+  Users,
   WalletCards,
 } from "lucide-react";
 import {
@@ -40,6 +42,8 @@ import {
   type ApiKeyStatusValue,
   type ApiProviderStatus,
   type ApiUsageData,
+  type GeminiWorkspaceUserUsageLevel,
+  type GeminiWorkspaceUsageData,
 } from "./data/apiUsageData";
 import {
   initialDashboardData,
@@ -61,7 +65,7 @@ import {
 } from "./lib/apiForecast";
 import { dashboardDataFromExcel } from "./lib/excelDashboard";
 
-type ViewKey = "monthly" | "department" | "detail" | "api";
+type ViewKey = "monthly" | "adoption" | "department" | "detail" | "api";
 
 type ForecastPoint = {
   month: string;
@@ -96,7 +100,7 @@ const chartColors = ["#0f8b8d", "#e85d4f", "#c58612", "#2f8f46"];
 const API_FORECAST_MONTH_DAYS = 30.4;
 const API_FORECAST_USD_TO_KRW = 1400;
 const VIEW_ROTATION_INTERVAL_MS = 12000;
-const viewRotationOrder: ViewKey[] = ["monthly", "department", "detail", "api"];
+const viewRotationOrder: ViewKey[] = ["adoption", "monthly", "department", "detail", "api"];
 const OPERATING_PLAN_START_MONTH = "2026-05";
 const OPERATING_PLAN_USD_TO_KRW = 1485;
 const OPERATING_PLAN_API_BUDGET_KRW = 280000;
@@ -354,7 +358,7 @@ function apiForecastActualCostUsd(forecast: ApiUsageRunRateForecast) {
 
 function App() {
   const [initialState] = useState(loadInitialDashboardState);
-  const [activeView, setActiveView] = useState<ViewKey>("monthly");
+  const [activeView, setActiveView] = useState<ViewKey>("adoption");
   const [query, setQuery] = useState("");
   const [toast, setToast] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -473,6 +477,7 @@ function App() {
       activeKeys,
     };
   }, [apiUsageData]);
+  const workspaceUsageData = apiUsageData.workspaceUsage ?? initialApiUsageData.workspaceUsage!;
   const isApiUsageCollected = apiUsageData.source.generatedAt !== initialApiUsageData.source.generatedAt;
   const apiForecast = useMemo(() => {
     if (!isApiUsageCollected) {
@@ -758,6 +763,14 @@ function App() {
 
       <nav className="view-tabs" aria-label="대시보드 보기">
         <button
+          className={activeView === "adoption" ? "is-active" : ""}
+          type="button"
+          onClick={() => setActiveView("adoption")}
+        >
+          <UserCheck size={17} />
+          활용성
+        </button>
+        <button
           className={activeView === "monthly" ? "is-active" : ""}
           type="button"
           onClick={() => setActiveView("monthly")}
@@ -822,6 +835,37 @@ function App() {
             footer={`가중 오류율 ${formatRate(apiTotals.avgErrorRate)}`}
           />
         </section>
+      ) : activeView === "adoption" ? (
+        <section className="metric-grid" aria-label="Gemini Workspace 활용 핵심 지표">
+          <MetricCard
+            icon={<UserCheck size={21} />}
+            label={`${workspaceUsageData.source.period} 활성 사용자`}
+            tone="teal"
+            value={`${numberFormat.format(workspaceUsageData.activeUsers)}명`}
+            footer={`대상 ${numberFormat.format(workspaceUsageData.licensedUsers)}명 · ${workspaceUsageData.source.status}`}
+          />
+          <MetricCard
+            icon={<Gauge size={21} />}
+            label="활성화율"
+            tone="green"
+            value={formatRate(workspaceUsageData.activationRate)}
+            footer={`평균 활성일 ${workspaceUsageData.avgActiveDays.toFixed(1)}일`}
+          />
+          <MetricCard
+            icon={<Activity size={21} />}
+            label="Workspace Gemini 이벤트"
+            tone="amber"
+            value={numberFormat.format(workspaceUsageData.totalEvents)}
+            footer={workspaceUsageData.source.mode}
+          />
+          <MetricCard
+            icon={<Users size={21} />}
+            label="미활용 계정"
+            tone="steel"
+            value={`${numberFormat.format(workspaceUsageData.zeroUsers)}명`}
+            footer={`High ${workspaceUsageData.highUsers} · Medium ${workspaceUsageData.mediumUsers} · Low ${workspaceUsageData.lowUsers}`}
+          />
+        </section>
       ) : (
         <section className="metric-grid" aria-label="핵심 비용 지표">
           <MetricCard
@@ -879,6 +923,8 @@ function App() {
           monthlyActuals={monthlyActuals}
         />
       )}
+
+      {activeView === "adoption" && <AdoptionView workspaceUsageData={workspaceUsageData} />}
 
       {activeView === "department" && (
         <DepartmentView
@@ -1508,6 +1554,185 @@ function DetailView({
   );
 }
 
+function AdoptionView({ workspaceUsageData }: { workspaceUsageData: GeminiWorkspaceUsageData }) {
+  const mostUsedApp = workspaceUsageData.appUsage[0];
+  const highAndMediumUsers = workspaceUsageData.highUsers + workspaceUsageData.mediumUsers;
+  const activeUserRate =
+    workspaceUsageData.activeUsers > 0 ? (highAndMediumUsers / workspaceUsageData.activeUsers) * 100 : 0;
+  const adoptionBuckets = [
+    { label: "High", value: workspaceUsageData.highUsers, color: "#0f8b8d" },
+    { label: "Medium", value: workspaceUsageData.mediumUsers, color: "#2f8f46" },
+    { label: "Low", value: workspaceUsageData.lowUsers, color: "#c58612" },
+    { label: "Zero", value: workspaceUsageData.zeroUsers, color: "#5f6f8c" },
+  ];
+
+  return (
+    <div className="content-grid adoption-view">
+      <section className="panel panel-large">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Gemini Workspace</span>
+            <h2>{workspaceUsageData.source.period} 계정별 활용 추이</h2>
+          </div>
+          <span className={`state-pill ${apiStatusTone(workspaceUsageData.source.status)}`}>
+            {workspaceUsageData.source.status}
+          </span>
+        </div>
+        <div className="chart-frame">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={workspaceUsageData.dailyUsage} margin={{ top: 12, right: 18, left: 0, bottom: 0 }}>
+              <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} />
+              <YAxis yAxisId="users" tickLine={false} axisLine={false} width={54} allowDecimals={false} />
+              <YAxis yAxisId="events" orientation="right" tickLine={false} axisLine={false} width={54} />
+              <Tooltip
+                formatter={(value, name) => [
+                  `${numberFormat.format(Number(value))}${name === "이벤트" ? "건" : "명"}`,
+                  name,
+                ]}
+              />
+              <Legend />
+              <Bar
+                yAxisId="users"
+                dataKey="activeUsers"
+                name="활성 사용자"
+                fill="#0f8b8d"
+                radius={[4, 4, 0, 0]}
+              />
+              <Line
+                yAxisId="events"
+                dataKey="events"
+                name="이벤트"
+                stroke="#e85d4f"
+                strokeWidth={2}
+                dot={{ r: 3 }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Adoption Mix</span>
+            <h2>활용 단계 분포</h2>
+          </div>
+        </div>
+        <div className="forecast-list">
+          {adoptionBuckets.map((bucket) => (
+            <MeterRow
+              color={bucket.color}
+              key={bucket.label}
+              label={workspaceLevelLabel(bucket.label as GeminiWorkspaceUserUsageLevel)}
+              value={workspaceUsageData.licensedUsers ? (bucket.value / workspaceUsageData.licensedUsers) * 100 : 0}
+              valueLabel={`${numberFormat.format(bucket.value)}명`}
+            />
+          ))}
+        </div>
+        <div className="insight-box">
+          <Users size={18} />
+          <div>
+            <strong>실활용 계정 기준 {formatRate(activeUserRate)}가 중간 이상 활용</strong>
+            <span>{workspaceUsageData.source.note}</span>
+            {mostUsedApp ? (
+              <span>
+                최다 사용 앱은 {mostUsedApp.app} · {numberFormat.format(mostUsedApp.events)}건 ·{" "}
+                {numberFormat.format(mostUsedApp.activeUsers)}명입니다.
+              </span>
+            ) : (
+              <span>Workspace Reports API 수집이 시작되면 앱별 활용도가 채워집니다.</span>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Apps</span>
+            <h2>앱별 활용도</h2>
+          </div>
+        </div>
+        <div className="api-provider-list">
+          {workspaceUsageData.appUsage.length > 0 ? (
+            workspaceUsageData.appUsage.map((app) => (
+              <article className="api-provider-card" key={app.app}>
+                <div className="api-provider-head">
+                  <span className="category-dot" style={{ background: "#0f8b8d" }} />
+                  <strong>{app.app}</strong>
+                  <span className="state-pill neutral">{numberFormat.format(app.activeUsers)}명</span>
+                </div>
+                <MeterRow
+                  color="#0f8b8d"
+                  label="이벤트 비중"
+                  value={workspaceUsageData.totalEvents ? (app.events / workspaceUsageData.totalEvents) * 100 : 0}
+                  valueLabel={`${numberFormat.format(app.events)}건`}
+                />
+              </article>
+            ))
+          ) : (
+            <article className="api-provider-card">
+              <div className="api-provider-head">
+                <span className="category-dot" style={{ background: "#5f6f8c" }} />
+                <strong>앱별 데이터 없음</strong>
+                <span className="state-pill neutral">대기</span>
+              </div>
+              <small>Reports API 이벤트가 수집되면 Gmail, Docs, Sheets 등 앱 단위로 분리됩니다.</small>
+            </article>
+          )}
+        </div>
+      </section>
+
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Accounts</span>
+            <h2>Gemini Workspace 계정별 활용 현황</h2>
+          </div>
+          <span className="state-pill neutral">{workspaceUsageData.source.generatedAt}</span>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>계정</th>
+                <th>활용 단계</th>
+                <th>점수</th>
+                <th>활성일</th>
+                <th>이벤트</th>
+                <th>앱</th>
+                <th>주요 액션</th>
+                <th>마지막 사용</th>
+              </tr>
+            </thead>
+            <tbody>
+              {workspaceUsageData.users.map((user) => (
+                <tr key={user.email}>
+                  <td>
+                    <strong>{user.email}</strong>
+                  </td>
+                  <td>
+                    <span className={`state-pill ${workspaceLevelTone(user.level)}`}>
+                      {workspaceLevelLabel(user.level)}
+                    </span>
+                  </td>
+                  <td>{user.score}</td>
+                  <td>{numberFormat.format(user.activeDays)}일</td>
+                  <td>{numberFormat.format(user.events)}건</td>
+                  <td>{user.apps.length > 0 ? user.apps.join(", ") : "-"}</td>
+                  <td>{user.topAction}</td>
+                  <td>{user.lastUsed}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function ApiUsageView({ apiUsageData }: { apiUsageData: ApiUsageData }) {
   const totalCost = apiUsageData.providers.reduce((sum, item) => sum + item.costUsd, 0);
   const totalTokens = apiUsageData.providers.reduce((sum, item) => sum + item.inputTokens + item.outputTokens, 0);
@@ -1700,6 +1925,19 @@ function ApiUsageView({ apiUsageData }: { apiUsageData: ApiUsageData }) {
       </section>
     </div>
   );
+}
+
+function workspaceLevelLabel(level: GeminiWorkspaceUserUsageLevel) {
+  if (level === "High") return "높은 활용";
+  if (level === "Medium") return "중간 활용";
+  if (level === "Low") return "낮은 활용";
+  return "미활용";
+}
+
+function workspaceLevelTone(level: GeminiWorkspaceUserUsageLevel) {
+  if (level === "High" || level === "Medium") return "ok";
+  if (level === "Low") return "warning";
+  return "neutral";
 }
 
 function MetricCard({

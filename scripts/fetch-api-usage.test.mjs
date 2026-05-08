@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildGeminiWorkspaceUsageFromActivities,
   buildGeminiBillingProjectFilter,
   resolveGeminiMonitoringProjectIds,
   resolveGeminiBillingUsageProjectIds,
@@ -77,3 +78,83 @@ describe("Gemini billing project filters", () => {
     })).toEqual(["zeroby-two", "riskzero-cloud"]);
   });
 });
+
+describe("Gemini Workspace usage aggregation", () => {
+  const buckets = [
+    { date: "2026-05-01", label: "5/1" },
+    { date: "2026-05-02", label: "5/2" },
+    { date: "2026-05-03", label: "5/3" },
+  ];
+
+  it("aggregates user-level Gemini Workspace utilization events", () => {
+    const usage = buildGeminiWorkspaceUsageFromActivities(
+      [
+        workspaceActivity("2026-05-01T01:00:00.000Z", "alpha@example.com", "summarize"),
+        workspaceActivity("2026-05-02T01:00:00.000Z", "alpha@example.com", "suggest_full_replies"),
+        workspaceActivity("2026-05-02T02:00:00.000Z", "beta@example.com", "bulletize"),
+      ],
+      {
+        buckets,
+        accountEmails: ["alpha@example.com", "beta@example.com", "zero@example.com"],
+        licensedUsers: 4,
+      },
+    );
+
+    expect(usage.activeUsers).toBe(2);
+    expect(usage.licensedUsers).toBe(4);
+    expect(usage.zeroUsers).toBe(2);
+    expect(usage.totalEvents).toBe(3);
+    expect(usage.activationRate).toBe(50);
+    expect(usage.dailyUsage.find((day) => day.date === "2026-05-02")).toMatchObject({
+      events: 2,
+      activeUsers: 2,
+    });
+    expect(usage.users.find((user) => user.email === "zero@example.com")).toMatchObject({
+      level: "Zero",
+      events: 0,
+    });
+  });
+
+  it("does not count inactive Gemini Workspace events as active utilization", () => {
+    const usage = buildGeminiWorkspaceUsageFromActivities(
+      [
+        workspaceActivity("2026-05-01T01:00:00.000Z", "alpha@example.com", "generate_starter_tile_prompts", {
+          event_category: "inactive",
+        }),
+        workspaceActivity("2026-05-01T02:00:00.000Z", "beta@example.com", "summarize", {
+          app_name: "docs",
+          event_category: "active_summarize",
+        }),
+      ],
+      {
+        buckets,
+        accountEmails: ["alpha@example.com", "beta@example.com"],
+      },
+    );
+
+    expect(usage.activeUsers).toBe(1);
+    expect(usage.totalEvents).toBe(1);
+    expect(usage.appUsage).toEqual([{ app: "Docs", events: 1, activeUsers: 1 }]);
+    expect(usage.users.find((user) => user.email === "alpha@example.com")).toMatchObject({
+      level: "Zero",
+      events: 0,
+    });
+  });
+});
+
+function workspaceActivity(time, email, action, extraParameters = {}) {
+  return {
+    id: { time },
+    actor: { email },
+    events: [
+      {
+        type: "ai_usage_event",
+        name: "feature_utilization",
+        parameters: [
+          { name: "action", value: action },
+          ...Object.entries(extraParameters).map(([name, value]) => ({ name, value })),
+        ],
+      },
+    ],
+  };
+}

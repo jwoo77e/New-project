@@ -42,6 +42,7 @@ const geminiInputTokenMetricTypes = [
 ];
 
 const geminiOutputTokenMetricTypes = ["generativelanguage.googleapis.com/generate_content_usage_output_token_count"];
+const workspaceReportsScope = "https://www.googleapis.com/auth/admin.reports.audit.readonly";
 
 export async function loadApiUsageEnv({ targetRootDir = process.cwd(), includeLocalEnv = true } = {}) {
   const localEnvPath = path.join(targetRootDir, ".env.local");
@@ -60,10 +61,11 @@ export async function collectApiUsage({
 } = {}) {
   configureRuntime({ targetRootDir, requestedDays, collectedAt });
 
-  const [openai, gemini, claude] = await Promise.all([
+  const [openai, gemini, claude, workspaceUsage] = await Promise.all([
     collectOpenAI(env.OPENAI_ADMIN_KEY),
     collectGemini(env.GEMINI_API_KEY, env),
     collectClaude(env.ANTHROPIC_ADMIN_API_KEY),
+    collectGeminiWorkspaceUsage(env),
   ]);
 
   const providers = [openai.provider, gemini.provider, claude.provider];
@@ -100,6 +102,7 @@ export async function collectApiUsage({
     dailyUsage,
     models: [...openai.models, ...gemini.models, ...claude.models].sort((a, b) => b.costUsd - a.costUsd),
     keyHealth: [openai.keyHealth, gemini.keyHealth, claude.keyHealth],
+    workspaceUsage,
   };
 }
 
@@ -131,6 +134,9 @@ async function runCli() {
       `${provider.provider}: ${provider.status} · ${provider.requests.toLocaleString("en-US")} requests · ${provider.costUsd.toFixed(2)} USD · ${provider.note}`,
     );
   }
+  console.log(
+    `Gemini Workspace: ${snapshot.workspaceUsage.source.status} · ${snapshot.workspaceUsage.activeUsers.toLocaleString("en-US")} active users · ${snapshot.workspaceUsage.totalEvents.toLocaleString("en-US")} events · ${snapshot.workspaceUsage.source.note}`,
+  );
 }
 
 function configureRuntime({ targetRootDir = process.cwd(), requestedDays = 7, collectedAt = new Date() } = {}) {
@@ -365,6 +371,222 @@ async function collectClaude(apiKey) {
       note: "환경변수에서만 읽음",
     }),
   };
+}
+
+async function collectGeminiWorkspaceUsage(env) {
+  const requestedWorkspaceDays = parseDays(env.GOOGLE_WORKSPACE_GEMINI_DAYS ?? "28");
+  const endingAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+  const startingAt = new Date(endingAt.getTime() - requestedWorkspaceDays * 24 * 60 * 60 * 1000);
+  const buckets = makeDayBuckets(startingAt, requestedWorkspaceDays);
+  const accountEmails = parseEmailList(env.GOOGLE_WORKSPACE_GEMINI_USER_EMAILS);
+
+  if (!env.GOOGLE_WORKSPACE_ADMIN_EMAIL) {
+    return emptyGeminiWorkspaceUsage({
+      buckets,
+      accountEmails,
+      note: "GOOGLE_WORKSPACE_ADMIN_EMAIL이 없어 Workspace Reports API를 수집하지 않았습니다.",
+      status: "연동대기",
+    });
+  }
+
+  try {
+    const accessToken = await getGoogleAccessToken(env, {
+      scopes: [workspaceReportsScope],
+      subject: env.GOOGLE_WORKSPACE_ADMIN_EMAIL,
+    });
+    const activities = await listGeminiWorkspaceActivities({ accessToken, startingAt, endingAt });
+    const usage = buildGeminiWorkspaceUsageFromActivities(activities, {
+      buckets,
+      accountEmails,
+      licensedUsers: numberValue(env.GOOGLE_WORKSPACE_GEMINI_LICENSED_USERS),
+      mode: "Google Workspace Reports API 수집",
+      note: "Gemini Workspace Audit logs 수집 완료",
+      status: "정상",
+    });
+    return usage;
+  } catch (error) {
+    return emptyGeminiWorkspaceUsage({
+      buckets,
+      accountEmails,
+      note: `Workspace Reports API 미수집: ${shortenError(error instanceof Error ? error.message : String(error))}`,
+      status: "주의",
+    });
+  }
+}
+
+async function listGeminiWorkspaceActivities({ accessToken, startingAt, endingAt }) {
+  const activities = [];
+  let pageToken = "";
+
+  do {
+    const url = new URL(
+      "https://admin.googleapis.com/admin/reports/v1/activity/users/all/applications/gemini_in_workspace_apps",
+    );
+    url.searchParams.set("eventName", "feature_utilization");
+    url.searchParams.set("startTime", startingAt.toISOString());
+    url.searchParams.set("endTime", endingAt.toISOString());
+    url.searchParams.set("maxResults", "1000");
+    if (pageToken) url.searchParams.set("pageToken", pageToken);
+
+    const result = await getJson(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (!result.ok) {
+      throw new Error(result.error);
+    }
+
+    activities.push(...(result.data.items ?? []));
+    pageToken = result.data.nextPageToken ?? "";
+  } while (pageToken);
+
+  return activities;
+}
+
+export function buildGeminiWorkspaceUsageFromActivities(
+  activities,
+  {
+    buckets = makeDayBuckets(startingAt, days),
+    accountEmails = [],
+    licensedUsers = 0,
+    mode = "Google Workspace Reports API 수집",
+    note = "Gemini Workspace Audit logs 수집 완료",
+    status = "정상",
+  } = {},
+) {
+  const users = new Map();
+  const daily = new Map(buckets.map((bucket) => [bucket.date, { date: bucket.date, label: bucket.label, events: 0, users: new Set() }]));
+  const appUsage = new Map();
+  const knownAccounts = new Set(accountEmails.map((email) => email.toLowerCase()));
+
+  for (const activity of activities ?? []) {
+    const email = stringValue(activity?.actor?.email, "").toLowerCase();
+    if (!email) continue;
+
+    knownAccounts.add(email);
+    const time = stringValue(activity?.id?.time, "");
+    const date = time ? time.slice(0, 10) : "";
+    const reportEvents = Array.isArray(activity?.events) ? activity.events : [];
+
+    for (const event of reportEvents) {
+      if (event?.name && event.name !== "feature_utilization") continue;
+      const parameters = eventParametersToObject(event?.parameters);
+      const eventCategory = stringValue(parameters.event_category ?? parameters.eventCategory, "").toLowerCase();
+      if (eventCategory === "inactive") continue;
+
+      const action = stringValue(parameters.action ?? event?.name, "feature_utilization");
+      const app = inferWorkspaceApp(parameters, action);
+      const user = users.get(email) ?? {
+        email,
+        events: 0,
+        activeDates: new Set(),
+        lastUsed: "",
+        apps: new Set(),
+        actions: new Map(),
+      };
+
+      user.events += 1;
+      if (date) {
+        user.activeDates.add(date);
+        if (!user.lastUsed || date > user.lastUsed) user.lastUsed = date;
+      }
+      user.apps.add(app);
+      user.actions.set(action, (user.actions.get(action) ?? 0) + 1);
+      users.set(email, user);
+
+      const day = daily.get(date);
+      if (day) {
+        day.events += 1;
+        day.users.add(email);
+      }
+
+      const appRow = appUsage.get(app) ?? { app, events: 0, users: new Set() };
+      appRow.events += 1;
+      appRow.users.add(email);
+      appUsage.set(app, appRow);
+    }
+  }
+
+  for (const email of knownAccounts) {
+    if (!users.has(email)) {
+      users.set(email, {
+        email,
+        events: 0,
+        activeDates: new Set(),
+        lastUsed: "",
+        apps: new Set(),
+        actions: new Map(),
+      });
+    }
+  }
+
+  const userRows = [...users.values()]
+    .map((user) => {
+      const activeDays = user.activeDates.size;
+      const topAction = topMapKey(user.actions) || "-";
+      const level = geminiWorkspaceUsageLevel(user.events, activeDays);
+      return {
+        email: user.email,
+        events: user.events,
+        activeDays,
+        lastUsed: user.lastUsed || "-",
+        apps: [...user.apps].sort(),
+        topAction,
+        level,
+        score: geminiWorkspaceUsageScore({ events: user.events, activeDays, appCount: user.apps.size }),
+      };
+    })
+    .sort((a, b) => b.score - a.score || b.events - a.events || a.email.localeCompare(b.email));
+  const activeUsers = userRows.filter((user) => user.events > 0).length;
+  const resolvedLicensedUsers = Math.max(licensedUsers, knownAccounts.size, activeUsers);
+  const totalEvents = userRows.reduce((sum, user) => sum + user.events, 0);
+  const totalActiveDays = userRows.reduce((sum, user) => sum + user.activeDays, 0);
+
+  return {
+    source: {
+      name: "Gemini Workspace 활용 현황",
+      period: `최근 ${buckets.length}일`,
+      generatedAt: formatKoreanTimestamp(now),
+      mode,
+      status,
+      note,
+    },
+    licensedUsers: resolvedLicensedUsers,
+    activeUsers,
+    activationRate: resolvedLicensedUsers > 0 ? roundRate((activeUsers / resolvedLicensedUsers) * 100) : 0,
+    totalEvents,
+    totalActiveDays,
+    avgActiveDays: activeUsers > 0 ? roundRate(totalActiveDays / activeUsers) : 0,
+    highUsers: userRows.filter((user) => user.level === "High").length,
+    mediumUsers: userRows.filter((user) => user.level === "Medium").length,
+    lowUsers: userRows.filter((user) => user.level === "Low").length,
+    zeroUsers: Math.max(0, resolvedLicensedUsers - activeUsers),
+    dailyUsage: [...daily.values()].map((day) => ({
+      date: day.date,
+      label: day.label,
+      events: day.events,
+      activeUsers: day.users.size,
+    })),
+    appUsage: [...appUsage.values()]
+      .map((app) => ({
+        app: app.app,
+        events: app.events,
+        activeUsers: app.users.size,
+      }))
+      .sort((a, b) => b.events - a.events || a.app.localeCompare(b.app)),
+    users: userRows,
+  };
+}
+
+function emptyGeminiWorkspaceUsage({ buckets, accountEmails = [], note, status }) {
+  return buildGeminiWorkspaceUsageFromActivities([], {
+    buckets,
+    accountEmails,
+    mode: "Google Workspace Reports API 연결 대기",
+    note,
+    status,
+  });
 }
 
 function parseOpenAIUsage(payload) {
@@ -777,21 +999,21 @@ async function listGoogleMonitoringTimeSeries(projectId, accessToken, metricType
   return allSeries;
 }
 
-async function getGoogleAccessToken(env) {
+async function getGoogleAccessToken(env, { scopes = ["https://www.googleapis.com/auth/cloud-platform"], subject = "" } = {}) {
   const serviceAccount = await readGoogleServiceAccount(env);
   const tokenUri = serviceAccount.token_uri ?? "https://oauth2.googleapis.com/token";
   const nowSeconds = Math.floor(Date.now() / 1000);
+  const claims = {
+    iss: serviceAccount.client_email,
+    scope: scopes.join(" "),
+    aud: tokenUri,
+    iat: nowSeconds,
+    exp: nowSeconds + 3600,
+  };
+  if (subject) claims.sub = subject;
   const assertionBody = [
     base64Url(JSON.stringify({ alg: "RS256", typ: "JWT" })),
-    base64Url(
-      JSON.stringify({
-        iss: serviceAccount.client_email,
-        scope: "https://www.googleapis.com/auth/cloud-platform",
-        aud: tokenUri,
-        iat: nowSeconds,
-        exp: nowSeconds + 3600,
-      }),
-    ),
+    base64Url(JSON.stringify(claims)),
   ].join(".");
   const signature = createSign("RSA-SHA256").update(assertionBody).sign(serviceAccount.private_key, "base64url");
   const tokenResult = await getJson(tokenUri, {
@@ -1096,6 +1318,84 @@ function amountValue(value) {
   return 0;
 }
 
+function eventParametersToObject(parameters = []) {
+  const result = {};
+  for (const parameter of parameters) {
+    const name = stringValue(parameter.name, "");
+    if (!name) continue;
+    const normalizedName = name.replace(/\s+/g, "");
+    const value =
+      parameter.value ??
+      parameter.intValue ??
+      parameter.boolValue ??
+      parameter.multiValue?.join(",") ??
+      parameter.multiIntValue?.join(",") ??
+      "";
+    result[name] = value;
+    result[normalizedName] = value;
+  }
+  return result;
+}
+
+function inferWorkspaceApp(parameters, action) {
+  const explicitApp =
+    parameters.app_name ??
+    parameters.application_name ??
+    parameters.workspace_app ??
+    parameters.product_name ??
+    parameters.app ??
+    parameters.surface;
+  if (explicitApp) return formatWorkspaceAppName(String(explicitApp));
+
+  const normalizedAction = String(action).toLowerCase();
+  if (/gmail|mail|reply|draft|email/.test(normalizedAction)) return "Gmail";
+  if (/docs|document|proofread|write|summarize/.test(normalizedAction)) return "Docs";
+  if (/sheet|smart_fill|organize/.test(normalizedAction)) return "Sheets";
+  if (/slide|bulletize|image/.test(normalizedAction)) return "Slides";
+  if (/meet|meeting|note/.test(normalizedAction)) return "Meet";
+  if (/chat/.test(normalizedAction)) return "Chat";
+  if (/classroom|rubric|lesson|student/.test(normalizedAction)) return "Classroom";
+  if (/calendar/.test(normalizedAction)) return "Calendar";
+  return "Workspace";
+}
+
+function formatWorkspaceAppName(value) {
+  const normalized = value.replace(/^google[_\s-]*/i, "").replace(/[_-]+/g, " ").trim();
+  if (!normalized) return "Workspace";
+  return normalized
+    .split(/\s+/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function geminiWorkspaceUsageLevel(events, activeDays) {
+  if (events <= 0) return "Zero";
+  if (events >= 20 && activeDays >= 4) return "High";
+  if (events >= 5 || activeDays >= 3) return "Medium";
+  return "Low";
+}
+
+function geminiWorkspaceUsageScore({ events, activeDays, appCount }) {
+  return Math.min(100, Math.round(events * 2 + activeDays * 6 + appCount * 8));
+}
+
+function topMapKey(map) {
+  return [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0] ?? "";
+}
+
+function parseEmailList(value) {
+  const trimmed = String(value ?? "").trim();
+  if (!trimmed) return [];
+  return [
+    ...new Set(
+      trimmed
+        .split(/[,\s]+/)
+        .map((email) => email.trim().toLowerCase())
+        .filter((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)),
+    ),
+  ];
+}
+
 function numberValue(value) {
   const number = Number(value);
   return Number.isFinite(number) ? number : 0;
@@ -1112,6 +1412,10 @@ function stringValue(value, fallback) {
 
 function roundMoney(value) {
   return Math.round(value * 100) / 100;
+}
+
+function roundRate(value) {
+  return Math.round(value * 10) / 10;
 }
 
 function toDateKey(date) {

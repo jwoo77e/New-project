@@ -56,6 +56,56 @@ export type ApiKeyHealth = {
   note: string;
 };
 
+export type GeminiWorkspaceUserUsageLevel = "High" | "Medium" | "Low" | "Zero";
+
+export type GeminiWorkspaceUserUsage = {
+  email: string;
+  events: number;
+  activeDays: number;
+  lastUsed: string;
+  apps: string[];
+  topAction: string;
+  level: GeminiWorkspaceUserUsageLevel;
+  score: number;
+};
+
+export type GeminiWorkspaceDailyUsage = {
+  date: string;
+  label: string;
+  events: number;
+  activeUsers: number;
+};
+
+export type GeminiWorkspaceAppUsage = {
+  app: string;
+  events: number;
+  activeUsers: number;
+};
+
+export type GeminiWorkspaceUsageData = {
+  source: {
+    name: string;
+    period: string;
+    generatedAt: string;
+    mode: string;
+    status: ApiProviderStatus;
+    note: string;
+  };
+  licensedUsers: number;
+  activeUsers: number;
+  activationRate: number;
+  totalEvents: number;
+  totalActiveDays: number;
+  avgActiveDays: number;
+  highUsers: number;
+  mediumUsers: number;
+  lowUsers: number;
+  zeroUsers: number;
+  dailyUsage: GeminiWorkspaceDailyUsage[];
+  appUsage: GeminiWorkspaceAppUsage[];
+  users: GeminiWorkspaceUserUsage[];
+};
+
 export type ApiUsageData = {
   source: {
     name: string;
@@ -67,6 +117,7 @@ export type ApiUsageData = {
   dailyUsage: ApiDailyUsage[];
   models: ApiModelUsage[];
   keyHealth: ApiKeyHealth[];
+  workspaceUsage?: GeminiWorkspaceUsageData;
 };
 
 export const initialApiUsageData: ApiUsageData = {
@@ -334,6 +385,134 @@ export const initialApiUsageData: ApiUsageData = {
       note: "Admin API 키 필요",
     },
   ],
+  workspaceUsage: {
+    source: {
+      name: "Gemini Workspace 활용 현황",
+      period: "최근 28일",
+      generatedAt: "연동 전 샘플",
+      mode: "Google Workspace Reports API 연결 대기",
+      status: "연동대기",
+      note: "GOOGLE_WORKSPACE_ADMIN_EMAIL과 Admin SDK Reports API 권한 설정 필요",
+    },
+    licensedUsers: 9,
+    activeUsers: 6,
+    activationRate: 66.7,
+    totalEvents: 84,
+    totalActiveDays: 38,
+    avgActiveDays: 6.3,
+    highUsers: 1,
+    mediumUsers: 3,
+    lowUsers: 2,
+    zeroUsers: 3,
+    dailyUsage: [
+      { date: "2026-04-24", label: "4/24", events: 9, activeUsers: 4 },
+      { date: "2026-04-25", label: "4/25", events: 11, activeUsers: 5 },
+      { date: "2026-04-26", label: "4/26", events: 6, activeUsers: 3 },
+      { date: "2026-04-27", label: "4/27", events: 8, activeUsers: 4 },
+      { date: "2026-04-28", label: "4/28", events: 16, activeUsers: 6 },
+      { date: "2026-04-29", label: "4/29", events: 18, activeUsers: 6 },
+      { date: "2026-04-30", label: "4/30", events: 16, activeUsers: 5 },
+    ],
+    appUsage: [
+      { app: "Gmail", events: 26, activeUsers: 5 },
+      { app: "Docs", events: 22, activeUsers: 4 },
+      { app: "Sheets", events: 16, activeUsers: 3 },
+      { app: "Slides", events: 12, activeUsers: 3 },
+      { app: "Gemini app", events: 8, activeUsers: 2 },
+    ],
+    users: [
+      {
+        email: "power.user@example.com",
+        events: 36,
+        activeDays: 15,
+        lastUsed: "2026-04-30",
+        apps: ["Gmail", "Docs", "Slides"],
+        topAction: "help_me_write",
+        level: "High",
+        score: 100,
+      },
+      {
+        email: "steady.user@example.com",
+        events: 18,
+        activeDays: 8,
+        lastUsed: "2026-04-30",
+        apps: ["Gmail", "Docs"],
+        topAction: "summarize",
+        level: "Medium",
+        score: 88,
+      },
+      {
+        email: "writer.user@example.com",
+        events: 15,
+        activeDays: 7,
+        lastUsed: "2026-04-30",
+        apps: ["Docs", "Slides"],
+        topAction: "draft",
+        level: "Medium",
+        score: 88,
+      },
+      {
+        email: "ops.user@example.com",
+        events: 9,
+        activeDays: 5,
+        lastUsed: "2026-04-29",
+        apps: ["Gmail", "Sheets"],
+        topAction: "organize",
+        level: "Medium",
+        score: 64,
+      },
+      {
+        email: "light.user@example.com",
+        events: 4,
+        activeDays: 2,
+        lastUsed: "2026-04-28",
+        apps: ["Sheets"],
+        topAction: "organize",
+        level: "Low",
+        score: 28,
+      },
+      {
+        email: "trial.user@example.com",
+        events: 2,
+        activeDays: 1,
+        lastUsed: "2026-04-27",
+        apps: ["Gemini app"],
+        topAction: "prompt",
+        level: "Low",
+        score: 18,
+      },
+      {
+        email: "zero.one@example.com",
+        events: 0,
+        activeDays: 0,
+        lastUsed: "-",
+        apps: [],
+        topAction: "-",
+        level: "Zero",
+        score: 0,
+      },
+      {
+        email: "zero.two@example.com",
+        events: 0,
+        activeDays: 0,
+        lastUsed: "-",
+        apps: [],
+        topAction: "-",
+        level: "Zero",
+        score: 0,
+      },
+      {
+        email: "zero.three@example.com",
+        events: 0,
+        activeDays: 0,
+        lastUsed: "-",
+        apps: [],
+        topAction: "-",
+        level: "Zero",
+        score: 0,
+      },
+    ],
+  },
 };
 
 export function isApiUsageData(value: unknown): value is ApiUsageData {
