@@ -483,6 +483,7 @@ function App() {
     };
   }, [apiUsageData]);
   const workspaceUsageData = apiUsageData.workspaceUsage ?? initialApiUsageData.workspaceUsage!;
+  const workspaceListedUsers = workspaceUsageData.listedUsers ?? workspaceUsageData.users.length;
   const isApiUsageCollected = apiUsageData.source.generatedAt !== initialApiUsageData.source.generatedAt;
   const apiForecast = useMemo(() => {
     if (!isApiUsageCollected) {
@@ -856,7 +857,7 @@ function App() {
             label={`${workspaceUsageData.source.period} 활성 사용자`}
             tone="teal"
             value={`${numberFormat.format(workspaceUsageData.activeUsers)}명`}
-            footer={`대상 ${numberFormat.format(workspaceUsageData.licensedUsers)}명 · ${workspaceUsageData.source.status}`}
+            footer={`대상자 ${numberFormat.format(workspaceListedUsers)}명 · ${workspaceUsageData.source.status}`}
           />
           <MetricCard
             icon={<Gauge size={21} />}
@@ -870,7 +871,7 @@ function App() {
             label="Workspace Gemini 이벤트"
             tone="amber"
             value={numberFormat.format(workspaceUsageData.totalEvents)}
-            footer={workspaceUsageData.source.mode}
+            footer="현재 대상자 기준"
           />
           <MetricCard
             icon={<Users size={21} />}
@@ -1837,6 +1838,7 @@ function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
 
 function AdoptionView({ workspaceUsageData }: { workspaceUsageData: GeminiWorkspaceUsageData }) {
   const mostUsedApp = workspaceUsageData.appUsage[0];
+  const listedUsers = workspaceUsageData.listedUsers ?? workspaceUsageData.users.length;
   const highAndMediumUsers = workspaceUsageData.highUsers + workspaceUsageData.mediumUsers;
   const activeUserRate =
     workspaceUsageData.activeUsers > 0 ? (highAndMediumUsers / workspaceUsageData.activeUsers) * 100 : 0;
@@ -1906,7 +1908,7 @@ function AdoptionView({ workspaceUsageData }: { workspaceUsageData: GeminiWorksp
               color={bucket.color}
               key={bucket.label}
               label={workspaceLevelLabel(bucket.label as GeminiWorkspaceUserUsageLevel)}
-              value={workspaceUsageData.licensedUsers ? (bucket.value / workspaceUsageData.licensedUsers) * 100 : 0}
+              value={listedUsers ? (bucket.value / listedUsers) * 100 : 0}
               valueLabel={`${numberFormat.format(bucket.value)}명`}
             />
           ))}
@@ -1916,6 +1918,7 @@ function AdoptionView({ workspaceUsageData }: { workspaceUsageData: GeminiWorksp
           <div>
             <strong>실활용 계정 기준 {formatRate(activeUserRate)}가 중간 이상 활용</strong>
             <span>{workspaceUsageData.source.note}</span>
+            <span>활용률은 현재 대상자 목록 {numberFormat.format(listedUsers)}명 기준으로 계산합니다.</span>
             {mostUsedApp ? (
               <span>
                 최다 사용 앱은 {mostUsedApp.app} · {numberFormat.format(mostUsedApp.events)}건 ·{" "}
@@ -1969,9 +1972,11 @@ function AdoptionView({ workspaceUsageData }: { workspaceUsageData: GeminiWorksp
         <div className="panel-header">
           <div>
             <span className="eyebrow">Accounts</span>
-            <h2>Gemini Workspace 계정별 활용 현황</h2>
+            <h2>Gemini Workspace 대상 계정별 활용 현황</h2>
           </div>
-          <span className="state-pill neutral">{workspaceUsageData.source.generatedAt}</span>
+          <span className="state-pill neutral">
+            대상자 {numberFormat.format(listedUsers)}명 · 라이선스 {numberFormat.format(workspaceUsageData.licensedUsers)}명
+          </span>
         </div>
         <div className="table-wrap">
           <table>
@@ -2010,6 +2015,7 @@ function AdoptionView({ workspaceUsageData }: { workspaceUsageData: GeminiWorksp
           </table>
         </div>
       </section>
+
     </div>
   );
 }

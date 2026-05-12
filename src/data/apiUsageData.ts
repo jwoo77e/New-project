@@ -92,6 +92,7 @@ export type GeminiWorkspaceUsageData = {
     note: string;
   };
   licensedUsers: number;
+  listedUsers: number;
   activeUsers: number;
   activationRate: number;
   totalEvents: number;
@@ -104,6 +105,7 @@ export type GeminiWorkspaceUsageData = {
   dailyUsage: GeminiWorkspaceDailyUsage[];
   appUsage: GeminiWorkspaceAppUsage[];
   users: GeminiWorkspaceUserUsage[];
+  outOfScopeUsers: GeminiWorkspaceUserUsage[];
 };
 
 export type ApiUsageData = {
@@ -395,6 +397,7 @@ export const initialApiUsageData: ApiUsageData = {
       note: "GOOGLE_WORKSPACE_ADMIN_EMAIL과 Admin SDK Reports API 권한 설정 필요",
     },
     licensedUsers: 9,
+    listedUsers: 9,
     activeUsers: 6,
     activationRate: 66.7,
     totalEvents: 84,
@@ -512,6 +515,7 @@ export const initialApiUsageData: ApiUsageData = {
         score: 0,
       },
     ],
+    outOfScopeUsers: [],
   },
 };
 

@@ -458,13 +458,16 @@ export function buildGeminiWorkspaceUsageFromActivities(
   const users = new Map();
   const daily = new Map(buckets.map((bucket) => [bucket.date, { date: bucket.date, label: bucket.label, events: 0, users: new Set() }]));
   const appUsage = new Map();
-  const knownAccounts = new Set(accountEmails.map((email) => email.toLowerCase()));
+  const rosterAccounts = new Set(accountEmails.map((email) => email.toLowerCase()));
+  const hasRoster = rosterAccounts.size > 0;
+  const knownAccounts = new Set(rosterAccounts);
 
   for (const activity of activities ?? []) {
     const email = stringValue(activity?.actor?.email, "").toLowerCase();
     if (!email) continue;
 
-    knownAccounts.add(email);
+    const isManagedUser = !hasRoster || rosterAccounts.has(email);
+    if (!hasRoster) knownAccounts.add(email);
     const time = stringValue(activity?.id?.time, "");
     const date = time ? time.slice(0, 10) : "";
     const reportEvents = Array.isArray(activity?.events) ? activity.events : [];
@@ -477,14 +480,9 @@ export function buildGeminiWorkspaceUsageFromActivities(
 
       const action = stringValue(parameters.action ?? event?.name, "feature_utilization");
       const app = inferWorkspaceApp(parameters, action);
-      const user = users.get(email) ?? {
-        email,
-        events: 0,
-        activeDates: new Set(),
-        lastUsed: "",
-        apps: new Set(),
-        actions: new Map(),
-      };
+      if (!isManagedUser) continue;
+
+      const user = getWorkspaceUserAccumulator(users, email);
 
       user.events += 1;
       if (date) {
@@ -510,18 +508,84 @@ export function buildGeminiWorkspaceUsageFromActivities(
 
   for (const email of knownAccounts) {
     if (!users.has(email)) {
-      users.set(email, {
-        email,
-        events: 0,
-        activeDates: new Set(),
-        lastUsed: "",
-        apps: new Set(),
-        actions: new Map(),
-      });
+      users.set(email, getWorkspaceUserAccumulator(users, email));
     }
   }
 
-  const userRows = [...users.values()]
+  const userRows = buildGeminiWorkspaceUserRows(users);
+  const activeUsers = userRows.filter((user) => user.events > 0).length;
+  const listedUsers = knownAccounts.size;
+  const resolvedLicensedUsers = hasRoster
+    ? Math.max(licensedUsers, listedUsers)
+    : Math.max(licensedUsers, listedUsers, activeUsers);
+  const activationBase = hasRoster ? listedUsers : resolvedLicensedUsers;
+  const totalEvents = userRows.reduce((sum, user) => sum + user.events, 0);
+  const totalActiveDays = userRows.reduce((sum, user) => sum + user.activeDays, 0);
+  const zeroUsers = userRows.filter((user) => user.level === "Zero").length;
+
+  return {
+    source: {
+      name: "Gemini Workspace 활용 현황",
+      period: `최근 ${buckets.length}일`,
+      generatedAt: formatKoreanTimestamp(now),
+      mode,
+      status,
+      note,
+    },
+    licensedUsers: resolvedLicensedUsers,
+    listedUsers,
+    activeUsers,
+    activationRate: activationBase > 0 ? roundRate((activeUsers / activationBase) * 100) : 0,
+    totalEvents,
+    totalActiveDays,
+    avgActiveDays: activeUsers > 0 ? roundRate(totalActiveDays / activeUsers) : 0,
+    highUsers: userRows.filter((user) => user.level === "High").length,
+    mediumUsers: userRows.filter((user) => user.level === "Medium").length,
+    lowUsers: userRows.filter((user) => user.level === "Low").length,
+    zeroUsers,
+    dailyUsage: [...daily.values()].map((day) => ({
+      date: day.date,
+      label: day.label,
+      events: day.events,
+      activeUsers: day.users.size,
+    })),
+    appUsage: [...appUsage.values()]
+      .map((app) => ({
+        app: app.app,
+        events: app.events,
+        activeUsers: app.users.size,
+      }))
+      .sort((a, b) => b.events - a.events || a.app.localeCompare(b.app)),
+    users: userRows,
+    outOfScopeUsers: [],
+  };
+}
+
+function emptyGeminiWorkspaceUsage({ buckets, accountEmails = [], note, status }) {
+  return buildGeminiWorkspaceUsageFromActivities([], {
+    buckets,
+    accountEmails,
+    mode: "Google Workspace Reports API 연결 대기",
+    note,
+    status,
+  });
+}
+
+function getWorkspaceUserAccumulator(users, email) {
+  return (
+    users.get(email) ?? {
+      email,
+      events: 0,
+      activeDates: new Set(),
+      lastUsed: "",
+      apps: new Set(),
+      actions: new Map(),
+    }
+  );
+}
+
+function buildGeminiWorkspaceUserRows(users) {
+  return [...users.values()]
     .map((user) => {
       const activeDays = user.activeDates.size;
       const topAction = topMapKey(user.actions) || "-";
@@ -538,55 +602,6 @@ export function buildGeminiWorkspaceUsageFromActivities(
       };
     })
     .sort((a, b) => b.score - a.score || b.events - a.events || a.email.localeCompare(b.email));
-  const activeUsers = userRows.filter((user) => user.events > 0).length;
-  const resolvedLicensedUsers = Math.max(licensedUsers, knownAccounts.size, activeUsers);
-  const totalEvents = userRows.reduce((sum, user) => sum + user.events, 0);
-  const totalActiveDays = userRows.reduce((sum, user) => sum + user.activeDays, 0);
-
-  return {
-    source: {
-      name: "Gemini Workspace 활용 현황",
-      period: `최근 ${buckets.length}일`,
-      generatedAt: formatKoreanTimestamp(now),
-      mode,
-      status,
-      note,
-    },
-    licensedUsers: resolvedLicensedUsers,
-    activeUsers,
-    activationRate: resolvedLicensedUsers > 0 ? roundRate((activeUsers / resolvedLicensedUsers) * 100) : 0,
-    totalEvents,
-    totalActiveDays,
-    avgActiveDays: activeUsers > 0 ? roundRate(totalActiveDays / activeUsers) : 0,
-    highUsers: userRows.filter((user) => user.level === "High").length,
-    mediumUsers: userRows.filter((user) => user.level === "Medium").length,
-    lowUsers: userRows.filter((user) => user.level === "Low").length,
-    zeroUsers: Math.max(0, resolvedLicensedUsers - activeUsers),
-    dailyUsage: [...daily.values()].map((day) => ({
-      date: day.date,
-      label: day.label,
-      events: day.events,
-      activeUsers: day.users.size,
-    })),
-    appUsage: [...appUsage.values()]
-      .map((app) => ({
-        app: app.app,
-        events: app.events,
-        activeUsers: app.users.size,
-      }))
-      .sort((a, b) => b.events - a.events || a.app.localeCompare(b.app)),
-    users: userRows,
-  };
-}
-
-function emptyGeminiWorkspaceUsage({ buckets, accountEmails = [], note, status }) {
-  return buildGeminiWorkspaceUsageFromActivities([], {
-    buckets,
-    accountEmails,
-    mode: "Google Workspace Reports API 연결 대기",
-    note,
-    status,
-  });
 }
 
 function parseOpenAIUsage(payload) {

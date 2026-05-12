@@ -101,10 +101,11 @@ describe("Gemini Workspace usage aggregation", () => {
     );
 
     expect(usage.activeUsers).toBe(2);
+    expect(usage.listedUsers).toBe(3);
     expect(usage.licensedUsers).toBe(4);
-    expect(usage.zeroUsers).toBe(2);
+    expect(usage.zeroUsers).toBe(1);
     expect(usage.totalEvents).toBe(3);
-    expect(usage.activationRate).toBe(50);
+    expect(usage.activationRate).toBe(66.7);
     expect(usage.dailyUsage.find((day) => day.date === "2026-05-02")).toMatchObject({
       events: 2,
       activeUsers: 2,
@@ -133,12 +134,34 @@ describe("Gemini Workspace usage aggregation", () => {
     );
 
     expect(usage.activeUsers).toBe(1);
+    expect(usage.listedUsers).toBe(2);
     expect(usage.totalEvents).toBe(1);
+    expect(usage.zeroUsers).toBe(1);
     expect(usage.appUsage).toEqual([{ app: "Docs", events: 1, activeUsers: 1 }]);
     expect(usage.users.find((user) => user.email === "alpha@example.com")).toMatchObject({
       level: "Zero",
       events: 0,
     });
+  });
+
+  it("excludes report actors that are not in the managed account roster", () => {
+    const usage = buildGeminiWorkspaceUsageFromActivities(
+      [
+        workspaceActivity("2026-05-01T01:00:00.000Z", "alpha@example.com", "summarize"),
+        workspaceActivity("2026-05-02T02:00:00.000Z", "deleted@example.com", "summarize"),
+      ],
+      {
+        buckets,
+        accountEmails: ["alpha@example.com", "zero@example.com"],
+      },
+    );
+
+    expect(usage.listedUsers).toBe(2);
+    expect(usage.activeUsers).toBe(1);
+    expect(usage.zeroUsers).toBe(1);
+    expect(usage.totalEvents).toBe(1);
+    expect(usage.users.map((user) => user.email)).toEqual(["alpha@example.com", "zero@example.com"]);
+    expect(usage.outOfScopeUsers).toEqual([]);
   });
 });
 
