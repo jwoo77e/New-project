@@ -16,6 +16,7 @@ import {
   RotateCcw,
   Search,
   ShieldCheck,
+  Sparkles,
   TrendingUp,
   Upload,
   UserCheck,
@@ -53,6 +54,10 @@ import {
   type TransactionCost,
 } from "./data/aiCostData";
 import {
+  initialGensparkUsageData,
+  type GensparkUsageData,
+} from "./data/gensparkUsageData";
+import {
   clearStoredDashboardData,
   loadStoredDashboardData,
   saveStoredDashboardData,
@@ -65,7 +70,7 @@ import {
 } from "./lib/apiForecast";
 import { dashboardDataFromExcel } from "./lib/excelDashboard";
 
-type ViewKey = "monthly" | "adoption" | "department" | "detail" | "api";
+type ViewKey = "monthly" | "adoption" | "genspark" | "department" | "detail" | "api";
 
 type ForecastPoint = {
   month: string;
@@ -100,7 +105,7 @@ const chartColors = ["#0f8b8d", "#e85d4f", "#c58612", "#2f8f46"];
 const API_FORECAST_MONTH_DAYS = 30.4;
 const API_FORECAST_USD_TO_KRW = 1400;
 const VIEW_ROTATION_INTERVAL_MS = 12000;
-const viewRotationOrder: ViewKey[] = ["adoption", "monthly", "department", "detail", "api"];
+const viewRotationOrder: ViewKey[] = ["adoption", "genspark", "monthly", "department", "detail", "api"];
 const OPERATING_PLAN_START_MONTH = "2026-05";
 const OPERATING_PLAN_USD_TO_KRW = 1485;
 const OPERATING_PLAN_API_BUDGET_KRW = 280000;
@@ -684,6 +689,7 @@ function App() {
       categoryCosts,
       vendorCosts,
       apiUsageData,
+      gensparkUsageData: initialGensparkUsageData,
       apiForecast,
       apiAdjustedForecast,
       operatingPlan: {
@@ -769,6 +775,14 @@ function App() {
         >
           <UserCheck size={17} />
           활용성
+        </button>
+        <button
+          className={activeView === "genspark" ? "is-active" : ""}
+          type="button"
+          onClick={() => setActiveView("genspark")}
+        >
+          <Sparkles size={17} />
+          AI 활용 상세 분석
         </button>
         <button
           className={activeView === "monthly" ? "is-active" : ""}
@@ -866,6 +880,37 @@ function App() {
             footer={`High ${workspaceUsageData.highUsers} · Medium ${workspaceUsageData.mediumUsers} · Low ${workspaceUsageData.lowUsers}`}
           />
         </section>
+      ) : activeView === "genspark" ? (
+        <section className="metric-grid" aria-label="AI 활용 상세 분석 핵심 지표">
+          <MetricCard
+            icon={<Sparkles size={21} />}
+            label="분석 대상 작업"
+            tone="teal"
+            value={`${numberFormat.format(initialGensparkUsageData.totalTasks)}건`}
+            footer={`${initialGensparkUsageData.source.period} · ${initialGensparkUsageData.source.collectedAt} 수집`}
+          />
+          <MetricCard
+            icon={<Search size={21} />}
+            label="정밀 분석 완료"
+            tone="green"
+            value={`${numberFormat.format(initialGensparkUsageData.detailedTasks)}건`}
+            footer={`메타 기반 ${numberFormat.format(initialGensparkUsageData.metadataOnlyTasks)}건 보강`}
+          />
+          <MetricCard
+            icon={<FileSpreadsheet size={21} />}
+            label="제안서 자동화"
+            tone="amber"
+            value={`${numberFormat.format(initialGensparkUsageData.proposalAutomationTasks)}건`}
+            footer="공공기관·지자체 스마트 안전관리 제안 중심"
+          />
+          <MetricCard
+            icon={<LineChart size={21} />}
+            label="AI 슬라이드 활용"
+            tone="steel"
+            value="약 80건"
+            footer="제안서·발표자료·로드맵 제작의 주력 도구"
+          />
+        </section>
       ) : (
         <section className="metric-grid" aria-label="핵심 비용 지표">
           <MetricCard
@@ -925,6 +970,8 @@ function App() {
       )}
 
       {activeView === "adoption" && <AdoptionView workspaceUsageData={workspaceUsageData} />}
+
+      {activeView === "genspark" && <GensparkUsageView usageData={initialGensparkUsageData} />}
 
       {activeView === "department" && (
         <DepartmentView
@@ -1548,6 +1595,240 @@ function DetailView({
               ))}
             </tbody>
           </table>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
+  const topTool = usageData.toolUsage[0];
+  const detailRate = usageData.totalTasks ? (usageData.detailedTasks / usageData.totalTasks) * 100 : 0;
+
+  return (
+    <div className="content-grid genspark-view">
+      <section className="panel panel-large">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">AI Usage Detail</span>
+            <h2>주제별 작업 분포</h2>
+          </div>
+          <span className="state-pill neutral">{usageData.source.collectedAt}</span>
+        </div>
+        <div className="chart-frame">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={usageData.categoryUsage} margin={{ top: 12, right: 16, left: 0, bottom: 42 }}>
+              <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
+              <XAxis dataKey="name" tickLine={false} axisLine={false} interval={0} angle={-28} textAnchor="end" />
+              <YAxis tickLine={false} axisLine={false} width={48} allowDecimals={false} />
+              <Tooltip
+                formatter={(value, name) => [
+                  name === "작업" ? `${numberFormat.format(Number(value))}건` : formatRate(Number(value)),
+                  name,
+                ]}
+              />
+              <Legend />
+              <Bar dataKey="tasks" name="작업" radius={[5, 5, 0, 0]}>
+                {usageData.categoryUsage.map((entry) => (
+                  <Cell fill={entry.color} key={entry.name} />
+                ))}
+              </Bar>
+              <Line dataKey="share" name="비중" stroke="#e85d4f" strokeWidth={2} dot={{ r: 3 }} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Tools</span>
+            <h2>주요 사용 도구</h2>
+          </div>
+        </div>
+        <div className="api-provider-list">
+          {usageData.toolUsage.map((tool) => (
+            <article className="api-provider-card" key={tool.tool}>
+              <div className="api-provider-head">
+                <span className="category-dot" style={{ background: tool.color }} />
+                <strong>{tool.tool}</strong>
+                <span className="state-pill neutral">{tool.share}%</span>
+              </div>
+              <MeterRow
+                color={tool.color}
+                label={tool.primaryUse}
+                value={(tool.tasks / usageData.totalTasks) * 100}
+                valueLabel={`${numberFormat.format(tool.tasks)}건`}
+              />
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Output Pattern</span>
+            <h2>사용 패턴 요약</h2>
+          </div>
+        </div>
+        <div className="pie-layout genspark-pie-layout">
+          <div className="pie-frame">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={usageData.toolUsage}
+                  dataKey="tasks"
+                  nameKey="tool"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={54}
+                  outerRadius={86}
+                  paddingAngle={2}
+                >
+                  {usageData.toolUsage.map((entry) => (
+                    <Cell fill={entry.color} key={entry.tool} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => `${numberFormat.format(Number(value))}건`} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="forecast-list">
+            <article className="forecast-row">
+              <div>
+                <strong>정밀 분석률</strong>
+                <span>직접 페이지 방문 분석 {numberFormat.format(usageData.detailedTasks)}건</span>
+              </div>
+              <b>{formatRate(detailRate)}</b>
+            </article>
+            <article className="forecast-row">
+              <div>
+                <strong>최다 사용 도구</strong>
+                <span>{topTool?.primaryUse ?? "-"}</span>
+              </div>
+              <b>{topTool?.tool ?? "-"}</b>
+            </article>
+            <article className="forecast-row">
+              <div>
+                <strong>생성파일 매핑</strong>
+                <span>상세 링크 목록 기준 파일 종류 확인</span>
+              </div>
+              <b>{numberFormat.format(usageData.generatedFileMappedTasks)}건</b>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Key Projects</span>
+            <h2>주요 사업/고객사별 활용</h2>
+          </div>
+          <span className="state-pill ok">제안서 중심</span>
+        </div>
+        <div className="department-list">
+          {usageData.topProjects.map((project) => (
+            <article className="department-row" key={project.target}>
+              <div>
+                <strong>
+                  {project.rank}. {project.target}
+                </strong>
+                <span>{project.theme}</span>
+                <small>규모/맥락: {project.scale}</small>
+              </div>
+              <div className="department-meter" aria-label={`${project.target} 작업 비중`}>
+                <span style={{ width: `${Math.min((project.tasks / 10) * 100, 100)}%` }} />
+              </div>
+              <div className="department-numbers">
+                <strong>{numberFormat.format(project.tasks)}건</strong>
+                <span>{formatRate((project.tasks / usageData.totalTasks) * 100)}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Focus Days</span>
+            <h2>집중 작업일</h2>
+          </div>
+        </div>
+        <div className="bar-frame">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={usageData.focusDays} margin={{ top: 16, right: 18, left: 0, bottom: 0 }}>
+              <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} />
+              <YAxis tickLine={false} axisLine={false} width={48} allowDecimals={false} />
+              <Tooltip
+                formatter={(value) => `${numberFormat.format(Number(value))}건`}
+                labelFormatter={(label) => {
+                  const row = usageData.focusDays.find((item) => item.label === label);
+                  return row ? `${row.date} · ${row.focus}` : label;
+                }}
+              />
+              <Bar dataKey="tasks" name="작업" fill="#0f8b8d" radius={[5, 5, 0, 0]} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Representative Tasks</span>
+            <h2>대표 작업 상세</h2>
+          </div>
+          <span className="state-pill neutral">{usageData.source.note}</span>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>일자</th>
+                <th>작업</th>
+                <th>요청 요약</th>
+                <th>결과</th>
+                <th>도구</th>
+                <th>산출물</th>
+                <th>상태</th>
+              </tr>
+            </thead>
+            <tbody>
+              {usageData.representativeTasks.map((task) => (
+                <tr key={task.id}>
+                  <td>{task.id}</td>
+                  <td>{task.date}</td>
+                  <td>
+                    <strong>{task.title}</strong>
+                    <small>{task.category}</small>
+                  </td>
+                  <td>{task.request}</td>
+                  <td>{task.result}</td>
+                  <td>{task.tool}</td>
+                  <td>{task.outputs.join(", ")}</td>
+                  <td>
+                    <span className={`state-pill ${task.status === "완료" ? "ok" : task.status === "진행" ? "warning" : "neutral"}`}>
+                      {task.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="insight-box">
+          <Sparkles size={18} />
+          <div>
+            <strong>Genspark 작업 히스토리를 AI 활용 상세 분석으로 재구성</strong>
+            {usageData.patterns.map((pattern) => (
+              <span key={pattern}>{pattern}</span>
+            ))}
+          </div>
         </div>
       </section>
     </div>

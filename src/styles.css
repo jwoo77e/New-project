@@ -626,8 +626,13 @@ h2 {
 }
 
 .api-view,
-.adoption-view {
+.adoption-view,
+.genspark-view {
   grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.82fr);
+}
+
+.genspark-pie-layout {
+  grid-template-columns: 210px minmax(0, 1fr);
 }
 
 .api-provider-list {
@@ -866,7 +871,8 @@ td strong {
   .department-view,
   .detail-view,
   .api-view,
-  .adoption-view {
+  .adoption-view,
+  .genspark-view {
     grid-template-columns: 1fr;
   }
 
@@ -938,6 +944,7 @@ td strong {
   .department-row,
   .vendor-row,
   .pie-layout,
+  .genspark-pie-layout,
   .key-health-card {
     grid-template-columns: 1fr;
   }
