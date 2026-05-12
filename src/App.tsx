@@ -104,7 +104,7 @@ type ApiMonthForecastSelection = {
 const chartColors = ["#0f8b8d", "#e85d4f", "#c58612", "#2f8f46"];
 const API_FORECAST_MONTH_DAYS = 30.4;
 const API_FORECAST_USD_TO_KRW = 1400;
-const VIEW_ROTATION_INTERVAL_MS = 12000;
+const VIEW_ROTATION_INTERVAL_MS = 20000;
 const viewRotationOrder: ViewKey[] = ["adoption", "genspark", "monthly", "department", "detail", "api"];
 const OPERATING_PLAN_START_MONTH = "2026-05";
 const OPERATING_PLAN_USD_TO_KRW = 1485;
@@ -727,7 +727,7 @@ function App() {
             <Gauge size={24} />
           </div>
           <div>
-            <h1>AI 관련 비용 대시보드</h1>
+            <h1>전사 AI 사용 현황 대시보드</h1>
             <p>
               {sourceMeta.period} · 원천 {sourceMeta.sourceSheet} {sourceMeta.recordCount}건
             </p>
