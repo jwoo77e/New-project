@@ -1618,9 +1618,18 @@ function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
         </div>
         <div className="chart-frame">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={usageData.categoryUsage} margin={{ top: 12, right: 16, left: 0, bottom: 42 }}>
+            <ComposedChart data={usageData.categoryUsage} margin={{ top: 38, right: 16, left: 0, bottom: 66 }}>
               <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
-              <XAxis dataKey="name" tickLine={false} axisLine={false} interval={0} angle={-28} textAnchor="end" />
+              <XAxis
+                dataKey="name"
+                tickLine={false}
+                axisLine={false}
+                interval={0}
+                angle={-28}
+                textAnchor="end"
+                height={74}
+                tickMargin={12}
+              />
               <YAxis tickLine={false} axisLine={false} width={48} allowDecimals={false} />
               <Tooltip
                 formatter={(value, name) => [
@@ -1628,7 +1637,7 @@ function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
                   name,
                 ]}
               />
-              <Legend />
+              <Legend align="right" height={26} verticalAlign="top" wrapperStyle={{ paddingBottom: 8 }} />
               <Bar dataKey="tasks" name="작업" radius={[5, 5, 0, 0]}>
                 {usageData.categoryUsage.map((entry) => (
                   <Cell fill={entry.color} key={entry.name} />
