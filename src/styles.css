@@ -331,6 +331,47 @@ h2 {
   gap: 14px;
 }
 
+.panel-header-side {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
+.chart-legend-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.chart-legend-inline span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-swatch {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+}
+
+.legend-swatch-bar {
+  background: #0f8b8d;
+}
+
+.legend-line {
+  display: inline-block;
+  width: 16px;
+  height: 2px;
+  border-radius: 999px;
+  background: #e85d4f;
+}
+
 .eyebrow {
   color: var(--muted);
   font-size: 0.76rem;

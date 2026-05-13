@@ -1614,11 +1614,23 @@ function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
             <span className="eyebrow">AI Usage Detail</span>
             <h2>주제별 작업 분포</h2>
           </div>
-          <span className="state-pill neutral">{usageData.source.collectedAt}</span>
+          <div className="panel-header-side">
+            <div className="chart-legend-inline" aria-label="주제별 작업 분포 범례">
+              <span>
+                <i className="legend-swatch legend-swatch-bar" />
+                작업
+              </span>
+              <span>
+                <i className="legend-line" />
+                비중
+              </span>
+            </div>
+            <span className="state-pill neutral">{usageData.source.collectedAt}</span>
+          </div>
         </div>
         <div className="chart-frame">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={usageData.categoryUsage} margin={{ top: 38, right: 16, left: 0, bottom: 66 }}>
+            <ComposedChart data={usageData.categoryUsage} margin={{ top: 12, right: 16, left: 0, bottom: 74 }}>
               <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
               <XAxis
                 dataKey="name"
@@ -1627,8 +1639,8 @@ function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
                 interval={0}
                 angle={-28}
                 textAnchor="end"
-                height={74}
-                tickMargin={12}
+                height={82}
+                tickMargin={14}
               />
               <YAxis tickLine={false} axisLine={false} width={48} allowDecimals={false} />
               <Tooltip
@@ -1637,7 +1649,6 @@ function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
                   name,
                 ]}
               />
-              <Legend align="right" height={26} verticalAlign="top" wrapperStyle={{ paddingBottom: 8 }} />
               <Bar dataKey="tasks" name="작업" radius={[5, 5, 0, 0]}>
                 {usageData.categoryUsage.map((entry) => (
                   <Cell fill={entry.color} key={entry.name} />
