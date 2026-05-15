@@ -484,9 +484,7 @@ function App() {
   }, [apiUsageData]);
   const workspaceUsageData = apiUsageData.workspaceUsage ?? initialApiUsageData.workspaceUsage!;
   const workspaceListedUsers = workspaceUsageData.listedUsers ?? workspaceUsageData.users.length;
-  const chatGptExportData = initialGensparkUsageData.chatGptExport;
-  const aiDetailTotalTasks =
-    initialGensparkUsageData.totalTasks + (chatGptExportData?.totalConversations ?? 0);
+  const aiUsageInsight = initialGensparkUsageData.insightAnalysis;
   const isApiUsageCollected = apiUsageData.source.generatedAt !== initialApiUsageData.source.generatedAt;
   const apiForecast = useMemo(() => {
     if (!isApiUsageCollected) {
@@ -888,31 +886,31 @@ function App() {
         <section className="metric-grid" aria-label="AI 활용 상세 분석 핵심 지표">
           <MetricCard
             icon={<Sparkles size={21} />}
-            label="분석 대상 이력"
+            label="통합 분석 대상"
             tone="teal"
-            value={`${numberFormat.format(aiDetailTotalTasks)}건`}
-            footer={`Genspark ${numberFormat.format(initialGensparkUsageData.totalTasks)} · ChatGPT ${numberFormat.format(chatGptExportData?.totalConversations ?? 0)}`}
+            value={`${numberFormat.format(aiUsageInsight.totalRecords)}건`}
+            footer="작업·대화 로그를 업무 주제 기준으로 재분류"
           />
           <MetricCard
             icon={<Search size={21} />}
-            label="ChatGPT 메시지"
+            label="실무 산출형 활용"
             tone="green"
-            value={`${numberFormat.format(chatGptExportData?.totalMessages ?? 0)}건`}
-            footer={`사용자 ${numberFormat.format(chatGptExportData?.totalUserMessages ?? 0)} · 응답 ${numberFormat.format(chatGptExportData?.totalAssistantMessages ?? 0)}`}
+            value={`${numberFormat.format(aiUsageInsight.outputOrientedRecords)}건`}
+            footer="제안·개발·문서·데이터 산출물 중심"
           />
           <MetricCard
             icon={<FileSpreadsheet size={21} />}
-            label="첨부 기반 ChatGPT"
+            label="첨부 기반 협업"
             tone="amber"
-            value={`${numberFormat.format(chatGptExportData?.conversationsWithFiles ?? 0)}건`}
-            footer={`export 파일명 ${numberFormat.format(chatGptExportData?.attachmentsFromFiles ?? 0)}개`}
+            value={`${numberFormat.format(aiUsageInsight.attachmentBasedRecords)}건`}
+            footer="문서·이미지·코드·표 데이터를 함께 처리"
           />
           <MetricCard
             icon={<LineChart size={21} />}
-            label="Genspark 제안/슬라이드"
+            label="가이드 필요 영역"
             tone="steel"
-            value={`${numberFormat.format(initialGensparkUsageData.proposalAutomationTasks)}건`}
-            footer="공공기관 제안과 발표자료 제작"
+            value={`${numberFormat.format(aiUsageInsight.guideNeededCount)}개`}
+            footer="프롬프트 템플릿으로 표준화할 후보"
           />
         </section>
       ) : (
@@ -1608,429 +1606,193 @@ function DetailView({
 }
 
 function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
-  const topTool = usageData.toolUsage[0];
-  const detailRate = usageData.totalTasks ? (usageData.detailedTasks / usageData.totalTasks) * 100 : 0;
-  const chatGptExport = usageData.chatGptExport;
-  const chatGptTopCategory = chatGptExport?.categoryUsage[0];
-  const chatGptTopTool = chatGptExport?.toolUsage[0];
-  const chatGptMonthlyPeak = chatGptExport
-    ? [...chatGptExport.monthlyUsage].sort((a, b) => b.conversations - a.conversations)[0]
-    : undefined;
-  const chatGptMaxMonthly = chatGptExport
-    ? Math.max(...chatGptExport.monthlyUsage.map((item) => item.conversations))
-    : 0;
+  const insight = usageData.insightAnalysis;
+  const topTopic = insight.topicInsights[0];
+  const qualityClass = (signal: string) =>
+    signal === "즉시 재사용" ? "ok" : signal === "가이드 필요" ? "guide" : "fix";
+  const urgencyClass = (value: string) => (value === "상" || value === "높음" ? "high" : value === "중간" || value === "중" ? "medium" : "low");
 
   return (
-    <div className="content-grid genspark-view">
+    <div className="content-grid ai-insight-view">
       <section className="panel panel-large">
         <div className="panel-header">
           <div>
-            <span className="eyebrow">AI Usage Detail</span>
-            <h2>주제별 작업 분포</h2>
+            <span className="eyebrow">AI Usage Insight</span>
+            <h2>무엇에 쓰이고 있나</h2>
           </div>
           <div className="panel-header-side">
-            <div className="chart-legend-inline" aria-label="주제별 작업 분포 범례">
-              <span>
-                <i className="legend-swatch legend-swatch-bar" />
-                작업
-              </span>
-              <span>
-                <i className="legend-line" />
-                비중
-              </span>
-            </div>
-            <span className="state-pill neutral">{usageData.source.collectedAt}</span>
+            <span className="state-pill neutral">{insight.period}</span>
           </div>
         </div>
-        <div className="chart-frame">
+        <p className="insight-lead">
+          도구별 집계를 합치면 AI는 주로 <strong>{topTopic?.topic ?? "실무 문제 해결"}</strong>에 쓰이고 있습니다.
+          비용보다 먼저 봐야 할 지표는 어떤 업무가 반복되고, 어디에 프롬프트 가이드가 필요한지입니다.
+        </p>
+        <div className="topic-chart-frame">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={usageData.categoryUsage} margin={{ top: 12, right: 16, left: 0, bottom: 74 }}>
+            <ComposedChart
+              data={insight.topicInsights}
+              layout="vertical"
+              margin={{ top: 10, right: 18, left: 128, bottom: 8 }}
+            >
               <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
-              <XAxis
-                dataKey="name"
+              <XAxis type="number" tickLine={false} axisLine={false} allowDecimals={false} />
+              <YAxis
+                dataKey="topic"
+                type="category"
                 tickLine={false}
                 axisLine={false}
-                interval={0}
-                angle={-28}
-                textAnchor="end"
-                height={82}
-                tickMargin={14}
+                width={132}
+                tick={{ fontSize: 12 }}
               />
-              <YAxis tickLine={false} axisLine={false} width={48} allowDecimals={false} />
               <Tooltip
-                formatter={(value, name) => [
-                  name === "작업" ? `${numberFormat.format(Number(value))}건` : formatRate(Number(value)),
-                  name,
-                ]}
-              />
-              <Bar dataKey="tasks" name="작업" radius={[5, 5, 0, 0]}>
-                {usageData.categoryUsage.map((entry) => (
-                  <Cell fill={entry.color} key={entry.name} />
-                ))}
-              </Bar>
-              <Line dataKey="share" name="비중" stroke="#e85d4f" strokeWidth={2} dot={{ r: 3 }} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-      </section>
-
-      <section className="panel">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">Tools</span>
-            <h2>주요 사용 도구</h2>
-          </div>
-        </div>
-        <div className="api-provider-list">
-          {usageData.toolUsage.map((tool) => (
-            <article className="api-provider-card" key={tool.tool}>
-              <div className="api-provider-head">
-                <span className="category-dot" style={{ background: tool.color }} />
-                <strong>{tool.tool}</strong>
-                <span className="state-pill neutral">{tool.share}%</span>
-              </div>
-              <MeterRow
-                color={tool.color}
-                label={tool.primaryUse}
-                value={(tool.tasks / usageData.totalTasks) * 100}
-                valueLabel={`${numberFormat.format(tool.tasks)}건`}
-              />
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="panel">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">Output Pattern</span>
-            <h2>사용 패턴 요약</h2>
-          </div>
-        </div>
-        <div className="pie-layout genspark-pie-layout">
-          <div className="pie-frame">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={usageData.toolUsage}
-                  dataKey="tasks"
-                  nameKey="tool"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={54}
-                  outerRadius={86}
-                  paddingAngle={2}
-                >
-                  {usageData.toolUsage.map((entry) => (
-                    <Cell fill={entry.color} key={entry.tool} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => `${numberFormat.format(Number(value))}건`} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="forecast-list">
-            <article className="forecast-row">
-              <div>
-                <strong>정밀 분석률</strong>
-                <span>직접 페이지 방문 분석 {numberFormat.format(usageData.detailedTasks)}건</span>
-              </div>
-              <b>{formatRate(detailRate)}</b>
-            </article>
-            <article className="forecast-row">
-              <div>
-                <strong>최다 사용 도구</strong>
-                <span>{topTool?.primaryUse ?? "-"}</span>
-              </div>
-              <b>{topTool?.tool ?? "-"}</b>
-            </article>
-            <article className="forecast-row">
-              <div>
-                <strong>생성파일 매핑</strong>
-                <span>상세 링크 목록 기준 파일 종류 확인</span>
-              </div>
-              <b>{numberFormat.format(usageData.generatedFileMappedTasks)}건</b>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      {chatGptExport && (
-        <section className="panel panel-wide">
-          <div className="panel-header">
-            <div>
-              <span className="eyebrow">ChatGPT Export</span>
-              <h2>ChatGPT 사용 이력 분석</h2>
-            </div>
-            <span className="state-pill neutral">{chatGptExport.source.period}</span>
-          </div>
-          <div className="api-summary-panel chatgpt-summary-panel">
-            <article className="api-summary-item">
-              <span>대화</span>
-              <strong>{numberFormat.format(chatGptExport.totalConversations)}건</strong>
-              <span>{chatGptExport.source.collectedAt} export</span>
-            </article>
-            <article className="api-summary-item">
-              <span>메시지</span>
-              <strong>{numberFormat.format(chatGptExport.totalMessages)}건</strong>
-              <span>
-                사용자 {numberFormat.format(chatGptExport.totalUserMessages)} · 응답{" "}
-                {numberFormat.format(chatGptExport.totalAssistantMessages)}
-              </span>
-            </article>
-            <article className="api-summary-item">
-              <span>첨부 기반 대화</span>
-              <strong>{numberFormat.format(chatGptExport.conversationsWithFiles)}건</strong>
-              <span>export 파일명 {numberFormat.format(chatGptExport.attachmentsFromFiles)}개</span>
-            </article>
-            <article className="api-summary-item">
-              <span>최다 활용 주제</span>
-              <strong>{chatGptTopCategory?.name ?? "-"}</strong>
-              <span>
-                {numberFormat.format(chatGptTopCategory?.tasks ?? 0)}건 ·{" "}
-                {formatRate(chatGptTopCategory?.share ?? 0)}
-              </span>
-            </article>
-          </div>
-          <div className="chatgpt-export-grid">
-            <div className="chatgpt-export-column">
-              <h3>주제별 대화 분포</h3>
-              <div className="forecast-list">
-                {chatGptExport.categoryUsage.map((category) => (
-                  <MeterRow
-                    color={category.color}
-                    key={category.name}
-                    label={category.name}
-                    value={(category.tasks / chatGptExport.totalConversations) * 100}
-                    valueLabel={`${numberFormat.format(category.tasks)}건`}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="chatgpt-export-column">
-              <h3>월별 대화량</h3>
-              <div className="chatgpt-month-grid">
-                {chatGptExport.monthlyUsage.map((item) => (
-                  <div className="chatgpt-month-row" key={item.month}>
-                    <span>{item.month}</span>
-                    <div className="department-meter" aria-label={`${item.month} ChatGPT 대화량`}>
-                      <span style={{ width: `${chatGptMaxMonthly ? (item.conversations / chatGptMaxMonthly) * 100 : 0}%` }} />
-                    </div>
-                    <strong>{numberFormat.format(item.conversations)}건</strong>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="chatgpt-export-grid compact">
-            <div className="chatgpt-export-column">
-              <h3>주요 업무군</h3>
-              <div className="department-list">
-                {chatGptExport.topProjects.map((project) => (
-                  <article className="department-row chatgpt-project-row" key={project.target}>
-                    <div>
-                      <strong>
-                        {project.rank}. {project.target}
-                      </strong>
-                      <span>{project.theme}</span>
-                      <small>맥락: {project.scale}</small>
-                    </div>
-                    <div className="department-meter" aria-label={`${project.target} ChatGPT 대화 비중`}>
-                      <span style={{ width: `${Math.min((project.tasks / (chatGptExport.topProjects[0]?.tasks ?? 1)) * 100, 100)}%` }} />
-                    </div>
-                    <div className="department-numbers">
-                      <strong>{numberFormat.format(project.tasks)}건</strong>
-                      <span>{formatRate((project.tasks / chatGptExport.totalConversations) * 100)}</span>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </div>
-            <div className="chatgpt-export-column">
-              <h3>활용 패턴</h3>
-              <div className="forecast-list">
-                <article className="forecast-row">
-                  <div>
-                    <strong>최다 도구성 활용</strong>
-                    <span>{chatGptTopTool?.primaryUse ?? "-"}</span>
-                  </div>
-                  <b>{chatGptTopTool?.tool ?? "-"}</b>
-                </article>
-                <article className="forecast-row">
-                  <div>
-                    <strong>최고 집중월</strong>
-                    <span>대화 생성일 기준 월별 집계</span>
-                  </div>
-                  <b>
-                    {chatGptMonthlyPeak?.month ?? "-"} · {numberFormat.format(chatGptMonthlyPeak?.conversations ?? 0)}건
-                  </b>
-                </article>
-                <article className="forecast-row">
-                  <div>
-                    <strong>주요 파일 유형</strong>
-                    <span>{chatGptExport.fileTypeUsage.slice(1, 5).map((item) => `${item.ext} ${item.count}`).join(" · ")}</span>
-                  </div>
-                  <b>{numberFormat.format(chatGptExport.totalAttachments)}개</b>
-                </article>
-                <article className="forecast-row">
-                  <div>
-                    <strong>반복 키워드</strong>
-                    <span>{chatGptExport.topTerms.slice(0, 8).map((item) => item.term).join(" · ")}</span>
-                  </div>
-                  <b>{chatGptExport.topTerms[0]?.term ?? "-"}</b>
-                </article>
-              </div>
-            </div>
-          </div>
-          <div className="table-wrap chatgpt-task-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>일자</th>
-                  <th>대표 장문 협업</th>
-                  <th>대화 규모</th>
-                  <th>분류</th>
-                  <th>도구성 활용</th>
-                </tr>
-              </thead>
-              <tbody>
-                {chatGptExport.representativeTasks.map((task) => (
-                  <tr key={`${task.date}-${task.id}`}>
-                    <td>{task.id}</td>
-                    <td>{task.date}</td>
-                    <td>
-                      <strong>{task.title}</strong>
-                      <small>{task.result}</small>
-                    </td>
-                    <td>{task.request}</td>
-                    <td>{task.category}</td>
-                    <td>{task.tool}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="insight-box">
-            <Bot size={18} />
-            <div>
-              <strong>ChatGPT export를 활용성 관점으로 재분류</strong>
-              {chatGptExport.patterns.map((pattern) => (
-                <span key={pattern}>{pattern}</span>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      <section className="panel panel-wide">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">Key Projects</span>
-            <h2>주요 사업/고객사별 활용</h2>
-          </div>
-          <span className="state-pill ok">제안서 중심</span>
-        </div>
-        <div className="department-list">
-          {usageData.topProjects.map((project) => (
-            <article className="department-row" key={project.target}>
-              <div>
-                <strong>
-                  {project.rank}. {project.target}
-                </strong>
-                <span>{project.theme}</span>
-                <small>규모/맥락: {project.scale}</small>
-              </div>
-              <div className="department-meter" aria-label={`${project.target} 작업 비중`}>
-                <span style={{ width: `${Math.min((project.tasks / 10) * 100, 100)}%` }} />
-              </div>
-              <div className="department-numbers">
-                <strong>{numberFormat.format(project.tasks)}건</strong>
-                <span>{formatRate((project.tasks / usageData.totalTasks) * 100)}</span>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="panel panel-wide">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">Focus Days</span>
-            <h2>집중 작업일</h2>
-          </div>
-        </div>
-        <div className="bar-frame">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={usageData.focusDays} margin={{ top: 16, right: 18, left: 0, bottom: 0 }}>
-              <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
-              <XAxis dataKey="label" tickLine={false} axisLine={false} />
-              <YAxis tickLine={false} axisLine={false} width={48} allowDecimals={false} />
-              <Tooltip
-                formatter={(value) => `${numberFormat.format(Number(value))}건`}
+                formatter={(value) => [`${numberFormat.format(Number(value))}건`, "분석 이력"]}
                 labelFormatter={(label) => {
-                  const row = usageData.focusDays.find((item) => item.label === label);
-                  return row ? `${row.date} · ${row.focus}` : label;
+                  const row = insight.topicInsights.find((item) => item.topic === label);
+                  return row ? `${row.topic} · ${formatRate(row.share)}` : label;
                 }}
               />
-              <Bar dataKey="tasks" name="작업" fill="#0f8b8d" radius={[5, 5, 0, 0]} />
+              <Bar dataKey="tasks" name="분석 이력" radius={[0, 5, 5, 0]}>
+                {insight.topicInsights.map((entry) => (
+                  <Cell fill={entry.color} key={entry.topic} />
+                ))}
+              </Bar>
             </ComposedChart>
           </ResponsiveContainer>
+        </div>
+        <div className="topic-evidence-list">
+          {insight.topicInsights.slice(0, 3).map((topic) => (
+            <article key={topic.topic}>
+              <span className="category-dot" style={{ background: topic.color }} />
+              <div>
+                <strong>{topic.signal}</strong>
+                <span>{topic.businessUse}</span>
+              </div>
+              <b>{formatRate(topic.share)}</b>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Decision Signals</span>
+            <h2>핵심 인사이트</h2>
+          </div>
+        </div>
+        <div className="insight-signal-list">
+          {insight.executiveSummary.map((summary, index) => (
+            <article className="insight-signal-card" key={summary}>
+              <span>{index + 1}</span>
+              <strong>{summary}</strong>
+            </article>
+          ))}
         </div>
       </section>
 
       <section className="panel panel-wide">
         <div className="panel-header">
           <div>
-            <span className="eyebrow">Representative Tasks</span>
-            <h2>대표 작업 상세</h2>
+            <span className="eyebrow">Prompt Library</span>
+            <h2>대표 프롬프트와 산출 결과</h2>
           </div>
-          <span className="state-pill neutral">{usageData.source.note}</span>
+          <span className="state-pill ok">업무 재사용 후보</span>
         </div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>일자</th>
-                <th>작업</th>
-                <th>요청 요약</th>
-                <th>결과</th>
-                <th>도구</th>
-                <th>산출물</th>
-                <th>상태</th>
-              </tr>
-            </thead>
-            <tbody>
-              {usageData.representativeTasks.map((task) => (
-                <tr key={task.id}>
-                  <td>{task.id}</td>
-                  <td>{task.date}</td>
-                  <td>
-                    <strong>{task.title}</strong>
-                    <small>{task.category}</small>
-                  </td>
-                  <td>{task.request}</td>
-                  <td>{task.result}</td>
-                  <td>{task.tool}</td>
-                  <td>{task.outputs.join(", ")}</td>
-                  <td>
-                    <span className={`state-pill ${task.status === "완료" ? "ok" : task.status === "진행" ? "warning" : "neutral"}`}>
-                      {task.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="prompt-card-grid">
+          {insight.representativePrompts.map((prompt) => (
+            <article className="prompt-example-card" key={prompt.title}>
+              <div className="prompt-card-meta">
+                <span>{prompt.useCase}</span>
+                <b className={`prompt-quality ${qualityClass(prompt.qualitySignal)}`}>{prompt.qualitySignal}</b>
+              </div>
+              <strong>{prompt.title}</strong>
+              <p>{prompt.prompt}</p>
+              <div>
+                <span>산출/효과</span>
+                <small>{prompt.outcome}</small>
+              </div>
+            </article>
+          ))}
         </div>
-        <div className="insight-box">
-          <Sparkles size={18} />
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
           <div>
-            <strong>Genspark 작업 히스토리를 AI 활용 상세 분석으로 재구성</strong>
-            {usageData.patterns.map((pattern) => (
-              <span key={pattern}>{pattern}</span>
-            ))}
+            <span className="eyebrow">Hard Prompts</span>
+            <h2>사용이 어려웠던 요청</h2>
+          </div>
+        </div>
+        <div className="prompt-friction-list">
+          {insight.difficultPrompts.map((item) => (
+            <article className="prompt-friction-card" key={item.title}>
+              <div>
+                <strong>{item.title}</strong>
+                <b className={`severity-pill ${urgencyClass(item.severity)}`}>{item.severity}</b>
+              </div>
+              <span>{item.pattern}</span>
+              <small>{item.whyHard}</small>
+              <p>{item.guide}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Guides Needed</span>
+            <h2>가이드가 필요한 프롬프트</h2>
+          </div>
+        </div>
+        <div className="guide-grid">
+          {insight.guideOpportunities.map((guide) => (
+            <article className="guide-card" key={guide.area}>
+              <div>
+                <strong>{guide.area}</strong>
+                <b className={`priority-pill ${urgencyClass(guide.priority)}`}>{guide.priority}</b>
+              </div>
+              <span>{guide.trigger}</span>
+              <p>{guide.template}</p>
+              <small>{guide.expectedEffect}</small>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Friction & Improvement</span>
+            <h2>불편 요소와 개선해야 할 부분</h2>
+          </div>
+          <span className="state-pill neutral">{insight.sourceLabel}</span>
+        </div>
+        <div className="friction-improvement-grid">
+          <div className="insight-box stacked">
+            <Bot size={18} />
+            <div>
+              <strong>사용 과정에서 보이는 불편</strong>
+              {insight.frictionInsights.map((friction) => (
+                <span key={friction}>{friction}</span>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="action-list">
+              {insight.improvementActions.map((action) => (
+                <article className="action-row" key={action.title}>
+                  <div>
+                    <strong>{action.title}</strong>
+                    <span>{action.currentSignal}</span>
+                  </div>
+                  <b className={`priority-pill ${urgencyClass(action.priority)}`}>{action.priority}</b>
+                  <p>{action.action}</p>
+                  <small>{action.expectedImpact}</small>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </section>

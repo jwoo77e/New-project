@@ -61,6 +61,65 @@ export type ChatGptModelUsage = {
   count: number;
 };
 
+export type AiUsageTopicInsight = {
+  topic: string;
+  tasks: number;
+  share: number;
+  signal: string;
+  businessUse: string;
+  evidence: string;
+  color: string;
+};
+
+export type AiPromptExample = {
+  title: string;
+  prompt: string;
+  useCase: string;
+  outcome: string;
+  qualitySignal: "즉시 재사용" | "가이드 필요" | "개선 필요";
+};
+
+export type AiPromptFriction = {
+  title: string;
+  pattern: string;
+  whyHard: string;
+  guide: string;
+  severity: "높음" | "중간" | "낮음";
+};
+
+export type AiGuideOpportunity = {
+  area: string;
+  trigger: string;
+  template: string;
+  expectedEffect: string;
+  priority: "상" | "중" | "하";
+};
+
+export type AiImprovementAction = {
+  title: string;
+  currentSignal: string;
+  action: string;
+  expectedImpact: string;
+  priority: "상" | "중" | "하";
+};
+
+export type AiUsageInsightAnalysis = {
+  sourceLabel: string;
+  period: string;
+  totalRecords: number;
+  totalMessages: number;
+  attachmentBasedRecords: number;
+  outputOrientedRecords: number;
+  guideNeededCount: number;
+  executiveSummary: string[];
+  topicInsights: AiUsageTopicInsight[];
+  representativePrompts: AiPromptExample[];
+  difficultPrompts: AiPromptFriction[];
+  guideOpportunities: AiGuideOpportunity[];
+  frictionInsights: string[];
+  improvementActions: AiImprovementAction[];
+};
+
 export type ChatGptExportAnalysis = {
   source: {
     name: string;
@@ -107,6 +166,7 @@ export type GensparkUsageData = {
   focusDays: GensparkFocusDay[];
   representativeTasks: GensparkTaskSummary[];
   patterns: string[];
+  insightAnalysis: AiUsageInsightAnalysis;
   chatGptExport?: ChatGptExportAnalysis;
 };
 
@@ -303,6 +363,224 @@ export const initialGensparkUsageData: GensparkUsageData = {
     "임원 보고용 1장 요약과 20장 내외 발표자료를 빠르게 만드는 의사결정 지원 용도가 강합니다.",
     "공공기관 제안과 제품 브랜딩, 법령 리스크 분석이 서로 연결되며 실제 영업 자료 생산에 집중되어 있습니다.",
   ],
+  insightAnalysis: {
+    sourceLabel: "Genspark 작업 히스토리와 ChatGPT export 통합 분석",
+    period: "2025-02-21 ~ 2026-05-12",
+    totalRecords: 1650,
+    totalMessages: 39737,
+    attachmentBasedRecords: 414,
+    outputOrientedRecords: 693,
+    guideNeededCount: 6,
+    executiveSummary: [
+      "AI 활용은 단순 질의보다 개발 문제 해결, 산업안전 제안, 문서 산출, 대시보드 운영처럼 실제 업무 산출물 생산에 집중되어 있습니다.",
+      "가장 큰 병목은 모델 성능보다 프롬프트 표준화 부족입니다. 입력 자료, 목표 산출물, 검증 기준이 누락될 때 장문 재작업이 반복됩니다.",
+      "공공 제안·법령 분석·개발 오류 해결은 재사용 가능한 프롬프트 템플릿으로 고정하면 업무 시간이 크게 줄어드는 영역입니다.",
+      "현재 데이터만으로는 최종 산출물이 실제 제출·배포·영업에 얼마나 쓰였는지까지 닫히지 않습니다. 사용 후 태깅과 결과 피드백이 다음 개선 지점입니다.",
+    ],
+    topicInsights: [
+      {
+        topic: "개발/배포·시스템 문제 해결",
+        tasks: 484,
+        share: 29.3,
+        signal: "최대 활용 영역",
+        businessUse: "API, 서버, 배포, 권한, BigQuery, 네트워크 오류를 실제 수정 작업으로 연결",
+        evidence: "ChatGPT export의 개발/코딩 대화 484건과 장문 오류 해결 대화가 핵심 근거",
+        color: "#0f8b8d",
+      },
+      {
+        topic: "산업안전·공공 제안/제품 전략",
+        tasks: 381,
+        share: 23.1,
+        signal: "매출 기회와 직접 연결",
+        businessUse: "순천시, LH, SH, 도로공사, 중부발전 제안서와 RiskZero/ZeroGuard 자료 생산",
+        evidence: "Genspark 제안·법령·현장안전 작업과 ChatGPT 산업안전/리스크 대화 통합",
+        color: "#2f8f46",
+      },
+      {
+        topic: "일반 질의·업무 판단 보조",
+        tasks: 286,
+        share: 17.3,
+        signal: "탐색형 사용",
+        businessUse: "짧은 의사결정, 비교, 개념 확인, 업무 방향성 점검",
+        evidence: "분류 키워드가 약한 일반 상담성 ChatGPT 대화 286건",
+        color: "#7d6ca7",
+      },
+      {
+        topic: "문서·보고·회의 산출물",
+        tasks: 269,
+        share: 16.3,
+        signal: "반복 산출물 자동화 후보",
+        businessUse: "보고서, 회의록, 계약/공문, 제안서, 발표원고 작성과 검토",
+        evidence: "ChatGPT 문서/보고서 231건과 Genspark 문서·회의록 작업 결합",
+        color: "#c58612",
+      },
+      {
+        topic: "기획·전략·브랜드/디자인",
+        tasks: 154,
+        share: 9.3,
+        signal: "메시지 정리와 시각화",
+        businessUse: "사업계획, 영업전략, 브랜드 방향, 포스터, UI, 슬라이드 구성",
+        evidence: "기획/전략 및 이미지/디자인성 활용을 통합 집계",
+        color: "#5f6f8c",
+      },
+      {
+        topic: "데이터·대시보드·계정/자동화",
+        tasks: 76,
+        share: 4.6,
+        signal: "운영 체계화 필요",
+        businessUse: "AI 비용, 사용량, BigQuery, Workspace 권한, API 수집 자동화",
+        evidence: "대시보드 구축·권한 설정·데이터 수집 관련 대화와 작업",
+        color: "#9a6b36",
+      },
+    ],
+    representativePrompts: [
+      {
+        title: "공공 제안서 일괄 산출",
+        prompt: "정부 RFP 격식의 Word 제안서와 부록까지 포함한 공식 제출본을 작성하고, HTML·인포그래픽·엑셀 산출물까지 확장해줘.",
+        useCase: "공공기관 제안·영업",
+        outcome: "35페이지 제안서, HTML 제안서, 인포그래픽, 워크북으로 이어지는 다중 산출물 생산",
+        qualitySignal: "즉시 재사용",
+      },
+      {
+        title: "촬영본 기반 발표자료 재구성",
+        prompt: "촬영 이미지에서 PPT 내용을 추출하고 중복을 정리한 뒤, 발표 흐름에 맞게 20장 내외 슬라이드로 재편집해줘.",
+        useCase: "세미나·임원 보고",
+        outcome: "삼성물산 안전혁신 사례 기반 발표자료 구조화",
+        qualitySignal: "가이드 필요",
+      },
+      {
+        title: "개발 오류 원인 진단",
+        prompt: "터미널 로그, 배포 상태, 환경변수 설정을 함께 보고 실제 원인을 찾은 뒤 수정하고 테스트까지 진행해줘.",
+        useCase: "개발/배포 운영",
+        outcome: "API, BigQuery, Railway, 권한 오류를 실행 가능한 수정 작업으로 전환",
+        qualitySignal: "즉시 재사용",
+      },
+      {
+        title: "법령 변화 리스크 요약",
+        prompt: "산업안전보건법 개정안의 As-Is/To-Be와 리스크제로 사업 영향, 대응 전략을 1장 슬라이드로 정리해줘.",
+        useCase: "정책·리스크 분석",
+        outcome: "안전보건공시제, 위험성평가 강화 등 사업 메시지로 연결",
+        qualitySignal: "가이드 필요",
+      },
+      {
+        title: "첨부 자료 기반 대시보드 반영",
+        prompt: "첨부한 JSON·엑셀·문서 내용을 분석해서 대시보드 지표와 탭 구조에 반영하고 로컬에서 검증해줘.",
+        useCase: "데이터/대시보드 운영",
+        outcome: "AI 비용·활용성·프롬프트 분석 화면으로 확장",
+        qualitySignal: "개선 필요",
+      },
+    ],
+    difficultPrompts: [
+      {
+        title: "자료가 많고 산출물이 여러 개인 요청",
+        pattern: "문서, 이미지, 엑셀, 링크를 한 번에 넣고 최종본·요약본·발표본을 동시에 요구",
+        whyHard: "입력 우선순위와 최종 산출물 기준이 불명확하면 결과물이 넓게 퍼지고 검토 시간이 늘어납니다.",
+        guide: "목표 산출물, 우선순위, 반드시 유지할 표현, 제외할 범위를 먼저 적는 제안서/보고서 브리프가 필요합니다.",
+        severity: "높음",
+      },
+      {
+        title: "개발 오류 해결 요청",
+        pattern: "로그, 환경변수, 권한, 배포 상태가 여러 시스템에 흩어진 상태에서 원인 진단을 요청",
+        whyHard: "재현 절차와 현재 실행 위치가 없으면 같은 원인을 여러 번 확인하게 됩니다.",
+        guide: "현상, 기대 동작, 실행 명령, 오류 전문, 마지막 변경사항을 한 묶음으로 입력하는 디버깅 템플릿이 필요합니다.",
+        severity: "높음",
+      },
+      {
+        title: "법령·정책 해석 요청",
+        pattern: "법령 변화, 공공기관 요구사항, 사업 메시지를 한 번에 요약",
+        whyHard: "최신성, 출처, 적용 대상이 빠지면 그럴듯하지만 제출하기 어려운 문장이 생깁니다.",
+        guide: "출처 URL/문서명, 적용 대상, 결론 수위, 리스크 표현 제한을 지정하는 정책 분석 템플릿이 필요합니다.",
+        severity: "중간",
+      },
+      {
+        title: "디자인/슬라이드 개선 요청",
+        pattern: "보기 좋게, 고급스럽게, 임원 보고용처럼 같은 추상 표현으로 요청",
+        whyHard: "톤앤매너, 분량, 사용처, 금지 스타일이 없으면 재작업이 발생합니다.",
+        guide: "대상 청중, 화면비, 컬러 제한, 참고 자료, 한 장의 핵심 메시지를 먼저 정하는 디자인 브리프가 필요합니다.",
+        severity: "중간",
+      },
+    ],
+    guideOpportunities: [
+      {
+        area: "공공 제안서/사업계획",
+        trigger: "RFP, 기관명, 제출본, 부록, 제안요청서가 포함된 요청",
+        template: "배경 → 발주처 Pain Point → 당사 차별점 → 산출물 형식 → 증빙/수치 → 금지 표현",
+        expectedEffect: "제안서 초안 품질 편차와 반복 수정 감소",
+        priority: "상",
+      },
+      {
+        area: "개발/배포 디버깅",
+        trigger: "오류, 권한, 배포, 환경변수, API 응답 불일치가 포함된 요청",
+        template: "현상 → 재현 명령 → 오류 전문 → 기대값 → 최근 변경 → 접근 가능한 환경",
+        expectedEffect: "원인 탐색 시간을 줄이고 실제 수정/테스트까지 바로 연결",
+        priority: "상",
+      },
+      {
+        area: "법령·정책 리스크 분석",
+        trigger: "개정안, 고시, 공공 기준, 안전보건, 중대재해 관련 요청",
+        template: "출처 → 적용 대상 → 변화점 → 사업 영향 → 대응 메시지 → 확인 필요 사항",
+        expectedEffect: "출처 없는 요약과 과도한 법적 단정 방지",
+        priority: "중",
+      },
+      {
+        area: "회의록/음성 재가공",
+        trigger: "회의 음성, 전사, NDA, 협의, 발표원고, 후속조치 요청",
+        template: "참석자 → 목적 → 결정사항 → 쟁점 → 액션아이템 → 재가공 산출물",
+        expectedEffect: "회의록에서 제안서·보고서로 이어지는 재가공 품질 향상",
+        priority: "중",
+      },
+      {
+        area: "대시보드/데이터 분석",
+        trigger: "CSV, JSON, export, 비용, 사용량, 예측, 탭 추가 요청",
+        template: "원천 파일 → 핵심 질문 → 집계 기준 → 제외 기준 → 화면 지표 → 검증 방법",
+        expectedEffect: "데이터 출처와 화면 수치 불일치에 대한 재검증 비용 감소",
+        priority: "상",
+      },
+      {
+        area: "슬라이드/디자인",
+        trigger: "발표자료, 포스터, 인포그래픽, 고급스럽게, 임원 보고용 요청",
+        template: "청중 → 한 줄 메시지 → 화면비/분량 → 참고 톤 → 금지 스타일 → 필수 문구",
+        expectedEffect: "시각물 재작업과 메시지 흔들림 감소",
+        priority: "중",
+      },
+    ],
+    frictionInsights: [
+      "ChatGPT, Genspark, Workspace, API 비용 데이터가 서로 다른 포맷으로 쌓여 업무 단위의 ROI를 바로 연결하기 어렵습니다.",
+      "프롬프트에는 실제 사용 목적이 보이지만, 최종 산출물이 제출·배포·영업에 사용됐는지 여부는 별도 태깅이 부족합니다.",
+      "첨부 파일명과 대화 제목만으로는 품질, 재사용 가능성, 실패 원인을 완전히 판단하기 어렵습니다.",
+      "일반 질의와 실무 산출형 요청이 같은 로그에 섞여 있어 교육 대상과 자동화 대상을 구분하는 기준이 필요합니다.",
+    ],
+    improvementActions: [
+      {
+        title: "업무 유형 태그 표준화",
+        currentSignal: "1,650건 중 도구별 원천은 있으나 업무 목적 태그가 수동 추정에 의존",
+        action: "요청 후 1분 안에 제안/개발/문서/정책/디자인/데이터 태그와 최종 사용 여부를 기록",
+        expectedImpact: "활용률을 비용이 아니라 업무 성과 기준으로 재분류 가능",
+        priority: "상",
+      },
+      {
+        title: "프롬프트 템플릿 라이브러리 구축",
+        currentSignal: "가이드 필요 영역 6개가 반복 등장",
+        action: "제안서, 디버깅, 법령 분석, 회의록, 대시보드, 디자인 브리프 템플릿을 버튼형으로 제공",
+        expectedImpact: "초보 사용자도 좋은 입력 구조를 따라가며 재작업 감소",
+        priority: "상",
+      },
+      {
+        title: "산출물 피드백 루프 추가",
+        currentSignal: "생성 파일과 대화량은 보이지만 실제 채택 여부가 닫히지 않음",
+        action: "완성/수정필요/미사용/제출완료 상태와 절감 시간, 후속 매출 기회를 기록",
+        expectedImpact: "AI 활용성이 실제 성과로 이어졌는지 월별로 평가 가능",
+        priority: "중",
+      },
+      {
+        title: "고난도 프롬프트 사전 경고",
+        currentSignal: "자료가 많거나 산출물이 여러 개인 요청에서 범위가 자주 확장",
+        action: "대량 첨부·다중 산출물·법령 해석 요청을 감지하면 입력 보강 체크리스트를 먼저 표시",
+        expectedImpact: "모호한 요청으로 인한 장문 재작업과 품질 편차 감소",
+        priority: "중",
+      },
+    ],
+  },
   chatGptExport: {
     source: {
       name: "ChatGPT 사용 이력 Export 분석",

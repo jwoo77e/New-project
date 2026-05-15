@@ -668,12 +668,220 @@ h2 {
 
 .api-view,
 .adoption-view,
-.genspark-view {
+.genspark-view,
+.ai-insight-view {
   grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.82fr);
 }
 
 .genspark-pie-layout {
   grid-template-columns: 210px minmax(0, 1fr);
+}
+
+.insight-lead {
+  margin: 8px 0 14px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.insight-lead strong {
+  color: var(--ink);
+}
+
+.topic-chart-frame {
+  height: 336px;
+}
+
+.topic-evidence-list,
+.insight-signal-list,
+.prompt-friction-list,
+.guide-grid,
+.action-list {
+  display: grid;
+  gap: 12px;
+}
+
+.topic-evidence-list {
+  margin-top: 14px;
+}
+
+.topic-evidence-list article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+}
+
+.topic-evidence-list strong,
+.topic-evidence-list span {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.topic-evidence-list span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.topic-evidence-list b {
+  font-size: 0.92rem;
+}
+
+.insight-signal-card {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 11px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.insight-signal-card span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(15, 139, 141, 0.12);
+  color: var(--teal);
+  font-weight: 900;
+}
+
+.insight-signal-card strong {
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.prompt-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.prompt-example-card,
+.prompt-friction-card,
+.guide-card,
+.action-row {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.prompt-example-card {
+  display: grid;
+  gap: 10px;
+}
+
+.prompt-card-meta,
+.prompt-friction-card > div,
+.guide-card > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.prompt-card-meta span,
+.prompt-example-card div span,
+.prompt-friction-card span,
+.guide-card span,
+.action-row span,
+.action-row small,
+.prompt-example-card small,
+.prompt-friction-card small,
+.guide-card small {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.prompt-example-card p,
+.prompt-friction-card p,
+.guide-card p,
+.action-row p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.92rem;
+  line-height: 1.48;
+}
+
+.prompt-example-card strong,
+.prompt-friction-card strong,
+.guide-card strong,
+.action-row strong {
+  overflow-wrap: anywhere;
+}
+
+.prompt-quality,
+.severity-pill,
+.priority-pill {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.prompt-quality.ok,
+.priority-pill.low,
+.severity-pill.low {
+  background: rgba(47, 143, 70, 0.12);
+  color: var(--green);
+}
+
+.prompt-quality.guide,
+.priority-pill.medium,
+.severity-pill.medium {
+  background: rgba(197, 134, 18, 0.14);
+  color: var(--amber);
+}
+
+.prompt-quality.fix,
+.priority-pill.high,
+.severity-pill.high {
+  background: rgba(232, 93, 79, 0.13);
+  color: var(--coral);
+}
+
+.prompt-friction-card,
+.guide-card,
+.action-row {
+  display: grid;
+  gap: 9px;
+}
+
+.guide-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 4px;
+}
+
+.friction-improvement-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr);
+  gap: 18px;
+  margin-top: 14px;
+  align-items: start;
+}
+
+.insight-box.stacked {
+  margin-top: 0;
+}
+
+.action-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.action-row p,
+.action-row small {
+  grid-column: 1 / -1;
 }
 
 .chatgpt-summary-panel {
@@ -969,13 +1177,15 @@ td strong {
   .detail-view,
   .api-view,
   .adoption-view,
-  .genspark-view {
+  .genspark-view,
+  .ai-insight-view {
     grid-template-columns: 1fr;
   }
 
   .api-summary-panel,
   .key-health-grid,
-  .chatgpt-export-grid {
+  .chatgpt-export-grid,
+  .friction-improvement-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1043,14 +1253,18 @@ td strong {
   .vendor-row,
   .pie-layout,
   .genspark-pie-layout,
-  .key-health-card {
+  .key-health-card,
+  .action-row {
     grid-template-columns: 1fr;
   }
 
   .api-provider-stats,
   .api-summary-panel,
   .key-health-grid,
-  .chatgpt-export-grid {
+  .chatgpt-export-grid,
+  .prompt-card-grid,
+  .guide-grid,
+  .friction-improvement-grid {
     grid-template-columns: 1fr;
   }
 
