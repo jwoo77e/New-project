@@ -676,6 +676,62 @@ h2 {
   grid-template-columns: 210px minmax(0, 1fr);
 }
 
+.chatgpt-summary-panel {
+  margin-top: 16px;
+}
+
+.chatgpt-export-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.chatgpt-export-grid.compact {
+  align-items: start;
+}
+
+.chatgpt-export-column {
+  min-width: 0;
+}
+
+.chatgpt-export-column h3 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+}
+
+.chatgpt-month-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.chatgpt-month-row {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr) 64px;
+  align-items: center;
+  gap: 10px;
+  min-height: 26px;
+}
+
+.chatgpt-month-row span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.chatgpt-month-row strong {
+  font-size: 0.86rem;
+  text-align: right;
+}
+
+.chatgpt-project-row {
+  grid-template-columns: minmax(220px, 0.95fr) minmax(150px, 1fr) minmax(120px, 0.3fr);
+}
+
+.chatgpt-task-table {
+  margin-top: 18px;
+}
+
 .api-provider-list {
   display: grid;
   gap: 12px;
@@ -918,7 +974,8 @@ td strong {
   }
 
   .api-summary-panel,
-  .key-health-grid {
+  .key-health-grid,
+  .chatgpt-export-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -992,7 +1049,8 @@ td strong {
 
   .api-provider-stats,
   .api-summary-panel,
-  .key-health-grid {
+  .key-health-grid,
+  .chatgpt-export-grid {
     grid-template-columns: 1fr;
   }
 

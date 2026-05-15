@@ -484,6 +484,9 @@ function App() {
   }, [apiUsageData]);
   const workspaceUsageData = apiUsageData.workspaceUsage ?? initialApiUsageData.workspaceUsage!;
   const workspaceListedUsers = workspaceUsageData.listedUsers ?? workspaceUsageData.users.length;
+  const chatGptExportData = initialGensparkUsageData.chatGptExport;
+  const aiDetailTotalTasks =
+    initialGensparkUsageData.totalTasks + (chatGptExportData?.totalConversations ?? 0);
   const isApiUsageCollected = apiUsageData.source.generatedAt !== initialApiUsageData.source.generatedAt;
   const apiForecast = useMemo(() => {
     if (!isApiUsageCollected) {
@@ -885,31 +888,31 @@ function App() {
         <section className="metric-grid" aria-label="AI 활용 상세 분석 핵심 지표">
           <MetricCard
             icon={<Sparkles size={21} />}
-            label="분석 대상 작업"
+            label="분석 대상 이력"
             tone="teal"
-            value={`${numberFormat.format(initialGensparkUsageData.totalTasks)}건`}
-            footer={`${initialGensparkUsageData.source.period} · ${initialGensparkUsageData.source.collectedAt} 수집`}
+            value={`${numberFormat.format(aiDetailTotalTasks)}건`}
+            footer={`Genspark ${numberFormat.format(initialGensparkUsageData.totalTasks)} · ChatGPT ${numberFormat.format(chatGptExportData?.totalConversations ?? 0)}`}
           />
           <MetricCard
             icon={<Search size={21} />}
-            label="정밀 분석 완료"
+            label="ChatGPT 메시지"
             tone="green"
-            value={`${numberFormat.format(initialGensparkUsageData.detailedTasks)}건`}
-            footer={`메타 기반 ${numberFormat.format(initialGensparkUsageData.metadataOnlyTasks)}건 보강`}
+            value={`${numberFormat.format(chatGptExportData?.totalMessages ?? 0)}건`}
+            footer={`사용자 ${numberFormat.format(chatGptExportData?.totalUserMessages ?? 0)} · 응답 ${numberFormat.format(chatGptExportData?.totalAssistantMessages ?? 0)}`}
           />
           <MetricCard
             icon={<FileSpreadsheet size={21} />}
-            label="제안서 자동화"
+            label="첨부 기반 ChatGPT"
             tone="amber"
-            value={`${numberFormat.format(initialGensparkUsageData.proposalAutomationTasks)}건`}
-            footer="공공기관·지자체 스마트 안전관리 제안 중심"
+            value={`${numberFormat.format(chatGptExportData?.conversationsWithFiles ?? 0)}건`}
+            footer={`export 파일명 ${numberFormat.format(chatGptExportData?.attachmentsFromFiles ?? 0)}개`}
           />
           <MetricCard
             icon={<LineChart size={21} />}
-            label="AI 슬라이드 활용"
+            label="Genspark 제안/슬라이드"
             tone="steel"
-            value="약 80건"
-            footer="제안서·발표자료·로드맵 제작의 주력 도구"
+            value={`${numberFormat.format(initialGensparkUsageData.proposalAutomationTasks)}건`}
+            footer="공공기관 제안과 발표자료 제작"
           />
         </section>
       ) : (
@@ -1239,6 +1242,8 @@ function MonthlyView({
           </div>
         </div>
       </section>
+
+
 
       <section className="panel panel-wide">
         <div className="panel-header">
@@ -1605,6 +1610,15 @@ function DetailView({
 function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
   const topTool = usageData.toolUsage[0];
   const detailRate = usageData.totalTasks ? (usageData.detailedTasks / usageData.totalTasks) * 100 : 0;
+  const chatGptExport = usageData.chatGptExport;
+  const chatGptTopCategory = chatGptExport?.categoryUsage[0];
+  const chatGptTopTool = chatGptExport?.toolUsage[0];
+  const chatGptMonthlyPeak = chatGptExport
+    ? [...chatGptExport.monthlyUsage].sort((a, b) => b.conversations - a.conversations)[0]
+    : undefined;
+  const chatGptMaxMonthly = chatGptExport
+    ? Math.max(...chatGptExport.monthlyUsage.map((item) => item.conversations))
+    : 0;
 
   return (
     <div className="content-grid genspark-view">
@@ -1740,6 +1754,174 @@ function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
           </div>
         </div>
       </section>
+
+      {chatGptExport && (
+        <section className="panel panel-wide">
+          <div className="panel-header">
+            <div>
+              <span className="eyebrow">ChatGPT Export</span>
+              <h2>ChatGPT 사용 이력 분석</h2>
+            </div>
+            <span className="state-pill neutral">{chatGptExport.source.period}</span>
+          </div>
+          <div className="api-summary-panel chatgpt-summary-panel">
+            <article className="api-summary-item">
+              <span>대화</span>
+              <strong>{numberFormat.format(chatGptExport.totalConversations)}건</strong>
+              <span>{chatGptExport.source.collectedAt} export</span>
+            </article>
+            <article className="api-summary-item">
+              <span>메시지</span>
+              <strong>{numberFormat.format(chatGptExport.totalMessages)}건</strong>
+              <span>
+                사용자 {numberFormat.format(chatGptExport.totalUserMessages)} · 응답{" "}
+                {numberFormat.format(chatGptExport.totalAssistantMessages)}
+              </span>
+            </article>
+            <article className="api-summary-item">
+              <span>첨부 기반 대화</span>
+              <strong>{numberFormat.format(chatGptExport.conversationsWithFiles)}건</strong>
+              <span>export 파일명 {numberFormat.format(chatGptExport.attachmentsFromFiles)}개</span>
+            </article>
+            <article className="api-summary-item">
+              <span>최다 활용 주제</span>
+              <strong>{chatGptTopCategory?.name ?? "-"}</strong>
+              <span>
+                {numberFormat.format(chatGptTopCategory?.tasks ?? 0)}건 ·{" "}
+                {formatRate(chatGptTopCategory?.share ?? 0)}
+              </span>
+            </article>
+          </div>
+          <div className="chatgpt-export-grid">
+            <div className="chatgpt-export-column">
+              <h3>주제별 대화 분포</h3>
+              <div className="forecast-list">
+                {chatGptExport.categoryUsage.map((category) => (
+                  <MeterRow
+                    color={category.color}
+                    key={category.name}
+                    label={category.name}
+                    value={(category.tasks / chatGptExport.totalConversations) * 100}
+                    valueLabel={`${numberFormat.format(category.tasks)}건`}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="chatgpt-export-column">
+              <h3>월별 대화량</h3>
+              <div className="chatgpt-month-grid">
+                {chatGptExport.monthlyUsage.map((item) => (
+                  <div className="chatgpt-month-row" key={item.month}>
+                    <span>{item.month}</span>
+                    <div className="department-meter" aria-label={`${item.month} ChatGPT 대화량`}>
+                      <span style={{ width: `${chatGptMaxMonthly ? (item.conversations / chatGptMaxMonthly) * 100 : 0}%` }} />
+                    </div>
+                    <strong>{numberFormat.format(item.conversations)}건</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="chatgpt-export-grid compact">
+            <div className="chatgpt-export-column">
+              <h3>주요 업무군</h3>
+              <div className="department-list">
+                {chatGptExport.topProjects.map((project) => (
+                  <article className="department-row chatgpt-project-row" key={project.target}>
+                    <div>
+                      <strong>
+                        {project.rank}. {project.target}
+                      </strong>
+                      <span>{project.theme}</span>
+                      <small>맥락: {project.scale}</small>
+                    </div>
+                    <div className="department-meter" aria-label={`${project.target} ChatGPT 대화 비중`}>
+                      <span style={{ width: `${Math.min((project.tasks / (chatGptExport.topProjects[0]?.tasks ?? 1)) * 100, 100)}%` }} />
+                    </div>
+                    <div className="department-numbers">
+                      <strong>{numberFormat.format(project.tasks)}건</strong>
+                      <span>{formatRate((project.tasks / chatGptExport.totalConversations) * 100)}</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+            <div className="chatgpt-export-column">
+              <h3>활용 패턴</h3>
+              <div className="forecast-list">
+                <article className="forecast-row">
+                  <div>
+                    <strong>최다 도구성 활용</strong>
+                    <span>{chatGptTopTool?.primaryUse ?? "-"}</span>
+                  </div>
+                  <b>{chatGptTopTool?.tool ?? "-"}</b>
+                </article>
+                <article className="forecast-row">
+                  <div>
+                    <strong>최고 집중월</strong>
+                    <span>대화 생성일 기준 월별 집계</span>
+                  </div>
+                  <b>
+                    {chatGptMonthlyPeak?.month ?? "-"} · {numberFormat.format(chatGptMonthlyPeak?.conversations ?? 0)}건
+                  </b>
+                </article>
+                <article className="forecast-row">
+                  <div>
+                    <strong>주요 파일 유형</strong>
+                    <span>{chatGptExport.fileTypeUsage.slice(1, 5).map((item) => `${item.ext} ${item.count}`).join(" · ")}</span>
+                  </div>
+                  <b>{numberFormat.format(chatGptExport.totalAttachments)}개</b>
+                </article>
+                <article className="forecast-row">
+                  <div>
+                    <strong>반복 키워드</strong>
+                    <span>{chatGptExport.topTerms.slice(0, 8).map((item) => item.term).join(" · ")}</span>
+                  </div>
+                  <b>{chatGptExport.topTerms[0]?.term ?? "-"}</b>
+                </article>
+              </div>
+            </div>
+          </div>
+          <div className="table-wrap chatgpt-task-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>일자</th>
+                  <th>대표 장문 협업</th>
+                  <th>대화 규모</th>
+                  <th>분류</th>
+                  <th>도구성 활용</th>
+                </tr>
+              </thead>
+              <tbody>
+                {chatGptExport.representativeTasks.map((task) => (
+                  <tr key={`${task.date}-${task.id}`}>
+                    <td>{task.id}</td>
+                    <td>{task.date}</td>
+                    <td>
+                      <strong>{task.title}</strong>
+                      <small>{task.result}</small>
+                    </td>
+                    <td>{task.request}</td>
+                    <td>{task.category}</td>
+                    <td>{task.tool}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="insight-box">
+            <Bot size={18} />
+            <div>
+              <strong>ChatGPT export를 활용성 관점으로 재분류</strong>
+              {chatGptExport.patterns.map((pattern) => (
+                <span key={pattern}>{pattern}</span>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="panel panel-wide">
         <div className="panel-header">

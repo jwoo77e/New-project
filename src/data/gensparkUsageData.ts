@@ -41,6 +41,53 @@ export type GensparkTaskSummary = {
   status: "완료" | "진행" | "미사용";
 };
 
+export type ChatGptMonthlyUsage = {
+  month: string;
+  conversations: number;
+};
+
+export type ChatGptFileTypeUsage = {
+  ext: string;
+  count: number;
+};
+
+export type ChatGptTermUsage = {
+  term: string;
+  count: number;
+};
+
+export type ChatGptModelUsage = {
+  model: string;
+  count: number;
+};
+
+export type ChatGptExportAnalysis = {
+  source: {
+    name: string;
+    collectedAt: string;
+    period: string;
+    accountLabel: string;
+    note: string;
+  };
+  totalConversations: number;
+  totalMessages: number;
+  totalUserMessages: number;
+  totalAssistantMessages: number;
+  totalAttachments: number;
+  conversationsWithFiles: number;
+  attachmentsFromFiles: number;
+  categoryUsage: GensparkCategoryUsage[];
+  toolUsage: GensparkToolUsage[];
+  topProjects: GensparkProjectUsage[];
+  focusDays: GensparkFocusDay[];
+  representativeTasks: GensparkTaskSummary[];
+  monthlyUsage: ChatGptMonthlyUsage[];
+  fileTypeUsage: ChatGptFileTypeUsage[];
+  topTerms: ChatGptTermUsage[];
+  modelUsage: ChatGptModelUsage[];
+  patterns: string[];
+};
+
 export type GensparkUsageData = {
   source: {
     name: string;
@@ -60,6 +107,7 @@ export type GensparkUsageData = {
   focusDays: GensparkFocusDay[];
   representativeTasks: GensparkTaskSummary[];
   patterns: string[];
+  chatGptExport?: ChatGptExportAnalysis;
 };
 
 export const initialGensparkUsageData: GensparkUsageData = {
@@ -255,4 +303,276 @@ export const initialGensparkUsageData: GensparkUsageData = {
     "임원 보고용 1장 요약과 20장 내외 발표자료를 빠르게 만드는 의사결정 지원 용도가 강합니다.",
     "공공기관 제안과 제품 브랜딩, 법령 리스크 분석이 서로 연결되며 실제 영업 자료 생산에 집중되어 있습니다.",
   ],
+  chatGptExport: {
+    source: {
+      name: "ChatGPT 사용 이력 Export 분석",
+      collectedAt: "2026-05-14",
+      period: "2025-02-21 ~ 2026-05-12",
+      accountLabel: "ChatGPT export",
+      note: "15개 대화 JSON과 995개 첨부 파일명을 집계",
+    },
+    totalConversations: 1491,
+    totalMessages: 39737,
+    totalUserMessages: 16246,
+    totalAssistantMessages: 23491,
+    totalAttachments: 5039,
+    conversationsWithFiles: 401,
+    attachmentsFromFiles: 995,
+    categoryUsage: [
+      {
+        name: "개발/코딩",
+        tasks: 484,
+        share: 32.5,
+        note: "서버, API, 배포, 오류 진단, 자동화 스크립트 중심",
+        color: "#0f8b8d",
+      },
+      {
+        name: "일반 질의",
+        tasks: 286,
+        share: 19.2,
+        note: "분류 키워드가 약한 일반 상담성 대화",
+        color: "#7d6ca7",
+      },
+      {
+        name: "산업안전/리스크",
+        tasks: 264,
+        share: 17.7,
+        note: "RiskZero/ZeroGuard, 산업안전, CCTV/IoT, 위험성평가",
+        color: "#e85d4f",
+      },
+      {
+        name: "문서/보고서",
+        tasks: 231,
+        share: 15.5,
+        note: "보고서, 회의록, 계약/공문, 제안서 초안과 검토",
+        color: "#2f8f46",
+      },
+      {
+        name: "이미지/디자인",
+        tasks: 76,
+        share: 5.1,
+        note: "이미지 해석, UI, 슬라이드, 포스터, 로고",
+        color: "#6b8f71",
+      },
+      {
+        name: "기획/전략",
+        tasks: 62,
+        share: 4.2,
+        note: "사업계획, 영업전략, 운영계획, 브랜드 방향성",
+        color: "#5f6f8c",
+      },
+      {
+        name: "데이터/대시보드",
+        tasks: 50,
+        share: 3.4,
+        note: "AI 비용, 사용량, 엑셀, BigQuery, 시각화와 예측",
+        color: "#c58612",
+      },
+      {
+        name: "관리/업무자동화",
+        tasks: 38,
+        share: 2.5,
+        note: "Workspace, 권한, 계정, 일정/메일, 환경설정",
+        color: "#9a6b36",
+      },
+    ],
+    toolUsage: [
+      {
+        tool: "코딩/디버깅",
+        tasks: 502,
+        share: 33.7,
+        primaryUse: "API, 서버, 배포, 오류 해결, 스크립트 작성",
+        color: "#0f8b8d",
+      },
+      {
+        tool: "일반 상담/질의",
+        tasks: 392,
+        share: 26.3,
+        primaryUse: "단기 질의와 일반 업무 보조",
+        color: "#7d6ca7",
+      },
+      {
+        tool: "문서 작성/검토",
+        tasks: 294,
+        share: 19.7,
+        primaryUse: "보고서, 제안서, 회의록, 계약/공문 검토",
+        color: "#2f8f46",
+      },
+      {
+        tool: "전략 기획",
+        tasks: 104,
+        share: 7,
+        primaryUse: "사업계획, 영업전략, 운영계획, 브랜딩",
+        color: "#5f6f8c",
+      },
+      {
+        tool: "이미지/디자인 지원",
+        tasks: 92,
+        share: 6.2,
+        primaryUse: "이미지 해석, UI/슬라이드, 디자인 자산",
+        color: "#6b8f71",
+      },
+      {
+        tool: "데이터 분석",
+        tasks: 62,
+        share: 4.2,
+        primaryUse: "엑셀, 비용, 사용량, 대시보드, 예측",
+        color: "#c58612",
+      },
+      {
+        tool: "업무 자동화/관리",
+        tasks: 45,
+        share: 3,
+        primaryUse: "계정/권한, Workspace, 일정, 환경설정",
+        color: "#9a6b36",
+      },
+    ],
+    topProjects: [
+      { rank: 1, target: "기타 업무", scale: "기타", tasks: 865, theme: "일반 질의와 보조 업무" },
+      { rank: 2, target: "개발/배포 운영", scale: "서비스 운영", tasks: 171, theme: "서비스 배포, 서버 설정, API/DB 문제 해결" },
+      { rank: 3, target: "공공/산업안전 제안", scale: "제안·수주", tasks: 152, theme: "스마트 안전관리 플랫폼 제안/수주 지원" },
+      { rank: 4, target: "RiskZero/ZeroGuard", scale: "제품·사업 운영", tasks: 108, theme: "제품 운영, 산업안전 AI, 사업자료 생산" },
+      { rank: 5, target: "문서/회의 업무", scale: "내부 운영", tasks: 89, theme: "보고서, 회의록, 계약/공문 정리" },
+      { rank: 6, target: "브랜드/디자인", scale: "마케팅 자산", tasks: 79, theme: "슬라이드, 이미지, 포스터, UI/브랜드 자산" },
+      { rank: 7, target: "AI 비용/활용 대시보드", scale: "전사 AI 운영", tasks: 27, theme: "API 비용·활용성·Workspace 사용량 관리" },
+    ],
+    focusDays: [
+      { date: "2025-09-10", label: "09/10", tasks: 13, focus: "개발/코딩" },
+      { date: "2025-11-10", label: "11/10", tasks: 16, focus: "개발/코딩" },
+      { date: "2025-11-11", label: "11/11", tasks: 14, focus: "산업안전/리스크" },
+      { date: "2025-11-12", label: "11/12", tasks: 16, focus: "일반 질의" },
+      { date: "2025-11-17", label: "11/17", tasks: 20, focus: "개발/코딩" },
+      { date: "2025-11-26", label: "11/26", tasks: 15, focus: "개발/코딩" },
+      { date: "2025-12-01", label: "12/01", tasks: 14, focus: "개발/코딩" },
+      { date: "2025-12-10", label: "12/10", tasks: 19, focus: "일반 질의" },
+    ],
+    representativeTasks: [
+      {
+        id: 1,
+        date: "2025-08-08",
+        title: "API 항목 추출 분석",
+        request: "343개 사용자 메시지, 43개 첨부 기반 대화",
+        result: "개발/코딩 / 개발·배포 운영 관련 장문 협업",
+        tool: "코딩/디버깅",
+        category: "개발/코딩",
+        outputs: ["CHAT", "FILES"],
+        status: "완료",
+      },
+      {
+        id: 2,
+        date: "2025-09-01",
+        title: "Spring 배치 프로그램 설정",
+        request: "239개 사용자 메시지, 108개 첨부 기반 대화",
+        result: "개발/코딩 / RiskZero·ZeroGuard 관련 장문 협업",
+        tool: "코딩/디버깅",
+        category: "개발/코딩",
+        outputs: ["CHAT", "FILES"],
+        status: "완료",
+      },
+      {
+        id: 3,
+        date: "2025-05-13",
+        title: "데이터 정제 작업",
+        request: "268개 사용자 메시지, 69개 첨부 기반 대화",
+        result: "산업안전/리스크 관련 데이터 정리 협업",
+        tool: "문서 작성/검토",
+        category: "산업안전/리스크",
+        outputs: ["CHAT", "FILES"],
+        status: "완료",
+      },
+      {
+        id: 4,
+        date: "2025-10-14",
+        title: "풍속 센서 설명",
+        request: "414개 사용자 메시지, 40개 첨부 기반 대화",
+        result: "센서·현장 데이터 해석과 설명 정리",
+        tool: "업무 자동화/관리",
+        category: "관리/업무자동화",
+        outputs: ["CHAT", "FILES"],
+        status: "완료",
+      },
+      {
+        id: 5,
+        date: "2025-08-27",
+        title: "Axios 네트워크 오류 원인",
+        request: "89개 사용자 메시지, 30개 첨부 기반 대화",
+        result: "웹/API 네트워크 오류 진단과 수정 방향 정리",
+        tool: "코딩/디버깅",
+        category: "개발/코딩",
+        outputs: ["CHAT", "FILES"],
+        status: "완료",
+      },
+      {
+        id: 6,
+        date: "2025-03-27",
+        title: "Spring Boot SW 아키텍처",
+        request: "205개 사용자 메시지, 8개 첨부 기반 대화",
+        result: "Spring Boot 기반 시스템 구조와 구현 방향 검토",
+        tool: "코딩/디버깅",
+        category: "개발/코딩",
+        outputs: ["CHAT", "FILES"],
+        status: "완료",
+      },
+    ],
+    monthlyUsage: [
+      { month: "2025-02", conversations: 25 },
+      { month: "2025-03", conversations: 59 },
+      { month: "2025-04", conversations: 100 },
+      { month: "2025-05", conversations: 73 },
+      { month: "2025-06", conversations: 93 },
+      { month: "2025-07", conversations: 122 },
+      { month: "2025-08", conversations: 100 },
+      { month: "2025-09", conversations: 189 },
+      { month: "2025-10", conversations: 138 },
+      { month: "2025-11", conversations: 221 },
+      { month: "2025-12", conversations: 171 },
+      { month: "2026-01", conversations: 74 },
+      { month: "2026-02", conversations: 31 },
+      { month: "2026-03", conversations: 48 },
+      { month: "2026-04", conversations: 36 },
+      { month: "2026-05", conversations: 11 },
+    ],
+    fileTypeUsage: [
+      { ext: "unknown", count: 2338 },
+      { ext: "jpg", count: 1070 },
+      { ext: "png", count: 871 },
+      { ext: "java", count: 125 },
+      { ext: "jpeg", count: 103 },
+      { ext: "pdf", count: 98 },
+      { ext: "xlsx", count: 97 },
+      { ext: "json", count: 40 },
+      { ext: "yml", count: 36 },
+      { ext: "xml", count: 35 },
+    ],
+    topTerms: [
+      { term: "설명", count: 88 },
+      { term: "요청", count: 66 },
+      { term: "설정", count: 53 },
+      { term: "해결", count: 53 },
+      { term: "오류", count: 49 },
+      { term: "AI", count: 33 },
+      { term: "비교", count: 32 },
+      { term: "차이", count: 28 },
+      { term: "파일", count: 26 },
+      { term: "문제", count: 25 },
+      { term: "시스템", count: 24 },
+      { term: "쿼리", count: 24 },
+    ],
+    modelUsage: [
+      { model: "gpt-4o", count: 8209 },
+      { model: "gpt-5", count: 7203 },
+      { model: "gpt-5-thinking", count: 4881 },
+      { model: "gpt-5-instant", count: 3319 },
+      { model: "gpt-5-1", count: 2374 },
+      { model: "gpt-5-2-instant", count: 1450 },
+      { model: "gpt-5-1-instant", count: 1216 },
+      { model: "gpt-5-2", count: 1169 },
+    ],
+    patterns: [
+      "ChatGPT는 1,491개 대화 중 개발/코딩 484건, 산업안전/리스크 264건, 문서/보고서 231건으로 실무형 활용이 강합니다.",
+      "첨부 기반 대화가 401건이며 이미지, 코드, PDF, 엑셀을 함께 다루는 다중 입력형 업무가 반복됩니다.",
+      "2025년 9월~12월 사용량이 급증했고, 11월에는 221개 대화로 가장 높은 집중도를 보였습니다.",
+      "장문 협업 상위 대화는 API 분석, Spring 배치, 데이터 정제, 센서 설명, 네트워크 오류처럼 실제 운영 문제 해결에 집중됩니다.",
+    ],
+  },
 };
