@@ -656,14 +656,14 @@ function parseClaudeUsage(payload) {
   return usage;
 }
 
-function parseClaudeCosts(payload) {
+export function parseClaudeCosts(payload) {
   const dailyCosts = new Map();
   let totalCostUsd = 0;
   for (const bucket of bucketItems(payload)) {
     const date = dateFromBucket(bucket);
     let bucketCost = 0;
     for (const result of resultItems(bucket)) {
-      bucketCost += amountValue(result.amount ?? result.cost ?? result.total_cost ?? result);
+      bucketCost += centsAmountValue(result.amount ?? result.cost ?? result.total_cost ?? result);
     }
     dailyCosts.set(date, roundMoney((dailyCosts.get(date) ?? 0) + bucketCost));
     totalCostUsd += bucketCost;
@@ -1331,6 +1331,10 @@ function amountValue(value) {
   if (typeof value?.value === "number" || typeof value?.value === "string") return numberValue(value.value);
   if (typeof value?.amount === "number" || typeof value?.amount === "string") return numberValue(value.amount);
   return 0;
+}
+
+function centsAmountValue(value) {
+  return amountValue(value) / 100;
 }
 
 function eventParametersToObject(parameters = []) {

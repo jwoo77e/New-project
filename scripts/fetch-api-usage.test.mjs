@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildGeminiWorkspaceUsageFromActivities,
   buildGeminiBillingProjectFilter,
+  parseClaudeCosts,
   resolveGeminiMonitoringProjectIds,
   resolveGeminiBillingUsageProjectIds,
 } from "./fetch-api-usage.mjs";
@@ -76,6 +77,37 @@ describe("Gemini billing project filters", () => {
     expect(resolveGeminiMonitoringProjectIds({
       GOOGLE_BILLING_USAGE_PROJECT_IDS: "zeroby-two,RiskZero Cloud,riskzero-cloud",
     })).toEqual(["zeroby-two", "riskzero-cloud"]);
+  });
+});
+
+describe("Claude cost parsing", () => {
+  it("converts Anthropic Admin Cost API cent amounts into USD", () => {
+    const costs = parseClaudeCosts({
+      data: [
+        {
+          starting_at: "2026-05-14T00:00:00Z",
+          ending_at: "2026-05-15T00:00:00Z",
+          results: [{ currency: "USD", amount: "92.607" }],
+        },
+      ],
+    });
+
+    expect(costs.totalCostUsd).toBe(0.93);
+    expect(costs.dailyCosts.get("2026-05-14")).toBe(0.93);
+  });
+
+  it("sums multiple Claude cent-denominated cost rows in the same bucket", () => {
+    const costs = parseClaudeCosts({
+      data: [
+        {
+          starting_at: "2026-05-14T00:00:00Z",
+          results: [{ amount: "80.25" }, { amount: "12.357" }],
+        },
+      ],
+    });
+
+    expect(costs.totalCostUsd).toBe(0.93);
+    expect(costs.dailyCosts.get("2026-05-14")).toBe(0.93);
   });
 });
 
