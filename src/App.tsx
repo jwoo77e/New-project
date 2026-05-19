@@ -58,6 +58,11 @@ import {
   type GensparkUsageData,
 } from "./data/gensparkUsageData";
 import {
+  initialClaudeTeamUsageData,
+  type ClaudeTeamUsageData,
+  type ClaudeTeamUsageLevel,
+} from "./data/claudeTeamUsageData";
+import {
   clearStoredDashboardData,
   loadStoredDashboardData,
   saveStoredDashboardData,
@@ -484,6 +489,7 @@ function App() {
   }, [apiUsageData]);
   const workspaceUsageData = apiUsageData.workspaceUsage ?? initialApiUsageData.workspaceUsage!;
   const workspaceListedUsers = workspaceUsageData.listedUsers ?? workspaceUsageData.users.length;
+  const claudeTeamUsageData = initialClaudeTeamUsageData;
   const aiUsageInsight = initialGensparkUsageData.insightAnalysis;
   const isApiUsageCollected = apiUsageData.source.generatedAt !== initialApiUsageData.source.generatedAt;
   const apiForecast = useMemo(() => {
@@ -852,34 +858,34 @@ function App() {
           />
         </section>
       ) : activeView === "adoption" ? (
-        <section className="metric-grid" aria-label="Gemini Workspace 활용 핵심 지표">
+        <section className="metric-grid" aria-label="AI 정액제 활용 핵심 지표">
           <MetricCard
             icon={<UserCheck size={21} />}
-            label={`${workspaceUsageData.source.period} 활성 사용자`}
+            label="Gemini Workspace 활성"
             tone="teal"
             value={`${numberFormat.format(workspaceUsageData.activeUsers)}명`}
-            footer={`대상자 ${numberFormat.format(workspaceListedUsers)}명 · ${workspaceUsageData.source.status}`}
+            footer={`${workspaceUsageData.source.period} · 대상자 ${numberFormat.format(workspaceListedUsers)}명`}
           />
           <MetricCard
             icon={<Gauge size={21} />}
-            label="활성화율"
+            label="Gemini 활성화율"
             tone="green"
             value={formatRate(workspaceUsageData.activationRate)}
-            footer={`평균 활성일 ${workspaceUsageData.avgActiveDays.toFixed(1)}일`}
+            footer={`이벤트 ${numberFormat.format(workspaceUsageData.totalEvents)}건 · 평균 활성일 ${workspaceUsageData.avgActiveDays.toFixed(1)}일`}
           />
           <MetricCard
-            icon={<Activity size={21} />}
-            label="Workspace Gemini 이벤트"
+            icon={<Bot size={21} />}
+            label="Claude Team 활성"
             tone="amber"
-            value={numberFormat.format(workspaceUsageData.totalEvents)}
-            footer="현재 대상자 기준"
+            value={`${numberFormat.format(claudeTeamUsageData.activeUsers)}명`}
+            footer={`좌석 ${numberFormat.format(claudeTeamUsageData.licensedUsers)}명 · spend 사용자 ${numberFormat.format(claudeTeamUsageData.spendUsers)}명`}
           />
           <MetricCard
-            icon={<Users size={21} />}
-            label="미활용 계정"
+            icon={<LineChart size={21} />}
+            label="Claude Code 활용"
             tone="steel"
-            value={`${numberFormat.format(workspaceUsageData.zeroUsers)}명`}
-            footer={`High ${workspaceUsageData.highUsers} · Medium ${workspaceUsageData.mediumUsers} · Low ${workspaceUsageData.lowUsers}`}
+            value={`${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄`}
+            footer={`${formatPreciseUsd(claudeTeamUsageData.totalNetSpendUsd)} · ${formatTokens(claudeTeamUsageData.totalTokens)} tokens`}
           />
         </section>
       ) : activeView === "genspark" ? (
@@ -971,7 +977,9 @@ function App() {
         />
       )}
 
-      {activeView === "adoption" && <AdoptionView workspaceUsageData={workspaceUsageData} />}
+      {activeView === "adoption" && (
+        <AdoptionView claudeTeamUsageData={claudeTeamUsageData} workspaceUsageData={workspaceUsageData} />
+      )}
 
       {activeView === "genspark" && <GensparkUsageView usageData={initialGensparkUsageData} />}
 
@@ -1800,12 +1808,23 @@ function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
   );
 }
 
-function AdoptionView({ workspaceUsageData }: { workspaceUsageData: GeminiWorkspaceUsageData }) {
+function AdoptionView({
+  claudeTeamUsageData,
+  workspaceUsageData,
+}: {
+  claudeTeamUsageData: ClaudeTeamUsageData;
+  workspaceUsageData: GeminiWorkspaceUsageData;
+}) {
   const mostUsedApp = workspaceUsageData.appUsage[0];
   const listedUsers = workspaceUsageData.listedUsers ?? workspaceUsageData.users.length;
   const highAndMediumUsers = workspaceUsageData.highUsers + workspaceUsageData.mediumUsers;
   const activeUserRate =
     workspaceUsageData.activeUsers > 0 ? (highAndMediumUsers / workspaceUsageData.activeUsers) * 100 : 0;
+  const claudeTopUser = claudeTeamUsageData.users[0];
+  const claudeTopProduct = claudeTeamUsageData.productUsage[0];
+  const claudeTopModel = claudeTeamUsageData.modelUsage[0];
+  const maxClaudeSpend = Math.max(...claudeTeamUsageData.users.map((user) => user.netSpendUsd), 1);
+  const maxClaudeLines = Math.max(...claudeTeamUsageData.users.map((user) => user.codeLines), 1);
   const adoptionBuckets = [
     { label: "High", value: workspaceUsageData.highUsers, color: "#0f8b8d" },
     { label: "Medium", value: workspaceUsageData.mediumUsers, color: "#2f8f46" },
@@ -1929,6 +1948,156 @@ function AdoptionView({ workspaceUsageData }: { workspaceUsageData: GeminiWorksp
               <small>Reports API 이벤트가 수집되면 Gmail, Docs, Sheets 등 앱 단위로 분리됩니다.</small>
             </article>
           )}
+        </div>
+      </section>
+
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Claude Team Plan</span>
+            <h2>Claude Team 정액제 사용 현황</h2>
+          </div>
+          <span className="state-pill neutral">{claudeTeamUsageData.source.period}</span>
+        </div>
+        <div className="api-summary-panel claude-team-summary-panel">
+          <article className="api-summary-item">
+            <span>활성 사용자</span>
+            <strong>{numberFormat.format(claudeTeamUsageData.activeUsers)}명</strong>
+            <span>좌석 {numberFormat.format(claudeTeamUsageData.licensedUsers)}명 기준</span>
+          </article>
+          <article className="api-summary-item">
+            <span>Spend report</span>
+            <strong>{formatPreciseUsd(claudeTeamUsageData.totalNetSpendUsd)}</strong>
+            <span>요청 {numberFormat.format(claudeTeamUsageData.totalRequests)}건</span>
+          </article>
+          <article className="api-summary-item">
+            <span>토큰</span>
+            <strong>{formatTokens(claudeTeamUsageData.totalTokens)}</strong>
+            <span>Prompt {formatTokens(claudeTeamUsageData.totalPromptTokens)} · Completion {formatTokens(claudeTeamUsageData.totalCompletionTokens)}</span>
+          </article>
+          <article className="api-summary-item">
+            <span>Claude Code Lines</span>
+            <strong>{numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄</strong>
+            <span>Code export 사용자 {numberFormat.format(claudeTeamUsageData.codeUsers)}명</span>
+          </article>
+        </div>
+        <div className="claude-team-grid">
+          <div className="claude-team-column">
+            <h3>제품별 사용</h3>
+            <div className="forecast-list">
+              {claudeTeamUsageData.productUsage.map((product) => (
+                <MeterRow
+                  color={product.product === "Claude Code" ? "#5f6f8c" : "#0f8b8d"}
+                  key={product.product}
+                  label={`${product.product} · ${numberFormat.format(product.userCount)}명`}
+                  value={claudeTeamUsageData.totalNetSpendUsd ? (product.spendUsd / claudeTeamUsageData.totalNetSpendUsd) * 100 : 0}
+                  valueLabel={`${formatPreciseUsd(product.spendUsd)} · ${numberFormat.format(product.requests)}건`}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="claude-team-column">
+            <h3>모델별 비용</h3>
+            <div className="forecast-list">
+              {claudeTeamUsageData.modelUsage.map((model) => (
+                <MeterRow
+                  color={model.model.includes("opus") ? "#5f6f8c" : model.model.includes("sonnet") ? "#2f8f46" : "#c58612"}
+                  key={model.model}
+                  label={`${model.model} · ${numberFormat.format(model.userCount)}명`}
+                  value={claudeTeamUsageData.totalNetSpendUsd ? (model.spendUsd / claudeTeamUsageData.totalNetSpendUsd) * 100 : 0}
+                  valueLabel={`${formatPreciseUsd(model.spendUsd)} · ${formatTokens(model.tokens)}`}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="claude-team-column">
+            <h3>판단 포인트</h3>
+            <div className="insight-box stacked">
+              <Bot size={18} />
+              <div>
+                <strong>정액제는 비용보다 활성 사용자와 산출량을 함께 봐야 함</strong>
+                {claudeTeamUsageData.insights.map((insight) => (
+                  <span key={insight}>{insight}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="insight-box">
+          <ShieldCheck size={18} />
+          <div>
+            <strong>CSV 원천 결합 기준</strong>
+            <span>{claudeTeamUsageData.source.note}</span>
+            <span>
+              최다 사용자는 {claudeTopUser?.email ?? "-"} · 최다 제품은 {claudeTopProduct?.product ?? "-"} · 최다 모델은{" "}
+              {claudeTopModel?.model ?? "-"}입니다.
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Claude Accounts</span>
+            <h2>Claude Team 계정별 사용 현황</h2>
+          </div>
+          <span className="state-pill neutral">
+            Spend {numberFormat.format(claudeTeamUsageData.spendUsers)}명 · Code lines {numberFormat.format(claudeTeamUsageData.codeUsers)}명
+          </span>
+        </div>
+        <div className="table-wrap claude-team-table">
+          <table>
+            <thead>
+              <tr>
+                <th>계정</th>
+                <th>활용 단계</th>
+                <th>Spend</th>
+                <th>요청</th>
+                <th>토큰</th>
+                <th>Code Lines</th>
+                <th>제품/모델</th>
+                <th>비고</th>
+              </tr>
+            </thead>
+            <tbody>
+              {claudeTeamUsageData.users.map((user) => (
+                <tr key={user.email}>
+                  <td>
+                    <strong>{user.email}</strong>
+                  </td>
+                  <td>
+                    <span className={`state-pill ${claudeTeamLevelTone(user.level)}`}>
+                      {claudeTeamLevelLabel(user.level)}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="claude-usage-cell">
+                      <strong>{formatPreciseUsd(user.netSpendUsd)}</strong>
+                      <div className="department-meter" aria-label={`${user.email} Claude spend 비중`}>
+                        <span style={{ width: `${Math.min((user.netSpendUsd / maxClaudeSpend) * 100, 100)}%` }} />
+                      </div>
+                    </div>
+                  </td>
+                  <td>{user.requests ? numberFormat.format(user.requests) : "-"}</td>
+                  <td>{user.totalTokens ? formatTokens(user.totalTokens) : "-"}</td>
+                  <td>
+                    <div className="claude-usage-cell">
+                      <strong>{numberFormat.format(user.codeLines)}줄</strong>
+                      <div className="department-meter" aria-label={`${user.email} Claude Code lines 비중`}>
+                        <span style={{ width: `${Math.min((user.codeLines / maxClaudeLines) * 100, 100)}%` }} />
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <strong>{user.products.length > 0 ? user.products.join(", ") : "Claude Code"}</strong>
+                    <small>{user.models.length > 0 ? user.models.join(", ") : "lines export only"}</small>
+                  </td>
+                  <td>{user.note}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 
@@ -2188,6 +2357,18 @@ function workspaceLevelLabel(level: GeminiWorkspaceUserUsageLevel) {
 function workspaceLevelTone(level: GeminiWorkspaceUserUsageLevel) {
   if (level === "High" || level === "Medium") return "ok";
   if (level === "Low") return "warning";
+  return "neutral";
+}
+
+function claudeTeamLevelLabel(level: ClaudeTeamUsageLevel) {
+  if (level === "High") return "높은 활용";
+  if (level === "Medium") return "중간 활용";
+  return "낮은 활용";
+}
+
+function claudeTeamLevelTone(level: ClaudeTeamUsageLevel) {
+  if (level === "High") return "ok";
+  if (level === "Medium") return "warning";
   return "neutral";
 }
 

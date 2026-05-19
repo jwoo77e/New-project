@@ -1050,6 +1050,41 @@ h2 {
   grid-column: 1 / -1;
 }
 
+.claude-team-summary-panel {
+  margin-top: 16px;
+}
+
+.claude-team-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+  align-items: start;
+}
+
+.claude-team-column {
+  min-width: 0;
+}
+
+.claude-team-column h3 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+}
+
+.claude-team-table table {
+  min-width: 1120px;
+}
+
+.claude-usage-cell {
+  display: grid;
+  gap: 7px;
+  min-width: 138px;
+}
+
+.claude-usage-cell strong {
+  font-size: 0.9rem;
+}
+
 .pie-layout {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
@@ -1185,6 +1220,7 @@ td strong {
   .api-summary-panel,
   .key-health-grid,
   .chatgpt-export-grid,
+  .claude-team-grid,
   .friction-improvement-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1262,6 +1298,7 @@ td strong {
   .api-summary-panel,
   .key-health-grid,
   .chatgpt-export-grid,
+  .claude-team-grid,
   .prompt-card-grid,
   .guide-grid,
   .friction-improvement-grid {
