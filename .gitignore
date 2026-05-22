@@ -2,6 +2,7 @@ node_modules/
 dist/
 output/playwright/
 .playwright-cli/
+.gamma-playwright-profile/
 .DS_Store
 *.local
 *.local.json

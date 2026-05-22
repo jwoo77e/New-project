@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "collect:api-usage": "node scripts/fetch-api-usage.mjs",
+    "collect:gamma-credits": "node scripts/fetch-gamma-credits.mjs",
+    "collect:all-usage": "npm run collect:gamma-credits && npm run collect:api-usage",
     "dev": "vite --host 0.0.0.0",
     "build": "tsc && vite build",
     "postbuild": "npm run collect:api-usage",

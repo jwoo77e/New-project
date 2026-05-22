@@ -108,6 +108,60 @@ export type GeminiWorkspaceUsageData = {
   outOfScopeUsers: GeminiWorkspaceUserUsage[];
 };
 
+export type GammaWorkspaceItem = {
+  id: string;
+  name: string;
+  type: string;
+};
+
+export type GammaGenerationUsage = {
+  generationId: string;
+  status: string;
+  gammaUrl: string;
+  exportUrl: string;
+  creditsDeducted: number;
+  creditsRemaining: number | null;
+  hasExport: boolean;
+  note: string;
+};
+
+export type GammaUsageData = {
+  source: {
+    name: string;
+    period: string;
+    generatedAt: string;
+    mode: string;
+    status: ApiProviderStatus;
+    note: string;
+  };
+  apiKeyConfigured: boolean;
+  workspaceAccess: boolean;
+  themeCount: number;
+  folderCount: number;
+  sampleThemes: GammaWorkspaceItem[];
+  sampleFolders: GammaWorkspaceItem[];
+  trackedGenerations: number;
+  completedGenerations: number;
+  failedGenerations: number;
+  exportedGenerations: number;
+  totalCreditsDeducted: number;
+  latestCreditsRemaining: number | null;
+  creditSource: "generation" | "web-crawl";
+  webCreditSnapshot: {
+    source: {
+      name: string;
+      collectedAt: string;
+      status: ApiProviderStatus;
+      note: string;
+      url: string;
+    };
+    currentCreditsRemaining: number | null;
+    matchedText: string;
+    candidates: string[];
+  } | null;
+  generations: GammaGenerationUsage[];
+};
+
 export type ApiUsageData = {
   source: {
     name: string;
@@ -120,6 +174,7 @@ export type ApiUsageData = {
   models: ApiModelUsage[];
   keyHealth: ApiKeyHealth[];
   workspaceUsage?: GeminiWorkspaceUsageData;
+  gammaUsage?: GammaUsageData;
 };
 
 export const initialApiUsageData: ApiUsageData = {
@@ -516,6 +571,31 @@ export const initialApiUsageData: ApiUsageData = {
       },
     ],
     outOfScopeUsers: [],
+  },
+  gammaUsage: {
+    source: {
+      name: "Gamma API 사용 가능 항목",
+      period: "최근 7일",
+      generatedAt: "연동 전 샘플",
+      mode: "Gamma API 연결 대기",
+      status: "연동대기",
+      note: "GAMMA_API_KEY를 설정하면 테마, 폴더, generation credit 상태를 조회합니다.",
+    },
+    apiKeyConfigured: false,
+    workspaceAccess: false,
+    themeCount: 0,
+    folderCount: 0,
+    sampleThemes: [],
+    sampleFolders: [],
+    trackedGenerations: 0,
+    completedGenerations: 0,
+    failedGenerations: 0,
+    exportedGenerations: 0,
+    totalCreditsDeducted: 0,
+    latestCreditsRemaining: null,
+    creditSource: "generation",
+    webCreditSnapshot: null,
+    generations: [],
   },
 };
 

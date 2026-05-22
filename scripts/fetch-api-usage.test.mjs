@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   buildGeminiWorkspaceUsageFromActivities,
+  buildGammaUsageFromGenerationStatuses,
   buildGeminiBillingProjectFilter,
+  parseGammaGenerationIds,
   parseClaudeCosts,
   resolveGeminiMonitoringProjectIds,
   resolveGeminiBillingUsageProjectIds,
@@ -194,6 +196,80 @@ describe("Gemini Workspace usage aggregation", () => {
     expect(usage.totalEvents).toBe(1);
     expect(usage.users.map((user) => user.email)).toEqual(["alpha@example.com", "zero@example.com"]);
     expect(usage.outOfScopeUsers).toEqual([]);
+  });
+});
+
+describe("Gamma API usage summary", () => {
+  it("summarizes visible Gamma API fields from tracked generation statuses", () => {
+    const usage = buildGammaUsageFromGenerationStatuses(
+      [
+        {
+          generationId: "gen_1",
+          status: "completed",
+          gammaUrl: "https://gamma.app/docs/one",
+          exportUrl: "https://gamma.app/export/one.pdf",
+          creditsDeducted: 15,
+          creditsRemaining: 485,
+          hasExport: true,
+          note: "",
+        },
+        {
+          generationId: "gen_2",
+          status: "failed",
+          gammaUrl: "",
+          exportUrl: "",
+          creditsDeducted: 0,
+          creditsRemaining: null,
+          hasExport: false,
+          note: "failed",
+        },
+      ],
+      {
+        themes: [{ id: "theme_1", name: "Corporate", type: "standard" }],
+        folders: [{ id: "folder_1", name: "Sales", type: "folder" }],
+        webCreditSnapshot: null,
+      },
+    );
+
+    expect(usage.workspaceAccess).toBe(true);
+    expect(usage.themeCount).toBe(1);
+    expect(usage.folderCount).toBe(1);
+    expect(usage.trackedGenerations).toBe(2);
+    expect(usage.completedGenerations).toBe(1);
+    expect(usage.failedGenerations).toBe(1);
+    expect(usage.exportedGenerations).toBe(1);
+    expect(usage.totalCreditsDeducted).toBe(15);
+    expect(usage.latestCreditsRemaining).toBe(485);
+    expect(usage.creditSource).toBe("generation");
+  });
+
+  it("parses comma and whitespace separated Gamma generation ids", () => {
+    expect(parseGammaGenerationIds("gen_a, gen_b\ngen_a gen_c")).toEqual(["gen_a", "gen_b", "gen_c"]);
+  });
+
+  it("prefers web-crawled Gamma remaining credits when available", () => {
+    const usage = buildGammaUsageFromGenerationStatuses(
+      [
+        {
+          generationId: "gen_1",
+          status: "completed",
+          gammaUrl: "",
+          exportUrl: "",
+          creditsDeducted: 15,
+          creditsRemaining: 485,
+          hasExport: false,
+          note: "",
+        },
+      ],
+      {
+        webCreditSnapshot: {
+          currentCreditsRemaining: 1234,
+        },
+      },
+    );
+
+    expect(usage.latestCreditsRemaining).toBe(1234);
+    expect(usage.creditSource).toBe("web-crawl");
   });
 });
 

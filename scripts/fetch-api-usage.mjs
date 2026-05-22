@@ -18,6 +18,8 @@ const providerColors = {
   Claude: "#5f6f8c",
 };
 
+const gammaApiBaseUrl = "https://public-api.gamma.app/v1.0";
+
 const geminiRequestMetricTypes = [
   "generativelanguage.googleapis.com/quota/generate_content_free_tier_requests/usage",
   "generativelanguage.googleapis.com/quota/generate_content_paid_tier_requests/usage",
@@ -61,11 +63,12 @@ export async function collectApiUsage({
 } = {}) {
   configureRuntime({ targetRootDir, requestedDays, collectedAt });
 
-  const [openai, gemini, claude, workspaceUsage] = await Promise.all([
+  const [openai, gemini, claude, workspaceUsage, gammaUsage] = await Promise.all([
     collectOpenAI(env.OPENAI_ADMIN_KEY),
     collectGemini(env.GEMINI_API_KEY, env),
     collectClaude(env.ANTHROPIC_ADMIN_API_KEY),
     collectGeminiWorkspaceUsage(env),
+    collectGamma(env.GAMMA_API_KEY, env),
   ]);
 
   const providers = [openai.provider, gemini.provider, claude.provider];
@@ -103,6 +106,7 @@ export async function collectApiUsage({
     models: [...openai.models, ...gemini.models, ...claude.models].sort((a, b) => b.costUsd - a.costUsd),
     keyHealth: [openai.keyHealth, gemini.keyHealth, claude.keyHealth],
     workspaceUsage,
+    gammaUsage,
   };
 }
 
@@ -136,6 +140,9 @@ async function runCli() {
   }
   console.log(
     `Gemini Workspace: ${snapshot.workspaceUsage.source.status} · ${snapshot.workspaceUsage.activeUsers.toLocaleString("en-US")} active users · ${snapshot.workspaceUsage.totalEvents.toLocaleString("en-US")} events · ${snapshot.workspaceUsage.source.note}`,
+  );
+  console.log(
+    `Gamma: ${snapshot.gammaUsage.source.status} · ${snapshot.gammaUsage.themeCount.toLocaleString("en-US")} themes · ${snapshot.gammaUsage.folderCount.toLocaleString("en-US")} folders · ${snapshot.gammaUsage.totalCreditsDeducted.toLocaleString("en-US")} credits · ${snapshot.gammaUsage.source.note}`,
   );
 }
 
@@ -371,6 +378,167 @@ async function collectClaude(apiKey) {
       note: "환경변수에서만 읽음",
     }),
   };
+}
+
+async function collectGamma(apiKey, env) {
+  const generationIds = parseGammaGenerationIds(env.GAMMA_GENERATION_IDS ?? env.GAMMA_GENERATION_ID);
+
+  if (!apiKey) {
+    return emptyGammaUsage({
+      apiKeyConfigured: false,
+      generationIds,
+      note: "GAMMA_API_KEY가 없어 Gamma API 항목을 수집하지 않았습니다.",
+      status: "연동대기",
+    });
+  }
+
+  const headers = {
+    "X-API-KEY": apiKey,
+    accept: "application/json",
+  };
+  const [themesResult, foldersResult] = await Promise.all([
+    getJson(`${gammaApiBaseUrl}/themes?limit=10`, { headers }),
+    getJson(`${gammaApiBaseUrl}/folders?limit=10`, { headers }),
+  ]);
+
+  if (!themesResult.ok && !foldersResult.ok) {
+    return emptyGammaUsage({
+      apiKeyConfigured: true,
+      generationIds,
+      note: `Gamma API 키 확인 실패: ${shortenError(themesResult.error ?? foldersResult.error)}`,
+      status: "주의",
+    });
+  }
+
+  const generationResults = await Promise.all(
+    generationIds.map(async (generationId) => {
+      const result = await getJson(`${gammaApiBaseUrl}/generations/${encodeURIComponent(generationId)}`, { headers });
+      return result.ok
+        ? parseGammaGenerationStatus(result.data, generationId)
+        : {
+            generationId,
+            status: "failed",
+            gammaUrl: "",
+            exportUrl: "",
+            creditsDeducted: 0,
+            creditsRemaining: null,
+            hasExport: false,
+            note: shortenError(result.error),
+          };
+    }),
+  );
+
+  const themes = themesResult.ok ? parseGammaWorkspaceItems(themesResult.data, "theme") : [];
+  const folders = foldersResult.ok ? parseGammaWorkspaceItems(foldersResult.data, "folder") : [];
+  const webCreditSnapshot = await readGammaCreditSnapshot(env);
+  const failedSources = [
+    !themesResult.ok ? `테마 조회 실패: ${shortenError(themesResult.error)}` : "",
+    !foldersResult.ok ? `폴더 조회 실패: ${shortenError(foldersResult.error)}` : "",
+  ].filter(Boolean);
+
+  return buildGammaUsageFromGenerationStatuses(generationResults, {
+    apiKeyConfigured: true,
+    folders,
+    note:
+      failedSources.length > 0
+        ? failedSources.join(" · ")
+        : webCreditSnapshot
+          ? `Gamma API 키 확인 및 웹 크레딧 수집값 반영 완료 (${webCreditSnapshot.currentCreditsRemaining?.toLocaleString?.("en-US") ?? "-"} credits)`
+        : generationIds.length > 0
+          ? "Gamma API 키 확인 및 generation credit 수집 완료"
+          : "Gamma API 키 확인 완료. 크레딧 차감량은 GAMMA_GENERATION_IDS 설정 시 수집됩니다.",
+    status: failedSources.length > 0 ? "주의" : "정상",
+    themes,
+    webCreditSnapshot,
+  });
+}
+
+function emptyGammaUsage({ apiKeyConfigured, generationIds = [], note, status }) {
+  return buildGammaUsageFromGenerationStatuses(
+    generationIds.map((generationId) => ({
+      generationId,
+      status: "unknown",
+      gammaUrl: "",
+      exportUrl: "",
+      creditsDeducted: 0,
+      creditsRemaining: null,
+      hasExport: false,
+      note: "GAMMA_API_KEY 설정 후 조회 가능",
+    })),
+    {
+      apiKeyConfigured,
+      folders: [],
+      note,
+      status,
+      themes: [],
+      webCreditSnapshot: null,
+    },
+  );
+}
+
+export function buildGammaUsageFromGenerationStatuses(
+  generations,
+  {
+    apiKeyConfigured = true,
+    folders = [],
+    note = "Gamma API 수집 완료",
+    status = "정상",
+    themes = [],
+    webCreditSnapshot = null,
+  } = {},
+) {
+  const completedGenerations = generations.filter((generation) => generation.status === "completed").length;
+  const failedGenerations = generations.filter((generation) => generation.status === "failed").length;
+  const generationCreditsRemaining = [...generations]
+    .reverse()
+    .find((generation) => typeof generation.creditsRemaining === "number")?.creditsRemaining;
+  const webCreditsRemaining =
+    webCreditSnapshot && typeof webCreditSnapshot.currentCreditsRemaining === "number"
+      ? webCreditSnapshot.currentCreditsRemaining
+      : null;
+  const latestCreditsRemaining =
+    typeof webCreditsRemaining === "number"
+      ? webCreditsRemaining
+      : typeof generationCreditsRemaining === "number"
+        ? generationCreditsRemaining
+        : null;
+
+  return {
+    source: {
+      name: "Gamma API 사용 가능 항목",
+      period: `최근 ${days}일`,
+      generatedAt: formatKoreanTimestamp(now),
+      mode: "Gamma API 수집",
+      status,
+      note,
+    },
+    apiKeyConfigured,
+    workspaceAccess: themes.length > 0 || folders.length > 0,
+    themeCount: themes.length,
+    folderCount: folders.length,
+    sampleThemes: themes.slice(0, 5),
+    sampleFolders: folders.slice(0, 5),
+    trackedGenerations: generations.length,
+    completedGenerations,
+    failedGenerations,
+    exportedGenerations: generations.filter((generation) => generation.hasExport).length,
+    totalCreditsDeducted: generations.reduce((sum, generation) => sum + generation.creditsDeducted, 0),
+    latestCreditsRemaining,
+    creditSource: typeof webCreditsRemaining === "number" ? "web-crawl" : "generation",
+    webCreditSnapshot,
+    generations,
+  };
+}
+
+export function parseGammaGenerationIds(value) {
+  return [
+    ...new Set(
+      String(value ?? "")
+        .split(/[,\s]+/)
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  ];
 }
 
 async function collectGeminiWorkspaceUsage(env) {
@@ -683,6 +851,50 @@ function parseGeminiModels(payload) {
     avgLatencyMs: 0,
     errorRate: 0,
   }));
+}
+
+function parseGammaWorkspaceItems(payload, fallbackType) {
+  const items = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload?.items) ? payload.items : [];
+  return items.map((item) => ({
+    id: stringValue(item?.id, ""),
+    name: stringValue(item?.name ?? item?.title, "이름 없음"),
+    type: stringValue(item?.type, fallbackType),
+  }));
+}
+
+function parseGammaGenerationStatus(payload, fallbackGenerationId) {
+  const credits = payload?.credits ?? {};
+  return {
+    generationId: stringValue(payload?.generationId ?? payload?.id, fallbackGenerationId),
+    status: stringValue(payload?.status, "unknown"),
+    gammaUrl: stringValue(payload?.gammaUrl, ""),
+    exportUrl: stringValue(payload?.exportUrl, ""),
+    creditsDeducted: numberValue(credits.deducted),
+    creditsRemaining:
+      credits.remaining === null || typeof credits.remaining === "undefined" ? null : numberValue(credits.remaining),
+    hasExport: Boolean(payload?.exportUrl),
+    note: payload?.error?.message ? shortenError(payload.error.message) : "",
+  };
+}
+
+async function readGammaCreditSnapshot(env) {
+  const snapshotPaths = [
+    env.GAMMA_CREDIT_SNAPSHOT_PATH ? path.resolve(rootDir, env.GAMMA_CREDIT_SNAPSHOT_PATH) : "",
+    path.join(rootDir, "public", "gamma-credit-snapshot.local.json"),
+    path.join(rootDir, "dist", "gamma-credit-snapshot.local.json"),
+  ].filter(Boolean);
+
+  for (const snapshotPath of [...new Set(snapshotPaths)]) {
+    if (!existsSync(snapshotPath)) continue;
+    try {
+      const snapshot = JSON.parse(await readFile(snapshotPath, "utf8"));
+      if (typeof snapshot?.currentCreditsRemaining === "number") return snapshot;
+    } catch {
+      // Ignore malformed local crawl snapshots and fall back to generation credits.
+    }
+  }
+
+  return null;
 }
 
 async function collectGeminiMonitoring(env) {
