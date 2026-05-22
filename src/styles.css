@@ -1004,6 +1004,120 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.ax-insight-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.35fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.ax-score-card {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  min-height: 220px;
+  padding: 16px;
+  border: 1px solid rgba(15, 139, 141, 0.2);
+  border-radius: 8px;
+  background: var(--teal-soft);
+}
+
+.ax-score-card span,
+.ax-score-card p,
+.ax-dimension-card span,
+.ax-dimension-card small,
+.ax-insight-column p {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.ax-score-card strong {
+  color: var(--ink);
+  font-size: 2.3rem;
+  line-height: 1;
+}
+
+.ax-score-card b {
+  color: var(--teal);
+  font-size: 1rem;
+}
+
+.ax-score-card p,
+.ax-insight-column p {
+  margin: 0;
+}
+
+.ax-score-track,
+.ax-dimension-meter {
+  overflow: hidden;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(95, 111, 140, 0.14);
+}
+
+.ax-score-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--teal);
+}
+
+.ax-dimension-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ax-dimension-card {
+  display: grid;
+  gap: 8px;
+  min-height: 220px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.ax-dimension-card strong,
+.ax-dimension-card span {
+  display: block;
+}
+
+.ax-dimension-card b {
+  color: var(--ink);
+  font-size: 1.22rem;
+}
+
+.ax-dimension-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.ax-insight-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.ax-insight-column {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  min-height: 180px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.ax-insight-column h3 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
 .service-usage-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1295,8 +1409,14 @@ td strong {
   .chatgpt-export-grid,
   .claude-team-grid,
   .service-usage-grid,
+  .ax-dimension-grid,
+  .ax-insight-columns,
   .friction-improvement-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ax-insight-layout {
+    grid-template-columns: 1fr;
   }
 
   .panel-large {
@@ -1374,6 +1494,8 @@ td strong {
   .chatgpt-export-grid,
   .claude-team-grid,
   .service-usage-grid,
+  .ax-dimension-grid,
+  .ax-insight-columns,
   .prompt-card-grid,
   .guide-grid,
   .friction-improvement-grid {

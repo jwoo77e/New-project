@@ -1883,9 +1883,147 @@ function AdoptionView({
       icon: <Activity size={18} />,
     },
   ];
+  const readyServiceCount = serviceCards.filter((service) => service.statusTone === "ok").length;
+  const outputRecords = gensparkUsageData.insightAnalysis.outputOrientedRecords;
+  const guideNeededCount = gensparkUsageData.insightAnalysis.guideNeededCount;
+  const gammaCreditsCollected = typeof gammaUsageData.latestCreditsRemaining === "number";
+  const axDimensions = [
+    {
+      name: "활용 확산",
+      score: Math.min(20, 8 + readyServiceCount * 2),
+      signal: `${readyServiceCount}/5 서비스 데이터`,
+      note: "주요 생성형 AI 서비스를 한 화면에서 추적하는 기반은 갖춰졌습니다.",
+      color: "#0f8b8d",
+    },
+    {
+      name: "산출 생산성",
+      score: Math.min(20, 10 + Math.round(outputRecords / 120)),
+      signal: `${numberFormat.format(outputRecords)}건 산출형 기록`,
+      note: "제안서, 개발, 문서, 대시보드처럼 실무 산출물 중심 사용이 강합니다.",
+      color: "#2f8f46",
+    },
+    {
+      name: "프로세스 내재화",
+      score: Math.min(
+        20,
+        8 +
+          (workspaceUsageData.totalEvents >= 50 ? 2 : 0) +
+          (claudeTeamUsageData.totalCodeLines >= 20000 ? 3 : 0) +
+          (gensparkUsageData.generatedFileMappedTasks > 0 ? 2 : 0),
+      ),
+      signal: "개발·제안 업무 중심",
+      note: "일부 핵심 업무에는 들어왔지만, 전 부서 반복 프로세스까지 닫히지는 않았습니다.",
+      color: "#c58612",
+    },
+    {
+      name: "데이터·자동화",
+      score: Math.min(
+        20,
+        7 + readyServiceCount + (chatGptExport ? 2 : 0) + (workspaceUsageData.totalEvents > 0 ? 2 : 0) + (gammaCreditsCollected ? 3 : 0),
+      ),
+      signal: gammaCreditsCollected ? "웹 크레딧 포함" : "크레딧 세션 보완 필요",
+      note: "API, CSV, export, 웹 크롤링을 결합했지만 일부는 수동/세션 의존입니다.",
+      color: "#5f6f8c",
+    },
+    {
+      name: "거버넌스·개선",
+      score: Math.min(
+        20,
+        9 + (guideNeededCount > 0 ? 2 : 0) + (claudeTeamUsageData.totalNetSpendUsd > 0 ? 2 : 0) + (gammaCreditsCollected ? 2 : 0),
+      ),
+      signal: `${numberFormat.format(guideNeededCount)}개 가이드 후보`,
+      note: "비용·사용 현황은 보이기 시작했지만 성과 기준과 프롬프트 표준화가 필요합니다.",
+      color: "#7d6ca7",
+    },
+  ];
+  const axLevelScore = Math.round((axDimensions.reduce((sum, item) => sum + item.score, 0) / axDimensions.length / 4) * 10) / 10;
+  const axLevelLabel =
+    axLevelScore < 2.5
+      ? "AX 탐색기"
+      : axLevelScore < 3.5
+        ? "업무 생산성 도입기"
+        : axLevelScore < 4.3
+          ? "AX 확산·내재화 전환기"
+          : "AX 운영 고도화 단계";
+  const axStrengths = [
+    `5종 서비스 중 ${readyServiceCount}종에서 실제 수집 신호가 확인됩니다.`,
+    `ChatGPT·Genspark 통합 분석 ${numberFormat.format(gensparkUsageData.insightAnalysis.totalRecords)}건 중 산출형 활용이 ${numberFormat.format(outputRecords)}건입니다.`,
+    `Claude Team은 ${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄의 Claude Code 활용과 ${formatTokens(claudeTeamUsageData.totalTokens)} 토큰 사용이 확인됩니다.`,
+    "API 비용, Workspace 이벤트, Team CSV, 작업 로그를 한 대시보드에서 함께 보는 운영 체계가 만들어졌습니다.",
+  ];
+  const axGaps = [
+    gammaCreditsCollected
+      ? "Gamma 크레딧은 웹 크롤링으로 보강됐지만 로그인 세션 만료 시 재인증이 필요합니다."
+      : "Gamma 잔여 크레딧은 아직 로그인 세션 저장 전이라 일일 자동 수집이 완전히 닫히지 않았습니다.",
+    "ChatGPT와 Genspark는 export/크롤링 기반이라 실시간 사용자별 활용률까지는 약합니다.",
+    "AI 사용 기록과 최종 산출물의 제출, 매출, 업무시간 절감 성과가 아직 자동 연결되지 않습니다.",
+    "반복 업무별 프롬프트 템플릿과 검증 기준이 표준화되지 않아 재작업 가능성이 남아 있습니다.",
+  ];
+  const axActions = [
+    "제안서, 개발 오류 해결, 회의록, 법령 검토 등 핵심 업무별 표준 프롬프트 템플릿을 만든다.",
+    "AI 사용 로그에 업무 목적, 산출물 유형, 실제 제출/배포 여부, 재사용 가능 여부 태그를 붙인다.",
+    "Gamma 로그인 세션과 ChatGPT/Genspark export 갱신을 월간 AX 운영 체크리스트에 포함한다.",
+    "월 1회 AX 리뷰에서 비용, 활용량, 산출물, 보완 과제를 같은 기준으로 보고한다.",
+  ];
 
   return (
     <div className="content-grid adoption-view">
+      <section className="panel panel-wide ax-insight-panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">AX Diagnosis</span>
+            <h2>사내 AX 수준과 실행 인사이트</h2>
+          </div>
+          <span className="state-pill ok">Level {axLevelScore.toFixed(1)} / 5</span>
+        </div>
+        <div className="ax-insight-layout">
+          <div className="ax-score-card">
+            <span>현재 수준</span>
+            <strong>{axLevelScore.toFixed(1)} / 5</strong>
+            <b>{axLevelLabel}</b>
+            <p>현재는 생성형 AI를 실무 산출물 생산에 쓰는 단계에서, 전사 업무 프로세스와 성과 관리로 확장하는 전환 구간입니다.</p>
+            <div className="ax-score-track" aria-label={`AX 수준 ${axLevelScore.toFixed(1)}점`}>
+              <span style={{ width: `${Math.min((axLevelScore / 5) * 100, 100)}%` }} />
+            </div>
+          </div>
+          <div className="ax-dimension-grid">
+            {axDimensions.map((dimension) => (
+              <article className="ax-dimension-card" key={dimension.name}>
+                <div>
+                  <strong>{dimension.name}</strong>
+                  <span>{dimension.signal}</span>
+                </div>
+                <b>{dimension.score}/20</b>
+                <div className="ax-dimension-meter">
+                  <span style={{ width: `${dimension.score * 5}%`, background: dimension.color }} />
+                </div>
+                <small>{dimension.note}</small>
+              </article>
+            ))}
+          </div>
+        </div>
+        <div className="ax-insight-columns">
+          <div className="ax-insight-column">
+            <h3>잘된 점</h3>
+            {axStrengths.map((item) => (
+              <p key={item}>{item}</p>
+            ))}
+          </div>
+          <div className="ax-insight-column">
+            <h3>미비점</h3>
+            {axGaps.map((item) => (
+              <p key={item}>{item}</p>
+            ))}
+          </div>
+          <div className="ax-insight-column">
+            <h3>보완 대책</h3>
+            {axActions.map((item) => (
+              <p key={item}>{item}</p>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="panel panel-wide">
         <div className="panel-header">
           <div>
