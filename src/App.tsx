@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import {
   Activity,
   Bot,
-  Building2,
   CalendarRange,
   CircleDollarSign,
   Cpu,
@@ -12,7 +11,6 @@ import {
   Gauge,
   KeyRound,
   LineChart,
-  PieChart as PieChartIcon,
   RotateCcw,
   Search,
   ShieldCheck,
@@ -75,7 +73,7 @@ import {
 } from "./lib/apiForecast";
 import { dashboardDataFromExcel } from "./lib/excelDashboard";
 
-type ViewKey = "monthly" | "adoption" | "genspark" | "department" | "detail" | "api";
+type ViewKey = "monthly" | "adoption" | "genspark" | "api";
 
 type ForecastPoint = {
   month: string;
@@ -110,7 +108,7 @@ const chartColors = ["#0f8b8d", "#e85d4f", "#c58612", "#2f8f46"];
 const API_FORECAST_MONTH_DAYS = 30.4;
 const API_FORECAST_USD_TO_KRW = 1400;
 const VIEW_ROTATION_INTERVAL_MS = 20000;
-const viewRotationOrder: ViewKey[] = ["adoption", "genspark", "monthly", "department", "detail", "api"];
+const viewRotationOrder: ViewKey[] = ["adoption", "genspark", "monthly", "api"];
 const OPERATING_PLAN_START_MONTH = "2026-05";
 const OPERATING_PLAN_USD_TO_KRW = 1485;
 const OPERATING_PLAN_API_BUDGET_KRW = 280000;
@@ -801,22 +799,6 @@ function App() {
           월별/예측
         </button>
         <button
-          className={activeView === "department" ? "is-active" : ""}
-          type="button"
-          onClick={() => setActiveView("department")}
-        >
-          <Building2 size={17} />
-          부서별
-        </button>
-        <button
-          className={activeView === "detail" ? "is-active" : ""}
-          type="button"
-          onClick={() => setActiveView("detail")}
-        >
-          <PieChartIcon size={17} />
-          상세
-        </button>
-        <button
           className={activeView === "api" ? "is-active" : ""}
           type="button"
           onClick={() => setActiveView("api")}
@@ -982,26 +964,6 @@ function App() {
       )}
 
       {activeView === "genspark" && <GensparkUsageView usageData={initialGensparkUsageData} />}
-
-      {activeView === "department" && (
-        <DepartmentView
-          commonDepartmentShare={commonDepartmentShare}
-          commonDepartmentTotal={commonDepartment.total}
-          departmentCosts={departmentCosts}
-          monthlyActuals={monthlyActuals}
-          sourceMeta={sourceMeta}
-        />
-      )}
-
-      {activeView === "detail" && (
-        <DetailView
-          categoryCosts={categoryCosts}
-          filteredTransactions={filteredTransactions}
-          query={query}
-          setQuery={setQuery}
-          vendorCosts={vendorCosts}
-        />
-      )}
 
       {activeView === "api" && <ApiUsageView apiUsageData={apiUsageData} />}
 
