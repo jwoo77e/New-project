@@ -107,8 +107,6 @@ type ApiMonthForecastSelection = {
 const chartColors = ["#0f8b8d", "#e85d4f", "#c58612", "#2f8f46"];
 const API_FORECAST_MONTH_DAYS = 30.4;
 const API_FORECAST_USD_TO_KRW = 1400;
-const VIEW_ROTATION_INTERVAL_MS = 20000;
-const viewRotationOrder: ViewKey[] = ["adoption", "genspark", "monthly", "api"];
 const OPERATING_PLAN_START_MONTH = "2026-05";
 const OPERATING_PLAN_USD_TO_KRW = 1485;
 const OPERATING_PLAN_API_BUDGET_KRW = 280000;
@@ -399,18 +397,6 @@ function App() {
     return () => {
       isMounted = false;
     };
-  }, []);
-
-  useEffect(() => {
-    const rotationTimer = window.setInterval(() => {
-      setActiveView((currentView) => {
-        const currentIndex = viewRotationOrder.indexOf(currentView);
-        const nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % viewRotationOrder.length;
-        return viewRotationOrder[nextIndex];
-      });
-    }, VIEW_ROTATION_INTERVAL_MS);
-
-    return () => window.clearInterval(rotationTimer);
   }, []);
 
   const {
