@@ -70,9 +70,9 @@ const fallbackDepartments = [
 ];
 
 const headerAliases = {
-  date: ["일자", "거래일자", "사용일자", "date", "day"],
-  item: ["품명", "사용내역", "내역", "적요", "description", "item"],
-  amount: ["사용금액", "금액", "비용", "amount", "cost"],
+  date: ["일자", "거래일자", "사용일자", "승인일자", "date", "day"],
+  item: ["품명", "사용내역", "내역", "전표적요", "적요", "description", "item"],
+  amount: ["사용금액", "승인금액", "금액", "비용", "amount", "cost"],
   vendor: ["거래처", "가맹점", "vendor", "merchant", "supplier"],
   department: ["부서", "부서명", "팀", "소속", "department", "owner"],
   category: ["분류", "카테고리", "category", "tool"],
@@ -117,8 +117,8 @@ export function dashboardDataFromSheets(
 
 function findCostSheet(sheets: WorkbookSheet[]) {
   const preferred = [...sheets].sort((a, b) => {
-    const aScore = a.sheet.includes("키워드검색결과") ? -1 : 0;
-    const bScore = b.sheet.includes("키워드검색결과") ? -1 : 0;
+    const aScore = sheetPreferenceScore(a.sheet);
+    const bScore = sheetPreferenceScore(b.sheet);
     return aScore - bScore;
   });
 
@@ -141,6 +141,14 @@ function findCostSheet(sheets: WorkbookSheet[]) {
   }
 
   return null;
+}
+
+function sheetPreferenceScore(sheetName: string) {
+  if (sheetName.includes("키워드검색결과")) return 0;
+  if (sheetName.includes("2026년 전체내역")) return 1;
+  if (sheetName.includes("전체내역")) return 2;
+  if (sheetName.toLowerCase() === "sheet1") return 3;
+  return 4;
 }
 
 function findColumn(row: readonly Cell[], aliases: string[]) {
@@ -392,8 +400,27 @@ function parseAmount(value: Cell): number {
 
 function inferCategory(text: string) {
   const normalized = text.toLowerCase();
-  if (normalized.includes("gemini") || normalized.includes("google") || normalized.includes("구글")) {
+  if (
+    normalized.includes("gemini") ||
+    normalized.includes("google") ||
+    normalized.includes("구글") ||
+    normalized.includes("제미나이")
+  ) {
     return "Google/Gemini";
+  }
+  if (normalized.includes("claude") || normalized.includes("anthropic") || normalized.includes("클로드")) {
+    return "Claude/Anthropic";
+  }
+  if (
+    normalized.includes("genspark") ||
+    normalized.includes("mainfunc") ||
+    normalized.includes("젠스파크") ||
+    normalized.includes("젠스파트")
+  ) {
+    return "Genspark";
+  }
+  if (normalized.includes("gamma") || normalized.includes("감마")) {
+    return "Gamma";
   }
   if (
     normalized.includes("chatgpt") ||
@@ -404,17 +431,11 @@ function inferCategory(text: string) {
   ) {
     return "ChatGPT/OpenAI";
   }
-  if (normalized.includes("claude") || normalized.includes("anthropic") || normalized.includes("클로드")) {
-    return "Claude/Anthropic";
-  }
-  if (normalized.includes("genspark") || normalized.includes("젠스파크")) {
-    return "Genspark";
-  }
-  if (normalized.includes("gamma") || normalized.includes("감마")) {
-    return "Gamma";
-  }
   if (normalized.includes("perplexity") || normalized.includes("퍼플")) {
     return "Perplexity";
+  }
+  if (normalized.includes("ollama")) {
+    return "Ollama";
   }
   if (normalized.includes("cursor")) {
     return "Cursor";
@@ -425,23 +446,36 @@ function inferCategory(text: string) {
 function normalizeCategory(category: string) {
   const normalized = category.trim().toLowerCase();
   if (!normalized) return "미분류";
-  if (normalized.includes("구글") || normalized.includes("gemini") || normalized.includes("google")) {
+  if (
+    normalized.includes("구글") ||
+    normalized.includes("gemini") ||
+    normalized.includes("google") ||
+    normalized.includes("제미나이")
+  ) {
     return "Google/Gemini";
-  }
-  if (normalized.includes("gpt") || normalized.includes("openai") || normalized.includes("챗")) {
-    return "ChatGPT/OpenAI";
   }
   if (normalized.includes("클로드") || normalized.includes("claude") || normalized.includes("anthropic")) {
     return "Claude/Anthropic";
   }
-  if (normalized.includes("젠스파크") || normalized.includes("genspark")) {
+  if (
+    normalized.includes("젠스파크") ||
+    normalized.includes("젠스파트") ||
+    normalized.includes("genspark") ||
+    normalized.includes("mainfunc")
+  ) {
     return "Genspark";
   }
   if (normalized.includes("감마") || normalized.includes("gamma")) {
     return "Gamma";
   }
+  if (normalized.includes("gpt") || normalized.includes("openai") || normalized.includes("챗")) {
+    return "ChatGPT/OpenAI";
+  }
   if (normalized.includes("퍼플") || normalized.includes("perplexity")) {
     return "Perplexity";
+  }
+  if (normalized.includes("ollama")) {
+    return "Ollama";
   }
   return category.trim();
 }

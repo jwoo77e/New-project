@@ -79,4 +79,71 @@ describe("dashboardDataFromSheets", () => {
       ]),
     ).toThrow("일자, 사용금액, 부서 컬럼을 가진 시트를 찾지 못했습니다.");
   });
+
+  it("supports corporate card approval headers and prefers the 2026 full-detail sheet", () => {
+    const data = dashboardDataFromSheets("2026년_4월_법인카드_AI.xlsx", [
+      {
+        sheet: "2025년 11월",
+        data: [
+          ["승인일자", "전표적요", "승인금액", "가맹점", "부서"],
+          ["2025-11-17", "과거 사용료", 999999, "OPENAI OPCO", "자금회계팀"],
+        ],
+      },
+      {
+        sheet: "2026년 전체내역",
+        data: [
+          ["승인일자", "카드명", "전표적요", "승인금액", "가맹점", "차변계정", "부서", "해당월"],
+          [
+            "2026-04-01",
+            "우리카드",
+            "AI 개발자 도구 Claude Maximum Flexibility",
+            340886,
+            "CLAUDE.AI SUBSCRIPTION SAN FRANCISCO USA",
+            "지급수수료",
+            "자금회계팀",
+            "4월",
+          ],
+          [
+            "2026-04-02",
+            "하나카드",
+            "구글 그룹웨어 이용",
+            821508,
+            "토스페이먼츠 주식회사",
+            "지급수수료",
+            "자금회계팀",
+            "4월",
+          ],
+          [
+            "2026-04-29",
+            "우리카드",
+            "AI 이용료",
+            31682,
+            "OLLAMA INC.",
+            "지급수수료",
+            "자금회계팀",
+            "4월",
+          ],
+        ],
+      },
+    ]);
+
+    expect(data.sourceMeta.sourceSheet).toBe("2026년 전체내역");
+    expect(data.monthlyActuals).toEqual([
+      { month: "2026-04", label: "4월", amount: 1194076, transactions: 3 },
+    ]);
+    expect(data.forecastAdjustments).toEqual([
+      {
+        month: "2026-04",
+        label: "4월",
+        amount: 821508,
+        transactions: 1,
+        reason: "개발/데모용 구글 API 일시 비용",
+      },
+    ]);
+    expect(data.categoryCosts.map((row) => [row.name, row.amount])).toEqual([
+      ["Google/Gemini", 821508],
+      ["Claude/Anthropic", 340886],
+      ["Ollama", 31682],
+    ]);
+  });
 });
