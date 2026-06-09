@@ -858,6 +858,57 @@ h2 {
   gap: 9px;
 }
 
+.notion-summary-grid {
+  display: grid;
+  grid-template-columns: 1.2fr repeat(2, minmax(0, 0.8fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.notion-summary-grid article {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.notion-summary-grid span,
+.notion-summary-grid small,
+.notion-prompt-table small,
+.notion-prompt-table td > span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.notion-summary-grid strong {
+  display: block;
+  margin: 6px 0;
+  color: var(--ink);
+  font-size: 1.32rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.notion-prompt-table td {
+  vertical-align: top;
+}
+
+.notion-prompt-table td > strong,
+.notion-prompt-table td strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.notion-usage-cell {
+  display: grid;
+  gap: 8px;
+  min-width: 120px;
+}
+
 .guide-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 4px;
@@ -1408,6 +1459,7 @@ td strong {
   .key-health-grid,
   .chatgpt-export-grid,
   .claude-team-grid,
+  .notion-summary-grid,
   .service-usage-grid,
   .ax-dimension-grid,
   .ax-insight-columns,
@@ -1493,6 +1545,7 @@ td strong {
   .key-health-grid,
   .chatgpt-export-grid,
   .claude-team-grid,
+  .notion-summary-grid,
   .service-usage-grid,
   .ax-dimension-grid,
   .ax-insight-columns,

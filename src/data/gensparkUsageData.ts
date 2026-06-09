@@ -120,6 +120,33 @@ export type AiUsageInsightAnalysis = {
   improvementActions: AiImprovementAction[];
 };
 
+export type NotionPromptSourceUsage = {
+  accountLabel: string;
+  sourcePage: string;
+  tool: string;
+  sourceUrl: string;
+  promptRecords: number;
+  generatedOutputs: number;
+  outputBasis: string;
+  includedRecords: string[];
+  note: string;
+};
+
+export type NotionPromptUsageData = {
+  source: {
+    name: string;
+    collectedAt: string;
+    period: string;
+    accountLabel: string;
+    note: string;
+  };
+  totalPromptRecords: number;
+  totalGeneratedOutputs: number;
+  templateRecordsExcluded: number;
+  sources: NotionPromptSourceUsage[];
+  insights: string[];
+};
+
 export type ChatGptExportAnalysis = {
   source: {
     name: string;
@@ -167,6 +194,7 @@ export type GensparkUsageData = {
   representativeTasks: GensparkTaskSummary[];
   patterns: string[];
   insightAnalysis: AiUsageInsightAnalysis;
+  notionPromptUsage?: NotionPromptUsageData;
   chatGptExport?: ChatGptExportAnalysis;
 };
 
@@ -579,6 +607,54 @@ export const initialGensparkUsageData: GensparkUsageData = {
         expectedImpact: "모호한 요청으로 인한 장문 재작업과 품질 편차 감소",
         priority: "중",
       },
+    ],
+  },
+  notionPromptUsage: {
+    source: {
+      name: "Notion 프롬프트 DB 분석",
+      collectedAt: "2026-06-09",
+      period: "2026-06-09",
+      accountLabel: "김재우 프롬프트 DB",
+      note: "사용자가 제공한 Notion 페이지 2건을 fetch해 프롬프트 기록과 생성 산출물만 집계",
+    },
+    totalPromptRecords: 5,
+    totalGeneratedOutputs: 7,
+    templateRecordsExcluded: 1,
+    sources: [
+      {
+        accountLabel: "김재우 프롬프트 DB",
+        sourcePage: "클로드 프롬프트 DB",
+        tool: "Claude/Cowork",
+        sourceUrl: "https://app.notion.com/p/37a32dfb494c806e9622cdadc1fa672e",
+        promptRecords: 2,
+        generatedOutputs: 2,
+        outputBasis: "하위 Claude 작업 페이지의 생성 파일 섹션 1건씩 집계",
+        includedRecords: [
+          "2026-06-09 · Iris (IRIS 크롤러 정기실행)",
+          "2026-06-09 · Aitrendv1 (2026 AI 트렌드·산업안전 적용)",
+        ],
+        note: "스케줄 자동 트리거 기반 Claude/Cowork 작업 2건",
+      },
+      {
+        accountLabel: "김재우 프롬프트 DB",
+        sourcePage: "Codex 프롬프트 DB",
+        tool: "Codex",
+        sourceUrl: "https://app.notion.com/p/37a32dfb494c802ea9dfea58a48dde04",
+        promptRecords: 3,
+        generatedOutputs: 5,
+        outputBasis: "Codex DB 실제 작업 행의 생성 파일/산출물 기록 기준, 템플릿 행 제외",
+        includedRecords: [
+          "2026-06-09 Codex 프롬프트 DB 구축",
+          "2026-06-09 Codex 프롬프트 DB 일일 저장 자동화 설정",
+          "2026-06-09 Codex 프롬프트 DB 테스트 업로드 실행",
+        ],
+        note: "템플릿 - Codex 질문/생성물 기록 1건은 운영 양식이므로 제외",
+      },
+    ],
+    insights: [
+      "Notion 계정 기준으로는 김재우 프롬프트 DB 아래 Claude와 Codex 기록이 함께 쌓이고 있습니다.",
+      "프롬프트 기록은 Claude 2건, Codex 3건으로 총 5건입니다.",
+      "생성 산출물은 Claude 2건, Codex 5건으로 총 7개이며, Notion 파일 첨부 속성은 이번 화면 지표에서 제외했습니다.",
     ],
   },
   chatGptExport: {

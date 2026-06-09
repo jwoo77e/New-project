@@ -1580,7 +1580,10 @@ function DetailView({
 
 function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
   const insight = usageData.insightAnalysis;
+  const notionPromptUsage = usageData.notionPromptUsage;
   const topTopic = insight.topicInsights[0];
+  const maxNotionPromptRecords = Math.max(...(notionPromptUsage?.sources.map((source) => source.promptRecords) ?? [1]), 1);
+  const maxNotionGeneratedOutputs = Math.max(...(notionPromptUsage?.sources.map((source) => source.generatedOutputs) ?? [1]), 1);
   const qualityClass = (signal: string) =>
     signal === "즉시 재사용" ? "ok" : signal === "가이드 필요" ? "guide" : "fix";
   const urgencyClass = (value: string) => (value === "상" || value === "높음" ? "high" : value === "중간" || value === "중" ? "medium" : "low");
@@ -1689,6 +1692,92 @@ function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
           ))}
         </div>
       </section>
+
+      {notionPromptUsage && (
+        <section className="panel panel-wide">
+          <div className="panel-header">
+            <div>
+              <span className="eyebrow">Notion Prompt DB</span>
+              <h2>Notion 계정별 프롬프트·생성 산출물</h2>
+            </div>
+            <span className="state-pill neutral">{notionPromptUsage.source.period}</span>
+          </div>
+          <div className="notion-summary-grid">
+            <article>
+              <span>노션 계정</span>
+              <strong>{notionPromptUsage.source.accountLabel}</strong>
+              <small>{notionPromptUsage.source.name}</small>
+            </article>
+            <article>
+              <span>프롬프트 기록</span>
+              <strong>{numberFormat.format(notionPromptUsage.totalPromptRecords)}건</strong>
+              <small>템플릿 {numberFormat.format(notionPromptUsage.templateRecordsExcluded)}건 제외</small>
+            </article>
+            <article>
+              <span>생성 산출물</span>
+              <strong>{numberFormat.format(notionPromptUsage.totalGeneratedOutputs)}개</strong>
+              <small>본문과 속성의 생성 파일 기록 기준</small>
+            </article>
+          </div>
+          <div className="table-wrap notion-prompt-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>노션 계정</th>
+                  <th>원천 페이지</th>
+                  <th>도구</th>
+                  <th>프롬프트 기록</th>
+                  <th>생성 산출물</th>
+                  <th>집계 기준</th>
+                </tr>
+              </thead>
+              <tbody>
+                {notionPromptUsage.sources.map((source) => (
+                  <tr key={`${source.sourcePage}-${source.tool}`}>
+                    <td>
+                      <strong>{source.accountLabel}</strong>
+                    </td>
+                    <td>
+                      <strong>{source.sourcePage}</strong>
+                      <small>{source.note}</small>
+                    </td>
+                    <td>{source.tool}</td>
+                    <td>
+                      <div className="notion-usage-cell">
+                        <strong>{numberFormat.format(source.promptRecords)}건</strong>
+                        <div className="department-meter" aria-label={`${source.sourcePage} 프롬프트 기록 비중`}>
+                          <span style={{ width: `${Math.min((source.promptRecords / maxNotionPromptRecords) * 100, 100)}%` }} />
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="notion-usage-cell">
+                        <strong>{numberFormat.format(source.generatedOutputs)}개</strong>
+                        <div className="department-meter" aria-label={`${source.sourcePage} 생성 산출물 비중`}>
+                          <span style={{ width: `${Math.min((source.generatedOutputs / maxNotionGeneratedOutputs) * 100, 100)}%` }} />
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span>{source.outputBasis}</span>
+                      <small>{source.includedRecords.join(" · ")}</small>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="insight-box">
+            <FileSpreadsheet size={18} />
+            <div>
+              <strong>Notion 원천 분석 기준</strong>
+              {notionPromptUsage.insights.map((insightText) => (
+                <span key={insightText}>{insightText}</span>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="panel">
         <div className="panel-header">
