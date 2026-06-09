@@ -1738,7 +1738,14 @@ function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
                       <strong>{source.accountLabel}</strong>
                     </td>
                     <td>
-                      <strong>{source.sourcePage}</strong>
+                      <a
+                        className="notion-page-link"
+                        href={source.sourceUrl}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                      >
+                        {source.sourcePage}
+                      </a>
                       <small>{source.note}</small>
                     </td>
                     <td>{source.tool}</td>
