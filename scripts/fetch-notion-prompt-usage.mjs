@@ -292,6 +292,9 @@ async function discoverPromptRecords(notion, blockId, state, depth = 0) {
     if (block.type === "child_page") {
       const record = await collectPageRecord(notion, block.id, block.child_page?.title || "제목 없음", state);
       if (record) records.push(record);
+      if (block.has_children) {
+        records.push(...(await discoverPromptRecords(notion, block.id, state, depth + 1)));
+      }
       continue;
     }
 

@@ -147,6 +147,75 @@ describe("Notion prompt usage aggregation", () => {
     expect(countGeneratedOutputs(records[0])).toBe(2);
     expect(state.sourceHints).toEqual(["database:data_sources", "data_source", "block_children"]);
   });
+
+  it("walks nested child pages to find databases inside source pages", async () => {
+    const state = createCollectorState();
+    const records = await discoverPromptRecordsFromRoot(
+      {
+        async queryDataSource() {
+          throw new Error("not a data source");
+        },
+        async retrieveDatabase(databaseId) {
+          if (String(databaseId).startsWith("bbbbbbbb")) {
+            throw new Error("database has no data sources");
+          }
+          throw new Error("not a database");
+        },
+        async queryDatabase(databaseId) {
+          if (String(databaseId).startsWith("bbbbbbbb")) {
+            return [
+              {
+                id: "cccccccc-cccc-cccc-cccc-cccccccccccc",
+                properties: {
+                  Name: { type: "title", title: [{ plain_text: "중첩 DB 행" }] },
+                  "생성 산출물": { type: "rich_text", rich_text: [{ plain_text: "회의록, 보고서" }] },
+                },
+              },
+            ];
+          }
+          throw new Error("not a legacy database");
+        },
+        async listBlockChildren(blockId) {
+          if (String(blockId).startsWith("aaaaaaaa")) {
+            return [
+              {
+                id: "dddddddd-dddd-dddd-dddd-dddddddddddd",
+                type: "child_page",
+                has_children: true,
+                child_page: { title: "Codex 프롬프트 DB" },
+              },
+            ];
+          }
+
+          if (String(blockId).startsWith("dddddddd")) {
+            return [
+              {
+                id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+                type: "child_database",
+                has_children: false,
+                child_database: { title: "Prompt Log" },
+              },
+            ];
+          }
+
+          return [];
+        },
+        async blockText(blockId) {
+          if (String(blockId).startsWith("dddddddd")) {
+            return "생성 산출물\n대시보드 카드";
+          }
+          return "";
+        },
+      },
+      "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      state,
+    );
+
+    expect(records).toHaveLength(2);
+    expect(records.map((record) => record.title)).toEqual(["Codex 프롬프트 DB", "중첩 DB 행"]);
+    expect(countGeneratedOutputs(records[1])).toBe(2);
+    expect(state.sourceHints).toEqual(["database", "block_children"]);
+  });
 });
 
 function createCollectorState() {
