@@ -138,7 +138,10 @@ export type NotionPromptUsageData = {
     collectedAt: string;
     period: string;
     accountLabel: string;
+    status?: "정상" | "주의";
     note: string;
+    mode?: string;
+    refreshSchedule?: string;
   };
   totalPromptRecords: number;
   totalGeneratedOutputs: number;
@@ -146,6 +149,44 @@ export type NotionPromptUsageData = {
   sources: NotionPromptSourceUsage[];
   insights: string[];
 };
+
+export function isNotionPromptUsageData(value: unknown): value is NotionPromptUsageData {
+  const data = value as NotionPromptUsageData;
+  return (
+    Boolean(data) &&
+    typeof data === "object" &&
+    Boolean(data.source) &&
+    typeof data.source.name === "string" &&
+    typeof data.source.collectedAt === "string" &&
+    typeof data.source.period === "string" &&
+    typeof data.source.accountLabel === "string" &&
+    typeof data.source.note === "string" &&
+    typeof data.totalPromptRecords === "number" &&
+    typeof data.totalGeneratedOutputs === "number" &&
+    typeof data.templateRecordsExcluded === "number" &&
+    Array.isArray(data.sources) &&
+    data.sources.every(isNotionPromptSourceUsage) &&
+    Array.isArray(data.insights) &&
+    data.insights.every((insight) => typeof insight === "string")
+  );
+}
+
+function isNotionPromptSourceUsage(value: unknown): value is NotionPromptSourceUsage {
+  const source = value as NotionPromptSourceUsage;
+  return (
+    Boolean(source) &&
+    typeof source === "object" &&
+    typeof source.accountLabel === "string" &&
+    typeof source.sourcePage === "string" &&
+    typeof source.tool === "string" &&
+    typeof source.sourceUrl === "string" &&
+    typeof source.promptRecords === "number" &&
+    typeof source.generatedOutputs === "number" &&
+    typeof source.outputBasis === "string" &&
+    Array.isArray(source.includedRecords) &&
+    typeof source.note === "string"
+  );
+}
 
 export type ChatGptExportAnalysis = {
   source: {

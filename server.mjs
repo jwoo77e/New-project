@@ -3,13 +3,26 @@ import { readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
 import { collectApiUsage, loadApiUsageEnv } from "./scripts/fetch-api-usage.mjs";
+import {
+  collectNotionPromptUsage,
+  loadNotionPromptEnv,
+  writeNotionPromptUsageSnapshot,
+} from "./scripts/fetch-notion-prompt-usage.mjs";
 
 const rootDir = process.cwd();
 const distDir = path.join(rootDir, "dist");
 const port = Number(process.env.PORT ?? 4173);
 const apiUsageCacheMs = Number(process.env.API_USAGE_CACHE_MS ?? 5 * 60 * 1000);
+const notionPromptCacheMs = Number(process.env.NOTION_PROMPT_USAGE_CACHE_MS ?? 24 * 60 * 60 * 1000);
+const notionPromptRefreshHourKst = Number(process.env.NOTION_PROMPT_USAGE_REFRESH_HOUR_KST ?? 8);
 
 let apiUsageCache = {
+  expiresAt: 0,
+  promise: null,
+  snapshot: null,
+};
+
+let notionPromptUsageCache = {
   expiresAt: 0,
   promise: null,
   snapshot: null,
@@ -36,6 +49,11 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (url.pathname === "/api/notion-prompt-usage") {
+      await handleNotionPromptUsage(url, response);
+      return;
+    }
+
     if (url.pathname === "/api/health") {
       sendJson(response, 200, {
         ok: true,
@@ -55,6 +73,7 @@ const server = createServer(async (request, response) => {
 
 server.listen(port, "0.0.0.0", () => {
   console.log(`AI cost dashboard listening on http://0.0.0.0:${port}`);
+  scheduleDailyNotionPromptRefresh();
 });
 
 async function handleApiUsage(url, response) {
@@ -93,6 +112,89 @@ async function collectRuntimeApiUsage(requestedDays) {
     collectedAt: new Date(),
     mode: "운영 런타임 API 수집",
   });
+}
+
+async function handleNotionPromptUsage(url, response) {
+  const refresh = url.searchParams.get("refresh") === "1";
+  const now = Date.now();
+
+  response.setHeader("cache-control", "no-store");
+
+  if (!refresh && notionPromptUsageCache.snapshot && notionPromptUsageCache.expiresAt > now) {
+    sendJson(response, 200, notionPromptUsageCache.snapshot);
+    return;
+  }
+
+  if (!notionPromptUsageCache.promise) {
+    notionPromptUsageCache.promise = collectRuntimeNotionPromptUsage().finally(() => {
+      notionPromptUsageCache.promise = null;
+    });
+  }
+
+  const snapshot = await notionPromptUsageCache.promise;
+  notionPromptUsageCache = {
+    expiresAt: Date.now() + notionPromptCacheMs,
+    promise: null,
+    snapshot,
+  };
+  sendJson(response, 200, snapshot);
+}
+
+async function collectRuntimeNotionPromptUsage() {
+  const env = await loadNotionPromptEnv({ targetRootDir: rootDir });
+  const snapshot = await collectNotionPromptUsage({
+    env,
+    targetRootDir: rootDir,
+    collectedAt: new Date(),
+    mode: "운영 런타임 Notion 수집",
+  });
+  await writeNotionPromptUsageSnapshot(snapshot, env);
+  return snapshot;
+}
+
+function scheduleDailyNotionPromptRefresh() {
+  const firstDelayMs = msUntilNextKstHour(notionPromptRefreshHourKst);
+  console.log(
+    `Notion prompt usage refresh scheduled daily at ${String(notionPromptRefreshHourKst).padStart(2, "0")}:00 KST`,
+  );
+
+  setTimeout(() => {
+    void refreshNotionPromptUsageCache();
+    setInterval(() => {
+      void refreshNotionPromptUsageCache();
+    }, 24 * 60 * 60 * 1000);
+  }, firstDelayMs);
+}
+
+async function refreshNotionPromptUsageCache() {
+  try {
+    const snapshot = await collectRuntimeNotionPromptUsage();
+    notionPromptUsageCache = {
+      expiresAt: Date.now() + notionPromptCacheMs,
+      promise: null,
+      snapshot,
+    };
+    console.log(
+      `Notion prompt usage refreshed: ${snapshot.source.status} · ${snapshot.totalPromptRecords} prompts · ${snapshot.totalGeneratedOutputs} outputs`,
+    );
+  } catch (error) {
+    console.warn(`Notion prompt usage refresh failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+function msUntilNextKstHour(hour) {
+  const boundedHour = Number.isFinite(hour) ? Math.max(0, Math.min(23, Math.floor(hour))) : 8;
+  const kstOffsetMs = 9 * 60 * 60 * 1000;
+  const now = Date.now();
+  const nowKst = new Date(now + kstOffsetMs);
+  let nextUtcMs =
+    Date.UTC(nowKst.getUTCFullYear(), nowKst.getUTCMonth(), nowKst.getUTCDate(), boundedHour, 0, 0, 0) - kstOffsetMs;
+
+  if (nextUtcMs <= now) {
+    nextUtcMs += 24 * 60 * 60 * 1000;
+  }
+
+  return nextUtcMs - now;
 }
 
 async function serveStatic(pathname, response) {

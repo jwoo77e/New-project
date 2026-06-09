@@ -52,8 +52,10 @@ import {
   type TransactionCost,
 } from "./data/aiCostData";
 import {
+  isNotionPromptUsageData,
   initialGensparkUsageData,
   type GensparkUsageData,
+  type NotionPromptUsageData,
 } from "./data/gensparkUsageData";
 import {
   initialClaudeTeamUsageData,
@@ -371,6 +373,9 @@ function App() {
   const [dashboardData, setDashboardData] = useState<DashboardData>(initialState.data);
   const [isStoredData, setIsStoredData] = useState(initialState.isStoredData);
   const [apiUsageData, setApiUsageData] = useState<ApiUsageData>(initialApiUsageData);
+  const [notionPromptUsageData, setNotionPromptUsageData] = useState<NotionPromptUsageData | undefined>(
+    initialGensparkUsageData.notionPromptUsage,
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -398,6 +403,44 @@ function App() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const snapshotUrls = [
+      "/api/notion-prompt-usage",
+      `${import.meta.env.BASE_URL}notion-prompt-usage-snapshot.local.json`,
+    ];
+
+    async function loadNotionPromptUsageData() {
+      for (const url of snapshotUrls) {
+        try {
+          const response = await fetch(url, { cache: "no-store" });
+          if (!response.ok) continue;
+          const data: unknown = await response.json();
+          if (isNotionPromptUsageData(data)) {
+            if (isMounted) setNotionPromptUsageData(data);
+            return;
+          }
+        } catch {
+          // The Notion collector is optional for local/static deployments; keep the bundled baseline.
+        }
+      }
+    }
+
+    void loadNotionPromptUsageData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const gensparkUsageData = useMemo<GensparkUsageData>(
+    () => ({
+      ...initialGensparkUsageData,
+      notionPromptUsage: notionPromptUsageData,
+    }),
+    [notionPromptUsageData],
+  );
 
   const {
     sourceMeta,
@@ -966,7 +1009,7 @@ function App() {
         />
       )}
 
-      {activeView === "genspark" && <GensparkUsageView usageData={initialGensparkUsageData} />}
+      {activeView === "genspark" && <GensparkUsageView usageData={gensparkUsageData} />}
 
       {activeView === "api" && <ApiUsageView apiUsageData={apiUsageData} />}
 
@@ -1700,13 +1743,18 @@ function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
               <span className="eyebrow">Notion Prompt DB</span>
               <h2>Notion 계정별 프롬프트·생성 산출물</h2>
             </div>
-            <span className="state-pill neutral">{notionPromptUsage.source.period}</span>
+            <div className="panel-header-side">
+              <span className={`state-pill ${notionPromptUsage.source.status === "주의" ? "warning" : "ok"}`}>
+                {notionPromptUsage.source.status ?? "기준값"}
+              </span>
+              <span className="state-pill neutral">{notionPromptUsage.source.period}</span>
+            </div>
           </div>
           <div className="notion-summary-grid">
             <article>
               <span>노션 계정</span>
               <strong>{notionPromptUsage.source.accountLabel}</strong>
-              <small>{notionPromptUsage.source.name}</small>
+              <small>{notionPromptUsage.source.refreshSchedule ?? notionPromptUsage.source.name}</small>
             </article>
             <article>
               <span>프롬프트 기록</span>
@@ -1778,6 +1826,7 @@ function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
             <FileSpreadsheet size={18} />
             <div>
               <strong>Notion 원천 분석 기준</strong>
+              <span>{notionPromptUsage.source.note}</span>
               {notionPromptUsage.insights.map((insightText) => (
                 <span key={insightText}>{insightText}</span>
               ))}

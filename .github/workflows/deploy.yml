@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+  schedule:
+    - cron: "0 23 * * *"
   workflow_dispatch:
 
 permissions:
@@ -38,6 +40,9 @@ jobs:
         env:
           ANTHROPIC_ADMIN_API_KEY: ${{ secrets.ANTHROPIC_ADMIN_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PROMPT_SOURCE_PAGES: ${{ secrets.NOTION_PROMPT_SOURCE_PAGES }}
           OPENAI_ADMIN_KEY: ${{ secrets.OPENAI_ADMIN_KEY }}
         run: npm run build -- --base=/New-project/
 
