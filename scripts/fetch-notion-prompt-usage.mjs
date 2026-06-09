@@ -85,6 +85,7 @@ export async function collectNotionPromptUsage({
   const notion = createNotionClient({
     token,
     notionVersion: env.NOTION_VERSION || "2022-06-28",
+    dataSourceVersion: env.NOTION_DATA_SOURCE_VERSION || "2025-09-03",
   });
 
   const collectedSources = [];
@@ -219,11 +220,15 @@ const templatePattern = /템플릿|template/i;
 const emptyOutputPattern = /^(없음|무|n\/a|na|null|none|-|미생성|없습니다)$/i;
 
 async function collectPromptSourceUsage(notion, source, { maxDepth }) {
-  const records = await discoverPromptRecords(notion, source.id, {
+  const state = {
     maxDepth,
     visitedBlocks: new Set(),
     visitedRecords: new Set(),
-  });
+    visitedDatabases: new Set(),
+    visitedDataSources: new Set(),
+    sourceHints: [],
+  };
+  const records = await discoverPromptRecordsFromRoot(notion, source.id, state);
 
   const includedRecords = [];
   let promptRecords = 0;
@@ -248,7 +253,10 @@ async function collectPromptSourceUsage(notion, source, { maxDepth }) {
     sourceUrl: source.sourceUrl,
     promptRecords,
     generatedOutputs,
-    outputBasis: "Notion API 하위 페이지/DB 행의 생성 산출물 속성과 본문 기준",
+    outputBasis:
+      state.sourceHints.length > 0
+        ? `Notion API ${[...new Set(state.sourceHints)].join("/")}의 생성 산출물 속성과 본문 기준`
+        : "Notion API 하위 페이지/DB 행의 생성 산출물 속성과 본문 기준",
     includedRecords: includedRecords.slice(0, 12),
     note:
       includedRecords.length > 12
@@ -256,6 +264,16 @@ async function collectPromptSourceUsage(notion, source, { maxDepth }) {
         : "Notion API 자동 집계",
     templateRecordsExcluded,
   };
+}
+
+export async function discoverPromptRecordsFromRoot(notion, sourceId, state) {
+  const records = [];
+
+  records.push(...(await tryCollectDataSourceRecords(notion, sourceId, state)));
+  records.push(...(await tryCollectDatabaseRecords(notion, sourceId, state)));
+  records.push(...(await tryDiscoverBlockRecords(notion, sourceId, state)));
+
+  return records;
 }
 
 async function discoverPromptRecords(notion, blockId, state, depth = 0) {
@@ -267,7 +285,7 @@ async function discoverPromptRecords(notion, blockId, state, depth = 0) {
 
   for (const block of blocks) {
     if (block.type === "child_database") {
-      records.push(...(await collectDatabaseRecords(notion, block.id, state)));
+      records.push(...(await tryCollectDatabaseRecords(notion, block.id, state)));
       continue;
     }
 
@@ -298,6 +316,86 @@ async function collectDatabaseRecords(notion, databaseId, state) {
   return records;
 }
 
+async function tryCollectDatabaseRecords(notion, databaseId, state) {
+  const normalizedId = normalizeNotionId(databaseId);
+  if (!normalizedId || state.visitedDatabases.has(normalizedId)) return [];
+  state.visitedDatabases.add(normalizedId);
+
+  const records = [];
+
+  try {
+    const database = await notion.retrieveDatabase(normalizedId);
+    const dataSources = Array.isArray(database?.data_sources) ? database.data_sources : [];
+
+    if (dataSources.length > 0) {
+      state.sourceHints.push("database:data_sources");
+      for (const dataSource of dataSources) {
+        records.push(...(await tryCollectDataSourceRecords(notion, dataSource.id, state)));
+      }
+      return records;
+    }
+  } catch {
+    // Some IDs are pages or data sources, not databases. Try the legacy query path next.
+  }
+
+  try {
+    const records = await collectDatabaseRecords(notion, normalizedId, state);
+    state.sourceHints.push("database");
+    return records;
+  } catch {
+    return records;
+  }
+}
+
+async function collectDataSourceRecords(notion, dataSourceId, state) {
+  const pages = await notion.queryDataSource(dataSourceId);
+  const records = [];
+
+  for (const item of pages) {
+    if (item.object === "page") {
+      const title = pageTitle(item) || "제목 없음";
+      const record = await collectPageRecord(notion, item.id, title, state, item.properties || {});
+      if (record) records.push(record);
+      continue;
+    }
+
+    if (item.object === "database") {
+      records.push(...(await tryCollectDatabaseRecords(notion, item.id, state)));
+      continue;
+    }
+
+    if (item.object === "data_source") {
+      records.push(...(await tryCollectDataSourceRecords(notion, item.id, state)));
+    }
+  }
+
+  return records;
+}
+
+async function tryCollectDataSourceRecords(notion, dataSourceId, state) {
+  const normalizedId = normalizeNotionId(dataSourceId);
+  if (!normalizedId || state.visitedDataSources.has(normalizedId)) return [];
+  state.visitedDataSources.add(normalizedId);
+
+  try {
+    const records = await collectDataSourceRecords(notion, normalizedId, state);
+    state.sourceHints.push("data_source");
+    return records;
+  } catch {
+    return [];
+  }
+}
+
+async function tryDiscoverBlockRecords(notion, blockId, state) {
+  try {
+    const records = await discoverPromptRecords(notion, blockId, state);
+    state.sourceHints.push("block_children");
+    return records;
+  } catch {
+    return [];
+  }
+}
+
 async function collectPageRecord(notion, pageId, title, state, properties = null) {
   if (state.visitedRecords.has(pageId)) return null;
   state.visitedRecords.add(pageId);
@@ -318,14 +416,14 @@ async function collectPageRecord(notion, pageId, title, state, properties = null
   };
 }
 
-function createNotionClient({ token, notionVersion }) {
-  async function request(endpoint, { method = "GET", body } = {}) {
+function createNotionClient({ token, notionVersion, dataSourceVersion }) {
+  async function request(endpoint, { method = "GET", body, version = notionVersion } = {}) {
     const response = await fetch(`https://api.notion.com/v1${endpoint}`, {
       method,
       headers: {
         authorization: `Bearer ${token}`,
         "content-type": "application/json",
-        "notion-version": notionVersion,
+        "notion-version": version,
       },
       body: body ? JSON.stringify(body) : undefined,
     });
@@ -338,7 +436,7 @@ function createNotionClient({ token, notionVersion }) {
     return response.json();
   }
 
-  async function listPaginated(endpoint, body = null) {
+  async function listPaginated(endpoint, body = null, options = {}) {
     const results = [];
     let cursor = null;
 
@@ -346,8 +444,9 @@ function createNotionClient({ token, notionVersion }) {
       const separator = endpoint.includes("?") ? "&" : "?";
       const data =
         body === null
-          ? await request(`${endpoint}${separator}page_size=100${cursor ? `&start_cursor=${cursor}` : ""}`)
+          ? await request(`${endpoint}${separator}page_size=100${cursor ? `&start_cursor=${cursor}` : ""}`, options)
           : await request(endpoint, {
+              ...options,
               method: "POST",
               body: {
                 ...body,
@@ -386,6 +485,11 @@ function createNotionClient({ token, notionVersion }) {
   return {
     listBlockChildren: (blockId) => listPaginated(`/blocks/${normalizeNotionId(blockId)}/children`),
     queryDatabase: (databaseId) => listPaginated(`/databases/${normalizeNotionId(databaseId)}/query`, {}),
+    queryDataSource: (dataSourceId) =>
+      listPaginated(`/data_sources/${normalizeNotionId(dataSourceId)}/query`, {}, { version: dataSourceVersion }),
+    retrieveDatabase: (databaseId) => request(`/databases/${normalizeNotionId(databaseId)}`, { version: dataSourceVersion }),
+    retrieveDataSource: (dataSourceId) =>
+      request(`/data_sources/${normalizeNotionId(dataSourceId)}`, { version: dataSourceVersion }),
     blockText,
   };
 }

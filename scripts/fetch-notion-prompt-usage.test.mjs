@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildNotionPromptUsageSnapshot,
   countGeneratedOutputs,
+  discoverPromptRecordsFromRoot,
   parseSourcePages,
 } from "./fetch-notion-prompt-usage.mjs";
 
@@ -63,4 +64,98 @@ describe("Notion prompt usage aggregation", () => {
     expect(sources[0].id).toBe("37a32dfb-494c-802e-a9df-ea58a48dde04");
     expect(sources[0].sourcePage).toBe("테스트 DB");
   });
+
+  it("collects rows when the configured root ID is a Notion data source", async () => {
+    const state = createCollectorState();
+    const records = await discoverPromptRecordsFromRoot(
+      {
+        async queryDataSource() {
+          return [
+            {
+              object: "page",
+              id: "11111111-1111-1111-1111-111111111111",
+              properties: {
+                Name: { type: "title", title: [{ plain_text: "Codex 자동 저장 테스트" }] },
+                "생성 산출물": { type: "rich_text", rich_text: [{ plain_text: "스냅샷 JSON, 대시보드 카드" }] },
+              },
+            },
+          ];
+        },
+        async retrieveDatabase() {
+          throw new Error("not a database");
+        },
+        async queryDatabase() {
+          throw new Error("not a legacy database");
+        },
+        async listBlockChildren() {
+          return [];
+        },
+        async blockText() {
+          return "프롬프트\nNotion 자동 수집 테스트";
+        },
+      },
+      "37a32dfb494c802ea9dfea58a48dde04",
+      state,
+    );
+
+    expect(records).toHaveLength(1);
+    expect(records[0].title).toBe("Codex 자동 저장 테스트");
+    expect(countGeneratedOutputs(records[0])).toBe(2);
+    expect(state.sourceHints).toEqual(["data_source", "block_children"]);
+  });
+
+  it("collects rows when the configured root ID is a database with data sources", async () => {
+    const state = createCollectorState();
+    const records = await discoverPromptRecordsFromRoot(
+      {
+        async queryDataSource(dataSourceId) {
+          if (String(dataSourceId).startsWith("22222222")) {
+            return [
+              {
+                object: "page",
+                id: "33333333-3333-3333-3333-333333333333",
+                properties: {
+                  Name: { type: "title", title: [{ plain_text: "Claude 자동화 기록" }] },
+                  Output: { type: "rich_text", rich_text: [{ plain_text: "회의록, 보고서" }] },
+                },
+              },
+            ];
+          }
+          throw new Error("not a data source");
+        },
+        async retrieveDatabase() {
+          return {
+            data_sources: [{ id: "22222222-2222-2222-2222-222222222222" }],
+          };
+        },
+        async queryDatabase() {
+          throw new Error("legacy database skipped");
+        },
+        async listBlockChildren() {
+          return [];
+        },
+        async blockText() {
+          return "";
+        },
+      },
+      "37a32dfb494c806e9622cdadc1fa672e",
+      state,
+    );
+
+    expect(records).toHaveLength(1);
+    expect(records[0].title).toBe("Claude 자동화 기록");
+    expect(countGeneratedOutputs(records[0])).toBe(2);
+    expect(state.sourceHints).toEqual(["database:data_sources", "data_source", "block_children"]);
+  });
 });
+
+function createCollectorState() {
+  return {
+    maxDepth: 6,
+    visitedBlocks: new Set(),
+    visitedRecords: new Set(),
+    visitedDatabases: new Set(),
+    visitedDataSources: new Set(),
+    sourceHints: [],
+  };
+}
