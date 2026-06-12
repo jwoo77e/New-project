@@ -6,12 +6,13 @@
   "scripts": {
     "collect:api-usage": "node scripts/fetch-api-usage.mjs",
     "collect:gamma-credits": "node scripts/fetch-gamma-credits.mjs",
-    "collect:notion-prompt-usage": "node scripts/fetch-notion-prompt-usage.mjs",
+    "collect:notion-prompt-usage": "node scripts/collect-notion-prompt-usage-runtime.mjs",
+    "collect:notion-prompt-usage:local": "node scripts/run-notion-prompt-usage-collector.mjs",
     "collect:all-usage": "npm run collect:gamma-credits && npm run collect:api-usage && npm run collect:notion-prompt-usage",
     "collect:runtime-snapshots": "npm run collect:api-usage && npm run collect:notion-prompt-usage",
     "dev": "vite --host 0.0.0.0",
     "build": "tsc && vite build",
-    "postbuild": "npm run collect:runtime-snapshots",
+    "postbuild": "npm run collect:api-usage",
     "preview": "vite preview --host 0.0.0.0",
     "start": "node server.mjs",
     "test": "vitest run"

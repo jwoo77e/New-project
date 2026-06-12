@@ -56,10 +56,14 @@ const fallbackSourceUsage = [
 ];
 
 export async function loadNotionPromptEnv({ targetRootDir = rootDir } = {}) {
-  return {
+  const localEnv = await readLocalEnv(path.join(targetRootDir, ".env.local"));
+  const mergedEnv = {
     ...process.env,
-    ...(await readLocalEnv(path.join(targetRootDir, ".env.local"))),
+    ...localEnv,
   };
+
+  hydrateProcessEnv(localEnv);
+  return mergedEnv;
 }
 
 export async function collectNotionPromptUsage({
@@ -95,6 +99,7 @@ export async function collectNotionPromptUsage({
     try {
       const sourceUsage = await collectPromptSourceUsage(notion, source, {
         maxDepth: parsePositiveInt(env.NOTION_PROMPT_MAX_DEPTH, 6),
+        debug: env.NOTION_PROMPT_DEBUG === "1",
       });
       collectedSources.push(sourceUsage);
       templateRecordsExcluded += sourceUsage.templateRecordsExcluded;
@@ -113,7 +118,7 @@ export async function collectNotionPromptUsage({
     return buildNotionPromptUsageSnapshot({
       collectedAt,
       status: "주의",
-      note: "Notion API 연결은 되었지만 집계 가능한 하위 페이지/DB 행을 찾지 못해 이전 수동 분석값을 표시합니다.",
+      note: "Notion API 연결은 되었지만 하위 페이지에서 집계 가능한 live 기록이 0건이라 이전 수동 분석값을 표시합니다.",
       sources: fallbackSourceUsage,
       templateRecordsExcluded: 1,
       mode,
@@ -219,7 +224,7 @@ const outputSignalPattern = /생성\s*(파일|산출물|결과)|산출물|결과
 const templatePattern = /템플릿|template/i;
 const emptyOutputPattern = /^(없음|무|n\/a|na|null|none|-|미생성|없습니다)$/i;
 
-async function collectPromptSourceUsage(notion, source, { maxDepth }) {
+async function collectPromptSourceUsage(notion, source, { maxDepth, debug = false }) {
   const state = {
     maxDepth,
     visitedBlocks: new Set(),
@@ -227,8 +232,21 @@ async function collectPromptSourceUsage(notion, source, { maxDepth }) {
     visitedDatabases: new Set(),
     visitedDataSources: new Set(),
     sourceHints: [],
+    warnings: [],
+    debug,
   };
   const records = await discoverPromptRecordsFromRoot(notion, source.id, state);
+
+  if (state.debug) {
+    console.error(
+      JSON.stringify({
+        sourcePage: source.sourcePage,
+        discoveredRecords: records.length,
+        sourceHints: state.sourceHints,
+        warnings: state.warnings.slice(0, 5),
+      }),
+    );
+  }
 
   const includedRecords = [];
   let promptRecords = 0;
@@ -281,6 +299,16 @@ async function discoverPromptRecords(notion, blockId, state, depth = 0) {
   state.visitedBlocks.add(blockId);
 
   const blocks = await notion.listBlockChildren(blockId);
+  if (state.debug && depth === 0) {
+    console.error(
+      JSON.stringify({
+        blockId,
+        depth,
+        blockCount: blocks.length,
+        blockTypes: blocks.slice(0, 5).map((block) => block.type),
+      }),
+    );
+  }
   const records = [];
 
   for (const block of blocks) {
@@ -290,7 +318,7 @@ async function discoverPromptRecords(notion, blockId, state, depth = 0) {
     }
 
     if (block.type === "child_page") {
-      const record = await collectPageRecord(notion, block.id, block.child_page?.title || "제목 없음", state);
+      const record = await tryCollectPageRecord(notion, block.id, block.child_page?.title || "제목 없음", state);
       if (record) records.push(record);
       if (block.has_children) {
         records.push(...(await discoverPromptRecords(notion, block.id, state, depth + 1)));
@@ -312,7 +340,7 @@ async function collectDatabaseRecords(notion, databaseId, state) {
 
   for (const page of pages) {
     const title = pageTitle(page) || "제목 없음";
-    const record = await collectPageRecord(notion, page.id, title, state, page.properties || {});
+    const record = await tryCollectPageRecord(notion, page.id, title, state, page.properties || {});
     if (record) records.push(record);
   }
 
@@ -357,7 +385,7 @@ async function collectDataSourceRecords(notion, dataSourceId, state) {
   for (const item of pages) {
     if (item.object === "page") {
       const title = pageTitle(item) || "제목 없음";
-      const record = await collectPageRecord(notion, item.id, title, state, item.properties || {});
+      const record = await tryCollectPageRecord(notion, item.id, title, state, item.properties || {});
       if (record) records.push(record);
       continue;
     }
@@ -394,7 +422,8 @@ async function tryDiscoverBlockRecords(notion, blockId, state) {
     const records = await discoverPromptRecords(notion, blockId, state);
     state.sourceHints.push("block_children");
     return records;
-  } catch {
+  } catch (error) {
+    state.warnings?.push(`block_children: ${shortenError(error instanceof Error ? error.message : String(error))}`);
     return [];
   }
 }
@@ -419,17 +448,52 @@ async function collectPageRecord(notion, pageId, title, state, properties = null
   };
 }
 
+async function tryCollectPageRecord(notion, pageId, title, state, properties = null) {
+  try {
+    return await collectPageRecord(notion, pageId, title, state, properties);
+  } catch (error) {
+    state.warnings?.push(`${title}: ${shortenError(error instanceof Error ? error.message : String(error))}`);
+    return {
+      id: pageId,
+      title,
+      propertiesText: properties
+        ? Object.entries(properties).map(([name, property]) => ({
+            name,
+            text: propertyToPlainText(property),
+          }))
+        : [],
+      blockText: "",
+    };
+  }
+}
+
 function createNotionClient({ token, notionVersion, dataSourceVersion }) {
   async function request(endpoint, { method = "GET", body, version = notionVersion } = {}) {
-    const response = await fetch(`https://api.notion.com/v1${endpoint}`, {
-      method,
-      headers: {
-        authorization: `Bearer ${token}`,
-        "content-type": "application/json",
-        "notion-version": version,
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    let response;
+
+    try {
+      response = await fetchWithRetry(`https://api.notion.com/v1${endpoint}`, {
+        method,
+        headers: {
+          authorization: `Bearer ${token}`,
+          "content-type": "application/json",
+          "notion-version": version,
+        },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    } catch (error) {
+      if (process.env.NOTION_PROMPT_DEBUG === "1") {
+        console.error(
+          JSON.stringify({
+            endpoint,
+            method,
+            error: error instanceof Error ? error.message : String(error),
+            cause: error instanceof Error && error.cause ? String(error.cause) : null,
+          }),
+        );
+      }
+      throw error;
+    }
 
     if (!response.ok) {
       const text = await response.text();
@@ -437,6 +501,21 @@ function createNotionClient({ token, notionVersion, dataSourceVersion }) {
     }
 
     return response.json();
+  }
+
+  async function fetchWithRetry(url, options, attempts = 2) {
+    let lastError;
+
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      try {
+        return await fetch(url, options);
+      } catch (error) {
+        lastError = error;
+        if (attempt < attempts) await new Promise((resolve) => setTimeout(resolve, 250 * attempt));
+      }
+    }
+
+    throw lastError;
   }
 
   async function listPaginated(endpoint, body = null, options = {}) {
@@ -477,16 +556,22 @@ function createNotionClient({ token, notionVersion, dataSourceVersion }) {
       if (text) lines.push(text);
 
       if (block.has_children && block.type !== "child_database") {
-        const childText = await blockText(block.id, { maxDepth }, depth + 1, visited);
-        if (childText) lines.push(childText);
+        try {
+          const childText = await blockText(block.id, { maxDepth }, depth + 1, visited);
+          if (childText) lines.push(childText);
+        } catch {
+          // Keep the parent page usable even when an embedded child block is not readable.
+        }
       }
     }
 
     return lines.join("\n");
   }
 
+  const listBlockChildren = (blockId) => listPaginated(`/blocks/${normalizeNotionId(blockId)}/children`);
+
   return {
-    listBlockChildren: (blockId) => listPaginated(`/blocks/${normalizeNotionId(blockId)}/children`),
+    listBlockChildren,
     queryDatabase: (databaseId) => listPaginated(`/databases/${normalizeNotionId(databaseId)}/query`, {}),
     queryDataSource: (dataSourceId) =>
       listPaginated(`/data_sources/${normalizeNotionId(dataSourceId)}/query`, {}, { version: dataSourceVersion }),
@@ -719,6 +804,14 @@ async function readLocalEnv(filePath) {
   }
 
   return entries;
+}
+
+function hydrateProcessEnv(entries) {
+  for (const [key, value] of Object.entries(entries)) {
+    if (!(key in process.env) || process.env[key] !== value) {
+      process.env[key] = value;
+    }
+  }
 }
 
 function getOutputPaths(env) {
