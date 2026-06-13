@@ -63,6 +63,10 @@ import {
   type ClaudeTeamUsageLevel,
 } from "./data/claudeTeamUsageData";
 import {
+  initialAiToolApprovalData,
+  type AiToolApprovalData,
+} from "./data/aiToolApprovalData";
+import {
   clearStoredDashboardData,
   loadStoredDashboardData,
   saveStoredDashboardData,
@@ -75,7 +79,7 @@ import {
 } from "./lib/apiForecast";
 import { dashboardDataFromExcel } from "./lib/excelDashboard";
 
-type ViewKey = "monthly" | "adoption" | "genspark" | "api";
+type ViewKey = "monthly" | "adoption" | "genspark" | "approval" | "api";
 
 type ForecastPoint = {
   month: string;
@@ -517,6 +521,7 @@ function App() {
   const workspaceUsageData = apiUsageData.workspaceUsage ?? initialApiUsageData.workspaceUsage!;
   const gammaUsageData = apiUsageData.gammaUsage ?? initialApiUsageData.gammaUsage!;
   const claudeTeamUsageData = initialClaudeTeamUsageData;
+  const aiToolApprovalData = initialAiToolApprovalData;
   const aiUsageInsight = initialGensparkUsageData.insightAnalysis;
   const isApiUsageCollected = apiUsageData.source.generatedAt !== initialApiUsageData.source.generatedAt;
   const apiForecast = useMemo(() => {
@@ -820,6 +825,14 @@ function App() {
           AI 활용 상세 분석
         </button>
         <button
+          className={activeView === "approval" ? "is-active" : ""}
+          type="button"
+          onClick={() => setActiveView("approval")}
+        >
+          <WalletCards size={17} />
+          AI 도구 결재 현황
+        </button>
+        <button
           className={activeView === "monthly" ? "is-active" : ""}
           type="button"
           onClick={() => setActiveView("monthly")}
@@ -866,6 +879,37 @@ function App() {
             tone="steel"
             value={`${apiTotals.activeKeys}개`}
             footer={`가중 오류율 ${formatRate(apiTotals.avgErrorRate)}`}
+          />
+        </section>
+      ) : activeView === "approval" ? (
+        <section className="metric-grid" aria-label="AI 도구 결재 핵심 지표">
+          <MetricCard
+            icon={<WalletCards size={21} />}
+            label="결재 계정"
+            tone="teal"
+            value={`${numberFormat.format(aiToolApprovalData.totalAccounts)}개`}
+            footer={aiToolApprovalData.source.period}
+          />
+          <MetricCard
+            icon={<CircleDollarSign size={21} />}
+            label="월 구독료"
+            tone="green"
+            value={formatManWon(aiToolApprovalData.totalMonthlyKrw)}
+            footer={`${formatPreciseUsd(aiToolApprovalData.totalMonthlyUsd)} · ${formatWon(aiToolApprovalData.totalMonthlyKrw)}`}
+          />
+          <MetricCard
+            icon={<ShieldCheck size={21} />}
+            label="AI 전용 카드"
+            tone="amber"
+            value={`${numberFormat.format(aiToolApprovalData.aiDedicatedCardAccounts)}개`}
+            footer={formatWon(aiToolApprovalData.aiDedicatedCardKrw)}
+          />
+          <MetricCard
+            icon={<KeyRound size={21} />}
+            label="기명법인카드"
+            tone="steel"
+            value={`${numberFormat.format(aiToolApprovalData.namedCorporateCardAccounts)}개`}
+            footer={formatWon(aiToolApprovalData.namedCorporateCardKrw)}
           />
         </section>
       ) : activeView === "adoption" ? (
@@ -1010,6 +1054,8 @@ function App() {
       )}
 
       {activeView === "genspark" && <GensparkUsageView usageData={gensparkUsageData} />}
+
+      {activeView === "approval" && <AiToolApprovalView approvalData={aiToolApprovalData} />}
 
       {activeView === "api" && <ApiUsageView apiUsageData={apiUsageData} />}
 
@@ -1916,6 +1962,180 @@ function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
       </section>
     </div>
   );
+}
+
+function AiToolApprovalView({ approvalData }: { approvalData: AiToolApprovalData }) {
+  const maxToolMonthlyKrw = Math.max(...approvalData.toolSummary.map((item) => item.monthlyKrw), 1);
+  const maxDepartmentMonthlyKrw = Math.max(...approvalData.departmentSummary.map((item) => item.monthlyKrw), 1);
+  const topTool = approvalData.toolSummary[0];
+  const topToolTieCount = approvalData.toolSummary.filter((item) => item.monthlyKrw === topTool?.monthlyKrw).length;
+  const topDepartment = approvalData.departmentSummary[0];
+
+  return (
+    <div className="content-grid approval-view">
+      <section className="panel panel-large">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Payment Control</span>
+            <h2>결재수단별 월 구독료</h2>
+          </div>
+          <div className="panel-header-side">
+            <span className="state-pill neutral">{approvalData.source.period}</span>
+          </div>
+        </div>
+        <div className="approval-payment-grid">
+          {approvalData.paymentSummary.map((payment, index) => (
+            <article className="approval-payment-card" key={payment.key}>
+              <span>{payment.key}</span>
+              <strong>{formatWon(payment.monthlyKrw)}</strong>
+              <small>
+                {numberFormat.format(payment.count)}개 계정 · {formatPreciseUsd(payment.monthlyUsd)} · {formatRate(payment.share)}
+              </small>
+              <div className="department-meter" aria-label={`${payment.key} 결재 비중`}>
+                <span style={{ width: `${Math.min(payment.share, 100)}%`, background: approvalPalette(index) }} />
+              </div>
+            </article>
+          ))}
+        </div>
+        <div className="approval-meter-list">
+          <h3>서비스 계열별 부담</h3>
+          {approvalData.categorySummary.map((category, index) => (
+            <MeterRow
+              color={approvalPalette(index)}
+              key={category.key}
+              label={`${category.key} · ${numberFormat.format(category.count)}개`}
+              value={category.share}
+              valueLabel={`${formatWon(category.monthlyKrw)} · ${formatRate(category.share)}`}
+            />
+          ))}
+        </div>
+        <div className="insight-box approval-source-note">
+          <FileSpreadsheet size={18} />
+          <div>
+            <strong>{approvalData.source.fileName}</strong>
+            <span>{approvalData.source.sheetName} 시트의 결재 관련 컬럼을 반영했습니다.</span>
+            <span>{approvalData.source.note}</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Decision Signals</span>
+            <h2>결재 관리 포인트</h2>
+          </div>
+        </div>
+        <div className="insight-signal-list">
+          {approvalData.insights.map((insight, index) => (
+            <article className="insight-signal-card" key={insight}>
+              <span>{index + 1}</span>
+              <strong>{insight}</strong>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Tool Cost Mix</span>
+            <h2>도구별 결재 비용</h2>
+          </div>
+          <span className="state-pill ok">
+            최상위 {topTool ? `${topToolTieCount > 1 ? `${topToolTieCount}개 도구` : topTool.key} ${formatWon(topTool.monthlyKrw)}` : "-"}
+          </span>
+        </div>
+        <div className="approval-split-grid">
+          <div className="approval-meter-list">
+            {approvalData.toolSummary.map((tool, index) => (
+              <MeterRow
+                color={approvalPalette(index)}
+                key={tool.key}
+                label={`${tool.key} · ${numberFormat.format(tool.count)}개`}
+                value={(tool.monthlyKrw / maxToolMonthlyKrw) * 100}
+                valueLabel={`${formatWon(tool.monthlyKrw)} · ${formatPreciseUsd(tool.monthlyUsd)}`}
+              />
+            ))}
+          </div>
+          <div className="approval-meter-list">
+            <h3>부서별 월액 상위</h3>
+            {approvalData.departmentSummary.slice(0, 9).map((department, index) => (
+              <MeterRow
+                color={approvalPalette(index + 2)}
+                key={department.key}
+                label={`${department.key} · ${numberFormat.format(department.count)}개`}
+                value={(department.monthlyKrw / maxDepartmentMonthlyKrw) * 100}
+                valueLabel={`${formatWon(department.monthlyKrw)} · ${formatRate(department.share)}`}
+              />
+            ))}
+            <small className="approval-footnote">
+              최상위 부서는 {topDepartment?.key ?? "-"}이며, 계정 소유자/부서 표기에서 부서명을 추출했습니다.
+            </small>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Approval Ledger</span>
+            <h2>AI 도구 결재 상세</h2>
+          </div>
+          <span className="state-pill neutral">{numberFormat.format(approvalData.records.length)}건</span>
+        </div>
+        <div className="table-wrap approval-record-table">
+          <table>
+            <thead>
+              <tr>
+                <th>번호</th>
+                <th>도구</th>
+                <th>계정</th>
+                <th>주사용자/부서</th>
+                <th>월 구독료</th>
+                <th>결재수단</th>
+                <th>비고</th>
+              </tr>
+            </thead>
+            <tbody>
+              {approvalData.records.map((record) => (
+                <tr key={record.no}>
+                  <td>{record.no}</td>
+                  <td>
+                    <strong>{record.tool}</strong>
+                    <small>{record.category}</small>
+                  </td>
+                  <td>
+                    <strong>{record.account}</strong>
+                    {record.linkedAccount !== "없음" && <small>연동 {record.linkedAccount}</small>}
+                  </td>
+                  <td>
+                    <strong>{record.owner}</strong>
+                    <small>{record.department}</small>
+                  </td>
+                  <td>
+                    <strong>{formatPreciseUsd(record.monthlyUsd)}</strong>
+                    <small>{formatWon(record.monthlyKrw)}</small>
+                  </td>
+                  <td>
+                    <span className={`state-pill ${record.paymentMethod === "AI 전용 카드" ? "ok" : "neutral"}`}>
+                      {record.paymentMethod}
+                    </span>
+                  </td>
+                  <td>{record.note || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function approvalPalette(index: number) {
+  const colors = ["#0f8b8d", "#2f9e44", "#d9902f", "#476a6f", "#e85d4f", "#6f7fd8", "#8a6f3d"];
+  return colors[index % colors.length];
 }
 
 function AdoptionView({
