@@ -952,8 +952,16 @@ function App() {
             icon={<Bot size={21} />}
             label="Claude Team 사용"
             tone="amber"
-            value={`${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄`}
-            footer={`${formatPreciseUsd(claudeTeamUsageData.totalNetSpendUsd)} · ${formatTokens(claudeTeamUsageData.totalTokens)} tokens`}
+            value={
+              claudeTeamUsageData.totalCodeLines > 0
+                ? `${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄`
+                : formatTokens(claudeTeamUsageData.totalTokens)
+            }
+            footer={
+              claudeTeamUsageData.totalCodeLines > 0
+                ? `${formatPreciseUsd(claudeTeamUsageData.totalNetSpendUsd)} · ${formatTokens(claudeTeamUsageData.totalTokens)} tokens`
+                : `${formatPreciseUsd(claudeTeamUsageData.totalNetSpendUsd)} · 요청 ${numberFormat.format(claudeTeamUsageData.totalRequests)}건`
+            }
           />
           <MetricCard
             icon={<Gauge size={21} />}
@@ -2172,11 +2180,14 @@ function AdoptionView({
   const chatGptExport = gensparkUsageData.chatGptExport;
   const mostUsedGeminiApp = workspaceUsageData.appUsage[0];
   const peakGeminiDay = [...workspaceUsageData.dailyUsage].sort((a, b) => b.events - a.events)[0];
-  const claudeTopUser = claudeTeamUsageData.users[0];
   const claudeTopProduct = claudeTeamUsageData.productUsage[0];
   const claudeTopModel = claudeTeamUsageData.modelUsage[0];
   const maxClaudeSpend = Math.max(...claudeTeamUsageData.users.map((user) => user.netSpendUsd), 1);
   const maxClaudeLines = Math.max(...claudeTeamUsageData.users.map((user) => user.codeLines), 1);
+  const hasClaudeCodeLines = claudeTeamUsageData.totalCodeLines > 0;
+  const claudeTopUser = [...claudeTeamUsageData.users].sort((a, b) =>
+    hasClaudeCodeLines ? b.codeLines - a.codeLines : b.netSpendUsd - a.netSpendUsd,
+  )[0];
   const gammaPlan = operatingPlanSubscriptions.find((item) => item.label.includes("Gamma"));
   const gammaMonthlyUsd = gammaPlan ? gammaPlan.quantity * gammaPlan.unitUsd : 0;
   const gammaTrackedLabel =
@@ -2250,7 +2261,9 @@ function AdoptionView({
       statusTone: "ok",
       value: formatTokens(claudeTeamUsageData.totalTokens),
       metric: "Team tokens",
-      detail: `${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄 · ${formatPreciseUsd(claudeTeamUsageData.totalNetSpendUsd)}`,
+      detail: hasClaudeCodeLines
+        ? `${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄 · ${formatPreciseUsd(claudeTeamUsageData.totalNetSpendUsd)}`
+        : `${numberFormat.format(claudeTeamUsageData.totalRequests)} requests · ${formatPreciseUsd(claudeTeamUsageData.totalNetSpendUsd)}`,
       note: claudeTeamUsageData.insights[2],
       color: "#5f6f8c",
       icon: <LineChart size={18} />,
@@ -2293,7 +2306,7 @@ function AdoptionView({
         20,
         8 +
           (workspaceUsageData.totalEvents >= 50 ? 2 : 0) +
-          (claudeTeamUsageData.totalCodeLines >= 20000 ? 3 : 0) +
+          ((hasClaudeCodeLines ? claudeTeamUsageData.totalCodeLines >= 20000 : claudeTeamUsageData.totalTokens >= 1000000000) ? 3 : 0) +
           (gensparkUsageData.generatedFileMappedTasks > 0 ? 2 : 0),
       ),
       signal: "개발·제안 업무 중심",
@@ -2333,7 +2346,9 @@ function AdoptionView({
   const axStrengths = [
     `5종 서비스 중 ${readyServiceCount}종에서 실제 수집 신호가 확인됩니다.`,
     `ChatGPT·Genspark 통합 분석 ${numberFormat.format(gensparkUsageData.insightAnalysis.totalRecords)}건 중 산출형 활용이 ${numberFormat.format(outputRecords)}건입니다.`,
-    `Claude Team은 ${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄의 Claude Code 활용과 ${formatTokens(claudeTeamUsageData.totalTokens)} 토큰 사용이 확인됩니다.`,
+    hasClaudeCodeLines
+      ? `Claude Team은 ${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄의 Claude Code 활용과 ${formatTokens(claudeTeamUsageData.totalTokens)} 토큰 사용이 확인됩니다.`
+      : `Claude Team은 6월 상반기 spend report에서 ${formatTokens(claudeTeamUsageData.totalTokens)} 토큰과 ${numberFormat.format(claudeTeamUsageData.totalRequests)}건 요청이 확인됩니다.`,
     "API 비용, Workspace 이벤트, Team CSV, 작업 로그를 한 대시보드에서 함께 보는 운영 체계가 만들어졌습니다.",
   ];
   const axGaps = [
@@ -2626,9 +2641,13 @@ function AdoptionView({
             <span>Prompt {formatTokens(claudeTeamUsageData.totalPromptTokens)} · Completion {formatTokens(claudeTeamUsageData.totalCompletionTokens)}</span>
           </article>
           <article className="api-summary-item">
-            <span>Claude Code Lines</span>
-            <strong>{numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄</strong>
-            <span>Code export 사용자 {numberFormat.format(claudeTeamUsageData.codeUsers)}명</span>
+            <span>{hasClaudeCodeLines ? "Claude Code Lines" : "Code lines 원천"}</span>
+            <strong>{hasClaudeCodeLines ? `${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄` : "미제공"}</strong>
+            <span>
+              {hasClaudeCodeLines
+                ? `Code export 사용자 ${numberFormat.format(claudeTeamUsageData.codeUsers)}명`
+                : "이번 CSV는 spend report 기준"}
+            </span>
           </article>
         </div>
         <div className="claude-team-grid">
@@ -2693,7 +2712,8 @@ function AdoptionView({
             <h2>Claude Team 계정별 사용 현황</h2>
           </div>
           <span className="state-pill neutral">
-            Spend {numberFormat.format(claudeTeamUsageData.spendUsers)}명 · Code lines {numberFormat.format(claudeTeamUsageData.codeUsers)}명
+            Spend {numberFormat.format(claudeTeamUsageData.spendUsers)}명 ·{" "}
+            {hasClaudeCodeLines ? `Code lines ${numberFormat.format(claudeTeamUsageData.codeUsers)}명` : "Code lines 미제공"}
           </span>
         </div>
         <div className="table-wrap claude-team-table">
@@ -2705,7 +2725,7 @@ function AdoptionView({
                 <th>Spend</th>
                 <th>요청</th>
                 <th>토큰</th>
-                <th>Code Lines</th>
+                <th>{hasClaudeCodeLines ? "Code Lines" : "Code Lines 원천"}</th>
                 <th>제품/모델</th>
                 <th>비고</th>
               </tr>
@@ -2732,12 +2752,16 @@ function AdoptionView({
                   <td>{user.requests ? numberFormat.format(user.requests) : "-"}</td>
                   <td>{user.totalTokens ? formatTokens(user.totalTokens) : "-"}</td>
                   <td>
-                    <div className="claude-usage-cell">
-                      <strong>{numberFormat.format(user.codeLines)}줄</strong>
-                      <div className="department-meter" aria-label={`${user.email} Claude Code lines 비중`}>
-                        <span style={{ width: `${Math.min((user.codeLines / maxClaudeLines) * 100, 100)}%` }} />
+                    {hasClaudeCodeLines ? (
+                      <div className="claude-usage-cell">
+                        <strong>{numberFormat.format(user.codeLines)}줄</strong>
+                        <div className="department-meter" aria-label={`${user.email} Claude Code lines 비중`}>
+                          <span style={{ width: `${Math.min((user.codeLines / maxClaudeLines) * 100, 100)}%` }} />
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <span className="state-pill neutral">미제공</span>
+                    )}
                   </td>
                   <td>
                     <strong>{user.products.length > 0 ? user.products.join(", ") : "Claude Code"}</strong>
