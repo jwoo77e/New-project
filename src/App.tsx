@@ -95,6 +95,7 @@ type OperatingPlanForecast = {
   applies: boolean;
   subscriptionUsd: number;
   subscriptionKrw: number;
+  forecastBaseKrw: number;
   apiKrw: number;
   apiSource: ApiForecastSource;
   apiSourceLabel: string;
@@ -275,12 +276,16 @@ function forecastMethodLabel(monthlyActuals: MonthlyActual[]) {
 function buildOperatingPlanForecast(
   month: string,
   apiForecastSelection: ApiMonthForecastSelection,
+  baselineForecastKrw: number,
+  subscriptionUsd: number,
+  subscriptionKrw: number,
 ): OperatingPlanForecast {
   if (month < OPERATING_PLAN_START_MONTH) {
     return {
       applies: false,
       subscriptionUsd: 0,
       subscriptionKrw: 0,
+      forecastBaseKrw: 0,
       apiKrw: 0,
       apiSource: "none",
       apiSourceLabel: "운영계획 미적용",
@@ -288,18 +293,18 @@ function buildOperatingPlanForecast(
     };
   }
 
-  const subscriptionUsd = operatingPlanSubscriptions.reduce((sum, item) => sum + item.quantity * item.unitUsd, 0);
-  const subscriptionKrw = Math.round(subscriptionUsd * OPERATING_PLAN_USD_TO_KRW);
+  const forecastBaseKrw = Math.max(Math.round(baselineForecastKrw), Math.round(subscriptionKrw));
   const apiKrw = apiForecastSelection.costKrw;
 
   return {
     applies: true,
     subscriptionUsd,
     subscriptionKrw,
+    forecastBaseKrw,
     apiKrw,
     apiSource: apiForecastSelection.source,
     apiSourceLabel: apiForecastSelection.sourceLabel,
-    totalKrw: subscriptionKrw + apiKrw,
+    totalKrw: forecastBaseKrw + apiKrw,
   };
 }
 
@@ -564,13 +569,10 @@ function App() {
       ),
     [apiForecast.isReady, forecast, latestMeasuredApiForecast, latestMeasuredApiMonth, monthlyApiForecasts],
   );
-  const operatingPlanSubscriptionUsd = operatingPlanSubscriptions.reduce(
-    (sum, item) => sum + item.quantity * item.unitUsd,
-    0,
-  );
-  const operatingPlanSubscriptionKrw = Math.round(operatingPlanSubscriptionUsd * OPERATING_PLAN_USD_TO_KRW);
-  const operatingPlanSubscriptionSummary = operatingPlanSubscriptions
-    .map((item) => `${item.label} ${item.quantity}`)
+  const operatingPlanSubscriptionUsd = aiToolApprovalData.totalMonthlyUsd;
+  const operatingPlanSubscriptionKrw = Math.round(aiToolApprovalData.totalMonthlyKrw);
+  const operatingPlanSubscriptionSummary = aiToolApprovalData.toolSummary
+    .map((item) => `${item.key} ${item.count}`)
     .join(" · ");
   const forecastApiSelections = [...apiForecastByMonth.values()];
   const operatingPlanApiSourceLabel = apiForecast.isReady ? "월별 실측 API 우선" : "API 예산";
@@ -590,13 +592,19 @@ function App() {
             latestMeasuredApiForecast,
             hasMeasuredApiUsage: apiForecast.isReady,
         });
-        const operatingPlan = buildOperatingPlanForecast(item.month, apiSelection);
+        const operatingPlan = buildOperatingPlanForecast(
+          item.month,
+          apiSelection,
+          item.amount,
+          operatingPlanSubscriptionUsd,
+          operatingPlanSubscriptionKrw,
+        );
         const apiUsageKrw = operatingPlan.applies
           ? operatingPlan.apiKrw
           : apiSelection.source === "budget"
             ? 0
             : apiSelection.costKrw;
-        const baseForecastKrw = operatingPlan.applies ? operatingPlan.subscriptionKrw : item.amount;
+        const baseForecastKrw = operatingPlan.applies ? operatingPlan.forecastBaseKrw : item.amount;
 
         return {
           ...item,
@@ -617,11 +625,16 @@ function App() {
       latestMeasuredApiForecast,
       latestMeasuredApiMonth,
       monthlyApiForecasts,
+      operatingPlanSubscriptionKrw,
+      operatingPlanSubscriptionUsd,
     ],
   );
   const apiAdjustedForecastTotal = apiAdjustedForecast.reduce((sum, item) => sum + item.totalWithApi, 0);
   const apiForecastAddedTotal = apiAdjustedForecast.reduce((sum, item) => sum + item.apiUsageKrw, 0);
-  const operatingPlanForecastTotal = apiAdjustedForecast.reduce((sum, item) => sum + item.operatingPlanKrw, 0);
+  const operatingPlanForecastTotal = apiAdjustedForecast.reduce(
+    (sum, item) => sum + (item.isOperatingPlan ? item.baseForecastKrw : 0),
+    0,
+  );
   const operatingPlanMonths = apiAdjustedForecast.filter((item) => item.isOperatingPlan).length;
   const apiAdjustedForecastGrowth =
     forecastBasisTotal > 0 ? ((apiAdjustedForecastTotal - forecastBasisTotal) / forecastBasisTotal) * 100 : 0;
@@ -651,7 +664,13 @@ function App() {
           latestMeasuredApiForecast,
           hasMeasuredApiUsage: apiForecast.isReady,
       });
-      const operatingPlan = buildOperatingPlanForecast(item.month, apiSelection);
+      const operatingPlan = buildOperatingPlanForecast(
+        item.month,
+        apiSelection,
+        item.amount,
+        operatingPlanSubscriptionUsd,
+        operatingPlanSubscriptionKrw,
+      );
       const apiUsageKrw = operatingPlan.applies
         ? operatingPlan.apiKrw
         : apiSelection.source === "budget"
@@ -662,7 +681,7 @@ function App() {
         label: item.label,
         actual: null,
         forecast: operatingPlan.applies ? null : item.amount,
-        operatingPlanForecast: operatingPlan.applies ? operatingPlan.subscriptionKrw : null,
+        operatingPlanForecast: operatingPlan.applies ? operatingPlan.forecastBaseKrw : null,
         apiUsageForecast: apiUsageKrw,
         apiSourceLabel: apiSelection.sourceLabel,
         forecastWithApi: operatingPlan.applies ? operatingPlan.totalKrw : item.amount + apiUsageKrw,
@@ -730,11 +749,12 @@ function App() {
       vendorCosts,
       apiUsageData,
       gensparkUsageData: initialGensparkUsageData,
+      aiToolApprovalData,
       apiForecast,
       apiAdjustedForecast,
       operatingPlan: {
         startMonth: OPERATING_PLAN_START_MONTH,
-        subscriptions: operatingPlanSubscriptions,
+        subscriptions: aiToolApprovalData.toolSummary,
         subscriptionUsd: operatingPlanSubscriptionUsd,
         subscriptionKrw: operatingPlanSubscriptionKrw,
         apiBudgetKrw: OPERATING_PLAN_API_BUDGET_KRW,
@@ -744,7 +764,7 @@ function App() {
         forecastTotalKrw: operatingPlanForecastTotal,
       },
       generatedAt: new Date().toISOString(),
-      forecastMethod: `${forecastMethodLabel(forecastBasisActuals)} - 5월 이후는 정액제 운영계획 구독 기준과 실측 API 월환산 비용으로 대체`,
+      forecastMethod: `${forecastMethodLabel(forecastBasisActuals)} - 5월 이후는 AI 도구 결재 현황의 구독료를 최소 하한으로 두고 실측 API 월환산 비용을 추가`,
     };
     const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
       type: "application/json",
@@ -1007,7 +1027,7 @@ function App() {
             label={`${forecastRange} API/구독 반영 예측`}
             tone="amber"
             value={formatManWon(apiAdjustedForecastTotal)}
-            footer={`5월 이후 운영계획 ${formatManWon(operatingPlanSubscriptionKrw)}/월 · ${operatingPlanApiSourceLabel} ${formatManWon(operatingPlanApiKrw)}/월`}
+            footer={`5월 이후 결재현황 최소 ${formatManWon(operatingPlanSubscriptionKrw)}/월 · ${operatingPlanApiSourceLabel} ${formatManWon(operatingPlanApiKrw)}/월`}
           />
           <MetricCard
             icon={<WalletCards size={21} />}
@@ -1158,7 +1178,7 @@ function MonthlyView({
               <Bar dataKey="forecast" name="기존 예측" stackId="forecast" fill="#c58612" radius={[5, 5, 0, 0]} />
               <Bar
                 dataKey="operatingPlanForecast"
-                name="운영계획 구독"
+                name="결재현황 하한 반영"
                 stackId="forecast"
                 fill="#5f6f8c"
                 radius={[5, 5, 0, 0]}
@@ -1243,8 +1263,8 @@ function MonthlyView({
                 <strong>{item.label}</strong>
                 {item.isOperatingPlan ? (
                   <span>
-                    운영계획 구독 {formatManWon(item.operatingPlanKrw)} · {item.apiSourceLabel}{" "}
-                    {formatManWon(item.apiUsageKrw)}
+                    결재현황 최소 {formatManWon(item.operatingPlanKrw)} · 적용 기준{" "}
+                    {formatManWon(item.baseForecastKrw)} · {item.apiSourceLabel} {formatManWon(item.apiUsageKrw)}
                   </span>
                 ) : (
                   <span>
@@ -1263,16 +1283,16 @@ function MonthlyView({
               {forecastRange} API/구독 반영 합계 {formatManWon(apiAdjustedForecastTotal)}
             </strong>
             <span>
-              {OPERATING_PLAN_START_MONTH}부터는 기존 선형 예측에 증감분을 더하지 않고, 정액제 운영계획 구독{" "}
-              {formatManWon(operatingPlanSubscriptionKrw)}과 월별 API 실측 우선 비용을 기준으로 계산합니다.
+              {OPERATING_PLAN_START_MONTH}부터는 AI 도구 결재 현황 탭의 월 구독료{" "}
+              {formatManWon(operatingPlanSubscriptionKrw)}을 최소 하한으로 두고, 선형 예측이 더 크면 선형 예측을 유지합니다.
             </span>
             <span>
-              API 반영분 {formatManWon(apiForecastAddedTotal)} · 운영계획 구독 반영분{" "}
-              {formatManWon(operatingPlanForecastTotal)} · 운영계획 적용월 {operatingPlanMonths}개월 · 보정 기준 대비{" "}
+              API 반영분 {formatManWon(apiForecastAddedTotal)} · 구독 하한 적용 기준{" "}
+              {formatManWon(operatingPlanForecastTotal)} · 적용월 {operatingPlanMonths}개월 · 보정 기준 대비{" "}
               {formatRate(apiAdjustedForecastGrowth, true)}
             </span>
             <span>
-              운영계획 구독 {formatPreciseUsd(operatingPlanSubscriptionUsd)}/월 · 환율{" "}
+              결재현황 구독 {formatPreciseUsd(operatingPlanSubscriptionUsd)}/월 · 환율{" "}
               {numberFormat.format(OPERATING_PLAN_USD_TO_KRW)}원 · 현재월 기준 {operatingPlanApiSourceLabel}{" "}
               {formatManWon(operatingPlanApiKrw)}/월
             </span>
@@ -1352,7 +1372,7 @@ function MonthlyView({
                 <th>실제 비용</th>
                 <th>예측 제외</th>
                 <th>예측 기준</th>
-                <th>운영계획 구독</th>
+                <th>하한 적용 기준</th>
                 <th>API 실측/예산</th>
                 <th>API/구독 반영</th>
                 <th>건수</th>

@@ -285,15 +285,15 @@ const records: AiToolApprovalRecord[] = [
   {
     no: 19,
     category: "Claude",
-    tool: "Claude Team Plan Standard",
+    tool: "Claude Team Plan Premium",
     account: "hchbae1001@riskzero.kr",
     linkedAccount: "없음",
     owner: "배현철 사원 / 플랫폼개발",
     department: "플랫폼개발",
-    monthlyUsd: 25,
-    monthlyKrw: 37125,
+    monthlyUsd: 125,
+    monthlyKrw: 185625,
     paymentMethod: "AI 전용 카드",
-    note: "신규",
+    note: "신규 · Standard에서 Premium으로 변경",
   },
   {
     no: 20,
@@ -456,10 +456,10 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
   departmentSummary: summarize(records, "department", totalMonthlyKrw),
   records,
   insights: [
-    "등록된 AI 도구 결재 계정은 29개이며 월 구독료 합계는 $2,145.59 / 3,186,201원입니다.",
-    "AI 전용 카드 결재가 26개 계정, 2,510,348원으로 전체 월액의 78.8%를 차지합니다.",
+    "등록된 AI 도구 결재 계정은 29개이며 월 구독료 합계는 $2,245.59 / 3,334,701원입니다.",
+    "AI 전용 카드 결재가 26개 계정, 2,658,848원으로 전체 월액의 79.7%를 차지합니다.",
     "기명법인카드는 3개 계정, 675,853원이며 전략실 전용 ChatGPT·Claude·Gemini 항목에 집중되어 있습니다.",
-    "Claude 계열은 20개 계정, 1,975,050원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
+    "Claude 계열은 20개 계정, 2,123,550원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
   ],
 };
 
