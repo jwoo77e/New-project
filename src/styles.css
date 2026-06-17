@@ -893,6 +893,80 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.claude-export-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0 18px;
+}
+
+.claude-export-summary-grid article {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.claude-export-summary-grid span,
+.claude-export-summary-grid small,
+.claude-export-table small,
+.claude-export-table td > span,
+.claude-account-list span,
+.claude-account-list small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.claude-export-summary-grid strong {
+  display: block;
+  margin: 6px 0;
+  color: var(--ink);
+  font-size: 1.32rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.claude-topic-list,
+.claude-account-list {
+  display: grid;
+  gap: 12px;
+}
+
+.claude-account-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.claude-account-list .department-meter,
+.claude-account-list small {
+  grid-column: 1 / -1;
+}
+
+.claude-account-list strong,
+.claude-export-table strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.claude-account-list b {
+  color: var(--teal);
+  font-size: 0.92rem;
+}
+
+.claude-export-table td {
+  vertical-align: top;
+  white-space: normal;
+}
+
 .notion-prompt-table td {
   vertical-align: top;
 }
@@ -1554,6 +1628,7 @@ td strong {
   .approval-payment-grid,
   .approval-split-grid,
   .notion-summary-grid,
+  .claude-export-summary-grid,
   .service-usage-grid,
   .ax-dimension-grid,
   .ax-insight-columns,
@@ -1642,6 +1717,7 @@ td strong {
   .approval-payment-grid,
   .approval-split-grid,
   .notion-summary-grid,
+  .claude-export-summary-grid,
   .service-usage-grid,
   .ax-dimension-grid,
   .ax-insight-columns,

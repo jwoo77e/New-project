@@ -939,14 +939,14 @@ function App() {
             label="관리 생성형 AI 서비스"
             tone="teal"
             value="5종"
-            footer={`Gemini · ChatGPT · Genspark · Claude · Gamma ${gammaUsageData.source.status}`}
+            footer={`Gemini · Claude Export · Genspark · Claude Team · Gamma ${gammaUsageData.source.status}`}
           />
           <MetricCard
             icon={<Sparkles size={21} />}
             label="수집된 활용 기록"
             tone="green"
             value={`${numberFormat.format(aiUsageInsight.totalRecords)}건`}
-            footer="ChatGPT export와 Genspark 작업 로그 통합"
+            footer="Claude export와 Genspark 작업 로그 통합"
           />
           <MetricCard
             icon={<Bot size={21} />}
@@ -1698,9 +1698,12 @@ function DetailView({
 function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
   const insight = usageData.insightAnalysis;
   const notionPromptUsage = usageData.notionPromptUsage;
+  const claudeExport = usageData.chatGptExport;
   const topTopic = insight.topicInsights[0];
   const maxNotionPromptRecords = Math.max(...(notionPromptUsage?.sources.map((source) => source.promptRecords) ?? [1]), 1);
   const maxNotionGeneratedOutputs = Math.max(...(notionPromptUsage?.sources.map((source) => source.generatedOutputs) ?? [1]), 1);
+  const maxClaudeSourceRecords = Math.max(...(claudeExport?.sourceFiles.map((source) => source.records) ?? [1]), 1);
+  const maxClaudeAccountMessages = Math.max(...(claudeExport?.accountUsage.map((account) => account.messages) ?? [1]), 1);
   const qualityClass = (signal: string) =>
     signal === "즉시 재사용" ? "ok" : signal === "가이드 필요" ? "guide" : "fix";
   const urgencyClass = (value: string) => (value === "상" || value === "높음" ? "high" : value === "중간" || value === "중" ? "medium" : "low");
@@ -1809,6 +1812,161 @@ function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
           ))}
         </div>
       </section>
+
+      {claudeExport && (
+        <section className="panel panel-wide">
+          <div className="panel-header">
+            <div>
+              <span className="eyebrow">Claude Export Audit</span>
+              <h2>Claude 사용 이력 원천 검증</h2>
+            </div>
+            <div className="panel-header-side">
+              <span className="state-pill ok">전체 파일 반영</span>
+              <span className="state-pill neutral">{claudeExport.source.period}</span>
+            </div>
+          </div>
+          <div className="claude-export-summary-grid">
+            <article>
+              <span>원천 파일</span>
+              <strong>{numberFormat.format(claudeExport.sourceFiles.length)}개</strong>
+              <small>conversations, memories, users, projects</small>
+            </article>
+            <article>
+              <span>대화/메시지</span>
+              <strong>{numberFormat.format(claudeExport.totalConversations)}개</strong>
+              <small>{numberFormat.format(claudeExport.totalMessages)}메시지 · 첨부 {numberFormat.format(claudeExport.totalAttachments)}개</small>
+            </article>
+            <article>
+              <span>활성 계정</span>
+              <strong>{numberFormat.format(claudeExport.userDirectory.activeAccounts)}개</strong>
+              <small>{claudeExport.userDirectory.domain} 사용자 {numberFormat.format(claudeExport.userDirectory.totalUsers)}명 중 매핑</small>
+            </article>
+            <article>
+              <span>프로젝트</span>
+              <strong>{numberFormat.format(claudeExport.projectExports.length)}개</strong>
+              <small>문서 포함 프로젝트 {numberFormat.format(claudeExport.projectExports.filter((project) => project.docs > 0).length)}개</small>
+            </article>
+          </div>
+
+          <div className="chatgpt-export-grid compact">
+            <div className="chatgpt-export-column">
+              <h3>어디에 쓰이고 있나</h3>
+              <div className="claude-topic-list">
+                {claudeExport.usageTopics.map((topic) => (
+                  <MeterRow
+                    color={topic.color}
+                    key={topic.topic}
+                    label={`${topic.topic} · ${numberFormat.format(topic.conversations)}대화`}
+                    value={topic.messageShare}
+                    valueLabel={`${numberFormat.format(topic.messages)}메시지 · ${formatRate(topic.messageShare)}`}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="chatgpt-export-column">
+              <h3>계정별 사용 확인</h3>
+              <div className="claude-account-list">
+                {claudeExport.accountUsage.map((account) => (
+                  <article key={account.accountLabel}>
+                    <div>
+                      <strong>{account.accountLabel}</strong>
+                      <span>{account.primaryUse}</span>
+                    </div>
+                    <b>{numberFormat.format(account.conversations)}대화</b>
+                    <div className="department-meter" aria-label={`${account.accountLabel} 메시지 비중`}>
+                      <span style={{ width: `${Math.min((account.messages / maxClaudeAccountMessages) * 100, 100)}%` }} />
+                    </div>
+                    <small>{numberFormat.format(account.messages)}메시지 · 첨부 {numberFormat.format(account.attachments)}개 · {account.verification}</small>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="table-wrap claude-export-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>원천 파일</th>
+                  <th>유형</th>
+                  <th>레코드</th>
+                  <th>반영 내용</th>
+                  <th>확인 기준</th>
+                </tr>
+              </thead>
+              <tbody>
+                {claudeExport.sourceFiles.map((source) => (
+                  <tr key={source.fileName}>
+                    <td>
+                      <strong>{source.fileName}</strong>
+                    </td>
+                    <td>{source.sourceType}</td>
+                    <td>
+                      <div className="notion-usage-cell">
+                        <strong>{numberFormat.format(source.records)}건</strong>
+                        <div className="department-meter" aria-label={`${source.fileName} 레코드 수`}>
+                          <span style={{ width: `${Math.min((source.records / maxClaudeSourceRecords) * 100, 100)}%` }} />
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span>{source.role}</span>
+                      <small>{source.detail}</small>
+                    </td>
+                    <td>
+                      <span>{source.verification}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="table-wrap claude-export-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>프로젝트</th>
+                  <th>공개 범위</th>
+                  <th>문서</th>
+                  <th>파일명</th>
+                  <th>사용/확인 내용</th>
+                </tr>
+              </thead>
+              <tbody>
+                {claudeExport.projectExports.map((project) => (
+                  <tr key={project.id}>
+                    <td>
+                      <strong>{project.name}</strong>
+                      <small>{project.id}</small>
+                    </td>
+                    <td>{project.visibility}</td>
+                    <td>{numberFormat.format(project.docs)}건</td>
+                    <td>{project.fileName}</td>
+                    <td>
+                      <span>{project.useCase}</span>
+                      <small>{project.createdAt} 생성 · {project.updatedAt} 수정 · {project.verification}</small>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="insight-box">
+            <FileSpreadsheet size={18} />
+            <div>
+              <strong>users.json·memories.json 반영 기준</strong>
+              <span>{claudeExport.userDirectory.privacyNote}</span>
+              {claudeExport.memoryUsage.map((memory) => (
+                <span key={memory.accountLabel}>
+                  {memory.accountLabel}: {numberFormat.format(memory.characters)}자 memory · {memory.signal}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {notionPromptUsage && (
         <section className="panel panel-wide">
@@ -2229,16 +2387,16 @@ function AdoptionView({
       icon: <Sparkles size={18} />,
     },
     {
-      name: "ChatGPT",
-      source: "Export 분석",
+      name: "Claude Export",
+      source: "JSON Export",
       status: chatGptExport ? "수집" : "대기",
       statusTone: chatGptExport ? "ok" : "warning",
       value: `${numberFormat.format(chatGptExport?.totalConversations ?? 0)}개`,
       metric: "대화 기록",
       detail: chatGptExport
         ? `${numberFormat.format(chatGptExport.totalMessages)} messages · ${numberFormat.format(chatGptExport.totalAttachments)} attachments`
-        : "ChatGPT export 업로드 필요",
-      note: chatGptExport?.patterns[0] ?? "대화 export를 주기적으로 가져오면 업무 주제별 활용 추이가 갱신됩니다.",
+        : "Claude export 업로드 필요",
+      note: chatGptExport?.patterns[0] ?? "Claude export를 주기적으로 가져오면 업무 주제별 활용 추이가 갱신됩니다.",
       color: "#e85d4f",
       icon: <Bot size={18} />,
     },
@@ -2345,7 +2503,7 @@ function AdoptionView({
           : "AX 운영 고도화 단계";
   const axStrengths = [
     `5종 서비스 중 ${readyServiceCount}종에서 실제 수집 신호가 확인됩니다.`,
-    `ChatGPT·Genspark 통합 분석 ${numberFormat.format(gensparkUsageData.insightAnalysis.totalRecords)}건 중 산출형 활용이 ${numberFormat.format(outputRecords)}건입니다.`,
+    `Claude export·Genspark 통합 분석 ${numberFormat.format(gensparkUsageData.insightAnalysis.totalRecords)}건 중 산출형 활용이 ${numberFormat.format(outputRecords)}건입니다.`,
     hasClaudeCodeLines
       ? `Claude Team은 ${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄의 Claude Code 활용과 ${formatTokens(claudeTeamUsageData.totalTokens)} 토큰 사용이 확인됩니다.`
       : `Claude Team은 6월 상반기 spend report에서 ${formatTokens(claudeTeamUsageData.totalTokens)} 토큰과 ${numberFormat.format(claudeTeamUsageData.totalRequests)}건 요청이 확인됩니다.`,
@@ -2355,14 +2513,14 @@ function AdoptionView({
     gammaCreditsCollected
       ? "Gamma 크레딧은 웹 크롤링으로 보강됐지만 로그인 세션 만료 시 재인증이 필요합니다."
       : "Gamma 잔여 크레딧은 아직 로그인 세션 저장 전이라 일일 자동 수집이 완전히 닫히지 않았습니다.",
-    "ChatGPT와 Genspark는 export/크롤링 기반이라 실시간 사용자별 활용률까지는 약합니다.",
+    "Claude export와 Genspark는 export/크롤링 기반이라 실시간 사용자별 활용률까지는 약합니다.",
     "AI 사용 기록과 최종 산출물의 제출, 매출, 업무시간 절감 성과가 아직 자동 연결되지 않습니다.",
     "반복 업무별 프롬프트 템플릿과 검증 기준이 표준화되지 않아 재작업 가능성이 남아 있습니다.",
   ];
   const axActions = [
     "제안서, 개발 오류 해결, 회의록, 법령 검토 등 핵심 업무별 표준 프롬프트 템플릿을 만든다.",
     "AI 사용 로그에 업무 목적, 산출물 유형, 실제 제출/배포 여부, 재사용 가능 여부 태그를 붙인다.",
-    "Gamma 로그인 세션과 ChatGPT/Genspark export 갱신을 월간 AX 운영 체크리스트에 포함한다.",
+    "Gamma 로그인 세션과 Claude/Genspark export 갱신을 월간 AX 운영 체크리스트에 포함한다.",
     "월 1회 AX 리뷰에서 비용, 활용량, 산출물, 보완 과제를 같은 기준으로 보고한다.",
   ];
 
@@ -2540,14 +2698,14 @@ function AdoptionView({
         <div className="panel-header">
           <div>
             <span className="eyebrow">Exports</span>
-            <h2>ChatGPT·Genspark 활용 로그</h2>
+            <h2>Claude Export·Genspark 활용 로그</h2>
           </div>
         </div>
         <div className="api-provider-list">
           <article className="api-provider-card">
             <div className="api-provider-head">
               <span className="category-dot" style={{ background: "#e85d4f" }} />
-              <strong>ChatGPT</strong>
+              <strong>Claude Export</strong>
               <span className="state-pill ok">Export</span>
             </div>
             <div className="api-provider-stats">
@@ -2555,7 +2713,7 @@ function AdoptionView({
               <span>{numberFormat.format(chatGptExport?.totalMessages ?? 0)} 메시지</span>
               <span>{numberFormat.format(chatGptExport?.conversationsWithFiles ?? 0)} 첨부 대화</span>
             </div>
-            <small>{chatGptExport?.patterns[1] ?? "ChatGPT export를 업로드하면 대화·첨부 기반 활용성이 채워집니다."}</small>
+            <small>{chatGptExport?.patterns[1] ?? "Claude export를 업로드하면 대화·첨부 기반 활용성이 채워집니다."}</small>
           </article>
           <article className="api-provider-card">
             <div className="api-provider-head">
