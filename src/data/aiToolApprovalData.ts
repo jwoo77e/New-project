@@ -425,19 +425,6 @@ const records: AiToolApprovalRecord[] = [
     paymentMethod: "AI 전용 카드",
     note: "",
   },
-  {
-    no: 30,
-    category: "Claude",
-    tool: "Claude Pro Max 5",
-    account: "박재현 상무님 전용",
-    linkedAccount: "없음",
-    owner: "박재현 상무 / 플랫폼개발",
-    department: "플랫폼개발",
-    monthlyUsd: 110,
-    monthlyKrw: 163350,
-    paymentMethod: "AI 전용 카드",
-    note: "신규 · 박재현 상무님 전용",
-  },
 ];
 
 const totalMonthlyUsd = sum(records, "monthlyUsd");
@@ -451,7 +438,7 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     name: "사내 AI도구 결재 현황",
     fileName: "사내 AI도구 현황조사표_V3.0.xlsx",
     sheetName: "전사 AI도구 현황조사표",
-    collectedAt: "2026-06-17",
+    collectedAt: "2026-06-13",
     period: "월 구독 기준 · USD 1 = 1,485원",
     note: "계정 ID, 주사용자/부서, 구독료, 결재수단, 비고를 반영했으며 비밀번호와 이중인증 전화번호는 결재 현황 지표에서 제외",
   },
@@ -469,10 +456,10 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
   departmentSummary: summarize(records, "department", totalMonthlyKrw),
   records,
   insights: [
-    "등록된 AI 도구 결재 계정은 30개이며 월 구독료 합계는 $2,355.59 / 3,498,051원입니다.",
-    "AI 전용 카드 결재가 27개 계정, 2,822,198원으로 전체 월액의 80.7%를 차지합니다.",
+    "등록된 AI 도구 결재 계정은 29개이며 월 구독료 합계는 $2,245.59 / 3,334,701원입니다.",
+    "AI 전용 카드 결재가 26개 계정, 2,658,848원으로 전체 월액의 79.7%를 차지합니다.",
     "기명법인카드는 3개 계정, 675,853원이며 전략실 전용 ChatGPT·Claude·Gemini 항목에 집중되어 있습니다.",
-    "Claude 계열은 21개 계정, 2,286,900원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
+    "Claude 계열은 20개 계정, 2,123,550원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
   ],
 };
 
