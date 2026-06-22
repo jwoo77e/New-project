@@ -129,6 +129,19 @@ const records: AiToolApprovalRecord[] = [
   {
     no: 7,
     category: "Claude",
+    tool: "Claude Pro Max 5",
+    account: "박재현 상무님 전용",
+    linkedAccount: "없음",
+    owner: "박재현 상무 / 전략실",
+    department: "전략실",
+    monthlyUsd: 110,
+    monthlyKrw: 163350,
+    paymentMethod: "AI 전용 카드",
+    note: "신규 · 박재현 상무 전용",
+  },
+  {
+    no: 8,
+    category: "Claude",
     tool: "Claude Pro Max 20",
     account: "전략실장님 전용",
     linkedAccount: "없음",
@@ -140,7 +153,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 8,
+    no: 9,
     category: "Claude",
     tool: "Claude Pro Max 20",
     account: "연구소장님 전용",
@@ -153,7 +166,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 9,
+    no: 10,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "jaewoo.kim@riskzero.kr",
@@ -166,7 +179,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 10,
+    no: 11,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "sieghaft@riskzero.kr",
@@ -179,7 +192,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 11,
+    no: 12,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "sjlim@riskzero.kr",
@@ -192,7 +205,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 12,
+    no: 13,
     category: "Claude",
     tool: "Claude Team Plan Premium",
     account: "wody@riskzero.kr",
@@ -205,7 +218,7 @@ const records: AiToolApprovalRecord[] = [
     note: "하네스 사용 등 Advanced User",
   },
   {
-    no: 13,
+    no: 14,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "mjkim1122@riskzero.kr",
@@ -218,7 +231,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 14,
+    no: 15,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "huizhen0227@riskzero.kr",
@@ -231,7 +244,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 15,
+    no: 16,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "hhlee0227@riskzero.kr",
@@ -244,7 +257,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 16,
+    no: 17,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "rkgmf1230@riskzero.kr",
@@ -257,7 +270,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 17,
+    no: 18,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "jungyr98@riskzero.kr",
@@ -270,7 +283,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 18,
+    no: 19,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "mygu@riskzero.kr",
@@ -283,7 +296,7 @@ const records: AiToolApprovalRecord[] = [
     note: "신규",
   },
   {
-    no: 19,
+    no: 20,
     category: "Claude",
     tool: "Claude Team Plan Premium",
     account: "hchbae1001@riskzero.kr",
@@ -296,7 +309,7 @@ const records: AiToolApprovalRecord[] = [
     note: "신규 · Standard에서 Premium으로 변경",
   },
   {
-    no: 20,
+    no: 21,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "staycurious@riskzero.kr",
@@ -309,7 +322,7 @@ const records: AiToolApprovalRecord[] = [
     note: "신규",
   },
   {
-    no: 21,
+    no: 22,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "woosung.jeon@riskzero.kr",
@@ -322,7 +335,7 @@ const records: AiToolApprovalRecord[] = [
     note: "신규",
   },
   {
-    no: 22,
+    no: 23,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "kys0392@riskzero.kr",
@@ -335,7 +348,7 @@ const records: AiToolApprovalRecord[] = [
     note: "신규",
   },
   {
-    no: 23,
+    no: 24,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "ai.marketing@riskzero.kr",
@@ -348,7 +361,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 24,
+    no: 25,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "james@riskzero.kr",
@@ -361,7 +374,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 25,
+    no: 26,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "bigone@riskzero.kr",
@@ -374,7 +387,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 26,
+    no: 27,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "riskzero@riskzero.kr",
@@ -387,7 +400,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 27,
+    no: 28,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "전략실장님 전용",
@@ -400,7 +413,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 28,
+    no: 29,
     category: "Genspark",
     tool: "Genspark Pro",
     account: "riskzero.marketing@gmail.com",
@@ -413,7 +426,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 29,
+    no: 30,
     category: "Gamma",
     tool: "Gamma AI Pro",
     account: "riskzero.marketing@gmail.com",
@@ -456,10 +469,10 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
   departmentSummary: summarize(records, "department", totalMonthlyKrw),
   records,
   insights: [
-    "등록된 AI 도구 결재 계정은 29개이며 월 구독료 합계는 $2,245.59 / 3,334,701원입니다.",
-    "AI 전용 카드 결재가 26개 계정, 2,658,848원으로 전체 월액의 79.7%를 차지합니다.",
+    "등록된 AI 도구 결재 계정은 30개이며 월 구독료 합계는 $2,355.59 / 3,498,051원입니다.",
+    "AI 전용 카드 결재가 27개 계정, 2,822,198원으로 전체 월액의 80.7%를 차지합니다.",
     "기명법인카드는 3개 계정, 675,853원이며 전략실 전용 ChatGPT·Claude·Gemini 항목에 집중되어 있습니다.",
-    "Claude 계열은 20개 계정, 2,123,550원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
+    "Claude 계열은 21개 계정, 2,286,900원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
   ],
 };
 
