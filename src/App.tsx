@@ -926,7 +926,7 @@ function App() {
           />
           <MetricCard
             icon={<KeyRound size={21} />}
-            label="기명법인카드"
+            label="공용 법인 카드"
             tone="steel"
             value={`${numberFormat.format(aiToolApprovalData.namedCorporateCardAccounts)}개`}
             footer={formatWon(aiToolApprovalData.namedCorporateCardKrw)}

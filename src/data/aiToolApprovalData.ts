@@ -149,7 +149,7 @@ const records: AiToolApprovalRecord[] = [
     department: "전략실",
     monthlyUsd: 220,
     monthlyKrw: 326700,
-    paymentMethod: "기명법인카드",
+    paymentMethod: "공용 법인 카드",
     note: "",
   },
   {
@@ -422,7 +422,7 @@ const records: AiToolApprovalRecord[] = [
     department: "전략실",
     monthlyUsd: 15.12,
     monthlyKrw: 22453.2,
-    paymentMethod: "기명법인카드",
+    paymentMethod: "공용 법인 카드",
     note: "",
   },
   {
@@ -470,7 +470,7 @@ const totalMonthlyUsd = sum(records, "monthlyUsd");
 const totalMonthlyKrw = sum(records, "monthlyKrw");
 const paymentSummary = summarize(records, "paymentMethod", totalMonthlyKrw);
 const aiDedicatedCard = paymentSummary.find((item) => item.key === "AI 전용 카드");
-const namedCorporateCard = paymentSummary.find((item) => item.key === "기명법인카드");
+const namedCorporateCard = paymentSummary.find((item) => item.key === "공용 법인 카드");
 
 export const initialAiToolApprovalData: AiToolApprovalData = {
   source: {
@@ -497,7 +497,7 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
   insights: [
     "등록된 AI 도구 결재 계정은 32개이며 월 구독료 합계는 $2,395.71 / 3,557,629원입니다.",
     "AI 전용 카드 결재가 30개 계정, 3,208,476원으로 전체 월액의 90.1%를 차지합니다.",
-    "기명법인카드는 2개 계정, 349,153원이며 전략실 전용 Claude·Gemini 항목에 집중되어 있습니다.",
+    "공용 법인 카드는 2개 계정, 349,153원이며 전략실 전용 Claude·Gemini 항목에 집중되어 있습니다.",
     "Claude 계열은 22개 계정, 2,324,025원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
     "신규 반영: 박재현 상무 jhpark@riskzero.kr Claude Team Standard, 박병민 상무 ai.smartservice@riskzero.kr Gemini Workspace.",
   ],
