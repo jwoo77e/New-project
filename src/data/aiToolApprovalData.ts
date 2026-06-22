@@ -349,6 +349,19 @@ const records: AiToolApprovalRecord[] = [
   },
   {
     no: 24,
+    category: "Claude",
+    tool: "Claude Team Plan Standard",
+    account: "jhpark@riskzero.kr",
+    linkedAccount: "없음",
+    owner: "박재현 상무 / 플랫폼 개발",
+    department: "플랫폼 개발",
+    monthlyUsd: 25,
+    monthlyKrw: 37125,
+    paymentMethod: "AI 전용 카드",
+    note: "신규",
+  },
+  {
+    no: 25,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "ai.marketing@riskzero.kr",
@@ -361,7 +374,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 25,
+    no: 26,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "james@riskzero.kr",
@@ -374,7 +387,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 26,
+    no: 27,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "bigone@riskzero.kr",
@@ -387,7 +400,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 27,
+    no: 28,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "riskzero@riskzero.kr",
@@ -400,7 +413,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 28,
+    no: 29,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "전략실장님 전용",
@@ -413,7 +426,20 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 29,
+    no: 30,
+    category: "Gemini",
+    tool: "Gemini(Google Workspace)",
+    account: "ai.smartservice@riskzero.kr",
+    linkedAccount: "ai.smartservice@riskzero.kr",
+    owner: "박병민 상무 / 스마트서비스",
+    department: "스마트서비스",
+    monthlyUsd: 15.12,
+    monthlyKrw: 22453.2,
+    paymentMethod: "AI 전용 카드",
+    note: "신규",
+  },
+  {
+    no: 31,
     category: "Genspark",
     tool: "Genspark Pro",
     account: "riskzero.marketing@gmail.com",
@@ -426,7 +452,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 30,
+    no: 32,
     category: "Gamma",
     tool: "Gamma AI Pro",
     account: "riskzero.marketing@gmail.com",
@@ -469,10 +495,11 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
   departmentSummary: summarize(records, "department", totalMonthlyKrw),
   records,
   insights: [
-    "등록된 AI 도구 결재 계정은 30개이며 월 구독료 합계는 $2,355.59 / 3,498,051원입니다.",
-    "AI 전용 카드 결재가 28개 계정, 3,148,898원으로 전체 월액의 90.0%를 차지합니다.",
+    "등록된 AI 도구 결재 계정은 32개이며 월 구독료 합계는 $2,395.71 / 3,557,629원입니다.",
+    "AI 전용 카드 결재가 30개 계정, 3,208,476원으로 전체 월액의 90.1%를 차지합니다.",
     "기명법인카드는 2개 계정, 349,153원이며 전략실 전용 Claude·Gemini 항목에 집중되어 있습니다.",
-    "Claude 계열은 21개 계정, 2,286,900원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
+    "Claude 계열은 22개 계정, 2,324,025원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
+    "신규 반영: 박재현 상무 jhpark@riskzero.kr Claude Team Standard, 박병민 상무 ai.smartservice@riskzero.kr Gemini Workspace.",
   ],
 };
 
