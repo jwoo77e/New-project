@@ -2879,6 +2879,7 @@ function AdoptionView({
             <thead>
               <tr>
                 <th>계정</th>
+                <th>이름</th>
                 <th>활용 단계</th>
                 <th>Spend</th>
                 <th>요청</th>
@@ -2893,6 +2894,9 @@ function AdoptionView({
                 <tr key={user.email}>
                   <td>
                     <strong>{user.email}</strong>
+                  </td>
+                  <td>
+                    <strong>{user.displayName}</strong>
                   </td>
                   <td>
                     <span className={`state-pill ${claudeTeamLevelTone(user.level)}`}>
