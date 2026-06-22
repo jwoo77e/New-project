@@ -71,7 +71,7 @@ const records: AiToolApprovalRecord[] = [
     department: "전략실",
     monthlyUsd: 220,
     monthlyKrw: 326700,
-    paymentMethod: "기명법인카드",
+    paymentMethod: "AI 전용 카드",
     note: "gpt5.5 사용 요청으로 증량",
   },
   {
@@ -470,8 +470,8 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
   records,
   insights: [
     "등록된 AI 도구 결재 계정은 30개이며 월 구독료 합계는 $2,355.59 / 3,498,051원입니다.",
-    "AI 전용 카드 결재가 27개 계정, 2,822,198원으로 전체 월액의 80.7%를 차지합니다.",
-    "기명법인카드는 3개 계정, 675,853원이며 전략실 전용 ChatGPT·Claude·Gemini 항목에 집중되어 있습니다.",
+    "AI 전용 카드 결재가 28개 계정, 3,148,898원으로 전체 월액의 90.0%를 차지합니다.",
+    "기명법인카드는 2개 계정, 349,153원이며 전략실 전용 Claude·Gemini 항목에 집중되어 있습니다.",
     "Claude 계열은 21개 계정, 2,286,900원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
   ],
 };
