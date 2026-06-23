@@ -978,7 +978,7 @@ function App() {
             label="Drive 저장 산출물"
             tone="amber"
             value={`${numberFormat.format(driveArtifactRepositoryData.totals.files)}개`}
-            footer={`${driveArtifactsByOwner} · 프롬프트 ${numberFormat.format(driveArtifactRepositoryData.totals.prompts)}건`}
+            footer={`${driveArtifactsByOwner} · zip 내부 ${numberFormat.format(driveArtifactRepositoryData.zipAnalysisPipeline.totals.extractedFiles)}개`}
           />
           <MetricCard
             icon={<LineChart size={21} />}
@@ -1693,6 +1693,14 @@ function GensparkUsageView({
       folderUrl: repository.folderUrl,
     })),
   );
+  const driveZipPipeline = driveRepositoryData.zipAnalysisPipeline;
+  const driveZipTaskGroups = driveZipPipeline.archives.flatMap((archive) =>
+    archive.taskGroups.map((group) => ({
+      ...group,
+      owner: archive.owner,
+      archiveName: archive.archiveName,
+    })),
+  );
   const maxDriveRepositoryFiles = Math.max(...driveRepositoryData.repositories.map((repository) => repository.fileCount), 1);
   const qualityClass = (signal: string) =>
     signal === "즉시 재사용" ? "ok" : signal === "가이드 필요" ? "guide" : "fix";
@@ -1994,6 +2002,79 @@ function GensparkUsageView({
             </strong>
             <small>Google Docs 문서와 엑셀 산출물</small>
           </article>
+        </div>
+
+        <div className="drive-zip-panel">
+          <div className="drive-zip-header">
+            <div>
+              <span className="eyebrow">Split Zip Intake</span>
+              <h3>분할 zip 임시 해제 분석 흐름</h3>
+            </div>
+            <div className="panel-header-side">
+              <span className="state-pill ok">{numberFormat.format(driveZipPipeline.totals.splitParts)}개 조각</span>
+              <span className="state-pill neutral">{driveZipPipeline.collectedAt}</span>
+            </div>
+          </div>
+          <p>{driveZipPipeline.mode}</p>
+          <div className="drive-zip-stage-grid">
+            {driveZipPipeline.stages.map((stage) => (
+              <article key={stage.label}>
+                <strong>{stage.label}</strong>
+                <span>{stage.action}</span>
+                <small>{stage.result}</small>
+              </article>
+            ))}
+          </div>
+          <div className="drive-zip-archive-grid">
+            {driveZipPipeline.archives.map((archive) => (
+              <article key={`${archive.owner}-${archive.archiveName}`}>
+                <div className="drive-repository-head">
+                  <div>
+                    <span>{archive.owner}</span>
+                    <strong>{archive.archiveName}</strong>
+                  </div>
+                  <a
+                    className="drive-folder-link"
+                    href={archive.folderUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                  >
+                    폴더 열기
+                  </a>
+                </div>
+                <div className="drive-repository-stats">
+                  <span>part {numberFormat.format(archive.sourceParts.length)}개</span>
+                  <span>결합 {numberFormat.format(Math.round(archive.combinedSizeBytes / 1024))}KB</span>
+                  <span>파일 {numberFormat.format(archive.extractedFiles)}개</span>
+                  <span>CRC 경고 {numberFormat.format(archive.crcWarningFiles.length)}개</span>
+                </div>
+                <small>{archive.verificationStatus}</small>
+                <small>{archive.cleanupStatus}</small>
+              </article>
+            ))}
+          </div>
+          <div className="drive-zip-task-grid">
+            {driveZipTaskGroups.map((group) => (
+              <article key={`${group.owner}-${group.folderName}`}>
+                <div>
+                  <strong>{group.title}</strong>
+                  <span>{group.useCase}</span>
+                </div>
+                <p>{group.summary}</p>
+                <div className="drive-repository-stats">
+                  <span>파일 {numberFormat.format(group.fileCount)}개</span>
+                  <span>프롬프트 {numberFormat.format(group.promptCount)}개</span>
+                  <span>응답 {numberFormat.format(group.responseCount)}개</span>
+                  {group.dataFiles.length > 0 && <span>데이터 {numberFormat.format(group.dataFiles.length)}개</span>}
+                </div>
+                <small>{group.verification}</small>
+              </article>
+            ))}
+          </div>
+          <div className="drive-zip-cleanup-note">
+            <ShieldCheck size={18} />
+            <span>{driveZipPipeline.cleanupPolicy}</span>
+          </div>
         </div>
 
         <div className="drive-repository-grid">

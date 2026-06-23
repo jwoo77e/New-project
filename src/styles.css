@@ -895,6 +895,113 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.drive-zip-panel {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.drive-zip-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.drive-zip-header h3 {
+  margin: 3px 0 0;
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.drive-zip-panel p,
+.drive-zip-panel small,
+.drive-zip-panel span {
+  overflow-wrap: anywhere;
+}
+
+.drive-zip-panel > p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.drive-zip-stage-grid,
+.drive-zip-archive-grid,
+.drive-zip-task-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.drive-zip-stage-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.drive-zip-archive-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.drive-zip-task-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.drive-zip-stage-grid article,
+.drive-zip-archive-grid article,
+.drive-zip-task-grid article {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.drive-zip-stage-grid strong,
+.drive-zip-task-grid strong {
+  display: block;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.drive-zip-stage-grid span,
+.drive-zip-stage-grid small,
+.drive-zip-archive-grid small,
+.drive-zip-task-grid span,
+.drive-zip-task-grid small,
+.drive-zip-cleanup-note span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.drive-zip-task-grid p {
+  color: var(--ink);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.drive-zip-cleanup-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(47, 143, 70, 0.24);
+  border-radius: 8px;
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.drive-zip-cleanup-note svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
 .drive-repository-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1687,6 +1794,9 @@ td strong {
   .approval-payment-grid,
   .approval-split-grid,
   .drive-summary-grid,
+  .drive-zip-stage-grid,
+  .drive-zip-archive-grid,
+  .drive-zip-task-grid,
   .drive-repository-grid,
   .claude-export-summary-grid,
   .service-usage-grid,
@@ -1777,6 +1887,9 @@ td strong {
   .approval-payment-grid,
   .approval-split-grid,
   .drive-summary-grid,
+  .drive-zip-stage-grid,
+  .drive-zip-archive-grid,
+  .drive-zip-task-grid,
   .drive-repository-grid,
   .claude-export-summary-grid,
   .service-usage-grid,

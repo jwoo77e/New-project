@@ -54,7 +54,62 @@ export type DriveArtifactRepositoryData = {
     dataFiles: number;
   };
   repositories: DriveArtifactRepository[];
+  zipAnalysisPipeline: DriveZipAnalysisPipeline;
   insights: string[];
+};
+
+export type DriveZipPipelineStage = {
+  label: string;
+  action: string;
+  result: string;
+};
+
+export type DriveZipTaskGroup = {
+  title: string;
+  folderName: string;
+  useCase: string;
+  fileCount: number;
+  promptCount: number;
+  responseCount: number;
+  skillCount: number;
+  dataFiles: string[];
+  summary: string;
+  verification: string;
+};
+
+export type DriveZipArchiveAnalysis = {
+  owner: string;
+  archiveName: string;
+  folderUrl: string;
+  sourceParts: string[];
+  combinedSizeBytes: number;
+  extractedEntries: number;
+  extractedFiles: number;
+  extractedDirectories: number;
+  promptFiles: number;
+  responseFiles: number;
+  skillFiles: number;
+  dataFiles: number;
+  crcWarningFiles: string[];
+  cleanupStatus: string;
+  verificationStatus: string;
+  taskGroups: DriveZipTaskGroup[];
+};
+
+export type DriveZipAnalysisPipeline = {
+  collectedAt: string;
+  mode: string;
+  cleanupPolicy: string;
+  stages: DriveZipPipelineStage[];
+  totals: {
+    splitParts: number;
+    archives: number;
+    extractedFiles: number;
+    taskGroups: number;
+    dataFiles: number;
+    crcWarnings: number;
+  };
+  archives: DriveZipArchiveAnalysis[];
 };
 
 const kindColors: Record<DriveArtifactKind, string> = {
@@ -450,6 +505,172 @@ const jaewooArtifacts: DriveArtifact[] = [
   },
 ];
 
+const jaewooZipFolderUrl = "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link";
+const jaewooZipModifiedAt = "2026-06-23T09:15:19.429Z";
+
+const jaewooZipArtifacts: DriveArtifact[] = [
+  {
+    title: "2026-06-23_세션모음.zip / claude-session-to-notion_SKILL.md",
+    url: jaewooZipFolderUrl,
+    mimeType: "text/markdown",
+    createdAt: "2026-06-23T08:12:00.000Z",
+    modifiedAt: jaewooZipModifiedAt,
+    kind: "문서 산출물",
+    useCase: "업무보고·지식관리",
+    usageSignal: "zip 내부에서 확인된 세션별 Drive 저장 자동화 지시서",
+  },
+  {
+    title: "2026-06-23_세션모음.zip / AxKPI_f2b7538e978c/프롬프트.md",
+    url: jaewooZipFolderUrl,
+    mimeType: "text/markdown",
+    createdAt: "2026-06-23T08:12:00.000Z",
+    modifiedAt: jaewooZipModifiedAt,
+    kind: "프롬프트",
+    useCase: "AX 운영·KPI",
+    usageSignal: "전사 AI 사용 현황 대시보드 값을 Notion AX 현황판에 반영하는 자동 작업 요청",
+  },
+  {
+    title: "2026-06-23_세션모음.zip / AxKPI_f2b7538e978c/응답.md",
+    url: jaewooZipFolderUrl,
+    mimeType: "text/markdown",
+    createdAt: "2026-06-23T08:12:00.000Z",
+    modifiedAt: jaewooZipModifiedAt,
+    kind: "응답",
+    useCase: "AX 운영·KPI",
+    usageSignal: "API 토큰·비용·구독 총액 변동과 Notion 갱신 결과가 기록됨",
+  },
+  {
+    title: "2026-06-23_세션모음.zip / AxKPI_f2b7538e978c/ax-kpi-daily-update_SKILL.md",
+    url: jaewooZipFolderUrl,
+    mimeType: "text/markdown",
+    createdAt: "2026-06-23T08:12:00.000Z",
+    modifiedAt: jaewooZipModifiedAt,
+    kind: "문서 산출물",
+    useCase: "AX 운영·KPI",
+    usageSignal: "AX 전환 현황판 자동 갱신 절차와 수동 보호 영역이 정의됨",
+  },
+  {
+    title: "2026-06-23_세션모음.zip / NaverAInews_74e90e57f6b9/프롬프트.md",
+    url: jaewooZipFolderUrl,
+    mimeType: "text/markdown",
+    createdAt: "2026-06-23T08:12:00.000Z",
+    modifiedAt: jaewooZipModifiedAt,
+    kind: "프롬프트",
+    useCase: "산업·AI 트렌드",
+    usageSignal: "최신 네이버 AI 뉴스 크롤링 및 엑셀 생성 요청",
+  },
+  {
+    title: "2026-06-23_세션모음.zip / NaverAInews_74e90e57f6b9/응답.md",
+    url: jaewooZipFolderUrl,
+    mimeType: "text/markdown",
+    createdAt: "2026-06-23T08:12:00.000Z",
+    modifiedAt: jaewooZipModifiedAt,
+    kind: "응답",
+    useCase: "산업·AI 트렌드",
+    usageSignal: "네이버 AI 뉴스 17건 수집, 중복 제거, 엑셀 생성 결과가 기록됨",
+  },
+  {
+    title: "2026-06-23_세션모음.zip / NaverAInews_74e90e57f6b9/naver_ai_news.xlsx",
+    url: jaewooZipFolderUrl,
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    createdAt: "2026-06-23T08:12:00.000Z",
+    modifiedAt: jaewooZipModifiedAt,
+    kind: "데이터 파일",
+    useCase: "산업·AI 트렌드",
+    usageSignal: "뉴스 17건 엑셀 산출물이나 zip CRC 경고가 있어 본문 재검증 필요",
+  },
+  {
+    title: "2026-06-23_세션모음.zip / Iris_689c22221d6c/프롬프트.md",
+    url: jaewooZipFolderUrl,
+    mimeType: "text/markdown",
+    createdAt: "2026-06-23T08:12:00.000Z",
+    modifiedAt: jaewooZipModifiedAt,
+    kind: "프롬프트",
+    useCase: "IRIS·공고 데이터",
+    usageSignal: "IRIS R&D 공고 크롤링, AI·산업안전·마감임박 분류 엑셀 생성 요청",
+  },
+  {
+    title: "2026-06-23_세션모음.zip / Iris_689c22221d6c/응답.md",
+    url: jaewooZipFolderUrl,
+    mimeType: "text/markdown",
+    createdAt: "2026-06-23T08:12:00.000Z",
+    modifiedAt: jaewooZipModifiedAt,
+    kind: "응답",
+    useCase: "IRIS·공고 데이터",
+    usageSignal: "최근 7일 기준 45건, AI 3건, 산업안전 2건, 마감임박 28건 요약",
+  },
+  {
+    title: "2026-06-23_세션모음.zip / Iris_689c22221d6c/IRIS_R_and_D_20260623.xlsx",
+    url: jaewooZipFolderUrl,
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    createdAt: "2026-06-23T08:12:00.000Z",
+    modifiedAt: jaewooZipModifiedAt,
+    kind: "데이터 파일",
+    useCase: "IRIS·공고 데이터",
+    usageSignal: "7시트 IRIS 공고 엑셀 산출물이나 zip CRC 경고가 있어 본문 재검증 필요",
+  },
+  {
+    title: "2026-06-23_세션모음.zip / Iris_689c22221d6c/iris_SKILL.md",
+    url: jaewooZipFolderUrl,
+    mimeType: "text/markdown",
+    createdAt: "2026-06-23T08:12:00.000Z",
+    modifiedAt: jaewooZipModifiedAt,
+    kind: "문서 산출물",
+    useCase: "IRIS·공고 데이터",
+    usageSignal: "IRIS 연구과제 공고 크롤러 실행 지시서",
+  },
+  {
+    title: "2026-06-23_세션모음.zip / ClaudeSessionToNotion_ed9281e57303/프롬프트.md",
+    url: jaewooZipFolderUrl,
+    mimeType: "text/markdown",
+    createdAt: "2026-06-23T08:12:00.000Z",
+    modifiedAt: jaewooZipModifiedAt,
+    kind: "프롬프트",
+    useCase: "업무보고·지식관리",
+    usageSignal: "세션 저장 위치를 김재우 폴더로 바꾸고 프롬프트·응답·생성파일 분리 저장하도록 지시",
+  },
+  {
+    title: "2026-06-23_세션모음.zip / ClaudeSessionToNotion_ed9281e57303/응답.md",
+    url: jaewooZipFolderUrl,
+    mimeType: "text/markdown",
+    createdAt: "2026-06-23T08:12:00.000Z",
+    modifiedAt: jaewooZipModifiedAt,
+    kind: "응답",
+    useCase: "업무보고·지식관리",
+    usageSignal: "6/21·6/22 세션 17개 백필, 텍스트 산출물 2개, IRIS 엑셀 업로드 결과가 기록됨",
+  },
+  {
+    title: "2026-06-23_세션모음.zip / Aitrendv1_1b13bc120fa0/프롬프트.md",
+    url: jaewooZipFolderUrl,
+    mimeType: "text/markdown",
+    createdAt: "2026-06-23T08:12:00.000Z",
+    modifiedAt: jaewooZipModifiedAt,
+    kind: "프롬프트",
+    useCase: "산업·AI 트렌드",
+    usageSignal: "최신 AI 기술 동향과 산업안전 적용 인사이트 리포트 작성 요청",
+  },
+  {
+    title: "2026-06-23_세션모음.zip / Aitrendv1_1b13bc120fa0/응답.md",
+    url: jaewooZipFolderUrl,
+    mimeType: "text/markdown",
+    createdAt: "2026-06-23T08:12:00.000Z",
+    modifiedAt: jaewooZipModifiedAt,
+    kind: "응답",
+    useCase: "산업·AI 트렌드",
+    usageSignal: "에이전틱·멀티모달·피지컬 AI 등 2026 AI 트렌드와 산업안전 적용 로드맵 요약",
+  },
+  {
+    title: "2026-06-23_세션모음.zip / Aitrendv1_1b13bc120fa0/aitrendv1_SKILL.md",
+    url: jaewooZipFolderUrl,
+    mimeType: "text/markdown",
+    createdAt: "2026-06-23T08:12:00.000Z",
+    modifiedAt: jaewooZipModifiedAt,
+    kind: "문서 산출물",
+    useCase: "산업·AI 트렌드",
+    usageSignal: "AI 기술 트렌드 분석 및 산업안전 적용 인사이트 도출 지시서",
+  },
+];
+
 const hyungbaeArtifacts: DriveArtifact[] = [
   {
     title: "V1 (dd36b6e9)",
@@ -719,21 +940,146 @@ function buildRepository(spec: DriveRepositorySpec): DriveArtifactRepository {
   };
 }
 
+const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
+  collectedAt: "2026-06-24 08:40 KST",
+  mode: "Drive에는 zip 분할 원본만 보존하고, 대시보드 수집 시 로컬 임시 영역에서만 결합·해제·분석합니다.",
+  cleanupPolicy: "결합 zip과 압축 해제 폴더는 분석 완료 후 삭제하며 Drive 원본 zip part 파일은 삭제하거나 변환하지 않습니다.",
+  stages: [
+    {
+      label: "1. Drive 원본 조회",
+      action: "대상 폴더에서 zip.partNN, zip.001, z01+zip 패턴을 그룹화",
+      result: "김재우 폴더에서 2026-06-23_세션모음.zip.part00~part03 4개 확인",
+    },
+    {
+      label: "2. 임시 결합",
+      action: "part 번호 순서대로 /private/tmp 영역에서 단일 zip으로 결합",
+      result: "46,616 bytes 결합 zip 생성 및 중앙 디렉터리 목록 확인",
+    },
+    {
+      label: "3. 압축 해제 분석",
+      action: "프롬프트·응답·SKILL·엑셀 산출물의 파일명, 크기, 본문 요약을 추출",
+      result: "실제 파일 16개, 업무 묶음 5개, 엑셀 산출물 2개 확인",
+    },
+    {
+      label: "4. 임시 파일 삭제",
+      action: "분석 후 결합 zip과 해제 폴더를 제거하고 요약 결과만 대시보드 데이터로 유지",
+      result: "Drive에는 원본 분할 zip만 남기는 운영 기준으로 반영",
+    },
+  ],
+  totals: {
+    splitParts: 4,
+    archives: 1,
+    extractedFiles: 16,
+    taskGroups: 5,
+    dataFiles: 2,
+    crcWarnings: 2,
+  },
+  archives: [
+    {
+      owner: "김재우",
+      archiveName: "2026-06-23_세션모음.zip",
+      folderUrl: jaewooZipFolderUrl,
+      sourceParts: [
+        "2026-06-23_세션모음.zip.part00",
+        "2026-06-23_세션모음.zip.part01",
+        "2026-06-23_세션모음.zip.part02",
+        "2026-06-23_세션모음.zip.part03",
+      ],
+      combinedSizeBytes: 46616,
+      extractedEntries: 21,
+      extractedFiles: 16,
+      extractedDirectories: 5,
+      promptFiles: 5,
+      responseFiles: 5,
+      skillFiles: 4,
+      dataFiles: 2,
+      crcWarningFiles: [
+        "NaverAInews_74e90e57f6b9/naver_ai_news.xlsx",
+        "Iris_689c22221d6c/IRIS_R_and_D_20260623.xlsx",
+      ],
+      cleanupStatus: "분석 후 로컬 임시 결합 zip과 압축 해제 폴더 삭제 대상",
+      verificationStatus: "마크다운·SKILL 14개 정상, 엑셀 2개는 CRC 경고로 재압축 또는 원본 재검증 필요",
+      taskGroups: [
+        {
+          title: "AX KPI 자동 업데이트",
+          folderName: "AxKPI_f2b7538e978c",
+          useCase: "AX 운영·KPI",
+          fileCount: 3,
+          promptCount: 1,
+          responseCount: 1,
+          skillCount: 1,
+          dataFiles: [],
+          summary: "Railway AI 사용 현황 대시보드 값을 Notion AX 현황판 자동 갱신 영역에 반영",
+          verification: "응답 본문에서 API 토큰·비용·구독 총액 변동과 Notion 갱신 결과 확인",
+        },
+        {
+          title: "네이버 AI 뉴스 엑셀",
+          folderName: "NaverAInews_74e90e57f6b9",
+          useCase: "산업·AI 트렌드",
+          fileCount: 3,
+          promptCount: 1,
+          responseCount: 1,
+          skillCount: 0,
+          dataFiles: ["naver_ai_news.xlsx"],
+          summary: "최신 네이버 AI 뉴스 17건을 수집해 엑셀로 정리",
+          verification: "응답 본문으로 17건 수집을 확인했고, 엑셀 sheet1.xml은 CRC 경고",
+        },
+        {
+          title: "IRIS R&D 공고 수집",
+          folderName: "Iris_689c22221d6c",
+          useCase: "IRIS·공고 데이터",
+          fileCount: 4,
+          promptCount: 1,
+          responseCount: 1,
+          skillCount: 1,
+          dataFiles: ["IRIS_R_and_D_20260623.xlsx"],
+          summary: "최근 7일 접수중·접수예정 R&D 공고를 AI·산업안전·마감임박 기준으로 분류",
+          verification: "응답 본문에서 총 45건, AI 3건, 산업안전 2건을 확인했고, 엑셀 sheet3.xml은 CRC 경고",
+        },
+        {
+          title: "Claude 세션 백필",
+          folderName: "ClaudeSessionToNotion_ed9281e57303",
+          useCase: "업무보고·지식관리",
+          fileCount: 2,
+          promptCount: 1,
+          responseCount: 1,
+          skillCount: 0,
+          dataFiles: [],
+          summary: "세션 저장 위치를 김재우 폴더로 전환하고 과거 6/21·6/22 기록을 백필",
+          verification: "응답 본문에서 17개 세션 프롬프트·응답 34개와 텍스트 산출물 2개 업로드 결과 확인",
+        },
+        {
+          title: "AI 트렌드 리포트",
+          folderName: "Aitrendv1_1b13bc120fa0",
+          useCase: "산업·AI 트렌드",
+          fileCount: 3,
+          promptCount: 1,
+          responseCount: 1,
+          skillCount: 1,
+          dataFiles: [],
+          summary: "2026 AI 기술 동향과 산업안전 적용 인사이트를 리포트로 정리",
+          verification: "응답 본문에서 에이전틱·멀티모달·피지컬 AI 등 5개 트렌드와 Gmail 초안 생성 확인",
+        },
+      ],
+    },
+  ],
+};
+
 const repositories: DriveArtifactRepository[] = [
   buildRepository({
     owner: "김재우",
     folderName: "김재우",
     folderId: "1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ",
     folderUrl: "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link",
-    role: "Claude 프롬프트·응답·업무 산출물 저장소",
-    folderModifiedAt: "2026-06-23T04:39:55.790Z",
-    utilizationScore: 86,
+    role: "Claude 세션 분할 zip 산출물 저장소",
+    folderModifiedAt: jaewooZipModifiedAt,
+    utilizationScore: 88,
     utilizationLevel: "높음",
-    artifacts: jaewooArtifacts,
+    artifacts: jaewooZipArtifacts,
     insights: [
-      "프롬프트와 응답이 17쌍으로 저장되어 재현성과 리뷰 가능성이 높습니다.",
-      "AX 운영, IRIS 공고, 업무보고, 지식관리까지 용도가 분산되어 실무 활용 폭이 넓습니다.",
-      "업무보고와 엑셀 산출물이 포함되어 단순 질의보다 실제 업무 결과물 보관에 가까운 형태입니다.",
+      "Drive 폴더에는 분할 zip 4개만 남기고, 대시보드는 내부 16개 파일과 5개 업무 묶음을 분석해 표시합니다.",
+      "프롬프트 5건과 응답 5건이 함께 포함되어 사용 의도와 결과를 같은 단위로 검토할 수 있습니다.",
+      "엑셀 산출물 2건은 zip 내부에 있으나 CRC 경고가 있어 재압축 또는 원본 검증이 필요합니다.",
     ],
   }),
   buildRepository({
@@ -773,9 +1119,9 @@ const repositories: DriveArtifactRepository[] = [
 export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   source: {
     name: "Google Drive Claude 산출물 저장소",
-    collectedAt: "2026-06-23 13:40 KST",
-    period: "2026-06-21 ~ 2026-06-23",
-    note: "사용자가 지정한 Google Drive 폴더 2건을 직접 조회해 파일명, 유형, 수정시점, Google Docs 본문 키워드를 기준으로 집계했습니다.",
+    collectedAt: "2026-06-24 08:40 KST",
+    period: "2026-06-21 ~ 2026-06-24",
+    note: "김재우 폴더는 Drive에 남은 분할 zip 원본을 임시 결합·해제해 내부 파일명과 본문을 분석했고, 이형배 폴더는 현재 Google Docs 직접 파일 기준으로 집계했습니다.",
   },
   totals: {
     repositories: repositories.length,
@@ -786,9 +1132,10 @@ export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
     dataFiles: repositories.reduce((sum, repository) => sum + repository.dataFileCount, 0),
   },
   repositories,
+  zipAnalysisPipeline,
   insights: [
-    "김재우 폴더는 프롬프트와 응답을 쌍으로 남겨 사용 의도와 결과물을 함께 추적할 수 있습니다.",
+    "김재우 폴더는 앞으로 Drive에 zip part 원본만 남기고, 대시보드 수집 시 임시 해제 분석 결과만 저장하는 구조로 운영합니다.",
     "이형배 폴더는 별도 마크다운 파일은 아니지만 Google Docs 본문에 프롬프트와 응답이 함께 남아 있습니다.",
-    "다음 단계에서는 Drive 파일별 제출 여부, 재사용 여부, 업무 절감 시간을 태그로 추가하면 활용성 지표가 비용 관리와 직접 연결됩니다.",
+    "분할 zip 내부 엑셀 2건은 CRC 경고가 있어 재압축 또는 원본 재검증을 추적 항목으로 표시했습니다.",
   ],
 };
