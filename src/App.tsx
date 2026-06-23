@@ -52,11 +52,13 @@ import {
   type TransactionCost,
 } from "./data/aiCostData";
 import {
-  isNotionPromptUsageData,
   initialGensparkUsageData,
   type GensparkUsageData,
-  type NotionPromptUsageData,
 } from "./data/gensparkUsageData";
+import {
+  driveArtifactRepositoryData,
+  type DriveArtifactRepositoryData,
+} from "./data/driveArtifactRepositoryData";
 import {
   initialClaudeTeamUsageData,
   type ClaudeTeamUsageData,
@@ -152,6 +154,16 @@ function formatAxisWon(value: number | string) {
 function formatRate(value: number, signed = false) {
   const prefix = signed && value > 0 ? "+" : "";
   return `${prefix}${value.toFixed(1)}%`;
+}
+
+function formatKstDateTime(value: string) {
+  return new Date(value).toLocaleString("ko-KR", {
+    timeZone: "Asia/Seoul",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function formatUsd(value: number) {
@@ -382,9 +394,6 @@ function App() {
   const [dashboardData, setDashboardData] = useState<DashboardData>(initialState.data);
   const [isStoredData, setIsStoredData] = useState(initialState.isStoredData);
   const [apiUsageData, setApiUsageData] = useState<ApiUsageData>(initialApiUsageData);
-  const [notionPromptUsageData, setNotionPromptUsageData] = useState<NotionPromptUsageData | undefined>(
-    initialGensparkUsageData.notionPromptUsage,
-  );
 
   useEffect(() => {
     let isMounted = true;
@@ -412,44 +421,6 @@ function App() {
       isMounted = false;
     };
   }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-    const snapshotUrls = [
-      "/api/notion-prompt-usage",
-      `${import.meta.env.BASE_URL}notion-prompt-usage-snapshot.local.json`,
-    ];
-
-    async function loadNotionPromptUsageData() {
-      for (const url of snapshotUrls) {
-        try {
-          const response = await fetch(url, { cache: "no-store" });
-          if (!response.ok) continue;
-          const data: unknown = await response.json();
-          if (isNotionPromptUsageData(data)) {
-            if (isMounted) setNotionPromptUsageData(data);
-            return;
-          }
-        } catch {
-          // The Notion collector is optional for local/static deployments; keep the bundled baseline.
-        }
-      }
-    }
-
-    void loadNotionPromptUsageData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const gensparkUsageData = useMemo<GensparkUsageData>(
-    () => ({
-      ...initialGensparkUsageData,
-      notionPromptUsage: notionPromptUsageData,
-    }),
-    [notionPromptUsageData],
-  );
 
   const {
     sourceMeta,
@@ -528,6 +499,9 @@ function App() {
   const claudeTeamUsageData = initialClaudeTeamUsageData;
   const aiToolApprovalData = initialAiToolApprovalData;
   const aiUsageInsight = initialGensparkUsageData.insightAnalysis;
+  const driveArtifactsByOwner = driveArtifactRepositoryData.repositories
+    .map((repository) => `${repository.owner} ${numberFormat.format(repository.fileCount)}개`)
+    .join(" · ");
   const isApiUsageCollected = apiUsageData.source.generatedAt !== initialApiUsageData.source.generatedAt;
   const apiForecast = useMemo(() => {
     if (!isApiUsageCollected) {
@@ -1001,10 +975,10 @@ function App() {
           />
           <MetricCard
             icon={<FileSpreadsheet size={21} />}
-            label="첨부 기반 협업"
+            label="Drive 저장 산출물"
             tone="amber"
-            value={`${numberFormat.format(aiUsageInsight.attachmentBasedRecords)}건`}
-            footer="문서·이미지·코드·표 데이터를 함께 처리"
+            value={`${numberFormat.format(driveArtifactRepositoryData.totals.files)}개`}
+            footer={`${driveArtifactsByOwner} · 프롬프트 ${numberFormat.format(driveArtifactRepositoryData.totals.prompts)}건`}
           />
           <MetricCard
             icon={<LineChart size={21} />}
@@ -1081,7 +1055,12 @@ function App() {
         />
       )}
 
-      {activeView === "genspark" && <GensparkUsageView usageData={gensparkUsageData} />}
+      {activeView === "genspark" && (
+        <GensparkUsageView
+          driveRepositoryData={driveArtifactRepositoryData}
+          usageData={initialGensparkUsageData}
+        />
+      )}
 
       {activeView === "approval" && <AiToolApprovalView approvalData={aiToolApprovalData} />}
 
@@ -1695,15 +1674,26 @@ function DetailView({
   );
 }
 
-function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
+function GensparkUsageView({
+  driveRepositoryData,
+  usageData,
+}: {
+  driveRepositoryData: DriveArtifactRepositoryData;
+  usageData: GensparkUsageData;
+}) {
   const insight = usageData.insightAnalysis;
-  const notionPromptUsage = usageData.notionPromptUsage;
   const claudeExport = usageData.chatGptExport;
   const topTopic = insight.topicInsights[0];
-  const maxNotionPromptRecords = Math.max(...(notionPromptUsage?.sources.map((source) => source.promptRecords) ?? [1]), 1);
-  const maxNotionGeneratedOutputs = Math.max(...(notionPromptUsage?.sources.map((source) => source.generatedOutputs) ?? [1]), 1);
   const maxClaudeSourceRecords = Math.max(...(claudeExport?.sourceFiles.map((source) => source.records) ?? [1]), 1);
   const maxClaudeAccountMessages = Math.max(...(claudeExport?.accountUsage.map((account) => account.messages) ?? [1]), 1);
+  const driveArtifacts = driveRepositoryData.repositories.flatMap((repository) =>
+    repository.artifacts.map((artifact) => ({
+      ...artifact,
+      owner: repository.owner,
+      folderUrl: repository.folderUrl,
+    })),
+  );
+  const maxDriveRepositoryFiles = Math.max(...driveRepositoryData.repositories.map((repository) => repository.fileCount), 1);
   const qualityClass = (signal: string) =>
     signal === "즉시 재사용" ? "ok" : signal === "가이드 필요" ? "guide" : "fix";
   const urgencyClass = (value: string) => (value === "상" || value === "높음" ? "high" : value === "중간" || value === "중" ? "medium" : "low");
@@ -1902,7 +1892,7 @@ function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
                     </td>
                     <td>{source.sourceType}</td>
                     <td>
-                      <div className="notion-usage-cell">
+                      <div className="usage-meter-cell">
                         <strong>{numberFormat.format(source.records)}건</strong>
                         <div className="department-meter" aria-label={`${source.fileName} 레코드 수`}>
                           <span style={{ width: `${Math.min((source.records / maxClaudeSourceRecords) * 100, 100)}%` }} />
@@ -1968,104 +1958,146 @@ function GensparkUsageView({ usageData }: { usageData: GensparkUsageData }) {
         </section>
       )}
 
-      {notionPromptUsage && (
-        <section className="panel panel-wide">
-          <div className="panel-header">
-            <div>
-              <span className="eyebrow">Notion Prompt DB</span>
-              <h2>Notion 계정별 프롬프트·생성 산출물</h2>
-            </div>
-            <div className="panel-header-side">
-              <span className={`state-pill ${notionPromptUsage.source.status === "주의" ? "warning" : "ok"}`}>
-                {notionPromptUsage.source.status ?? "기준값"}
-              </span>
-              <span className="state-pill neutral">{notionPromptUsage.source.period}</span>
-            </div>
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Google Drive Repository</span>
+            <h2>Claude Drive 산출물 저장소</h2>
           </div>
-          <div className="notion-summary-grid">
-            <article>
-              <span>노션 계정</span>
-              <strong>{notionPromptUsage.source.accountLabel}</strong>
-              <small>{notionPromptUsage.source.refreshSchedule ?? notionPromptUsage.source.name}</small>
-            </article>
-            <article>
-              <span>프롬프트 기록</span>
-              <strong>{numberFormat.format(notionPromptUsage.totalPromptRecords)}건</strong>
-              <small>템플릿 {numberFormat.format(notionPromptUsage.templateRecordsExcluded)}건 제외</small>
-            </article>
-            <article>
-              <span>생성 산출물</span>
-              <strong>{numberFormat.format(notionPromptUsage.totalGeneratedOutputs)}개</strong>
-              <small>본문과 속성의 생성 파일 기록 기준</small>
-            </article>
+          <div className="panel-header-side">
+            <span className="state-pill ok">Drive 조회</span>
+            <span className="state-pill neutral">{driveRepositoryData.source.period}</span>
           </div>
-          <div className="table-wrap notion-prompt-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>노션 계정</th>
-                  <th>원천 페이지</th>
-                  <th>도구</th>
-                  <th>프롬프트 기록</th>
-                  <th>생성 산출물</th>
-                  <th>집계 기준</th>
-                </tr>
-              </thead>
-              <tbody>
-                {notionPromptUsage.sources.map((source) => (
-                  <tr key={`${source.sourcePage}-${source.tool}`}>
-                    <td>
-                      <strong>{source.accountLabel}</strong>
-                    </td>
-                    <td>
-                      <a
-                        className="notion-page-link"
-                        href={source.sourceUrl}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                      >
-                        {source.sourcePage}
-                      </a>
-                      <small>{source.note}</small>
-                    </td>
-                    <td>{source.tool}</td>
-                    <td>
-                      <div className="notion-usage-cell">
-                        <strong>{numberFormat.format(source.promptRecords)}건</strong>
-                        <div className="department-meter" aria-label={`${source.sourcePage} 프롬프트 기록 비중`}>
-                          <span style={{ width: `${Math.min((source.promptRecords / maxNotionPromptRecords) * 100, 100)}%` }} />
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="notion-usage-cell">
-                        <strong>{numberFormat.format(source.generatedOutputs)}개</strong>
-                        <div className="department-meter" aria-label={`${source.sourcePage} 생성 산출물 비중`}>
-                          <span style={{ width: `${Math.min((source.generatedOutputs / maxNotionGeneratedOutputs) * 100, 100)}%` }} />
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span>{source.outputBasis}</span>
-                      <small>{source.includedRecords.join(" · ")}</small>
-                    </td>
-                  </tr>
+        </div>
+        <div className="drive-summary-grid">
+          <article>
+            <span>저장소</span>
+            <strong>{numberFormat.format(driveRepositoryData.totals.repositories)}명</strong>
+            <small>{driveRepositoryData.repositories.map((repository) => repository.owner).join(" · ")}</small>
+          </article>
+          <article>
+            <span>총 파일</span>
+            <strong>{numberFormat.format(driveRepositoryData.totals.files)}개</strong>
+            <small>Google Drive 직접 포함 파일 기준</small>
+          </article>
+          <article>
+            <span>프롬프트/산출물</span>
+            <strong>
+              {numberFormat.format(driveRepositoryData.totals.prompts)} / {numberFormat.format(driveRepositoryData.totals.outputs)}
+            </strong>
+            <small>프롬프트 원문과 응답·문서·데이터 파일</small>
+          </article>
+          <article>
+            <span>Docs/데이터 파일</span>
+            <strong>
+              {numberFormat.format(driveRepositoryData.totals.documents)} / {numberFormat.format(driveRepositoryData.totals.dataFiles)}
+            </strong>
+            <small>Google Docs 문서와 엑셀 산출물</small>
+          </article>
+        </div>
+
+        <div className="drive-repository-grid">
+          {driveRepositoryData.repositories.map((repository) => (
+            <article className="drive-repository-card" key={repository.owner}>
+              <div className="drive-repository-head">
+                <div>
+                  <span>{repository.role}</span>
+                  <strong>{repository.owner}</strong>
+                </div>
+                <a
+                  className="drive-folder-link"
+                  href={repository.folderUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  폴더 열기
+                </a>
+              </div>
+              <div className="drive-repository-stats">
+                <span>{numberFormat.format(repository.fileCount)}개 파일</span>
+                <span>프롬프트 {numberFormat.format(repository.promptCount)}건</span>
+                <span>활용도 {repository.utilizationScore}점</span>
+              </div>
+              <div className="usage-meter-cell">
+                <strong>{repository.utilizationLevel}</strong>
+                <div className="department-meter" aria-label={`${repository.owner} 저장 파일 비중`}>
+                  <span style={{ width: `${Math.min((repository.fileCount / maxDriveRepositoryFiles) * 100, 100)}%` }} />
+                </div>
+                <small>폴더 수정 {formatKstDateTime(repository.folderModifiedAt)}</small>
+              </div>
+              <div className="drive-use-case-list">
+                {repository.useCaseBreakdown.map((useCase) => (
+                  <MeterRow
+                    color={useCase.color}
+                    key={`${repository.owner}-${useCase.label}`}
+                    label={useCase.label}
+                    value={useCase.share}
+                    valueLabel={`${numberFormat.format(useCase.count)}개 · ${formatRate(useCase.share)}`}
+                  />
                 ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="insight-box">
-            <FileSpreadsheet size={18} />
-            <div>
-              <strong>Notion 원천 분석 기준</strong>
-              <span>{notionPromptUsage.source.note}</span>
-              {notionPromptUsage.insights.map((insightText) => (
-                <span key={insightText}>{insightText}</span>
+              </div>
+              <div className="drive-repository-note">
+                {repository.insights.map((insightText) => (
+                  <span key={insightText}>{insightText}</span>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className="table-wrap drive-artifact-table">
+          <table>
+            <thead>
+              <tr>
+                <th>생성자</th>
+                <th>자료명</th>
+                <th>유형</th>
+                <th>용도</th>
+                <th>수정시각</th>
+                <th>활용 신호</th>
+              </tr>
+            </thead>
+            <tbody>
+              {driveArtifacts.map((artifact) => (
+                <tr key={`${artifact.owner}-${artifact.title}`}>
+                  <td>
+                    <strong>{artifact.owner}</strong>
+                  </td>
+                  <td>
+                    <a
+                      className="drive-file-link"
+                      href={artifact.url}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      {artifact.title}
+                    </a>
+                    <small>{artifact.mimeType}</small>
+                  </td>
+                  <td>
+                    <span className="state-pill neutral">{artifact.kind}</span>
+                  </td>
+                  <td>{artifact.useCase}</td>
+                  <td>{formatKstDateTime(artifact.modifiedAt)}</td>
+                  <td>
+                    <span>{artifact.usageSignal}</span>
+                  </td>
+                </tr>
               ))}
-            </div>
+            </tbody>
+          </table>
+        </div>
+        <div className="insight-box">
+          <FileSpreadsheet size={18} />
+          <div>
+            <strong>Drive 원천 분석 기준</strong>
+            <span>{driveRepositoryData.source.note}</span>
+            {driveRepositoryData.insights.map((insightText) => (
+              <span key={insightText}>{insightText}</span>
+            ))}
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       <section className="panel">
         <div className="panel-header">
