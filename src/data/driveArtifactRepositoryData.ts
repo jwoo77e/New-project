@@ -1,4 +1,4 @@
-export type DriveArtifactKind = "프롬프트" | "응답" | "업무보고" | "데이터 파일" | "문서 산출물";
+export type DriveArtifactKind = "프롬프트" | "프롬프트+응답" | "응답" | "업무보고" | "데이터 파일" | "문서 산출물";
 
 export type DriveArtifact = {
   title: string;
@@ -59,6 +59,7 @@ export type DriveArtifactRepositoryData = {
 
 const kindColors: Record<DriveArtifactKind, string> = {
   프롬프트: "#0f8b8d",
+  "프롬프트+응답": "#0f8b8d",
   응답: "#2f8f46",
   업무보고: "#c58612",
   "데이터 파일": "#5f6f8c",
@@ -672,32 +673,46 @@ function buildBreakdown<T extends string>(
     .sort((a, b) => b.count - a.count);
 }
 
-function buildRepository(
-  spec: Omit<
-    DriveArtifactRepository,
-    "fileCount" | "promptCount" | "outputCount" | "documentCount" | "dataFileCount" | "typeBreakdown" | "useCaseBreakdown"
-  >,
-): DriveArtifactRepository {
-  const fileCount = spec.artifacts.length;
-  const promptCount = spec.artifacts.filter((artifact) => artifact.kind === "프롬프트").length;
-  const dataFileCount = spec.artifacts.filter((artifact) => artifact.kind === "데이터 파일").length;
-  const documentCount = spec.artifacts.filter((artifact) => artifact.kind === "문서 산출물").length;
-  const outputCount = spec.artifacts.filter((artifact) => artifact.kind !== "프롬프트").length;
+type DriveRepositorySpec = Omit<
+  DriveArtifactRepository,
+  "fileCount" | "promptCount" | "outputCount" | "documentCount" | "dataFileCount" | "typeBreakdown" | "useCaseBreakdown"
+> & {
+  promptArtifactTitles?: string[];
+};
+
+function buildRepository(spec: DriveRepositorySpec): DriveArtifactRepository {
+  const { promptArtifactTitles = [], ...repositorySpec } = spec;
+  const promptArtifactTitleSet = new Set(promptArtifactTitles);
+  const artifacts = repositorySpec.artifacts.map((artifact) =>
+    promptArtifactTitleSet.has(artifact.title)
+      ? {
+          ...artifact,
+          kind: "프롬프트+응답" as DriveArtifactKind,
+          usageSignal: `${artifact.usageSignal} · Google Docs 본문에 프롬프트와 응답 기록 포함`,
+        }
+      : artifact,
+  );
+  const fileCount = artifacts.length;
+  const promptCount = artifacts.filter((artifact) => artifact.kind === "프롬프트" || artifact.kind === "프롬프트+응답").length;
+  const dataFileCount = artifacts.filter((artifact) => artifact.kind === "데이터 파일").length;
+  const documentCount = artifacts.filter((artifact) => artifact.mimeType === "application/vnd.google-apps.document").length;
+  const outputCount = artifacts.filter((artifact) => artifact.kind !== "프롬프트").length;
 
   return {
-    ...spec,
+    ...repositorySpec,
+    artifacts,
     fileCount,
     promptCount,
     outputCount,
     documentCount,
     dataFileCount,
     typeBreakdown: buildBreakdown(
-      spec.artifacts.map((artifact) => artifact.kind),
+      artifacts.map((artifact) => artifact.kind),
       fileCount,
       kindColors,
     ),
     useCaseBreakdown: buildBreakdown(
-      spec.artifacts.map((artifact) => artifact.useCase),
+      artifacts.map((artifact) => artifact.useCase),
       fileCount,
       useCaseColors,
     ),
@@ -731,10 +746,26 @@ const repositories: DriveArtifactRepository[] = [
     utilizationScore: 78,
     utilizationLevel: "양호",
     artifacts: hyungbaeArtifacts,
+    promptArtifactTitles: [
+      "V1 (dd36b6e9)",
+      "Collect data from all station resource pages (b6a9200d)",
+      "V1 (70f54c98)",
+      "V1 (b19a2c2d)",
+      "Collect ergonomic hazard assessment data (6e85c136)",
+      "V1 (ac99fd8e)",
+      "Collect safety management cost data (05ac25e6)",
+      "V1 (15f95825)",
+      "Document TBM safety management system (0b3672ce)",
+      "V1 (41303be4)",
+      "Document safety management system pages (c921fcc7)",
+      "Document safety equipment distribution across sites (718b84a0)",
+      "Collect safety facility data across sites (59f4398d)",
+      "Collect risk assessment data (bad3d43a)",
+    ],
     insights: [
       "20개 파일 모두 Google Docs 문서로 저장되어 자료 검토와 후속 편집에 적합합니다.",
+      "14개 Google Docs 본문에서 프롬프트와 Claude 응답 기록이 함께 확인됩니다.",
       "안전관리비, 위험성 평가, 재난 대응, TBM 등 현장 안전관리 주제가 집중되어 있습니다.",
-      "명시적인 프롬프트 파일은 별도 보관되지 않아 프롬프트-응답 재현성은 김재우 폴더보다 낮습니다.",
     ],
   }),
 ];
@@ -744,7 +775,7 @@ export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
     name: "Google Drive Claude 산출물 저장소",
     collectedAt: "2026-06-23 13:40 KST",
     period: "2026-06-21 ~ 2026-06-23",
-    note: "사용자가 지정한 Google Drive 폴더 2건을 직접 조회해 파일명, 유형, 수정시점, 저장 구조를 기준으로 집계했습니다.",
+    note: "사용자가 지정한 Google Drive 폴더 2건을 직접 조회해 파일명, 유형, 수정시점, Google Docs 본문 키워드를 기준으로 집계했습니다.",
   },
   totals: {
     repositories: repositories.length,
@@ -757,7 +788,7 @@ export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   repositories,
   insights: [
     "김재우 폴더는 프롬프트와 응답을 쌍으로 남겨 사용 의도와 결과물을 함께 추적할 수 있습니다.",
-    "이형배 폴더는 현장 안전관리 자료 수집·문서화 결과가 집중되어 있어 업무 주제는 선명하지만, 프롬프트 원문 보관은 보강이 필요합니다.",
+    "이형배 폴더는 별도 마크다운 파일은 아니지만 Google Docs 본문에 프롬프트와 응답이 함께 남아 있습니다.",
     "다음 단계에서는 Drive 파일별 제출 여부, 재사용 여부, 업무 절감 시간을 태그로 추가하면 활용성 지표가 비용 관리와 직접 연결됩니다.",
   ],
 };
