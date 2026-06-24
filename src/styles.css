@@ -875,8 +875,6 @@ h2 {
 
 .drive-summary-grid span,
 .drive-summary-grid small,
-.drive-artifact-table small,
-.drive-artifact-table td > span,
 .drive-repository-head span,
 .drive-repository-note span {
   display: block;
@@ -1026,8 +1024,7 @@ h2 {
   align-items: flex-start;
 }
 
-.drive-repository-head strong,
-.drive-artifact-table strong {
+.drive-repository-head strong {
   display: block;
   overflow-wrap: anywhere;
 }
@@ -1129,19 +1126,7 @@ h2 {
   white-space: normal;
 }
 
-.drive-artifact-table td {
-  vertical-align: top;
-  white-space: normal;
-}
-
-.drive-artifact-table td > strong,
-.drive-artifact-table td strong {
-  display: block;
-  overflow-wrap: anywhere;
-}
-
-.drive-folder-link,
-.drive-file-link {
+.drive-folder-link {
   display: block;
   width: fit-content;
   max-width: 100%;
@@ -1153,9 +1138,7 @@ h2 {
 }
 
 .drive-folder-link:hover,
-.drive-folder-link:focus-visible,
-.drive-file-link:hover,
-.drive-file-link:focus-visible {
+.drive-folder-link:focus-visible {
   color: var(--green);
   text-decoration: underline;
   text-underline-offset: 3px;

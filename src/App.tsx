@@ -1686,13 +1686,6 @@ function GensparkUsageView({
   const topTopic = insight.topicInsights[0];
   const maxClaudeSourceRecords = Math.max(...(claudeExport?.sourceFiles.map((source) => source.records) ?? [1]), 1);
   const maxClaudeAccountMessages = Math.max(...(claudeExport?.accountUsage.map((account) => account.messages) ?? [1]), 1);
-  const driveArtifacts = driveRepositoryData.repositories.flatMap((repository) =>
-    repository.artifacts.map((artifact) => ({
-      ...artifact,
-      owner: repository.owner,
-      folderUrl: repository.folderUrl,
-    })),
-  );
   const driveZipPipeline = driveRepositoryData.zipAnalysisPipeline;
   const driveZipTaskGroups = driveZipPipeline.archives.flatMap((archive) =>
     archive.taskGroups.map((group) => ({
@@ -2126,48 +2119,6 @@ function GensparkUsageView({
           ))}
         </div>
 
-        <div className="table-wrap drive-artifact-table">
-          <table>
-            <thead>
-              <tr>
-                <th>생성자</th>
-                <th>자료명</th>
-                <th>유형</th>
-                <th>용도</th>
-                <th>수정시각</th>
-                <th>활용 신호</th>
-              </tr>
-            </thead>
-            <tbody>
-              {driveArtifacts.map((artifact) => (
-                <tr key={`${artifact.owner}-${artifact.title}`}>
-                  <td>
-                    <strong>{artifact.owner}</strong>
-                  </td>
-                  <td>
-                    <a
-                      className="drive-file-link"
-                      href={artifact.url}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                    >
-                      {artifact.title}
-                    </a>
-                    <small>{artifact.mimeType}</small>
-                  </td>
-                  <td>
-                    <span className="state-pill neutral">{artifact.kind}</span>
-                  </td>
-                  <td>{artifact.useCase}</td>
-                  <td>{formatKstDateTime(artifact.modifiedAt)}</td>
-                  <td>
-                    <span>{artifact.usageSignal}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
         <div className="insight-box">
           <FileSpreadsheet size={18} />
           <div>
