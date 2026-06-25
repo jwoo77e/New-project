@@ -132,8 +132,6 @@ const useCaseColors: Record<string, string> = {
   "V1 초안 정리": "#5f6f8c",
   "자료실·현장 데이터 수집": "#0f8b8d",
   "안전관리 계획·비용": "#c58612",
-  "Drive 백업 운영": "#7d6ca7",
-  "V1/V2 예약 작업": "#5f6f8c",
 };
 
 const jaewooArtifacts: DriveArtifact[] = [
@@ -711,12 +709,6 @@ const hyungbaeArtifacts: DriveArtifact[] = [
     "4개 활성 현장의 TBM 263건과 첨부 메타데이터 823건을 정리하고 자동 다운로드 제한을 기록",
   ),
   hyungbaeDoc(
-    "2026-06-25 / Google Drive upload request (056709b0)",
-    "1anWVsJhERd2w78XazgppoIF-T2jhYO3DCGYaGBSVmJc",
-    "Drive 백업 운영",
-    "이형배 폴더에 세션 프롬프트·응답·생성 파일을 Google Docs로 업로드한 운영 이력",
-  ),
-  hyungbaeDoc(
     "2026-06-25 / Document safety management system pages part2 (c921fcc7)",
     "1-4_DdCeleWFZ8RPIekqFnScR8m2x_TSoE3fTMoO0RSA",
     "현장 안전관리 자료",
@@ -727,12 +719,6 @@ const hyungbaeArtifacts: DriveArtifact[] = [
     "1_qrpwF2GLh-sMwcgw46Bvq4D3ZCYn1kx6xjoU9YPgXY",
     "현장 안전관리 자료",
     "근골격계 유해요인조사 23개 현장 점검, 용인 2공구 조사 2건과 PDF 3건 수집",
-  ),
-  hyungbaeDoc(
-    "2026-06-25 / File upload workflow (2049ca32)",
-    "1Rarmc8_MT63B1HLwXkTJAU9H0muZnY3GXWJa_NBkwD8",
-    "Drive 백업 운영",
-    "이전 zip 백업 워크플로우 테스트 이력과 이후 날짜별 Docs 수집 구조 전환의 근거",
   ),
   hyungbaeDoc(
     "2026-06-25 / Collect safety management plan data (7a5e7017)",
@@ -746,36 +732,16 @@ const hyungbaeArtifacts: DriveArtifact[] = [
     "안전관리 계획·비용",
     "산안법 안전관리비 계획 탭에서 약 1.9조원 대상액과 약 520억원 계상액, 첨부 21건을 정리",
   ),
-  hyungbaeDoc("2026-06-25 / V1 (b19a2c2d)", "1rfcQyT1mCeVIG_WtrFtcb0n5D6xMope9lvYJ8QjQEKE", "V1/V2 예약 작업", "V1 예약 작업 또는 초안 세션이 Docs 본문으로 저장됨"),
-  hyungbaeDoc("2026-06-25 / V2 (a99fe24b)", "18RAt6TVKF6L8jcW0gbFntUMLNoa8Sbphz6G-ddifjXs", "V1/V2 예약 작업", "V2 예약 작업 또는 초안 세션이 Docs 본문으로 저장됨"),
   hyungbaeDoc("2026-06-25 / Collect safety management cost data part1 (6348cd75)", "1FBBs-AsgQ-GqVFUO1NRVQKZN7GywhOAjzIs8yaY7nVs", "안전관리 계획·비용", "안전관리비 수집 세션의 앞부분으로 대상 현장 조회와 다운로드 준비 흐름을 보존"),
   hyungbaeDoc("2026-06-25 / Document safety management system pages part1 (c921fcc7)", "1fJQHzYFMYXjSxNcSg-P_MalwL0rcbQVsYLoUz50TPJ8", "현장 안전관리 자료", "안전관리 시스템 페이지 문서화 세션의 앞부분으로 현장별 페이지 탐색을 보존"),
   hyungbaeDoc("2026-06-25 / Document safety equipment distribution across sites (718b84a0)", "1uk3MGJjtQf_8bDNUSkiPNvsHbUe0ml7NMv7dIkaVJPM", "현장 안전관리 자료", "현장별 안전장비 배치·배포 현황을 문서화한 세션"),
   hyungbaeDoc("2026-06-25 / Collect safety facility data across sites (59f4398d)", "1qG5jiRYUQBT98o1zhtyiaV351L-OVdIJtEV1Ok0pPEs", "현장 안전관리 자료", "현장별 안전시설 데이터를 수집하고 비교하기 위한 세션"),
-  hyungbaeDoc("2026-06-25 / V1 (ac99fd8e)", "1lktvgRFmRWzh7yA1aDXGQsvbESHCTNFN7asF6_4pUMk", "V1/V2 예약 작업", "V1 예약 작업 또는 초안 세션이 Docs 본문으로 저장됨"),
-  hyungbaeDoc("2026-06-25 / V2 (92c0067f)", "16RDxvAG_24aThKnNRvOsBnAJWbrEpdZLbjc5PEyLHBw", "V1/V2 예약 작업", "V2 예약 작업 또는 초안 세션이 Docs 본문으로 저장됨"),
   hyungbaeDoc("2026-06-25 / Collect risk assessment data from all sites (2c77ed42)", "1nMHfzoZ7te8gZqCa0IWNauf69HQEib1kKXOqgXtjrpI", "현장 안전관리 자료", "전체 현장 위험성평가 자료를 수집·검증한 세션"),
   hyungbaeDoc("2026-06-25 / Collect disaster response manuals from all sites (4d18ed3c)", "1kNlDhQCGUztsLVmsoxvZHoaCNquKI0VH5jMYHIIEGL8", "현장 안전관리 자료", "전체 현장 재난대응 매뉴얼 자료 수집을 수행한 세션"),
   hyungbaeDoc("2026-06-25 / Document safety report system across sites (ab9618f4)", "1w16X2UBPPr-GvncmMp9zxg07Y0ID01jAEwNb2JxOgzU", "현장 안전관리 자료", "현장별 안전보고 체계와 보고 흐름을 문서화한 세션"),
-  hyungbaeDoc("2026-06-25 / V1 (15f95825)", "1_s84SriVVr_c_ZsUwcMsIY315ujr2vlb5M9HNLFAJ1c", "V1/V2 예약 작업", "V1 예약 작업 또는 초안 세션이 Docs 본문으로 저장됨"),
-  hyungbaeDoc("2026-06-25 / V1 (285d9ca8)", "1Q3vdkyhOqL6R5ODFCtyZ0Ss9o1XJ6HWT4z8D3cclkBs", "V1/V2 예약 작업", "V1 예약 작업 또는 초안 세션이 Docs 본문으로 저장됨"),
   hyungbaeDoc("2026-06-25 / Collect safety management cost data (05ac25e6)", "1lm5glq9NMamQo1qK8P6Uu0neNHYd44KG3sQ7Hn0U8kU", "안전관리 계획·비용", "임시소방시설비 또는 안전관리비 관련 수집 결과를 정리한 세션"),
   hyungbaeDoc("2026-06-25 / Collect safety management expense data (5915ecf8)", "1rvJOwpFWgs0VZoO5WsVnvUN6uz7Z5vULarIiMjGLauw", "안전관리 계획·비용", "안전관리비 집행·경비 자료 수집 결과를 정리한 세션"),
   hyungbaeDoc("2026-06-25 / Collect risk assessment data from all sites (bad3d43a)", "1tLNWA9wYbpth8PQD4SAKAvh69tVneEukAUAOl3jmx7E", "현장 안전관리 자료", "전체 현장 위험성평가 자료를 수집·검증한 별도 세션"),
-  hyungbaeDoc("2026-06-25 / V1 (70f54c98)", "1DndXetKLmQmT-gQSyJNBNIIprbaeEBPd8FvFjZVvzgc", "V1/V2 예약 작업", "V1 예약 작업 또는 초안 세션이 Docs 본문으로 저장됨"),
-  hyungbaeDoc("2026-06-25 / V2 (0a130ed8)", "1HQcf9P01v6zHImcist2ySWvVDbdFP2TRugsFfAg2KCM", "V1/V2 예약 작업", "V2 예약 작업 또는 초안 세션이 Docs 본문으로 저장됨"),
-  hyungbaeDoc("2026-06-25 / V1 (41303be4)", "1gAWWCp7VzHOibSpaLdGeOjCvkaDMvhdEWUUZDk71SOw", "V1/V2 예약 작업", "V1 예약 작업 또는 초안 세션이 Docs 본문으로 저장됨"),
-  hyungbaeDoc("2026-06-25 / V1 (dd36b6e9)", "12rjeq1vcyZeaLR7xN61p7vsfb-8C6l6zAQXn-VRz1Wo", "V1/V2 예약 작업", "V1 예약 작업 또는 초안 세션이 Docs 본문으로 저장됨"),
-  {
-    title: "2026-06-25 / SKILL_v2_scheduled-task.md",
-    url: "https://drive.google.com/file/d/1721M-ZciKFCLNPisYW0uDeNMeHELS-JX/view?usp=drivesdk",
-    mimeType: "text/markdown",
-    createdAt: hyungbaeDocsCreatedAt,
-    modifiedAt: hyungbaeDocsModifiedAt,
-    kind: "문서 산출물",
-    useCase: "Drive 백업 운영",
-    usageSignal: "날짜별 Google Docs 세션 백업을 운영하기 위한 예약 작업 지시서",
-  },
 ];
 
 function buildBreakdown<T extends string>(
@@ -1066,7 +1032,7 @@ const repositories: DriveArtifactRepository[] = [
     utilizationLevel: "높음",
     artifacts: hyungbaeArtifacts,
     insights: [
-      "최신 하위 폴더 claude-backup-2026-06-25에서 Google Docs 28개와 SKILL 파일 1개를 확인했습니다.",
+      "최신 하위 폴더 claude-backup-2026-06-25에서 의미 있는 현장·안전관리 Google Docs 16개를 선별했습니다.",
       "Docs 본문은 프롬프트와 Claude 응답이 함께 남는 형태라 현장 자료 수집 목적과 결과를 같은 단위로 검토할 수 있습니다.",
       "주요 작업은 TBM 263건, 노사협의체 18건, 근골격계 조사 2건, 안전관리비 계획·집행, 위험성평가·재난대응·안전보고 체계 수집으로 묶입니다.",
     ],
@@ -1076,9 +1042,9 @@ const repositories: DriveArtifactRepository[] = [
 export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   source: {
     name: "Google Drive Claude 산출물 저장소",
-    collectedAt: "2026-06-25 14:35 KST",
+    collectedAt: "2026-06-25 12:24 KST",
     period: "2026-06-21 ~ 2026-06-25",
-    note: "김재우 폴더는 Drive에 남은 분할 zip 원본을 기준으로 최신 rev2 그룹을 재확인했고, 이형배 폴더는 claude-backup-2026-06-25 날짜 폴더 아래 Google Docs 28개와 SKILL 파일 1개를 기준으로 갱신했습니다.",
+    note: "김재우 폴더는 Drive에 남은 분할 zip 원본을 기준으로 최신 rev2 그룹을 재확인했고, 이형배 폴더는 claude-backup-2026-06-25 날짜 폴더 아래에서 현장·안전관리 분석에 직접 쓰이는 Google Docs 16개를 기준으로 갱신했습니다.",
   },
   totals: {
     repositories: repositories.length,
