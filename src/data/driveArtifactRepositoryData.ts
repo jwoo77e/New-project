@@ -941,14 +941,14 @@ function buildRepository(spec: DriveRepositorySpec): DriveArtifactRepository {
 }
 
 const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
-  collectedAt: "2026-06-25 08:24 KST",
+  collectedAt: "2026-06-25 11:37 KST",
   mode: "Drive에는 zip 분할 원본만 보존하고, 대시보드 수집 시 로컬 임시 영역에서만 결합·해제·분석합니다.",
   cleanupPolicy: "결합 zip과 압축 해제 폴더는 분석 완료 후 삭제하며 Drive 원본 zip part 파일은 삭제하거나 변환하지 않습니다.",
   stages: [
     {
       label: "1. Drive 원본 조회",
       action: "대상 폴더에서 zip.partNN, zip.001, z01+zip 패턴을 그룹화",
-      result: "김재우 폴더에서 AX_2026-06-24_백업_rev2.zip.part00~part03 4개 확인",
+      result: "김재우 폴더에서 AX_2026-06-24_백업_rev2.zip.part00~part03 4개 재확인, 이형배 폴더는 2026-06-25 plain zip 2개 추가 확인",
     },
     {
       label: "2. 임시 결합",
@@ -963,7 +963,7 @@ const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
     {
       label: "4. 임시 파일 삭제",
       action: "분석 후 결합 zip과 해제 폴더를 제거하고 요약 결과만 대시보드 데이터로 유지",
-      result: "Drive에는 원본 분할 zip만 남기는 운영 기준으로 반영",
+      result: "Drive 원본은 변경하지 않았고, 이번 실행의 로컬 임시 다운로드·결합 파일은 남기지 않음",
     },
   ],
   totals: {
@@ -1180,7 +1180,7 @@ const repositories: DriveArtifactRepository[] = [
     insights: [
       "20개 파일 모두 Google Docs 문서로 저장되어 자료 검토와 후속 편집에 적합합니다.",
       "14개 Google Docs 본문에서 프롬프트와 Claude 응답 기록이 함께 확인됩니다.",
-      "안전관리비, 위험성 평가, 재난 대응, TBM 등 현장 안전관리 주제가 집중되어 있습니다.",
+      "2026-06-25 plain zip 2개가 새로 보이나 현재 샌드박스 네트워크 제한으로 raw zip 재해제는 미완료 상태입니다.",
     ],
   }),
 ];
@@ -1188,9 +1188,9 @@ const repositories: DriveArtifactRepository[] = [
 export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   source: {
     name: "Google Drive Claude 산출물 저장소",
-    collectedAt: "2026-06-25 08:24 KST",
+    collectedAt: "2026-06-25 11:37 KST",
     period: "2026-06-21 ~ 2026-06-25",
-    note: "김재우 폴더는 Drive에 남은 분할 zip 원본을 임시 결합·해제해 내부 파일명과 본문을 분석했고, 이형배 폴더는 현재 Google Docs 직접 파일과 Drive에 보이는 plain zip 원본 기준으로 확인했습니다.",
+    note: "김재우 폴더는 Drive에 남은 분할 zip 원본을 기준으로 최신 rev2 그룹을 재확인했고, 이형배 폴더는 2026-06-25 plain zip 2개 추가 노출까지 확인했습니다. 이번 실행은 샌드박스 네트워크 제한으로 connector raw zip을 로컬 재해제하지 못했습니다.",
   },
   totals: {
     repositories: repositories.length,
@@ -1204,7 +1204,7 @@ export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   zipAnalysisPipeline,
   insights: [
     "김재우 폴더는 앞으로 Drive에 zip part 원본만 남기고, 대시보드 수집 시 임시 해제 분석 결과만 저장하는 구조로 운영합니다.",
-    "이형배 폴더는 별도 마크다운 파일은 아니지만 Google Docs 본문에 프롬프트와 응답이 함께 남아 있습니다.",
+    "이형배 폴더는 별도 마크다운 파일은 아니지만 Google Docs 본문에 프롬프트와 응답이 함께 남아 있으며, 신규 2026-06-25 plain zip은 raw 접근 가능 환경에서 재검증이 필요합니다.",
     "최신 김재우 rev2 분할 zip은 CRC 경고 없이 검증됐고, 이전 6월 23일 엑셀 CRC 경고는 후속 원본 재검증 이력으로 분리했습니다.",
   ],
 };
