@@ -41,6 +41,37 @@ export type GensparkTaskSummary = {
   status: "완료" | "진행" | "미사용";
 };
 
+export type GensparkDriveRepresentativeFile = {
+  title: string;
+  url: string;
+  fileType: string;
+  purpose: string;
+  sizeLabel: string;
+  modifiedAt: string;
+};
+
+export type GensparkDriveAnalysis = {
+  source: {
+    name: string;
+    folderUrl: string;
+    collectedAt: string;
+    period: string;
+    accountLabel: string;
+    note: string;
+  };
+  totalSessions: number;
+  finishedSessions: number;
+  failedSessions: number;
+  pendingSessions: number;
+  directFileSignal: string;
+  typeBreakdown: GensparkCategoryUsage[];
+  statusBreakdown: GensparkCategoryUsage[];
+  monthlyBreakdown: GensparkCategoryUsage[];
+  purposeBreakdown: GensparkCategoryUsage[];
+  representativeFiles: GensparkDriveRepresentativeFile[];
+  insights: string[];
+};
+
 export type ChatGptMonthlyUsage = {
   month: string;
   conversations: number;
@@ -297,6 +328,7 @@ export type GensparkUsageData = {
   representativeTasks: GensparkTaskSummary[];
   patterns: string[];
   insightAnalysis: AiUsageInsightAnalysis;
+  driveAnalysis?: GensparkDriveAnalysis;
   notionPromptUsage?: NotionPromptUsageData;
   chatGptExport?: ChatGptExportAnalysis;
 };
@@ -494,6 +526,107 @@ export const initialGensparkUsageData: GensparkUsageData = {
     "임원 보고용 1장 요약과 20장 내외 발표자료를 빠르게 만드는 의사결정 지원 용도가 강합니다.",
     "공공기관 제안과 제품 브랜딩, 법령 리스크 분석이 서로 연결되며 실제 영업 자료 생산에 집중되어 있습니다.",
   ],
+  driveAnalysis: {
+    source: {
+      name: "Genspark Drive 산출물 저장소",
+      folderUrl: "https://drive.google.com/drive/folders/1MFJpVf9QfLNbzwLIE27N3b9yua9uYsa2",
+      collectedAt: "2026-06-25 11:35 KST",
+      period: "2025-12-17 ~ 2026-06-24",
+      accountLabel: "riskzero.marketing@gmail.com (리스크제로_마케팅, Pro)",
+      note: "Genspark 폴더의 세션 요약 Markdown, 세션 목록 Google Sheet, PPTX/DOCX/PDF/XLSX/PNG/HTML 산출물을 Drive에서 직접 확인",
+    },
+    totalSessions: 230,
+    finishedSessions: 221,
+    failedSessions: 5,
+    pendingSessions: 4,
+    directFileSignal: "PPTX·DOCX·PDF·XLSX·PNG·HTML·ZIP·CSV·Markdown 산출물이 같은 Drive 폴더에 보관됨",
+    typeBreakdown: [
+      { name: "AI채팅", tasks: 78, share: 33.9, note: "질의, 제안서 보완, 음성/이미지 후처리 요청", color: "#0f8b8d" },
+      { name: "AI슬라이드", tasks: 76, share: 33.0, note: "제안서, 발표자료, 사업계획, 제품 설명서", color: "#2f8f46" },
+      { name: "AI문서", tasks: 27, share: 11.7, note: "보고서, 제안서, Q&A, 회의록 문서화", color: "#c58612" },
+      { name: "AI이미지", tasks: 24, share: 10.4, note: "표지, 목업, 로고, 대시보드 UI, 발표 이미지", color: "#e85d4f" },
+      { name: "AI회의록/통화", tasks: 17, share: 7.4, note: "프로젝트 회의, 고객 통화, 내부 운영 논의 정리", color: "#7d6ca7" },
+      { name: "AI시트", tasks: 7, share: 3.0, note: "기능점수, 예산, 장비 현황, 일정/금액 산출", color: "#5f6f8c" },
+      { name: "대시보드/CRM", tasks: 1, share: 0.4, note: "경비 스프레드시트 기반 DB 생성 시도", color: "#9a6b36" },
+    ],
+    statusBreakdown: [
+      { name: "FINISHED", tasks: 221, share: 96.1, note: "세션 요약 파일의 완료 상태", color: "#2f8f46" },
+      { name: "FAILURE", tasks: 5, share: 2.2, note: "슬라이드/생성 작업 실패 이력", color: "#e85d4f" },
+      { name: "PENDING_FOR_ASYNC", tasks: 4, share: 1.7, note: "비동기 시트/문서 생성 대기 이력", color: "#c58612" },
+    ],
+    monthlyBreakdown: [
+      { name: "2026-06", tasks: 48, share: 20.9, note: "대시보드, 회의록, 안전체험관 이미지/공간 수정", color: "#0f8b8d" },
+      { name: "2025-12", tasks: 47, share: 20.4, note: "기업소개, 사업계획, 679억 수주계획, AI CCTV 자료", color: "#2f8f46" },
+      { name: "2026-04", tasks: 43, share: 18.7, note: "스마트 안전 플랫폼 제안, 산업안전 법령, 사고예측", color: "#c58612" },
+      { name: "2026-05", tasks: 31, share: 13.5, note: "GH/SH/LH 제안, 회의록, 전략사업팀 운영", color: "#e85d4f" },
+      { name: "2026-01", tasks: 26, share: 11.3, note: "제로비/제조업 안전, 중대재해, 신규사업 서치", color: "#5f6f8c" },
+      { name: "2026-02", tasks: 25, share: 10.9, note: "LH, BKR, 통신/트래커, 스마트 안전관리 제안", color: "#7d6ca7" },
+      { name: "2026-03", tasks: 10, share: 4.3, note: "ZeroGuard, 실종 ZERO, 전남 해상 안전", color: "#9a6b36" },
+    ],
+    purposeBreakdown: [
+      { name: "스마트 안전관리 제안/영업", tasks: 118, share: 51.3, note: "RiskZero/ZeroGuard, 공공기관 제안, 건설·산업안전 플랫폼 자료", color: "#0f8b8d" },
+      { name: "문서·보고·회의록", tasks: 44, share: 19.1, note: "AI문서와 AI회의록/통화 결과를 보고서·회의록으로 전환", color: "#c58612" },
+      { name: "사업계획·조직/제품자료", tasks: 36, share: 15.7, note: "사업계획, 조직/R&R, 제품 소개·대표보고 자료", color: "#2f8f46" },
+      { name: "이미지·슬라이드 디자인", tasks: 24, share: 10.4, note: "표지, 목업, 로고, 대시보드 UI, 발표 이미지", color: "#e85d4f" },
+      { name: "데이터·시트/대시보드", tasks: 8, share: 3.5, note: "AI시트 7건과 대시보드/CRM 1건", color: "#5f6f8c" },
+    ],
+    representativeFiles: [
+      {
+        title: "Genspark 세션 목록 (2026-06-25)",
+        url: "https://docs.google.com/spreadsheets/d/1Ez026y_g1EvoHrfchHZ9g4FXNfJ3siLRm93SbfQhmRc/edit?usp=drivesdk",
+        fileType: "Google Sheet",
+        purpose: "230건 세션 원천 목록",
+        sizeLabel: "15,111 bytes",
+        modifiedAt: "2026-06-25T00:34:33.834Z",
+      },
+      {
+        title: "genspark_sessions_요약_20260625.md",
+        url: "https://drive.google.com/file/d/1HaXgjZuD5l3T_eDCmi3mMNp3gdMriMZn/view?usp=drivesdk",
+        fileType: "Markdown",
+        purpose: "유형·상태·월별 요약",
+        sizeLabel: "767 bytes",
+        modifiedAt: "2026-06-25T01:14:45.726Z",
+      },
+      {
+        title: "제로가드_제품설명서.pptx",
+        url: "https://drive.google.com/file/d/19r0xyOTfI6k-CV3GX5qFduiw-DWupgqh/view?usp=drivesdk",
+        fileType: "PPTX",
+        purpose: "ZeroGuard 제품/영업 설명",
+        sizeLabel: "229.6 MB",
+        modifiedAt: "2026-06-25T02:02:24.000Z",
+      },
+      {
+        title: "AI사고예측_스마트안전관리시스템_발표자료_20260422_044355.zip",
+        url: "https://drive.google.com/file/d/1Plsa-gfOB_rIGYjC0KZManCACGm2S4c5/view?usp=drivesdk",
+        fileType: "ZIP",
+        purpose: "사고예측 발표자료 묶음",
+        sizeLabel: "125.8 MB",
+        modifiedAt: "2026-06-25T02:04:59.000Z",
+      },
+      {
+        title: "RiskZero_영업대시보드_개선.html",
+        url: "https://drive.google.com/file/d/1Dw6YnRfU1rugVYtt9QsaTDLyNvzwLtLY/view?usp=drivesdk",
+        fileType: "HTML",
+        purpose: "영업 대시보드 개선 산출물",
+        sizeLabel: "126.5 KB",
+        modifiedAt: "2026-06-25T02:02:08.000Z",
+      },
+      {
+        title: "FP_산정_내역_기반_총_사업금액_산출_요청-Genspark_AI_Sheets-20260518_1338.xlsx",
+        url: "https://drive.google.com/file/d/1JH8PoB8EeGd58v1ZASB36sql3253GkbG/view?usp=drivesdk",
+        fileType: "XLSX",
+        purpose: "기능점수·사업금액 산출",
+        sizeLabel: "302.6 KB",
+        modifiedAt: "2026-06-25T02:14:14.000Z",
+      },
+    ],
+    insights: [
+      "Genspark Drive 폴더는 단순 파일 저장소가 아니라 세션 목록과 실제 산출 파일을 함께 보관하는 활용 로그 역할을 합니다.",
+      "230건 중 221건이 FINISHED라 생성 성공률은 96.1%이고, 실패/대기 세션은 슬라이드·시트 같은 비동기 생성 작업에 집중됩니다.",
+      "사용 목적은 스마트 안전관리 제안/영업, 문서·회의록, 슬라이드·이미지 산출, 데이터·시트 산출로 재분류할 수 있습니다.",
+      "PPTX, DOCX, PDF, XLSX, PNG, HTML, ZIP이 함께 있어 Genspark는 제안서 초안보다 실제 제출·보고 자료 생산에 가까운 용도로 쓰였습니다.",
+    ],
+  },
   insightAnalysis: {
     sourceLabel: "Genspark 작업 히스토리와 Claude export 통합 분석",
     period: "2025-12-18 ~ 2026-06-17",

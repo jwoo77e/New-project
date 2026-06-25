@@ -6,6 +6,7 @@
   "scripts": {
     "collect:api-usage": "node scripts/fetch-api-usage.mjs",
     "collect:drive-zip-artifacts": "node scripts/collect-drive-zip-artifacts.mjs",
+    "collect:genspark-drive-artifacts": "node scripts/collect-genspark-drive-artifacts.mjs",
     "collect:gamma-credits": "node scripts/fetch-gamma-credits.mjs",
     "collect:notion-prompt-usage": "node scripts/collect-notion-prompt-usage-runtime.mjs",
     "collect:notion-prompt-usage:local": "node scripts/run-notion-prompt-usage-collector.mjs",

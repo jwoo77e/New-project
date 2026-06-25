@@ -1687,6 +1687,8 @@ function GensparkUsageView({
   const maxClaudeSourceRecords = Math.max(...(claudeExport?.sourceFiles.map((source) => source.records) ?? [1]), 1);
   const maxClaudeAccountMessages = Math.max(...(claudeExport?.accountUsage.map((account) => account.messages) ?? [1]), 1);
   const maxDriveRepositoryFiles = Math.max(...driveRepositoryData.repositories.map((repository) => repository.fileCount), 1);
+  const gensparkDrive = usageData.driveAnalysis;
+  const maxGensparkDriveMonth = Math.max(...(gensparkDrive?.monthlyBreakdown.map((month) => month.tasks) ?? [1]), 1);
   const qualityClass = (signal: string) =>
     signal === "즉시 재사용" ? "ok" : signal === "가이드 필요" ? "guide" : "fix";
   const urgencyClass = (value: string) => (value === "상" || value === "높음" ? "high" : value === "중간" || value === "중" ? "medium" : "low");
@@ -1769,6 +1771,116 @@ function GensparkUsageView({
           ))}
         </div>
       </section>
+
+      {gensparkDrive && (
+        <section className="panel panel-wide">
+          <div className="panel-header">
+            <div>
+              <span className="eyebrow">Genspark Drive Audit</span>
+              <h2>Genspark 폴더 사용 내역</h2>
+            </div>
+            <div className="panel-header-side">
+              <span className="state-pill ok">Drive 조회</span>
+              <span className="state-pill neutral">{gensparkDrive.source.period}</span>
+            </div>
+          </div>
+          <div className="drive-summary-grid">
+            <article>
+              <span>세션</span>
+              <strong>{numberFormat.format(gensparkDrive.totalSessions)}건</strong>
+              <small>{gensparkDrive.source.accountLabel}</small>
+            </article>
+            <article>
+              <span>완료/실패</span>
+              <strong>
+                {numberFormat.format(gensparkDrive.finishedSessions)} / {numberFormat.format(gensparkDrive.failedSessions)}
+              </strong>
+              <small>대기 {numberFormat.format(gensparkDrive.pendingSessions)}건</small>
+            </article>
+            <article>
+              <span>최다 유형</span>
+              <strong>{gensparkDrive.typeBreakdown[0]?.name ?? "-"}</strong>
+              <small>{numberFormat.format(gensparkDrive.typeBreakdown[0]?.tasks ?? 0)}건 · {formatRate(gensparkDrive.typeBreakdown[0]?.share ?? 0)}</small>
+            </article>
+            <article>
+              <span>Drive 산출물</span>
+              <strong>{numberFormat.format(gensparkDrive.representativeFiles.length)}개 대표</strong>
+              <small>{gensparkDrive.directFileSignal}</small>
+            </article>
+          </div>
+
+          <div className="chatgpt-export-grid compact">
+            <div className="chatgpt-export-column">
+              <h3>무엇에 쓰였나</h3>
+              <div className="claude-topic-list">
+                {gensparkDrive.purposeBreakdown.map((purpose) => (
+                  <MeterRow
+                    color={purpose.color}
+                    key={purpose.name}
+                    label={`${purpose.name} · ${numberFormat.format(purpose.tasks)}건`}
+                    value={purpose.share}
+                    valueLabel={formatRate(purpose.share)}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="chatgpt-export-column">
+              <h3>월별 집중도</h3>
+              <div className="claude-topic-list">
+                {gensparkDrive.monthlyBreakdown.map((month) => (
+                  <MeterRow
+                    color={month.color}
+                    key={month.name}
+                    label={`${month.name} · ${month.note}`}
+                    value={(month.tasks / maxGensparkDriveMonth) * 100}
+                    valueLabel={`${numberFormat.format(month.tasks)}건`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="table-wrap claude-export-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Drive 파일</th>
+                  <th>유형</th>
+                  <th>사용 목적</th>
+                  <th>크기</th>
+                  <th>수정 시각</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gensparkDrive.representativeFiles.map((file) => (
+                  <tr key={file.url}>
+                    <td>
+                      <a href={file.url} target="_blank" rel="noreferrer noopener">
+                        <strong>{file.title}</strong>
+                      </a>
+                    </td>
+                    <td>{file.fileType}</td>
+                    <td>{file.purpose}</td>
+                    <td>{file.sizeLabel}</td>
+                    <td>{formatKstDateTime(file.modifiedAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="insight-box">
+            <FileSpreadsheet size={18} />
+            <div>
+              <strong>{gensparkDrive.source.name}</strong>
+              <span>{gensparkDrive.source.note}</span>
+              {gensparkDrive.insights.map((driveInsight) => (
+                <span key={driveInsight}>{driveInsight}</span>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="panel panel-wide">
         <div className="panel-header">
