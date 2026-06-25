@@ -980,13 +980,6 @@ function App() {
             value={`${numberFormat.format(driveArtifactRepositoryData.totals.files)}개`}
             footer={`${driveArtifactsByOwner} · zip 내부 ${numberFormat.format(driveArtifactRepositoryData.zipAnalysisPipeline.totals.extractedFiles)}개`}
           />
-          <MetricCard
-            icon={<LineChart size={21} />}
-            label="가이드 필요 영역"
-            tone="steel"
-            value={`${numberFormat.format(aiUsageInsight.guideNeededCount)}개`}
-            footer="프롬프트 템플릿으로 표준화할 후보"
-          />
         </section>
       ) : (
         <section className="metric-grid" aria-label="핵심 비용 지표">
@@ -1689,10 +1682,6 @@ function GensparkUsageView({
   const maxDriveRepositoryFiles = Math.max(...driveRepositoryData.repositories.map((repository) => repository.fileCount), 1);
   const gensparkDrive = usageData.driveAnalysis;
   const maxGensparkDriveMonth = Math.max(...(gensparkDrive?.monthlyBreakdown.map((month) => month.tasks) ?? [1]), 1);
-  const qualityClass = (signal: string) =>
-    signal === "즉시 재사용" ? "ok" : signal === "가이드 필요" ? "guide" : "fix";
-  const urgencyClass = (value: string) => (value === "상" || value === "높음" ? "high" : value === "중간" || value === "중" ? "medium" : "low");
-
   return (
     <div className="content-grid ai-insight-view">
       <section className="panel panel-large">
@@ -1707,7 +1696,7 @@ function GensparkUsageView({
         </div>
         <p className="insight-lead">
           도구별 집계를 합치면 AI는 주로 <strong>{topTopic?.topic ?? "실무 문제 해결"}</strong>에 쓰이고 있습니다.
-          비용보다 먼저 봐야 할 지표는 어떤 업무가 반복되고, 어디에 프롬프트 가이드가 필요한지입니다.
+          비용보다 먼저 봐야 할 지표는 어떤 업무가 반복되고, 어느 영역에서 실제 산출물이 만들어지는지입니다.
         </p>
         <div className="topic-chart-frame">
           <ResponsiveContainer width="100%" height="100%">
@@ -1881,32 +1870,6 @@ function GensparkUsageView({
           </div>
         </section>
       )}
-
-      <section className="panel panel-wide">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">Prompt Library</span>
-            <h2>대표 프롬프트와 산출 결과</h2>
-          </div>
-          <span className="state-pill ok">업무 재사용 후보</span>
-        </div>
-        <div className="prompt-card-grid">
-          {insight.representativePrompts.map((prompt) => (
-            <article className="prompt-example-card" key={prompt.title}>
-              <div className="prompt-card-meta">
-                <span>{prompt.useCase}</span>
-                <b className={`prompt-quality ${qualityClass(prompt.qualitySignal)}`}>{prompt.qualitySignal}</b>
-              </div>
-              <strong>{prompt.title}</strong>
-              <p>{prompt.prompt}</p>
-              <div>
-                <span>산출/효과</span>
-                <small>{prompt.outcome}</small>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
 
       {claudeExport && (
         <section className="panel panel-wide">
@@ -2162,85 +2125,6 @@ function GensparkUsageView({
         </div>
       </section>
 
-      <section className="panel">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">Hard Prompts</span>
-            <h2>사용이 어려웠던 요청</h2>
-          </div>
-        </div>
-        <div className="prompt-friction-list">
-          {insight.difficultPrompts.map((item) => (
-            <article className="prompt-friction-card" key={item.title}>
-              <div>
-                <strong>{item.title}</strong>
-                <b className={`severity-pill ${urgencyClass(item.severity)}`}>{item.severity}</b>
-              </div>
-              <span>{item.pattern}</span>
-              <small>{item.whyHard}</small>
-              <p>{item.guide}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="panel">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">Guides Needed</span>
-            <h2>가이드가 필요한 프롬프트</h2>
-          </div>
-        </div>
-        <div className="guide-grid">
-          {insight.guideOpportunities.map((guide) => (
-            <article className="guide-card" key={guide.area}>
-              <div>
-                <strong>{guide.area}</strong>
-                <b className={`priority-pill ${urgencyClass(guide.priority)}`}>{guide.priority}</b>
-              </div>
-              <span>{guide.trigger}</span>
-              <p>{guide.template}</p>
-              <small>{guide.expectedEffect}</small>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="panel panel-wide">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">Friction & Improvement</span>
-            <h2>불편 요소와 개선해야 할 부분</h2>
-          </div>
-          <span className="state-pill neutral">{insight.sourceLabel}</span>
-        </div>
-        <div className="friction-improvement-grid">
-          <div className="insight-box stacked">
-            <Bot size={18} />
-            <div>
-              <strong>사용 과정에서 보이는 불편</strong>
-              {insight.frictionInsights.map((friction) => (
-                <span key={friction}>{friction}</span>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div className="action-list">
-              {insight.improvementActions.map((action) => (
-                <article className="action-row" key={action.title}>
-                  <div>
-                    <strong>{action.title}</strong>
-                    <span>{action.currentSignal}</span>
-                  </div>
-                  <b className={`priority-pill ${urgencyClass(action.priority)}`}>{action.priority}</b>
-                  <p>{action.action}</p>
-                  <small>{action.expectedImpact}</small>
-                </article>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
