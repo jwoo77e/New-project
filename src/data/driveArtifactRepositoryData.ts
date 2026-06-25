@@ -508,9 +508,39 @@ const jaewooArtifacts: DriveArtifact[] = [
 ];
 
 const jaewooZipFolderUrl = "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link";
-const jaewooZipModifiedAt = "2026-06-23T09:15:19.429Z";
+const jaewooZipModifiedAt = "2026-06-24T23:15:33.210Z";
 
 const jaewooZipArtifacts: DriveArtifact[] = [
+  {
+    title: "2026-06-25 / AX_2026-06-25",
+    url: "https://docs.google.com/document/d/109IEO8m0JsZSyk5bhw1wU490PhqHeUULyVoi6Yp-GCo/edit?usp=drivesdk",
+    mimeType: "application/vnd.google-apps.document",
+    createdAt: "2026-06-24T23:15:31.511Z",
+    modifiedAt: "2026-06-24T23:15:33.210Z",
+    kind: "프롬프트+응답",
+    useCase: "AX 운영·KPI",
+    usageSignal: "전사 AX 전환 현황판을 6월 25일 기준으로 자동 갱신하고 API 런레이트 가속, Claude Team 사용량, AX 챔피언 후보를 정리",
+  },
+  {
+    title: "2026-06-25 / AX_대시보드분석_2026-06-25",
+    url: "https://docs.google.com/document/d/1OfifPlcsnCbSoZrtu7C2FtKZHKUqGPK9QHqqws6vpE4/edit?usp=drivesdk",
+    mimeType: "application/vnd.google-apps.document",
+    createdAt: "2026-06-24T23:08:49.794Z",
+    modifiedAt: "2026-06-24T23:08:51.289Z",
+    kind: "프롬프트+응답",
+    useCase: "AX 운영·KPI",
+    usageSignal: "AI 비용 대시보드 5개 탭을 6월 25일 기준으로 분석해 AX 수준 3.6/5, 208건 활용기록, 84건 산출형 사용, API 비용 증가를 요약",
+  },
+  {
+    title: "2026-06-25 / AX_세션처리로그_2026-06-25.md",
+    url: "https://drive.google.com/file/d/1k0sxM0kVeajAKrwcQyCtXMN-5NE9l5Ji/view?usp=drivesdk",
+    mimeType: "text/plain",
+    createdAt: "2026-06-24T23:04:25.578Z",
+    modifiedAt: "2026-06-24T23:04:25.578Z",
+    kind: "문서 산출물",
+    useCase: "업무보고·지식관리",
+    usageSignal: "2026-06-24 세션 11건과 백업 실행 세션 1건을 중복 재처리하지 않도록 누적 처리 ID를 보존",
+  },
   {
     title: "2026-06-23_세션모음.zip / claude-session-to-notion_SKILL.md",
     url: jaewooZipFolderUrl,
@@ -811,29 +841,29 @@ function buildRepository(spec: DriveRepositorySpec): DriveArtifactRepository {
 }
 
 const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
-  collectedAt: "2026-06-25 11:37 KST",
+  collectedAt: "2026-06-25 23:04 KST",
   mode: "Drive에는 zip 분할 원본만 보존하고, 대시보드 수집 시 로컬 임시 영역에서만 결합·해제·분석합니다.",
   cleanupPolicy: "결합 zip과 압축 해제 폴더는 분석 완료 후 삭제하며 Drive 원본 zip part 파일은 삭제하거나 변환하지 않습니다.",
   stages: [
     {
       label: "1. Drive 원본 조회",
       action: "대상 폴더에서 zip.partNN, zip.001, z01+zip 패턴을 그룹화",
-      result: "김재우 폴더에서 AX_2026-06-24_백업_rev2.zip.part00~part03 4개 재확인, 이형배 폴더는 zip 대신 날짜별 Google Docs 폴더로 전환됨",
+      result: "김재우 폴더에서 AX_2026-06-24_백업_rev2.zip.part00~part03 4개와 6/25 AX Docs 3개를 재확인, 이형배 폴더는 zip 대신 날짜별 Google Docs 폴더 유지",
     },
     {
       label: "2. 임시 결합",
       action: "part 번호 순서대로 /private/tmp 영역에서 단일 zip으로 결합",
-      result: "23,844 bytes 결합 zip 생성 및 중앙 디렉터리 목록 확인",
+      result: "이전 검증에서 23,844 bytes 결합 zip 생성 및 중앙 디렉터리 목록 확인. 이번 실행은 connector raw payload를 확인했지만 shell DNS 제한으로 재다운로드 결합은 차단됨",
     },
     {
       label: "3. 압축 해제 분석",
       action: "프롬프트·응답·SKILL·엑셀 산출물의 파일명, 크기, 본문 요약을 추출",
-      result: "실제 파일 26개, 업무 묶음 11개, CRC 경고 0개 확인",
+      result: "이전 rev2 로컬 해제 결과 기준 실제 파일 26개, 업무 묶음 11개, CRC 경고 0개 유지",
     },
     {
       label: "4. 임시 파일 삭제",
       action: "분석 후 결합 zip과 해제 폴더를 제거하고 요약 결과만 대시보드 데이터로 유지",
-      result: "Drive 원본은 변경하지 않았고, 이번 실행의 로컬 임시 다운로드·결합 파일은 남기지 않음",
+      result: "Drive 원본은 변경하지 않았고, 이번 실행의 빈 로컬 임시 다운로드 폴더도 삭제 대상",
     },
   ],
   totals: {
@@ -864,8 +894,8 @@ const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
       skillFiles: 0,
       dataFiles: 0,
       crcWarningFiles: [],
-      cleanupStatus: "분석 후 로컬 임시 결합 zip과 압축 해제 폴더 삭제 대상",
-      verificationStatus: "zip 테스트와 압축 해제 정상, CRC 경고 없음",
+      cleanupStatus: "이전 검증의 로컬 임시 결합 zip과 압축 해제 폴더는 삭제됨. 이번 실행의 빈 다운로드 임시 폴더도 삭제됨",
+      verificationStatus: "이전 rev2 zip 테스트와 압축 해제 정상, CRC 경고 없음. 이번 실행은 connector raw payload 확인 후 shell DNS 제한으로 재결합 검증 차단",
       taskGroups: [
         {
           title: "Claude 세션 백필",
@@ -1010,15 +1040,15 @@ const repositories: DriveArtifactRepository[] = [
     folderName: "김재우",
     folderId: "1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ",
     folderUrl: "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link",
-    role: "Claude 세션 분할 zip 산출물 저장소",
+    role: "Claude 세션 분할 zip 및 AX Docs 산출물 저장소",
     folderModifiedAt: jaewooZipModifiedAt,
     utilizationScore: 88,
     utilizationLevel: "높음",
     artifacts: jaewooZipArtifacts,
     insights: [
-      "Drive 폴더에는 분할 zip 원본을 보존하고, 대시보드는 최신 rev2 백업의 내부 26개 파일과 11개 업무 묶음을 분석해 표시합니다.",
+      "Drive 폴더에는 분할 zip 원본을 보존하고, 대시보드는 최신 rev2 백업의 내부 26개 파일과 11개 업무 묶음, 6/25 AX Docs 3개를 함께 표시합니다.",
       "프롬프트 11건과 응답 11건이 함께 포함되어 사용 의도와 결과를 같은 단위로 검토할 수 있습니다.",
-      "이번 rev2 분할 zip은 zip 테스트와 압축 해제를 통과했고 CRC 경고가 없습니다.",
+      "이전 rev2 분할 zip은 zip 테스트와 압축 해제를 통과했고 CRC 경고가 없습니다. 이번 실행의 raw 재결합은 shell DNS 제한으로 차단됐습니다.",
     ],
   }),
   buildRepository({
@@ -1042,9 +1072,9 @@ const repositories: DriveArtifactRepository[] = [
 export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   source: {
     name: "Google Drive Claude 산출물 저장소",
-    collectedAt: "2026-06-25 12:24 KST",
+    collectedAt: "2026-06-25 23:04 KST",
     period: "2026-06-21 ~ 2026-06-25",
-    note: "김재우 폴더는 Drive에 남은 분할 zip 원본을 기준으로 최신 rev2 그룹을 재확인했고, 이형배 폴더는 claude-backup-2026-06-25 날짜 폴더 아래에서 현장·안전관리 분석에 직접 쓰이는 Google Docs 16개를 기준으로 갱신했습니다.",
+    note: "김재우 폴더는 Drive에 남은 최신 rev2 분할 zip 원본과 6/25 AX Docs 3개를 재확인했고, 이형배 폴더는 claude-backup-2026-06-25 날짜 폴더 아래에서 현장·안전관리 분석에 직접 쓰이는 Google Docs 16개를 기준으로 유지했습니다.",
   },
   totals: {
     repositories: repositories.length,
@@ -1059,6 +1089,6 @@ export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   insights: [
     "김재우 폴더는 앞으로 Drive에 zip part 원본만 남기고, 대시보드 수집 시 임시 해제 분석 결과만 저장하는 구조로 운영합니다.",
     `이형배 폴더는 ${hyungbaeDateFolderUrl} 하위의 날짜별 Docs 백업 구조로 전환되어, zip 해제 없이 세션별 프롬프트·응답 본문을 바로 추적합니다.`,
-    "최신 김재우 rev2 분할 zip은 CRC 경고 없이 검증됐고, 이전 6월 23일 엑셀 CRC 경고는 후속 원본 재검증 이력으로 분리했습니다.",
+    "최신 김재우 rev2 분할 zip은 이전 로컬 검증에서 CRC 경고 없이 확인됐고, 이번 실행의 raw 재결합 검증은 shell DNS 제한으로 차단됐습니다.",
   ],
 };
