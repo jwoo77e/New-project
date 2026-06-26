@@ -1684,6 +1684,9 @@ function GensparkUsageView({
   const maxDriveRepositoryFiles = Math.max(...driveRepositoryData.repositories.map((repository) => repository.fileCount), 1);
   const gensparkDrive = usageData.driveAnalysis;
   const maxGensparkDriveMonth = Math.max(...(gensparkDrive?.monthlyBreakdown.map((month) => month.tasks) ?? [1]), 1);
+  const gammaDeckCount = gammaDriveUsageData.deckCount;
+  const gammaTotalSlides = gammaDriveUsageData.totalSlides;
+  const gammaTopArtifact = gammaDriveUsageData.artifacts[0];
   return (
     <div className="content-grid ai-insight-view">
       <section className="panel panel-large">
@@ -1872,6 +1875,71 @@ function GensparkUsageView({
           </div>
         </section>
       )}
+
+      <section className="panel panel-wide gamma-drive-panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Gamma Output Analysis</span>
+            <h2>Drive 폴더 기반 Gamma 활용 현황</h2>
+          </div>
+          <span className="state-pill ok">{gammaDriveUsageData.source.status}</span>
+        </div>
+        <div className="gamma-drive-summary">
+          <div className="gamma-drive-lede">
+            <span>분석 대상</span>
+            <strong>{numberFormat.format(gammaDeckCount)}개 발표자료</strong>
+            <p>{gammaDriveUsageData.businessUse}</p>
+            <small>{gammaDriveUsageData.source.note}</small>
+          </div>
+          <div className="gamma-drive-metrics">
+            <div>
+              <span>총 분량</span>
+              <strong>{numberFormat.format(gammaTotalSlides)}장</strong>
+            </div>
+            <div>
+              <span>핵심 주제</span>
+              <strong>{gammaDriveUsageData.primaryTheme}</strong>
+            </div>
+            <div>
+              <span>대표 산출물</span>
+              <strong>{gammaTopArtifact?.title ?? "-"}</strong>
+            </div>
+          </div>
+        </div>
+        <div className="gamma-topic-grid">
+          {gammaDriveUsageData.topicMix.map((topic) => (
+            <article className="gamma-topic-card" key={topic.topic}>
+              <div>
+                <strong>{topic.topic}</strong>
+                <span>{numberFormat.format(topic.count)}개 deck</span>
+              </div>
+              <p>{topic.note}</p>
+            </article>
+          ))}
+        </div>
+        <div className="gamma-artifact-list">
+          {gammaDriveUsageData.artifacts.slice(0, 6).map((artifact) => (
+            <a className="gamma-artifact-row" key={artifact.id} href={artifact.url} target="_blank" rel="noreferrer">
+              <div>
+                <strong>{artifact.title}</strong>
+                <span>{artifact.focus}</span>
+              </div>
+              <small>
+                {artifact.category} · {artifact.slideCount}장
+              </small>
+            </a>
+          ))}
+        </div>
+        <div className="insight-box">
+          <FileText size={18} />
+          <div>
+            <strong>{gammaDriveUsageData.insights[0]}</strong>
+            {gammaDriveUsageData.insights.slice(1).map((insight) => (
+              <span key={insight}>{insight}</span>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {claudeExport && (
         <section className="panel panel-wide">
@@ -2331,19 +2399,14 @@ function AdoptionView({
   const gammaMonthlyUsd = gammaPlan ? gammaPlan.quantity * gammaPlan.unitUsd : 0;
   const gammaDeckCount = gammaDriveUsageData.deckCount;
   const gammaTotalSlides = gammaDriveUsageData.totalSlides;
-  const gammaTopArtifact = gammaDriveUsageData.artifacts[0];
   const gammaTrackedLabel =
-    gammaDeckCount > 0
-      ? `${numberFormat.format(gammaDeckCount)}개`
-      : typeof gammaUsageData.latestCreditsRemaining === "number"
+    typeof gammaUsageData.latestCreditsRemaining === "number"
       ? `${numberFormat.format(gammaUsageData.latestCreditsRemaining)} credits`
       : gammaUsageData.trackedGenerations > 0
       ? `${numberFormat.format(gammaUsageData.totalCreditsDeducted)} credits`
       : `${numberFormat.format(gammaUsageData.themeCount)} themes`;
   const gammaDetail =
-    gammaDeckCount > 0
-      ? `${numberFormat.format(gammaTotalSlides)} slides · ${gammaDriveUsageData.primaryTheme}`
-      : typeof gammaUsageData.latestCreditsRemaining === "number"
+    typeof gammaUsageData.latestCreditsRemaining === "number"
       ? `현재 잔여 ${numberFormat.format(gammaUsageData.latestCreditsRemaining)} credits · ${gammaUsageData.creditSource === "web-crawl" ? "웹 크롤링" : "Generation 응답"} 기준`
       : gammaUsageData.trackedGenerations > 0
       ? `Generation ${numberFormat.format(gammaUsageData.trackedGenerations)}건 · 완료 ${numberFormat.format(gammaUsageData.completedGenerations)}건 · 잔여 ${gammaUsageData.latestCreditsRemaining ?? "-"} credits`
@@ -2416,15 +2479,15 @@ function AdoptionView({
     },
     {
       name: "Gamma",
-      source: gammaDeckCount > 0 ? "Drive 산출물" : "Gamma API",
-      status: gammaDeckCount > 0 ? gammaDriveUsageData.source.status : gammaUsageData.source.status,
-      statusTone: gammaDeckCount > 0 ? "ok" : apiStatusTone(gammaUsageData.source.status),
-      value: gammaUsageData.apiKeyConfigured || gammaDeckCount > 0 ? gammaTrackedLabel : "대기",
-      metric: gammaDeckCount > 0 ? "Gamma Deck" : gammaUsageData.trackedGenerations > 0 ? "차감 크레딧" : "조회 가능 항목",
+      source: "Gamma API",
+      status: gammaUsageData.source.status,
+      statusTone: apiStatusTone(gammaUsageData.source.status),
+      value: gammaUsageData.apiKeyConfigured ? gammaTrackedLabel : "대기",
+      metric: gammaUsageData.trackedGenerations > 0 ? "차감 크레딧" : "조회 가능 항목",
       detail: gammaDetail,
-      note: gammaDeckCount > 0 ? gammaDriveUsageData.businessUse : gammaUsageData.source.note,
+      note: gammaUsageData.source.note,
       color: "#2f8f46",
-      icon: gammaDeckCount > 0 ? <FileText size={18} /> : <Activity size={18} />,
+      icon: <Activity size={18} />,
     },
   ];
   const readyServiceCount = serviceCards.filter((service) => service.statusTone === "ok").length;
@@ -2612,72 +2675,7 @@ function AdoptionView({
           <div>
             <strong>활용성 탭은 서비스별 원천 데이터 상태를 함께 보여줍니다.</strong>
             <span>Gemini는 단일 계정 기준이라 활성 사용자 지표를 제거하고 이벤트·앱 사용량 중심으로 바꿨습니다.</span>
-            <span>Gamma는 Drive 폴더의 발표자료를 읽어 영업 제안서·보고서 산출 현황으로 반영했습니다.</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="panel panel-wide gamma-drive-panel">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">Gamma Output Analysis</span>
-            <h2>Drive 폴더 기반 Gamma 활용 현황</h2>
-          </div>
-          <span className="state-pill ok">{gammaDriveUsageData.source.status}</span>
-        </div>
-        <div className="gamma-drive-summary">
-          <div className="gamma-drive-lede">
-            <span>분석 대상</span>
-            <strong>{numberFormat.format(gammaDeckCount)}개 발표자료</strong>
-            <p>{gammaDriveUsageData.businessUse}</p>
-            <small>{gammaDriveUsageData.source.note}</small>
-          </div>
-          <div className="gamma-drive-metrics">
-            <div>
-              <span>총 분량</span>
-              <strong>{numberFormat.format(gammaTotalSlides)}장</strong>
-            </div>
-            <div>
-              <span>핵심 주제</span>
-              <strong>{gammaDriveUsageData.primaryTheme}</strong>
-            </div>
-            <div>
-              <span>대표 산출물</span>
-              <strong>{gammaTopArtifact?.title ?? "-"}</strong>
-            </div>
-          </div>
-        </div>
-        <div className="gamma-topic-grid">
-          {gammaDriveUsageData.topicMix.map((topic) => (
-            <article className="gamma-topic-card" key={topic.topic}>
-              <div>
-                <strong>{topic.topic}</strong>
-                <span>{numberFormat.format(topic.count)}개 deck</span>
-              </div>
-              <p>{topic.note}</p>
-            </article>
-          ))}
-        </div>
-        <div className="gamma-artifact-list">
-          {gammaDriveUsageData.artifacts.slice(0, 6).map((artifact) => (
-            <a className="gamma-artifact-row" key={artifact.id} href={artifact.url} target="_blank" rel="noreferrer">
-              <div>
-                <strong>{artifact.title}</strong>
-                <span>{artifact.focus}</span>
-              </div>
-              <small>
-                {artifact.category} · {artifact.slideCount}장
-              </small>
-            </a>
-          ))}
-        </div>
-        <div className="insight-box">
-          <FileText size={18} />
-          <div>
-            <strong>{gammaDriveUsageData.insights[0]}</strong>
-            {gammaDriveUsageData.insights.slice(1).map((insight) => (
-              <span key={insight}>{insight}</span>
-            ))}
+            <span>Gamma는 API 테마·폴더와 Generation ID, 웹 크레딧 스냅샷을 기준으로 연결 상태를 추적합니다.</span>
           </div>
         </div>
       </section>
