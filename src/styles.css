@@ -580,11 +580,21 @@ h2 {
 .insight-box {
   display: flex;
   gap: 10px;
+  min-width: 0;
   margin-top: 16px;
   padding: 13px;
   border-radius: 8px;
   background: var(--teal-soft);
   color: var(--teal);
+}
+
+.insight-box > div {
+  min-width: 0;
+}
+
+.insight-box strong,
+.insight-box span {
+  overflow-wrap: anywhere;
 }
 
 .insight-box span {
@@ -964,6 +974,7 @@ h2 {
 .claude-export-summary-grid small,
 .claude-export-table small,
 .claude-export-table td > span,
+.claude-topic-item small,
 .claude-account-list span,
 .claude-account-list small {
   display: block;
@@ -986,6 +997,15 @@ h2 {
 .claude-account-list {
   display: grid;
   gap: 12px;
+}
+
+.claude-topic-item {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
 }
 
 .claude-account-list article {
@@ -1690,8 +1710,10 @@ h2 {
 
 .table-wrap {
   width: 100%;
+  min-width: 0;
   margin-top: 14px;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 table {

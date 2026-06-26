@@ -1981,13 +1981,16 @@ function GensparkUsageView({
               <h3>어디에 쓰이고 있나</h3>
               <div className="claude-topic-list">
                 {claudeExport.usageTopics.map((topic) => (
-                  <MeterRow
-                    color={topic.color}
-                    key={topic.topic}
-                    label={`${topic.topic} · ${numberFormat.format(topic.conversations)}대화`}
-                    value={topic.messageShare}
-                    valueLabel={`${numberFormat.format(topic.messages)}메시지 · ${formatRate(topic.messageShare)}`}
-                  />
+                  <article className="claude-topic-item" key={topic.topic}>
+                    <MeterRow
+                      color={topic.color}
+                      label={`${topic.topic} · ${numberFormat.format(topic.conversations)}대화`}
+                      value={topic.messageShare}
+                      valueLabel={`${numberFormat.format(topic.messages)}메시지 · ${formatRate(topic.messageShare)}`}
+                    />
+                    <small>{topic.businessUse}</small>
+                    <small>근거: {topic.evidence}</small>
+                  </article>
                 ))}
               </div>
             </div>
