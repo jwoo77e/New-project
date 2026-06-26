@@ -130,19 +130,28 @@ async function runCli() {
     collectedAt: now,
     mode: "로컬 수집 스냅샷",
   });
-  const outputPaths = await writeApiUsageSnapshot(snapshot, env);
+  const existingSnapshot = await readExistingApiUsageSnapshot(env);
+  const preserveExisting =
+    env.API_USAGE_PRESERVE_ON_FAILURE !== "false" &&
+    isApiUsageFetchFailure(snapshot) &&
+    hasLiveApiUsage(existingSnapshot);
+  const outputSnapshot = preserveExisting ? existingSnapshot : snapshot;
+  const outputPaths = await writeApiUsageSnapshot(outputSnapshot, env);
 
   console.log(`Wrote ${outputPaths.map((outputPath) => path.relative(rootDir, outputPath)).join(", ")}`);
-  for (const provider of snapshot.providers) {
+  if (preserveExisting) {
+    console.log("API usage live collection failed; preserved previous normal snapshot instead of writing zero-value warnings.");
+  }
+  for (const provider of outputSnapshot.providers) {
     console.log(
       `${provider.provider}: ${provider.status} · ${provider.requests.toLocaleString("en-US")} requests · ${provider.costUsd.toFixed(2)} USD · ${provider.note}`,
     );
   }
   console.log(
-    `Gemini Workspace: ${snapshot.workspaceUsage.source.status} · ${snapshot.workspaceUsage.activeUsers.toLocaleString("en-US")} active users · ${snapshot.workspaceUsage.totalEvents.toLocaleString("en-US")} events · ${snapshot.workspaceUsage.source.note}`,
+    `Gemini Workspace: ${outputSnapshot.workspaceUsage.source.status} · ${outputSnapshot.workspaceUsage.activeUsers.toLocaleString("en-US")} active users · ${outputSnapshot.workspaceUsage.totalEvents.toLocaleString("en-US")} events · ${outputSnapshot.workspaceUsage.source.note}`,
   );
   console.log(
-    `Gamma: ${snapshot.gammaUsage.source.status} · ${snapshot.gammaUsage.themeCount.toLocaleString("en-US")} themes · ${snapshot.gammaUsage.folderCount.toLocaleString("en-US")} folders · ${snapshot.gammaUsage.totalCreditsDeducted.toLocaleString("en-US")} credits · ${snapshot.gammaUsage.source.note}`,
+    `Gamma: ${outputSnapshot.gammaUsage.source.status} · ${outputSnapshot.gammaUsage.themeCount.toLocaleString("en-US")} themes · ${outputSnapshot.gammaUsage.folderCount.toLocaleString("en-US")} folders · ${outputSnapshot.gammaUsage.totalCreditsDeducted.toLocaleString("en-US")} credits · ${outputSnapshot.gammaUsage.source.note}`,
   );
 }
 
@@ -895,6 +904,43 @@ async function readGammaCreditSnapshot(env) {
   }
 
   return null;
+}
+
+async function readExistingApiUsageSnapshot(env) {
+  for (const snapshotPath of getOutputPaths(env)) {
+    if (!existsSync(snapshotPath)) continue;
+    try {
+      return JSON.parse(await readFile(snapshotPath, "utf8"));
+    } catch {
+      // Ignore malformed local snapshots and allow the new collection result to be written.
+    }
+  }
+
+  return null;
+}
+
+function isApiUsageFetchFailure(snapshot) {
+  if (!snapshot) return false;
+
+  const providerFailures = Array.isArray(snapshot.providers)
+    ? snapshot.providers.length > 0 && snapshot.providers.every((provider) => provider.status !== "정상")
+    : true;
+  const workspaceFailure = snapshot.workspaceUsage?.source?.status !== "정상";
+  const gammaFailure = snapshot.gammaUsage?.source?.status !== "정상";
+
+  return providerFailures && workspaceFailure && gammaFailure;
+}
+
+function hasLiveApiUsage(snapshot) {
+  if (!snapshot) return false;
+
+  const hasNormalProvider = Array.isArray(snapshot.providers)
+    ? snapshot.providers.some((provider) => provider.status === "정상")
+    : false;
+  const hasNormalWorkspace = snapshot.workspaceUsage?.source?.status === "정상";
+  const hasNormalGamma = snapshot.gammaUsage?.source?.status === "정상";
+
+  return hasNormalProvider || hasNormalWorkspace || hasNormalGamma;
 }
 
 async function collectGeminiMonitoring(env) {

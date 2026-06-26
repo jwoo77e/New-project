@@ -7,6 +7,7 @@ import {
   CircleDollarSign,
   Cpu,
   Download,
+  FileText,
   FileSpreadsheet,
   Gauge,
   KeyRound,
@@ -55,6 +56,7 @@ import {
   initialGensparkUsageData,
   type GensparkUsageData,
 } from "./data/gensparkUsageData";
+import { gammaDriveUsageData } from "./data/gammaDriveUsageData";
 import {
   driveArtifactRepositoryData,
   type DriveArtifactRepositoryData,
@@ -2327,14 +2329,21 @@ function AdoptionView({
   )[0];
   const gammaPlan = operatingPlanSubscriptions.find((item) => item.label.includes("Gamma"));
   const gammaMonthlyUsd = gammaPlan ? gammaPlan.quantity * gammaPlan.unitUsd : 0;
+  const gammaDeckCount = gammaDriveUsageData.deckCount;
+  const gammaTotalSlides = gammaDriveUsageData.totalSlides;
+  const gammaTopArtifact = gammaDriveUsageData.artifacts[0];
   const gammaTrackedLabel =
-    typeof gammaUsageData.latestCreditsRemaining === "number"
+    gammaDeckCount > 0
+      ? `${numberFormat.format(gammaDeckCount)}개`
+      : typeof gammaUsageData.latestCreditsRemaining === "number"
       ? `${numberFormat.format(gammaUsageData.latestCreditsRemaining)} credits`
       : gammaUsageData.trackedGenerations > 0
       ? `${numberFormat.format(gammaUsageData.totalCreditsDeducted)} credits`
       : `${numberFormat.format(gammaUsageData.themeCount)} themes`;
   const gammaDetail =
-    typeof gammaUsageData.latestCreditsRemaining === "number"
+    gammaDeckCount > 0
+      ? `${numberFormat.format(gammaTotalSlides)} slides · ${gammaDriveUsageData.primaryTheme}`
+      : typeof gammaUsageData.latestCreditsRemaining === "number"
       ? `현재 잔여 ${numberFormat.format(gammaUsageData.latestCreditsRemaining)} credits · ${gammaUsageData.creditSource === "web-crawl" ? "웹 크롤링" : "Generation 응답"} 기준`
       : gammaUsageData.trackedGenerations > 0
       ? `Generation ${numberFormat.format(gammaUsageData.trackedGenerations)}건 · 완료 ${numberFormat.format(gammaUsageData.completedGenerations)}건 · 잔여 ${gammaUsageData.latestCreditsRemaining ?? "-"} credits`
@@ -2407,15 +2416,15 @@ function AdoptionView({
     },
     {
       name: "Gamma",
-      source: "Gamma API",
-      status: gammaUsageData.source.status,
-      statusTone: apiStatusTone(gammaUsageData.source.status),
-      value: gammaUsageData.apiKeyConfigured ? gammaTrackedLabel : "대기",
-      metric: gammaUsageData.trackedGenerations > 0 ? "차감 크레딧" : "조회 가능 항목",
+      source: gammaDeckCount > 0 ? "Drive 산출물" : "Gamma API",
+      status: gammaDeckCount > 0 ? gammaDriveUsageData.source.status : gammaUsageData.source.status,
+      statusTone: gammaDeckCount > 0 ? "ok" : apiStatusTone(gammaUsageData.source.status),
+      value: gammaUsageData.apiKeyConfigured || gammaDeckCount > 0 ? gammaTrackedLabel : "대기",
+      metric: gammaDeckCount > 0 ? "Gamma Deck" : gammaUsageData.trackedGenerations > 0 ? "차감 크레딧" : "조회 가능 항목",
       detail: gammaDetail,
-      note: gammaUsageData.source.note,
+      note: gammaDeckCount > 0 ? gammaDriveUsageData.businessUse : gammaUsageData.source.note,
       color: "#2f8f46",
-      icon: <Activity size={18} />,
+      icon: gammaDeckCount > 0 ? <FileText size={18} /> : <Activity size={18} />,
     },
   ];
   const readyServiceCount = serviceCards.filter((service) => service.statusTone === "ok").length;
@@ -2432,8 +2441,8 @@ function AdoptionView({
     },
     {
       name: "산출 생산성",
-      score: Math.min(20, 10 + Math.round(outputRecords / 120)),
-      signal: `${numberFormat.format(outputRecords)}건 산출형 기록`,
+      score: Math.min(20, 10 + Math.round(outputRecords / 120) + Math.min(3, Math.floor(gammaDeckCount / 4))),
+      signal: `${numberFormat.format(outputRecords)}건 + Gamma ${numberFormat.format(gammaDeckCount)}개`,
       note: "제안서, 개발, 문서, 대시보드처럼 실무 산출물 중심 사용이 강합니다.",
       color: "#2f8f46",
     },
@@ -2464,7 +2473,11 @@ function AdoptionView({
       name: "거버넌스·개선",
       score: Math.min(
         20,
-        9 + (guideNeededCount > 0 ? 2 : 0) + (claudeTeamUsageData.totalNetSpendUsd > 0 ? 2 : 0) + (gammaCreditsCollected ? 2 : 0),
+        9 +
+          (guideNeededCount > 0 ? 2 : 0) +
+          (claudeTeamUsageData.totalNetSpendUsd > 0 ? 2 : 0) +
+          (gammaCreditsCollected ? 2 : 0) +
+          (gammaDeckCount > 0 ? 1 : 0),
       ),
       signal: `${numberFormat.format(guideNeededCount)}개 가이드 후보`,
       note: "비용·사용 현황은 보이기 시작했지만 성과 기준과 프롬프트 표준화가 필요합니다.",
@@ -2486,10 +2499,13 @@ function AdoptionView({
     hasClaudeCodeLines
       ? `Claude Team은 ${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄의 Claude Code 활용과 ${formatTokens(claudeTeamUsageData.totalTokens)} 토큰 사용이 확인됩니다.`
       : `Claude Team은 6월 상반기 spend report에서 ${formatTokens(claudeTeamUsageData.totalTokens)} 토큰과 ${numberFormat.format(claudeTeamUsageData.totalRequests)}건 요청이 확인됩니다.`,
+    `Gamma Drive 폴더에서 ${numberFormat.format(gammaDeckCount)}개 발표자료와 약 ${numberFormat.format(gammaTotalSlides)}장 분량의 스마트 안전관리 제안 산출물이 확인됩니다.`,
     "API 비용, Workspace 이벤트, Team CSV, 작업 로그를 한 대시보드에서 함께 보는 운영 체계가 만들어졌습니다.",
   ];
   const axGaps = [
-    gammaCreditsCollected
+    gammaDeckCount > 0
+      ? "Gamma 산출물은 확보됐지만 유사 deck이 많아 최종본 선별과 근거 검증 태그가 필요합니다."
+      : gammaCreditsCollected
       ? "Gamma 크레딧은 웹 크롤링으로 보강됐지만 로그인 세션 만료 시 재인증이 필요합니다."
       : "Gamma 잔여 크레딧은 아직 로그인 세션 저장 전이라 일일 자동 수집이 완전히 닫히지 않았습니다.",
     "Claude export와 Genspark는 export/크롤링 기반이라 실시간 사용자별 활용률까지는 약합니다.",
@@ -2499,7 +2515,7 @@ function AdoptionView({
   const axActions = [
     "제안서, 개발 오류 해결, 회의록, 법령 검토 등 핵심 업무별 표준 프롬프트 템플릿을 만든다.",
     "AI 사용 로그에 업무 목적, 산출물 유형, 실제 제출/배포 여부, 재사용 가능 여부 태그를 붙인다.",
-    "Gamma 로그인 세션과 Claude/Genspark export 갱신을 월간 AX 운영 체크리스트에 포함한다.",
+    "Gamma Drive 폴더의 신규 deck을 제목, 주제, 슬라이드 수, 최종본 여부로 분류해 영업 산출물 저장소로 관리한다.",
     "월 1회 AX 리뷰에서 비용, 활용량, 산출물, 보완 과제를 같은 기준으로 보고한다.",
   ];
 
@@ -2596,7 +2612,72 @@ function AdoptionView({
           <div>
             <strong>활용성 탭은 서비스별 원천 데이터 상태를 함께 보여줍니다.</strong>
             <span>Gemini는 단일 계정 기준이라 활성 사용자 지표를 제거하고 이벤트·앱 사용량 중심으로 바꿨습니다.</span>
-            <span>Gamma는 아직 자동 사용 로그가 없어 현재는 구독 상태로 표시하고, CSV 또는 관리자 리포트 확보 시 활용 지표로 확장합니다.</span>
+            <span>Gamma는 Drive 폴더의 발표자료를 읽어 영업 제안서·보고서 산출 현황으로 반영했습니다.</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel panel-wide gamma-drive-panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Gamma Output Analysis</span>
+            <h2>Drive 폴더 기반 Gamma 활용 현황</h2>
+          </div>
+          <span className="state-pill ok">{gammaDriveUsageData.source.status}</span>
+        </div>
+        <div className="gamma-drive-summary">
+          <div className="gamma-drive-lede">
+            <span>분석 대상</span>
+            <strong>{numberFormat.format(gammaDeckCount)}개 발표자료</strong>
+            <p>{gammaDriveUsageData.businessUse}</p>
+            <small>{gammaDriveUsageData.source.note}</small>
+          </div>
+          <div className="gamma-drive-metrics">
+            <div>
+              <span>총 분량</span>
+              <strong>{numberFormat.format(gammaTotalSlides)}장</strong>
+            </div>
+            <div>
+              <span>핵심 주제</span>
+              <strong>{gammaDriveUsageData.primaryTheme}</strong>
+            </div>
+            <div>
+              <span>대표 산출물</span>
+              <strong>{gammaTopArtifact?.title ?? "-"}</strong>
+            </div>
+          </div>
+        </div>
+        <div className="gamma-topic-grid">
+          {gammaDriveUsageData.topicMix.map((topic) => (
+            <article className="gamma-topic-card" key={topic.topic}>
+              <div>
+                <strong>{topic.topic}</strong>
+                <span>{numberFormat.format(topic.count)}개 deck</span>
+              </div>
+              <p>{topic.note}</p>
+            </article>
+          ))}
+        </div>
+        <div className="gamma-artifact-list">
+          {gammaDriveUsageData.artifacts.slice(0, 6).map((artifact) => (
+            <a className="gamma-artifact-row" key={artifact.id} href={artifact.url} target="_blank" rel="noreferrer">
+              <div>
+                <strong>{artifact.title}</strong>
+                <span>{artifact.focus}</span>
+              </div>
+              <small>
+                {artifact.category} · {artifact.slideCount}장
+              </small>
+            </a>
+          ))}
+        </div>
+        <div className="insight-box">
+          <FileText size={18} />
+          <div>
+            <strong>{gammaDriveUsageData.insights[0]}</strong>
+            {gammaDriveUsageData.insights.slice(1).map((insight) => (
+              <span key={insight}>{insight}</span>
+            ))}
           </div>
         </div>
       </section>
