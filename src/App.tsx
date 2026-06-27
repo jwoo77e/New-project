@@ -283,14 +283,13 @@ function monthRangeLabel(items: Array<{ month: string }>) {
   return `${monthLabel(items[0].month)}-${monthLabel(items[items.length - 1].month)}`;
 }
 
-function forecastMethodLabel(monthlyActuals: MonthlyActual[]) {
-  return `${monthRangeLabel(monthlyActuals)} 월별 실적 단순 선형 추세`;
+function fixedCostForecastMethodLabel(monthlyFixedKrw: number) {
+  return `현재 월 고정 비용 ${formatManWon(monthlyFixedKrw)} 기준`;
 }
 
 function buildOperatingPlanForecast(
   month: string,
   apiForecastSelection: ApiMonthForecastSelection,
-  baselineForecastKrw: number,
   subscriptionUsd: number,
   subscriptionKrw: number,
 ): OperatingPlanForecast {
@@ -307,7 +306,7 @@ function buildOperatingPlanForecast(
     };
   }
 
-  const forecastBaseKrw = Math.max(Math.round(baselineForecastKrw), Math.round(subscriptionKrw));
+  const forecastBaseKrw = Math.round(subscriptionKrw);
   const apiKrw = apiForecastSelection.costKrw;
 
   return {
@@ -451,15 +450,12 @@ function App() {
   );
 
   const forecast = useMemo(() => buildForecast(forecastBasisActuals), [forecastBasisActuals]);
-  const forecastTotal = forecast.reduce((sum, item) => sum + item.amount, 0);
-  const forecastBasisTotal = forecastBasisActuals.reduce((sum, item) => sum + item.amount, 0);
   const lastActual = monthlyActuals[monthlyActuals.length - 1];
   const previousActual = monthlyActuals[monthlyActuals.length - 2];
   const lastMoM =
     previousActual && previousActual.amount > 0
       ? ((lastActual.amount - previousActual.amount) / previousActual.amount) * 100
       : 0;
-  const overFixedPlan = sourceMeta.totalActual - sourceMeta.expectedQuarterFixed;
   const priorYearRate =
     sourceMeta.priorYearTotal > 0 ? (sourceMeta.totalActual / sourceMeta.priorYearTotal) * 100 : 0;
   const commonDepartment = departmentCosts[0] ?? {
@@ -571,7 +567,6 @@ function App() {
         const operatingPlan = buildOperatingPlanForecast(
           item.month,
           apiSelection,
-          item.amount,
           operatingPlanSubscriptionUsd,
           operatingPlanSubscriptionKrw,
         );
@@ -613,7 +608,9 @@ function App() {
   );
   const operatingPlanMonths = apiAdjustedForecast.filter((item) => item.isOperatingPlan).length;
   const apiAdjustedForecastGrowth =
-    forecastBasisTotal > 0 ? ((apiAdjustedForecastTotal - forecastBasisTotal) / forecastBasisTotal) * 100 : 0;
+    operatingPlanForecastTotal > 0
+      ? ((apiAdjustedForecastTotal - operatingPlanForecastTotal) / operatingPlanForecastTotal) * 100
+      : 0;
 
   const monthlySeries = [
     ...monthlyActuals.map((item) => ({
@@ -625,7 +622,7 @@ function App() {
       forecastWithApi: null,
       forecastBasis: forecastBasisActuals.find((basis) => basis.month === item.month)?.amount ?? item.amount,
       adjustment: adjustmentByMonth.get(item.month)?.amount ?? 0,
-      fixedPlan: sourceMeta.expectedMonthlyFixed,
+      fixedPlan: operatingPlanSubscriptionKrw,
       transactions: item.transactions,
       apiSourceLabel: null,
       status: "실적",
@@ -643,7 +640,6 @@ function App() {
       const operatingPlan = buildOperatingPlanForecast(
         item.month,
         apiSelection,
-        item.amount,
         operatingPlanSubscriptionUsd,
         operatingPlanSubscriptionKrw,
       );
@@ -663,7 +659,7 @@ function App() {
         forecastWithApi: operatingPlan.applies ? operatingPlan.totalKrw : item.amount + apiUsageKrw,
         forecastBasis: null,
         adjustment: null,
-        fixedPlan: operatingPlan.applies ? operatingPlan.totalKrw : sourceMeta.expectedMonthlyFixed,
+        fixedPlan: operatingPlan.applies ? operatingPlan.forecastBaseKrw : operatingPlanSubscriptionKrw,
         transactions: null,
         status: "예측",
       };
@@ -740,7 +736,7 @@ function App() {
         forecastTotalKrw: operatingPlanForecastTotal,
       },
       generatedAt: new Date().toISOString(),
-      forecastMethod: `${forecastMethodLabel(forecastBasisActuals)} - 5월 이후는 AI 도구 결재 현황의 구독료를 최소 하한으로 두고 실측 API 월환산 비용을 추가`,
+      forecastMethod: `${fixedCostForecastMethodLabel(operatingPlanSubscriptionKrw)} - 5월 이후는 AI 도구 결재 현황의 현재 월 고정 비용을 예측 기준으로 두고 실측 API 월환산 비용을 추가`,
     };
     const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
       type: "application/json",
@@ -1001,10 +997,10 @@ function App() {
           />
           <MetricCard
             icon={<CalendarRange size={21} />}
-            label={`${forecastRange} API/구독 반영 예측`}
+            label={`${forecastRange} API/고정비 반영 예측`}
             tone="amber"
             value={formatManWon(apiAdjustedForecastTotal)}
-            footer={`5월 이후 결재현황 최소 ${formatManWon(operatingPlanSubscriptionKrw)}/월 · ${operatingPlanApiSourceLabel} ${formatManWon(operatingPlanApiKrw)}/월`}
+            footer={`5월 이후 현재 월 고정비 ${formatManWon(operatingPlanSubscriptionKrw)}/월 · ${operatingPlanApiSourceLabel} ${formatManWon(operatingPlanApiKrw)}/월`}
           />
           <MetricCard
             icon={<WalletCards size={21} />}
@@ -1034,8 +1030,6 @@ function App() {
           operatingPlanSubscriptionUsd={operatingPlanSubscriptionUsd}
           forecastAdjustments={forecastAdjustments}
           forecastBasisActuals={forecastBasisActuals}
-          overFixedPlan={overFixedPlan}
-          forecastTotal={forecastTotal}
           sourceMeta={sourceMeta}
           monthlyActuals={monthlyActuals}
         />
@@ -1082,10 +1076,8 @@ function MonthlyView({
   forecast,
   forecastAdjustments,
   forecastBasisActuals,
-  forecastTotal,
   monthlyActuals,
   monthlySeries,
-  overFixedPlan,
   sourceMeta,
 }: {
   apiAdjustedForecast: Array<
@@ -1114,7 +1106,6 @@ function MonthlyView({
   forecast: ForecastPoint[];
   forecastAdjustments: DashboardData["forecastAdjustments"];
   forecastBasisActuals: MonthlyActual[];
-  forecastTotal: number;
   monthlyActuals: MonthlyActual[];
   monthlySeries: Array<{
     label: string;
@@ -1130,13 +1121,15 @@ function MonthlyView({
     transactions: number | null;
     status: string;
   }>;
-  overFixedPlan: number;
   sourceMeta: SourceMeta;
 }) {
   const actualRange = monthRangeLabel(monthlyActuals);
   const forecastRange = monthRangeLabel(forecast);
   const adjustmentTotal = forecastAdjustments.reduce((sum, item) => sum + item.amount, 0);
   const apiForecastProviderSummary = formatApiForecastProviderSummary(apiForecast);
+  const actualFixedPlanTotal = operatingPlanSubscriptionKrw * monthlyActuals.length;
+  const overFixedPlan = sourceMeta.totalActual - actualFixedPlanTotal;
+  const actualFixedPlanRatio = actualFixedPlanTotal > 0 ? sourceMeta.totalActual / actualFixedPlanTotal : 0;
 
   return (
     <div className="content-grid monthly-view">
@@ -1146,7 +1139,7 @@ function MonthlyView({
             <span className="eyebrow">Monthly Spend</span>
             <h2>월별 비용과 {forecastRange} 예측</h2>
           </div>
-          <span className="state-pill warning">선형 추세 예측</span>
+          <span className="state-pill warning">현재 월 고정비 기준</span>
         </div>
         <div className="chart-frame">
           <ResponsiveContainer width="100%" height="100%">
@@ -1160,7 +1153,7 @@ function MonthlyView({
               <Bar dataKey="forecast" name="기존 예측" stackId="forecast" fill="#c58612" radius={[5, 5, 0, 0]} />
               <Bar
                 dataKey="operatingPlanForecast"
-                name="결재현황 하한 반영"
+                name="현재 월 고정비"
                 stackId="forecast"
                 fill="#5f6f8c"
                 radius={[5, 5, 0, 0]}
@@ -1174,21 +1167,21 @@ function MonthlyView({
               />
               <Line
                 dataKey="forecastWithApi"
-                name="API/구독 반영 예측"
+                name="API/고정비 반영 예측"
                 stroke="#2f8f46"
                 strokeWidth={2}
                 dot={{ r: 3 }}
               />
               <Line
                 dataKey="forecastBasis"
-                name="예측 기준"
+                name="실적 보정 기준"
                 stroke="#e85d4f"
                 strokeWidth={2}
                 dot={{ r: 3 }}
               />
               <Line
                 dataKey="fixedPlan"
-                name="월정액 기준"
+                name="현재 월 고정비 기준"
                 stroke="#5f6f8c"
                 strokeDasharray="6 4"
                 strokeWidth={2}
@@ -1217,7 +1210,7 @@ function MonthlyView({
                   <span>{adjustment?.reason ?? "보정 없음"}</span>
                 </div>
                 <b>{formatManWon(adjustment?.amount ?? 0)}</b>
-                <small>예측 기준 {formatManWon(basis?.amount ?? item.amount)}</small>
+                <small>실적 보정 기준 {formatManWon(basis?.amount ?? item.amount)}</small>
               </article>
             );
           })}
@@ -1245,8 +1238,8 @@ function MonthlyView({
                 <strong>{item.label}</strong>
                 {item.isOperatingPlan ? (
                   <span>
-                    결재현황 최소 {formatManWon(item.operatingPlanKrw)} · 적용 기준{" "}
-                    {formatManWon(item.baseForecastKrw)} · {item.apiSourceLabel} {formatManWon(item.apiUsageKrw)}
+                    현재 월 고정비 {formatManWon(item.baseForecastKrw)} · {item.apiSourceLabel}{" "}
+                    {formatManWon(item.apiUsageKrw)}
                   </span>
                 ) : (
                   <span>
@@ -1262,19 +1255,19 @@ function MonthlyView({
           <Activity size={18} />
           <div>
             <strong>
-              {forecastRange} API/구독 반영 합계 {formatManWon(apiAdjustedForecastTotal)}
+              {forecastRange} API/고정비 반영 합계 {formatManWon(apiAdjustedForecastTotal)}
             </strong>
             <span>
-              {OPERATING_PLAN_START_MONTH}부터는 AI 도구 결재 현황 탭의 월 구독료{" "}
-              {formatManWon(operatingPlanSubscriptionKrw)}을 최소 하한으로 두고, 선형 예측이 더 크면 선형 예측을 유지합니다.
+              {OPERATING_PLAN_START_MONTH}부터는 AI 도구 결재 현황 탭의 현재 월 고정 비용{" "}
+              {formatManWon(operatingPlanSubscriptionKrw)}을 예측 기준으로 적용합니다.
             </span>
             <span>
-              API 반영분 {formatManWon(apiForecastAddedTotal)} · 구독 하한 적용 기준{" "}
-              {formatManWon(operatingPlanForecastTotal)} · 적용월 {operatingPlanMonths}개월 · 보정 기준 대비{" "}
+              API 반영분 {formatManWon(apiForecastAddedTotal)} · 고정비 적용 기준{" "}
+              {formatManWon(operatingPlanForecastTotal)} · 적용월 {operatingPlanMonths}개월 · 고정비 기준 대비{" "}
               {formatRate(apiAdjustedForecastGrowth, true)}
             </span>
             <span>
-              결재현황 구독 {formatPreciseUsd(operatingPlanSubscriptionUsd)}/월 · 환율{" "}
+              현재 월 고정 비용 {formatPreciseUsd(operatingPlanSubscriptionUsd)}/월 · 환율{" "}
               {numberFormat.format(OPERATING_PLAN_USD_TO_KRW)}원 · 현재월 기준 {operatingPlanApiSourceLabel}{" "}
               {formatManWon(operatingPlanApiKrw)}/월
             </span>
@@ -1311,15 +1304,15 @@ function MonthlyView({
         <div className="panel-header">
           <div>
             <span className="eyebrow">Plan Gap</span>
-            <h2>월정액 기준 대비</h2>
+            <h2>현재 월 고정비 기준 대비</h2>
           </div>
         </div>
         <div className="plan-stack">
           <GaugeRow
-            label={`${actualRange} 월정액 기준`}
+            label={`${actualRange} 현재 월 고정비 기준`}
             max={sourceMeta.totalActual}
             tone="steel"
-            value={sourceMeta.expectedQuarterFixed}
+            value={actualFixedPlanTotal}
           />
           <GaugeRow
             label="실제 누적 비용"
@@ -1333,7 +1326,7 @@ function MonthlyView({
           </div>
           <div className="rule-row">
             <span>실제/기준 배율</span>
-            <strong>{(sourceMeta.totalActual / sourceMeta.expectedQuarterFixed).toFixed(2)}x</strong>
+            <strong>{actualFixedPlanRatio.toFixed(2)}x</strong>
           </div>
         </div>
       </section>
@@ -1353,12 +1346,12 @@ function MonthlyView({
                 <th>구분</th>
                 <th>실제 비용</th>
                 <th>예측 제외</th>
-                <th>예측 기준</th>
-                <th>하한 적용 기준</th>
+                <th>실적 보정 기준</th>
+                <th>현재 월 고정비</th>
                 <th>API 실측/예산</th>
-                <th>API/구독 반영</th>
+                <th>API/고정비 반영</th>
                 <th>건수</th>
-                <th>월정액 기준</th>
+                <th>고정비 기준</th>
                 <th>차이</th>
               </tr>
             </thead>
