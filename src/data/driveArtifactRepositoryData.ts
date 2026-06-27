@@ -508,9 +508,39 @@ const jaewooArtifacts: DriveArtifact[] = [
 ];
 
 const jaewooZipFolderUrl = "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link";
-const jaewooZipModifiedAt = "2026-06-25T23:13:36.907Z";
+const jaewooZipModifiedAt = "2026-06-26T23:26:55.583Z";
 
 const jaewooZipArtifacts: DriveArtifact[] = [
+  {
+    title: "2026-06-27 / AX_2026-06-27",
+    url: "https://docs.google.com/document/d/1XaGU9mmfumFjduGDFTgR3W5TK-P1pgh4IpN7sbBK5w4/edit?usp=drivesdk",
+    mimeType: "application/vnd.google-apps.document",
+    createdAt: "2026-06-26T23:26:54.161Z",
+    modifiedAt: "2026-06-26T23:26:55.583Z",
+    kind: "프롬프트+응답",
+    useCase: "AX 운영·KPI",
+    usageSignal: "6월 27일 AX 전환 현황판 자동 갱신본으로 AX Level 3.8, 활용 기록 224건, 산출형 91건, Claude Team 276,191줄을 요약",
+  },
+  {
+    title: "2026-06-27 / AX_대시보드분석_2026-06-27",
+    url: "https://docs.google.com/document/d/14sBr6V413XgE4-VLSTxWKAacIzrsSJFB0HITMDJ8Ui8/edit?usp=drivesdk",
+    mimeType: "application/vnd.google-apps.document",
+    createdAt: "2026-06-26T23:16:29.445Z",
+    modifiedAt: "2026-06-26T23:16:30.617Z",
+    kind: "프롬프트+응답",
+    useCase: "AX 운영·KPI",
+    usageSignal: "6월 27일 대시보드 5탭 분석본으로 활용성, AI 활용 상세, 결재, 예측, API 사용 탭을 누락 없이 재수집",
+  },
+  {
+    title: "2026-06-27 / AX_세션처리로그_2026-06-27.md",
+    url: "https://drive.google.com/file/d/1kPBPCgQ05ML-sYRZ5mi05VxTpdZqI1xj/view?usp=drivesdk",
+    mimeType: "text/plain",
+    createdAt: "2026-06-26T23:12:37.697Z",
+    modifiedAt: "2026-06-26T23:12:37.697Z",
+    kind: "문서 산출물",
+    useCase: "업무보고·지식관리",
+    usageSignal: "2026-06-27 실행에서 신규 세션 25건을 처리했고 실행 중 partial 세션 2건은 다음 회차 재처리 대상으로 남김",
+  },
   {
     title: "2026-06-26 / AX_2026-06-26",
     url: "https://docs.google.com/document/d/1Fy7LlpxRKPuM9Rimtj7vl6eQytj5XIEULlOBaU_BfJo/edit?usp=drivesdk",
@@ -743,9 +773,9 @@ const jaewooZipArtifacts: DriveArtifact[] = [
   },
 ];
 
-const hyungbaeDateFolderUrl = "https://drive.google.com/drive/folders/1rYi6EI6aMdxiKdnHY7awSLZiZgBZsQja?usp=sharing";
-const hyungbaeDocsCreatedAt = "2026-06-25T18:09:29.577Z";
-const hyungbaeDocsModifiedAt = "2026-06-25T18:15:35.490Z";
+const hyungbaeDateFolderUrl = "https://drive.google.com/drive/folders/1t9fHXfhndy5v4c-Tl91yiMCNKDjEl9rd?usp=sharing";
+const hyungbaeDocsCreatedAt = "2026-06-26T18:09:45.005Z";
+const hyungbaeDocsModifiedAt = "2026-06-26T18:14:57.778Z";
 
 function hyungbaeDoc(
   title: string,
@@ -767,51 +797,51 @@ function hyungbaeDoc(
 
 const hyungbaeArtifacts: DriveArtifact[] = [
   hyungbaeDoc(
-    "2026-06-26 / Collect data from all station resource pages (b6a9200d)",
-    "1cDOZR4HP4vd3lkNQZb3gLA5r9ikeCZykUKsvmrpQYiw",
+    "2026-06-27 / Collect data from all station resource pages (b6a9200d)",
+    "1mhkSxa5SlJWChrNiDrxuKc1xD3uqDG1kDDqMHhRi2gA",
     "자료실·현장 데이터 수집",
     "GH Biz&고양 23개 현장 자료실을 점검하고 양주은남 현장 파일 3건을 확보한 세션",
   ),
   hyungbaeDoc(
-    "2026-06-26 / Document TBM safety management system (0b3672ce)",
-    "1G7nUx1Hp3mi4AcVcfzbd6Y3yEhPaN9HHIFmQDKx0u3A",
+    "2026-06-27 / Document TBM safety management system (0b3672ce)",
+    "1kyhSFsrHn5RuRqs4IrHiK_S0QP6sEjJOFGkUCin3OpI",
     "현장 안전관리 자료",
     "4개 활성 현장의 TBM 263건과 첨부 메타데이터 823건을 정리하고 자동 다운로드 제한을 기록",
   ),
   hyungbaeDoc(
-    "2026-06-26 / Document safety management system pages (c921fcc7)",
-    "1JXSTnO6NDR0L6mdI1WSQsXjR0VN081CqtzSpUmAR5Hg",
+    "2026-06-27 / Document safety management system pages (c921fcc7)",
+    "1UBdKFSnnJwaCIQOTLeA4cPORmYvw7XoWd9L96IyppLg",
     "현장 안전관리 자료",
     "노사협의체 자료 23개 현장 점검, 6개 현장 18개 회의 기록과 첨부 파일 수집 결과",
   ),
   hyungbaeDoc(
-    "2026-06-26 / Collect ergonomic hazard assessment data (6e85c136)",
-    "1woSmI-OvGi8astLZArnVyWJ1gUZJ2TuQL_pYS0ToYg8",
+    "2026-06-27 / Collect ergonomic hazard assessment data (6e85c136)",
+    "11t8e65fqfdonPvYkpta8r54DGe7uMObIF91tjmWAiGk",
     "현장 안전관리 자료",
     "근골격계 유해요인조사 23개 현장 점검, 용인 2공구 조사 2건과 PDF 3건 수집",
   ),
   hyungbaeDoc(
-    "2026-06-26 / Collect safety management plan data (7a5e7017)",
-    "1OH8egAzsLo14Uw8Uw8sHvYEYo_bo0zzl1yW_98d7OTY",
+    "2026-06-27 / Collect safety management plan data (7a5e7017)",
+    "196Ti0-5tgtABthI87ZtsTkbCFxIlg6xMJEPMxu2iUrM",
     "안전관리 계획·비용",
     "부서별 안전보건관리계획 23개 현장을 확인했으나 수집 가능한 기록이 없음을 검증",
   ),
   hyungbaeDoc(
-    "2026-06-26 / Collect safety management cost data (6348cd75)",
-    "17CLLE71cS77m7FcWvNYyFyF-VZYhBoxVLYONnd4B8yQ",
+    "2026-06-27 / Collect safety management cost data (6348cd75)",
+    "1jY695oxWISL8eHJSTccTV4uJgelLxE5ZMlidoBkCHS0",
     "안전관리 계획·비용",
     "산안법 안전관리비 계획 탭에서 약 1.9조원 대상액과 약 520억원 계상액, 첨부 21건을 정리",
   ),
-  hyungbaeDoc("2026-06-26 / V2 safety management cost branch (47c30863)", "1BqDvz-okUjw9O2VGYQ21My5aGWt9utwViwlufLiTE90", "안전관리 계획·비용", "안전관리비 수집 세션의 보완본으로 대상 현장 조회와 다운로드 준비 흐름을 보존"),
-  hyungbaeDoc("2026-06-26 / V2 safety management pages branch (a99fe24b)", "19Lt-EhAEa2IZyk5GfJK0x6aEGkAZluQ9_w2HAcC5AV8", "현장 안전관리 자료", "안전관리 시스템 페이지 문서화 세션의 보완본으로 현장별 페이지 탐색을 보존"),
-  hyungbaeDoc("2026-06-26 / Document safety equipment distribution across sites (718b84a0)", "1tUJOKdd-EWTag8HinHkASKxPqtlbU20bvbe8vDBniTA", "현장 안전관리 자료", "현장별 안전장비 배치·배포 현황을 문서화한 세션"),
-  hyungbaeDoc("2026-06-26 / Collect safety facility data across sites (59f4398d)", "1AiPvjAIhYqOmuZASYExSyXiNqI8iI8BSMB3HIxBI46g", "현장 안전관리 자료", "현장별 안전시설 데이터를 수집하고 비교하기 위한 세션"),
-  hyungbaeDoc("2026-06-26 / Collect risk assessment data from all sites (2c77ed42)", "1PzV6FchGclR2oRJPGlV9QGsjzIKA-DrXzO_Zp4oreIM", "현장 안전관리 자료", "전체 현장 위험성평가 자료를 수집·검증한 세션"),
-  hyungbaeDoc("2026-06-26 / Collect disaster response manuals from all sites (4d18ed3c)", "1FC_KMCr9ANJCXlGG9gaUK6YEOIIEAypEo7EROKbRD04", "현장 안전관리 자료", "전체 현장 재난대응 매뉴얼 자료 수집을 수행한 세션"),
-  hyungbaeDoc("2026-06-26 / Document safety report system across sites (ab9618f4)", "1_jUB2wbY1AN2zdKi46UWDdlv-_Mm6_cFQnQGSEt1Pgc", "현장 안전관리 자료", "현장별 안전보고 체계와 보고 흐름을 문서화한 세션"),
-  hyungbaeDoc("2026-06-26 / Collect safety management cost data (05ac25e6)", "1nTW00oFP69XPST0Gu--lKF9mSLsdzts9Yanq7I1sKSc", "안전관리 계획·비용", "임시소방시설비 또는 안전관리비 관련 수집 결과를 정리한 세션"),
-  hyungbaeDoc("2026-06-26 / Collect safety management expense data (5915ecf8)", "1wNgkqBgmzGb-r4-kkbcAUbO_PgdLAKJpGCrF31IEmjs", "안전관리 계획·비용", "안전관리비 집행·경비 자료 수집 결과를 정리한 세션"),
-  hyungbaeDoc("2026-06-26 / Collect risk assessment data from all sites (bad3d43a)", "1au8rGkg7kACEdn56TLQ2NgNuBGY2Oaalq98hqFvceto", "현장 안전관리 자료", "전체 현장 위험성평가 자료를 수집·검증한 별도 세션"),
+  hyungbaeDoc("2026-06-27 / V2 safety management cost branch (f959b650)", "1Vv6IBUzCUxcOEoY0JJFgtfo8ipLDv8uxSEBVnXetisU", "안전관리 계획·비용", "안전관리비 수집 세션의 보완본으로 대상 현장 조회와 다운로드 준비 흐름을 보존"),
+  hyungbaeDoc("2026-06-27 / V2 safety management pages branch (a99fe24b)", "1k7AkxhPB9kaZsQOm12b6f3euc9Qz-vQqTMALG1qf1ZM", "현장 안전관리 자료", "안전관리 시스템 페이지 문서화 세션의 보완본으로 현장별 페이지 탐색을 보존"),
+  hyungbaeDoc("2026-06-27 / Document safety equipment distribution across sites (718b84a0)", "17u24ti9-glRVz7g83EkfxnmTwo59kbhUT6S8IK8swcA", "현장 안전관리 자료", "현장별 안전장비 배치·배포 현황을 문서화한 세션"),
+  hyungbaeDoc("2026-06-27 / Collect safety facility data across sites (59f4398d)", "18H_SkWmG6ovLFWItB_CJVtPdZtxwQCi8EQkuTCXMpQc", "현장 안전관리 자료", "현장별 안전시설 데이터를 수집하고 비교하기 위한 세션"),
+  hyungbaeDoc("2026-06-27 / Collect risk assessment data from all sites (2c77ed42)", "1evQmm2jlY4OE1kcu2oPelSHjuuK5KB_HFcHsAPrCF_0", "현장 안전관리 자료", "전체 현장 위험성평가 자료를 수집·검증한 세션"),
+  hyungbaeDoc("2026-06-27 / Collect disaster response manuals from all sites (4d18ed3c)", "1dpKbjIo07qIb8xwFW_-3irP7zCo9QoODOfg-1RZLyg4", "현장 안전관리 자료", "전체 현장 재난대응 매뉴얼 자료 수집을 수행한 세션"),
+  hyungbaeDoc("2026-06-27 / Document safety report system across sites (ab9618f4)", "16JLKSQtEhxT3fCxjMN1vpvdW3k_K7HToFgNKc4x4nNs", "현장 안전관리 자료", "현장별 안전보고 체계와 보고 흐름을 문서화한 세션"),
+  hyungbaeDoc("2026-06-27 / Collect safety management cost data (05ac25e6)", "1n1R1ThC-7BI6iyWCawWvPtPOC-xoujnwE7Dum0PpcOU", "안전관리 계획·비용", "임시소방시설비 또는 안전관리비 관련 수집 결과를 정리한 세션"),
+  hyungbaeDoc("2026-06-27 / Collect safety management expense data (5915ecf8)", "1kc1zmWQWS3XWb-nZVvjKlOMpnYCQxbpfDDP2xwRCalI", "안전관리 계획·비용", "안전관리비 집행·경비 자료 수집 결과를 정리한 세션"),
+  hyungbaeDoc("2026-06-27 / Collect risk assessment data from all sites (bad3d43a)", "18MT7hLQX7PjT-gR7ZLtCwlItiwIwjO11ARHioH08UUI", "현장 안전관리 자료", "전체 현장 위험성평가 자료를 수집·검증한 별도 세션"),
 ];
 
 function buildBreakdown<T extends string>(
@@ -881,34 +911,34 @@ function buildRepository(spec: DriveRepositorySpec): DriveArtifactRepository {
 }
 
 const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
-  collectedAt: "2026-06-26 22:50 KST",
+  collectedAt: "2026-06-27 23:10 KST",
   mode: "Drive에는 zip 분할 원본만 보존하고, 대시보드 수집 시 로컬 임시 영역에서만 결합·해제·분석합니다.",
   cleanupPolicy: "결합 zip과 압축 해제 폴더는 분석 완료 후 삭제하며 Drive 원본 zip part 파일은 삭제하거나 변환하지 않습니다.",
   stages: [
     {
       label: "1. Drive 원본 조회",
       action: "대상 폴더에서 zip.partNN, zip.001, z01+zip 패턴을 그룹화",
-      result: "김재우 폴더에서 2026-06-23 세션모음 4개, 6/24 백업 계열 9개, 6/25 단일 백업 1개, 최신 AX_2026-06-25_백업_v2.zip.part00~part13 14개를 확인. 이형배 폴더는 6/26 날짜별 Docs 폴더 유지",
+      result: "김재우 폴더에서 2026-06-23 세션모음 4개, 6/24 백업 계열 9개, 6/25 백업 계열 15개, 최신 AX_2026-06-27_백업.zip.part00~part02 3개를 확인. 이형배 폴더는 6/27 날짜별 Docs 폴더로 갱신",
     },
     {
       label: "2. 임시 결합",
       action: "part 번호 순서대로 /private/tmp 영역에서 단일 zip으로 결합",
-      result: "최신 6/25 v2는 part00~part13 순서가 완성됐고 총 41,899 bytes이나, shell Google OAuth fetch failed와 connector 임시 URL DNS 실패로 이번 실행의 로컬 결합은 차단됨",
+      result: "최신 6/27 백업은 part00~part02 순서가 완성됐고 총 15,073 bytes이나, connector 임시 URL DNS 실패로 이번 실행의 로컬 결합은 차단됨",
     },
     {
       label: "3. 압축 해제 분석",
       action: "프롬프트·응답·SKILL·엑셀 산출물의 파일명, 크기, 본문 요약을 추출",
-      result: "6/26 처리로그 기준 전날 26개 세션이 신규 백업됐으나 최신 6/25 v2 zip 내부 파일 수·CRC는 이번 실행에서 검증 불가. 이전 6/24 rev2 검증값 26개 파일·11개 묶음·CRC 0개는 참고값으로 유지",
+      result: "6/27 처리로그 기준 신규 세션 25건이 백업됐고 partial 세션 2건은 다음 회차 대상으로 남음. 최신 6/27 zip 내부 파일 수·CRC는 이번 실행에서 검증 불가. 이전 6/24 rev2 검증값 26개 파일·11개 묶음·CRC 0개는 참고값으로 유지",
     },
     {
       label: "4. 임시 파일 삭제",
       action: "분석 후 결합 zip과 해제 폴더를 제거하고 요약 결과만 대시보드 데이터로 유지",
-      result: "Drive 원본은 변경하지 않았고, shell 테스트용 빈 임시 폴더는 삭제됨. 결합 zip·해제 폴더는 생성되지 않음",
+      result: "Drive 원본은 변경하지 않았고, shell 다운로드 테스트용 빈 임시 폴더는 삭제됨. 결합 zip·해제 폴더는 생성되지 않음",
     },
   ],
   totals: {
-    splitParts: 28,
-    archives: 5,
+    splitParts: 31,
+    archives: 6,
     extractedFiles: 26,
     taskGroups: 11,
     dataFiles: 0,
@@ -917,25 +947,14 @@ const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
   archives: [
     {
       owner: "김재우",
-      archiveName: "AX_2026-06-25_백업_v2.zip",
+      archiveName: "AX_2026-06-27_백업.zip",
       folderUrl: jaewooZipFolderUrl,
       sourceParts: [
-        "AX_2026-06-25_백업_v2.zip.part00",
-        "AX_2026-06-25_백업_v2.zip.part01",
-        "AX_2026-06-25_백업_v2.zip.part02",
-        "AX_2026-06-25_백업_v2.zip.part03",
-        "AX_2026-06-25_백업_v2.zip.part04",
-        "AX_2026-06-25_백업_v2.zip.part05",
-        "AX_2026-06-25_백업_v2.zip.part06",
-        "AX_2026-06-25_백업_v2.zip.part07",
-        "AX_2026-06-25_백업_v2.zip.part08",
-        "AX_2026-06-25_백업_v2.zip.part09",
-        "AX_2026-06-25_백업_v2.zip.part10",
-        "AX_2026-06-25_백업_v2.zip.part11",
-        "AX_2026-06-25_백업_v2.zip.part12",
-        "AX_2026-06-25_백업_v2.zip.part13",
+        "AX_2026-06-27_백업.zip.part00",
+        "AX_2026-06-27_백업.zip.part01",
+        "AX_2026-06-27_백업.zip.part02",
       ],
-      combinedSizeBytes: 41899,
+      combinedSizeBytes: 15073,
       extractedEntries: 37,
       extractedFiles: 26,
       extractedDirectories: 11,
@@ -944,8 +963,8 @@ const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
       skillFiles: 0,
       dataFiles: 0,
       crcWarningFiles: [],
-      cleanupStatus: "이번 실행에서는 결합 zip·압축 해제 폴더가 생성되지 않았고, shell 테스트용 임시 폴더는 삭제됨. Drive 원본 part는 변경하지 않음",
-      verificationStatus: "최신 6/25 v2는 Drive 메타데이터상 part00~part13 완성. 로컬 결합·unzip·CRC 검증은 Google OAuth fetch failed 및 connector 임시 URL DNS 실패로 차단됨. 아래 taskGroups는 이전 6/24 rev2 검증 결과를 참고값으로 표시",
+      cleanupStatus: "이번 실행에서는 결합 zip·압축 해제 폴더가 생성되지 않았고, shell 다운로드 테스트용 빈 임시 폴더는 삭제됨. Drive 원본 part는 변경하지 않음",
+      verificationStatus: "최신 6/27 백업은 Drive 메타데이터상 part00~part02 완성. 로컬 결합·unzip·CRC 검증은 connector 임시 URL DNS 실패로 차단됨. 아래 taskGroups는 이전 6/24 rev2 검증 결과를 참고값으로 표시",
       taskGroups: [
         {
           title: "Claude 세션 백필",
@@ -1096,9 +1115,9 @@ const repositories: DriveArtifactRepository[] = [
     utilizationLevel: "높음",
     artifacts: jaewooZipArtifacts,
     insights: [
-      "Drive 폴더에는 최신 AX_2026-06-25_백업_v2.zip.part00~part13 14개와 6/26 AX Docs·처리로그가 추가됐습니다.",
-      "6/26 처리로그 기준 전날 세션 26건이 신규 처리됐고, 대시보드는 직접 포함 Docs·로그와 마지막 로컬 검증 zip 내부 26개 파일을 분리해 표시합니다.",
-      "최신 6/25 v2 zip은 part 순서와 총 41,899 bytes만 확인됐고, 이번 실행의 로컬 결합·unzip·CRC 검증은 shell 네트워크 제한으로 차단됐습니다.",
+      "Drive 폴더에는 최신 AX_2026-06-27_백업.zip.part00~part02 3개와 6/27 AX Docs·처리로그가 추가됐습니다.",
+      "6/27 처리로그 기준 신규 세션 25건이 처리됐고 partial 세션 2건은 다음 회차 대상으로 남았습니다. 대시보드는 직접 포함 Docs·로그와 마지막 로컬 검증 zip 내부 26개 파일을 분리해 표시합니다.",
+      "최신 6/27 zip은 part 순서와 총 15,073 bytes만 확인됐고, 이번 실행의 로컬 결합·unzip·CRC 검증은 shell 네트워크 제한으로 차단됐습니다.",
     ],
   }),
   buildRepository({
@@ -1112,7 +1131,7 @@ const repositories: DriveArtifactRepository[] = [
     utilizationLevel: "높음",
     artifacts: hyungbaeArtifacts,
     insights: [
-      "최신 하위 폴더 claude-backup-2026-06-26에서 28개 Google Docs와 SKILL 파일 1개를 확인했고, 의미 있는 현장·안전관리 Docs 16개를 선별했습니다.",
+      "최신 하위 폴더 claude-backup-2026-06-27에서 27개 Google Docs와 SKILL 파일 2개를 확인했고, 의미 있는 현장·안전관리 Docs 16개를 선별했습니다.",
       "Docs 본문은 프롬프트와 Claude 응답이 함께 남는 형태라 현장 자료 수집 목적과 결과를 같은 단위로 검토할 수 있습니다.",
       "주요 작업은 TBM 263건, 노사협의체 18건, 근골격계 조사 2건, 안전관리비 계획·집행, 위험성평가·재난대응·안전보고 체계 수집으로 묶입니다.",
     ],
@@ -1122,9 +1141,9 @@ const repositories: DriveArtifactRepository[] = [
 export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   source: {
     name: "Google Drive Claude 산출물 저장소",
-    collectedAt: "2026-06-26 22:50 KST",
-    period: "2026-06-21 ~ 2026-06-26",
-    note: "김재우 폴더는 최신 AX_2026-06-25_백업_v2.zip.part00~part13와 6/26 AX Docs·처리로그를 확인했고, 이형배 폴더는 claude-backup-2026-06-26 날짜 폴더 아래 28개 Docs 중 현장·안전관리 분석에 직접 쓰이는 16개를 선별했습니다.",
+    collectedAt: "2026-06-27 23:10 KST",
+    period: "2026-06-21 ~ 2026-06-27",
+    note: "김재우 폴더는 최신 AX_2026-06-27_백업.zip.part00~part02와 6/27 AX Docs·처리로그를 확인했고, 이형배 폴더는 claude-backup-2026-06-27 날짜 폴더 아래 27개 Docs와 2개 SKILL 파일 중 현장·안전관리 분석에 직접 쓰이는 16개를 선별했습니다.",
   },
   totals: {
     repositories: repositories.length,
@@ -1139,6 +1158,6 @@ export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   insights: [
     "김재우 폴더는 Drive에 zip part 원본만 남기고, 대시보드 수집 시 임시 해제 분석 결과만 저장하는 구조로 운영합니다.",
     `이형배 폴더는 ${hyungbaeDateFolderUrl} 하위의 날짜별 Docs 백업 구조로 전환되어, zip 해제 없이 세션별 프롬프트·응답 본문을 바로 추적합니다.`,
-    "최신 김재우 6/25 v2 분할 zip은 Drive 메타데이터상 14개 part가 완성됐지만, 이번 실행의 로컬 결합·CRC 검증은 shell Google OAuth fetch failed와 connector 임시 URL DNS 실패로 차단됐습니다.",
+    "최신 김재우 6/27 분할 zip은 Drive 메타데이터상 3개 part가 완성됐지만, 이번 실행의 로컬 결합·CRC 검증은 connector 임시 URL DNS 실패로 차단됐습니다.",
   ],
 };
