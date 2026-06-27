@@ -85,7 +85,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 110,
     monthlyKrw: 163350,
     paymentMethod: "AI 전용 카드",
-    note: "신규 · GPT Pro 5배",
+    note: "GPT Pro 5배",
   },
   {
     no: 4,
@@ -98,7 +98,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 110,
     monthlyKrw: 163350,
     paymentMethod: "AI 전용 카드",
-    note: "신규",
+    note: "",
   },
   {
     no: 5,
@@ -111,7 +111,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 110,
     monthlyKrw: 163350,
     paymentMethod: "AI 전용 카드",
-    note: "신규",
+    note: "",
   },
   {
     no: 6,
@@ -137,7 +137,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 110,
     monthlyKrw: 163350,
     paymentMethod: "AI 전용 카드",
-    note: "전략사업팀 신규",
+    note: "전략사업팀",
   },
   {
     no: 8,
@@ -150,7 +150,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 110,
     monthlyKrw: 163350,
     paymentMethod: "AI 전용 카드",
-    note: "신규 · 박재현 상무 전용",
+    note: "박재현 상무 전용",
   },
   {
     no: 9,
@@ -306,7 +306,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 25,
     monthlyKrw: 37125,
     paymentMethod: "AI 전용 카드",
-    note: "신규",
+    note: "",
   },
   {
     no: 21,
@@ -319,7 +319,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 125,
     monthlyKrw: 185625,
     paymentMethod: "AI 전용 카드",
-    note: "신규 · Standard에서 Premium으로 변경",
+    note: "Standard에서 Premium으로 변경",
   },
   {
     no: 22,
@@ -332,7 +332,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 25,
     monthlyKrw: 37125,
     paymentMethod: "AI 전용 카드",
-    note: "신규",
+    note: "",
   },
   {
     no: 23,
@@ -345,7 +345,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 25,
     monthlyKrw: 37125,
     paymentMethod: "AI 전용 카드",
-    note: "신규",
+    note: "",
   },
   {
     no: 24,
@@ -358,7 +358,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 25,
     monthlyKrw: 37125,
     paymentMethod: "AI 전용 카드",
-    note: "신규",
+    note: "",
   },
   {
     no: 25,
@@ -371,7 +371,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 25,
     monthlyKrw: 37125,
     paymentMethod: "AI 전용 카드",
-    note: "신규",
+    note: "",
   },
   {
     no: 26,
@@ -449,7 +449,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 15.12,
     monthlyKrw: 22453.2,
     paymentMethod: "AI 전용 카드",
-    note: "신규",
+    note: "",
   },
   {
     no: 32,
@@ -512,7 +512,7 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     "AI 전용 카드 결재가 31개 계정, 3,520,326원으로 전체 월액의 91.0%를 차지합니다.",
     "공용 법인 카드는 2개 계정, 349,153원이며 전략실 전용 Claude·Gemini 항목에 집중되어 있습니다.",
     "Claude 계열은 22개 계정, 2,472,525원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
-    "신규/변경 반영: jaewoo.kim@riskzero.kr Claude Team Premium 변경, 김재우 부장 GPT Pro 5배 추가.",
+    "변경 반영: jaewoo.kim@riskzero.kr Claude Team Premium 변경, 김재우 부장 GPT Pro 5배 추가.",
   ],
 };
 
