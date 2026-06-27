@@ -72,7 +72,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 220,
     monthlyKrw: 326700,
     paymentMethod: "AI 전용 카드",
-    note: "gpt5.5 사용 요청으로 증량",
+    note: "",
   },
   {
     no: 3,
@@ -85,7 +85,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 110,
     monthlyKrw: 163350,
     paymentMethod: "AI 전용 카드",
-    note: "GPT Pro 5배",
+    note: "",
   },
   {
     no: 4,
@@ -137,7 +137,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 110,
     monthlyKrw: 163350,
     paymentMethod: "AI 전용 카드",
-    note: "전략사업팀",
+    note: "",
   },
   {
     no: 8,
@@ -150,7 +150,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 110,
     monthlyKrw: 163350,
     paymentMethod: "AI 전용 카드",
-    note: "박재현 상무 전용",
+    note: "",
   },
   {
     no: 9,
@@ -189,7 +189,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 125,
     monthlyKrw: 185625,
     paymentMethod: "AI 전용 카드",
-    note: "Standard에서 Premium으로 변경",
+    note: "",
   },
   {
     no: 12,
@@ -228,7 +228,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 125,
     monthlyKrw: 185625,
     paymentMethod: "AI 전용 카드",
-    note: "하네스 사용 등 Advanced User",
+    note: "",
   },
   {
     no: 15,
@@ -319,7 +319,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyUsd: 125,
     monthlyKrw: 185625,
     paymentMethod: "AI 전용 카드",
-    note: "Standard에서 Premium으로 변경",
+    note: "",
   },
   {
     no: 22,
@@ -492,7 +492,7 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     sheetName: "전사 AI도구 현황조사표",
     collectedAt: "2026-06-27",
     period: "월 구독 기준 · USD 1 = 1,485원",
-    note: "계정 ID, 주사용자/부서, 구독료, 결재수단, 비고를 반영했으며 비밀번호와 이중인증 전화번호는 결재 현황 지표에서 제외",
+    note: "계정 ID, 주사용자/부서, 구독료, 결재수단을 반영했으며 비밀번호, 이중인증 전화번호, 비고 내용은 결재 현황 지표에서 제외",
   },
   exchangeRate,
   totalAccounts: records.length,

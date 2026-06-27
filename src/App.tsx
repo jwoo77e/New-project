@@ -2360,7 +2360,7 @@ function AiToolApprovalView({ approvalData }: { approvalData: AiToolApprovalData
                       {record.paymentMethod}
                     </span>
                   </td>
-                  <td>{record.note || "-"}</td>
+                  <td>{record.note}</td>
                 </tr>
               ))}
             </tbody>
