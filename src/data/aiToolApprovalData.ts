@@ -76,6 +76,19 @@ const records: AiToolApprovalRecord[] = [
   },
   {
     no: 3,
+    category: "ChatGPT",
+    tool: "chatGPT Pro(5배)",
+    account: "jaewoo.kim@riskzero.kr",
+    linkedAccount: "없음",
+    owner: "김재우 부장 / 기술연구소",
+    department: "기술연구소",
+    monthlyUsd: 110,
+    monthlyKrw: 163350,
+    paymentMethod: "AI 전용 카드",
+    note: "신규 · GPT Pro 5배",
+  },
+  {
+    no: 4,
     category: "Claude",
     tool: "Claude Pro Max 5",
     account: "조욱상 이사님 전용",
@@ -88,7 +101,7 @@ const records: AiToolApprovalRecord[] = [
     note: "신규",
   },
   {
-    no: 4,
+    no: 5,
     category: "Claude",
     tool: "Claude Pro Max 5",
     account: "이병헌 이사님 전용",
@@ -101,7 +114,7 @@ const records: AiToolApprovalRecord[] = [
     note: "신규",
   },
   {
-    no: 5,
+    no: 6,
     category: "Claude",
     tool: "Claude Pro Max 5",
     account: "infra@riskzero.kr",
@@ -114,7 +127,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 6,
+    no: 7,
     category: "Claude",
     tool: "Claude Pro Max 5",
     account: "riskzero.marketing@gmail.com",
@@ -127,7 +140,7 @@ const records: AiToolApprovalRecord[] = [
     note: "전략사업팀 신규",
   },
   {
-    no: 7,
+    no: 8,
     category: "Claude",
     tool: "Claude Pro Max 5",
     account: "박재현 상무님 전용",
@@ -140,7 +153,7 @@ const records: AiToolApprovalRecord[] = [
     note: "신규 · 박재현 상무 전용",
   },
   {
-    no: 8,
+    no: 9,
     category: "Claude",
     tool: "Claude Pro Max 20",
     account: "전략실장님 전용",
@@ -153,7 +166,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 9,
+    no: 10,
     category: "Claude",
     tool: "Claude Pro Max 20",
     account: "연구소장님 전용",
@@ -166,20 +179,20 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 10,
+    no: 11,
     category: "Claude",
-    tool: "Claude Team Plan Standard",
+    tool: "Claude Team Plan Premium",
     account: "jaewoo.kim@riskzero.kr",
     linkedAccount: "없음",
     owner: "김재우 부장 / 기술연구소",
     department: "기술연구소",
-    monthlyUsd: 25,
-    monthlyKrw: 37125,
+    monthlyUsd: 125,
+    monthlyKrw: 185625,
     paymentMethod: "AI 전용 카드",
-    note: "",
+    note: "Standard에서 Premium으로 변경",
   },
   {
-    no: 11,
+    no: 12,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "sieghaft@riskzero.kr",
@@ -192,7 +205,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 12,
+    no: 13,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "sjlim@riskzero.kr",
@@ -205,7 +218,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 13,
+    no: 14,
     category: "Claude",
     tool: "Claude Team Plan Premium",
     account: "wody@riskzero.kr",
@@ -218,7 +231,7 @@ const records: AiToolApprovalRecord[] = [
     note: "하네스 사용 등 Advanced User",
   },
   {
-    no: 14,
+    no: 15,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "mjkim1122@riskzero.kr",
@@ -231,7 +244,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 15,
+    no: 16,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "huizhen0227@riskzero.kr",
@@ -244,7 +257,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 16,
+    no: 17,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "hhlee0227@riskzero.kr",
@@ -257,7 +270,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 17,
+    no: 18,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "rkgmf1230@riskzero.kr",
@@ -270,7 +283,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 18,
+    no: 19,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "jungyr98@riskzero.kr",
@@ -283,7 +296,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 19,
+    no: 20,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "mygu@riskzero.kr",
@@ -296,7 +309,7 @@ const records: AiToolApprovalRecord[] = [
     note: "신규",
   },
   {
-    no: 20,
+    no: 21,
     category: "Claude",
     tool: "Claude Team Plan Premium",
     account: "hchbae1001@riskzero.kr",
@@ -309,7 +322,7 @@ const records: AiToolApprovalRecord[] = [
     note: "신규 · Standard에서 Premium으로 변경",
   },
   {
-    no: 21,
+    no: 22,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "staycurious@riskzero.kr",
@@ -322,7 +335,7 @@ const records: AiToolApprovalRecord[] = [
     note: "신규",
   },
   {
-    no: 22,
+    no: 23,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "woosung.jeon@riskzero.kr",
@@ -335,7 +348,7 @@ const records: AiToolApprovalRecord[] = [
     note: "신규",
   },
   {
-    no: 23,
+    no: 24,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "kys0392@riskzero.kr",
@@ -348,7 +361,7 @@ const records: AiToolApprovalRecord[] = [
     note: "신규",
   },
   {
-    no: 24,
+    no: 25,
     category: "Claude",
     tool: "Claude Team Plan Standard",
     account: "jhpark@riskzero.kr",
@@ -361,7 +374,7 @@ const records: AiToolApprovalRecord[] = [
     note: "신규",
   },
   {
-    no: 25,
+    no: 26,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "ai.marketing@riskzero.kr",
@@ -374,7 +387,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 26,
+    no: 27,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "james@riskzero.kr",
@@ -387,7 +400,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 27,
+    no: 28,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "bigone@riskzero.kr",
@@ -400,7 +413,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 28,
+    no: 29,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "riskzero@riskzero.kr",
@@ -413,7 +426,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 29,
+    no: 30,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "전략실장님 전용",
@@ -426,7 +439,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 30,
+    no: 31,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "ai.smartservice@riskzero.kr",
@@ -439,7 +452,7 @@ const records: AiToolApprovalRecord[] = [
     note: "신규",
   },
   {
-    no: 31,
+    no: 32,
     category: "Genspark",
     tool: "Genspark Pro",
     account: "riskzero.marketing@gmail.com",
@@ -452,7 +465,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 32,
+    no: 33,
     category: "Gamma",
     tool: "Gamma AI Pro",
     account: "riskzero.marketing@gmail.com",
@@ -477,7 +490,7 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     name: "사내 AI도구 결재 현황",
     fileName: "사내 AI도구 현황조사표_V3.0.xlsx",
     sheetName: "전사 AI도구 현황조사표",
-    collectedAt: "2026-06-13",
+    collectedAt: "2026-06-27",
     period: "월 구독 기준 · USD 1 = 1,485원",
     note: "계정 ID, 주사용자/부서, 구독료, 결재수단, 비고를 반영했으며 비밀번호와 이중인증 전화번호는 결재 현황 지표에서 제외",
   },
@@ -495,11 +508,11 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
   departmentSummary: summarize(records, "department", totalMonthlyKrw),
   records,
   insights: [
-    "등록된 AI 도구 결재 계정은 32개이며 월 구독료 합계는 $2,395.71 / 3,557,629원입니다.",
-    "AI 전용 카드 결재가 30개 계정, 3,208,476원으로 전체 월액의 90.1%를 차지합니다.",
+    "등록된 AI 도구 결재 계정은 33개이며 월 구독료 합계는 $2,605.71 / 3,869,479원입니다.",
+    "AI 전용 카드 결재가 31개 계정, 3,520,326원으로 전체 월액의 91.0%를 차지합니다.",
     "공용 법인 카드는 2개 계정, 349,153원이며 전략실 전용 Claude·Gemini 항목에 집중되어 있습니다.",
-    "Claude 계열은 22개 계정, 2,324,025원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
-    "신규 반영: 박재현 상무 jhpark@riskzero.kr Claude Team Standard, 박병민 상무 ai.smartservice@riskzero.kr Gemini Workspace.",
+    "Claude 계열은 22개 계정, 2,472,525원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
+    "신규/변경 반영: jaewoo.kim@riskzero.kr Claude Team Premium 변경, 김재우 부장 GPT Pro 5배 추가.",
   ],
 };
 
