@@ -1956,11 +1956,6 @@ function GensparkUsageView({
               <strong>{numberFormat.format(claudeExport.userDirectory.activeAccounts)}개</strong>
               <small>{claudeExport.userDirectory.domain} 사용자 {numberFormat.format(claudeExport.userDirectory.totalUsers)}명 중 매핑</small>
             </article>
-            <article>
-              <span>프로젝트</span>
-              <strong>{numberFormat.format(claudeExport.projectExports.length)}개</strong>
-              <small>문서 포함 프로젝트 {numberFormat.format(claudeExport.projectExports.filter((project) => project.docs > 0).length)}개</small>
-            </article>
           </div>
 
           <div className="chatgpt-export-grid compact">
@@ -1999,37 +1994,6 @@ function GensparkUsageView({
                 ))}
               </div>
             </div>
-          </div>
-
-          <div className="table-wrap claude-export-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>프로젝트</th>
-                  <th>공개 범위</th>
-                  <th>문서</th>
-                  <th>파일명</th>
-                  <th>사용/확인 내용</th>
-                </tr>
-              </thead>
-              <tbody>
-                {claudeExport.projectExports.map((project) => (
-                  <tr key={project.id}>
-                    <td>
-                      <strong>{project.name}</strong>
-                      <small>{project.id}</small>
-                    </td>
-                    <td>{project.visibility}</td>
-                    <td>{numberFormat.format(project.docs)}건</td>
-                    <td>{project.fileName}</td>
-                    <td>
-                      <span>{project.useCase}</span>
-                      <small>{project.createdAt} 생성 · {project.updatedAt} 수정 · {project.verification}</small>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
 
           <div className="insight-box">
