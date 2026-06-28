@@ -224,65 +224,6 @@ function formatApiForecastProviderSummary(forecast: ApiUsageRunRateForecast) {
   return summaries.length > 0 ? summaries.join(" · ") : "반복 API 비용 없음";
 }
 
-type ClaudeAccountIdentity = Pick<ClaudeTeamUsageData["users"][number], "displayName" | "email">;
-
-const CLAUDE_EXPORT_ACCOUNT_ALIASES = new Map<string, string>([
-  ["성진", "sieghaft"],
-]);
-
-function normalizeClaudeAccountKey(value: string) {
-  return value.trim().toLowerCase().replace(/\s+/g, "");
-}
-
-function addClaudeAccountIdentity(
-  directory: Map<string, ClaudeAccountIdentity | null>,
-  key: string,
-  identity: ClaudeAccountIdentity,
-) {
-  const normalizedKey = normalizeClaudeAccountKey(key);
-  if (!normalizedKey) return;
-
-  const existingIdentity = directory.get(normalizedKey);
-  if (existingIdentity === undefined) {
-    directory.set(normalizedKey, identity);
-    return;
-  }
-
-  if (existingIdentity && existingIdentity.email !== identity.email) {
-    directory.set(normalizedKey, null);
-  }
-}
-
-function buildClaudeAccountIdentityDirectory(claudeTeamUsageData: ClaudeTeamUsageData) {
-  const directory = new Map<string, ClaudeAccountIdentity | null>();
-
-  claudeTeamUsageData.users.forEach((user) => {
-    const identity = {
-      displayName: user.displayName,
-      email: user.email,
-    };
-    const emailLocalPart = user.email.split("@")[0];
-    const personName = user.displayName.split(/\s+/)[0];
-
-    [user.email, emailLocalPart, user.displayName, personName].forEach((key) => {
-      addClaudeAccountIdentity(directory, key, identity);
-    });
-  });
-
-  return directory;
-}
-
-function getClaudeAccountIdentity(
-  directory: Map<string, ClaudeAccountIdentity | null>,
-  accountLabel: string,
-) {
-  const normalizedLabel = normalizeClaudeAccountKey(accountLabel);
-  const alias = CLAUDE_EXPORT_ACCOUNT_ALIASES.get(accountLabel) ?? CLAUDE_EXPORT_ACCOUNT_ALIASES.get(normalizedLabel);
-  const lookupKey = alias ? normalizeClaudeAccountKey(alias) : normalizedLabel;
-  const identity = directory.get(lookupKey);
-  return identity ?? null;
-}
-
 function apiStatusTone(status: ApiProviderStatus) {
   if (status === "정상") return "ok";
   if (status === "주의") return "warning";
@@ -1105,7 +1046,6 @@ function App() {
 
       {activeView === "genspark" && (
         <GensparkUsageView
-          claudeTeamUsageData={claudeTeamUsageData}
           driveRepositoryData={driveArtifactRepositoryData}
           usageData={initialGensparkUsageData}
         />
@@ -1723,19 +1663,15 @@ function DetailView({
 }
 
 function GensparkUsageView({
-  claudeTeamUsageData,
   driveRepositoryData,
   usageData,
 }: {
-  claudeTeamUsageData: ClaudeTeamUsageData;
   driveRepositoryData: DriveArtifactRepositoryData;
   usageData: GensparkUsageData;
 }) {
   const insight = usageData.insightAnalysis;
   const claudeExport = usageData.chatGptExport;
   const topTopic = insight.topicInsights[0];
-  const claudeAccountIdentityDirectory = buildClaudeAccountIdentityDirectory(claudeTeamUsageData);
-  const maxClaudeAccountMessages = Math.max(...(claudeExport?.accountUsage.map((account) => account.messages) ?? [1]), 1);
   const maxDriveRepositoryFiles = Math.max(...driveRepositoryData.repositories.map((repository) => repository.fileCount), 1);
   const gensparkDrive = usageData.driveAnalysis;
   const maxGensparkDriveMonth = Math.max(...(gensparkDrive?.monthlyBreakdown.map((month) => month.tasks) ?? [1]), 1);
@@ -2037,32 +1973,6 @@ function GensparkUsageView({
                     <small>근거: {topic.evidence}</small>
                   </article>
                 ))}
-              </div>
-            </div>
-            <div className="chatgpt-export-column">
-              <h3>계정별 사용 확인</h3>
-              <div className="claude-account-list">
-                {claudeExport.accountUsage.map((account) => {
-                  const identity = getClaudeAccountIdentity(claudeAccountIdentityDirectory, account.accountLabel);
-
-                  return (
-                    <article key={account.accountLabel}>
-                      <div>
-                        <strong>
-                          {account.accountLabel}
-                          {identity ? ` · ${identity.displayName}` : ""}
-                        </strong>
-                        {identity ? <span>{identity.email}</span> : null}
-                        <span>{account.primaryUse}</span>
-                      </div>
-                      <b>{numberFormat.format(account.conversations)}대화</b>
-                      <div className="department-meter" aria-label={`${account.accountLabel} 메시지 비중`}>
-                        <span style={{ width: `${Math.min((account.messages / maxClaudeAccountMessages) * 100, 100)}%` }} />
-                      </div>
-                      <small>{numberFormat.format(account.messages)}메시지 · 첨부 {numberFormat.format(account.attachments)}개 · {account.verification}</small>
-                    </article>
-                  );
-                })}
               </div>
             </div>
           </div>
@@ -2509,16 +2419,6 @@ function AdoptionView({
       color: "#c58612",
     },
     {
-      name: "데이터·자동화",
-      score: Math.min(
-        20,
-        7 + readyServiceCount + (chatGptExport ? 2 : 0) + (workspaceUsageData.totalEvents > 0 ? 2 : 0) + (gammaCreditsCollected ? 3 : 0),
-      ),
-      signal: gammaCreditsCollected ? "웹 크레딧 포함" : "크레딧 세션 보완 필요",
-      note: "API, CSV, export, 웹 크롤링을 결합했지만 일부는 수동/세션 의존입니다.",
-      color: "#5f6f8c",
-    },
-    {
       name: "거버넌스·개선",
       score: Math.min(
         20,
@@ -2549,21 +2449,21 @@ function AdoptionView({
       ? `Claude Team은 ${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄의 Claude Code 활용과 ${formatTokens(claudeTeamUsageData.totalTokens)} 토큰 사용이 확인됩니다.`
       : `Claude Team은 6월 상반기 spend report에서 ${formatTokens(claudeTeamUsageData.totalTokens)} 토큰과 ${numberFormat.format(claudeTeamUsageData.totalRequests)}건 요청이 확인됩니다.`,
     `Gamma Drive 폴더에서 ${numberFormat.format(gammaDeckCount)}개 발표자료와 약 ${numberFormat.format(gammaTotalSlides)}장 분량의 스마트 안전관리 제안 산출물이 확인됩니다.`,
-    "API 비용, Workspace 이벤트, Team CSV, 작업 로그를 한 대시보드에서 함께 보는 운영 체계가 만들어졌습니다.",
+    "개발, 제안, 문서 작성, 회의록 정리처럼 실제 업무 산출물로 이어지는 활용 패턴이 확인됩니다.",
   ];
   const axGaps = [
     gammaDeckCount > 0
       ? "Gamma 산출물은 확보됐지만 유사 deck이 많아 최종본 선별과 근거 검증 태그가 필요합니다."
       : gammaCreditsCollected
-      ? "Gamma 크레딧은 웹 크롤링으로 보강됐지만 로그인 세션 만료 시 재인증이 필요합니다."
-      : "Gamma 잔여 크레딧은 아직 로그인 세션 저장 전이라 일일 자동 수집이 완전히 닫히지 않았습니다.",
-    "Claude export와 Genspark는 export/크롤링 기반이라 실시간 사용자별 활용률까지는 약합니다.",
-    "AI 사용 기록과 최종 산출물의 제출, 매출, 업무시간 절감 성과가 아직 자동 연결되지 않습니다.",
+      ? "Gamma 활용 흔적은 확인되지만 실제 제안 성과와 연결되는 최종 산출물 판별이 필요합니다."
+      : "Gamma 활용은 아직 최종 산출물 중심으로 충분히 검증되지 않았습니다.",
+    "Claude 사용 이력에는 개인/게임·생활 질의가 섞여 있어 업무 활용도와 개인 활용도를 분리해서 관리해야 합니다.",
+    "산출물 생산은 활발하지만 제출, 재사용, 고객 반응, 업무시간 절감 같은 성과 기준은 아직 약합니다.",
     "반복 업무별 프롬프트 템플릿과 검증 기준이 표준화되지 않아 재작업 가능성이 남아 있습니다.",
   ];
   const axActions = [
     "제안서, 개발 오류 해결, 회의록, 법령 검토 등 핵심 업무별 표준 프롬프트 템플릿을 만든다.",
-    "AI 사용 로그에 업무 목적, 산출물 유형, 실제 제출/배포 여부, 재사용 가능 여부 태그를 붙인다.",
+    "부서별 대표 업무 2-3개를 정해 AI 적용 전후의 산출 품질, 처리 시간, 재사용률을 비교한다.",
     "Gamma Drive 폴더의 신규 deck을 제목, 주제, 슬라이드 수, 최종본 여부로 분류해 영업 산출물 저장소로 관리한다.",
     "월 1회 AX 리뷰에서 비용, 활용량, 산출물, 보완 과제를 같은 기준으로 보고한다.",
   ];
@@ -2583,7 +2483,10 @@ function AdoptionView({
             <span>현재 수준</span>
             <strong>{axLevelScore.toFixed(1)} / 5</strong>
             <b>{axLevelLabel}</b>
-            <p>현재는 생성형 AI를 실무 산출물 생산에 쓰는 단계에서, 전사 업무 프로세스와 성과 관리로 확장하는 전환 구간입니다.</p>
+            <p>
+              현재는 산출 생산성과 일부 핵심 업무 내재화가 먼저 올라온 상태입니다.
+              전사 표준 프로세스와 성과 관리까지 닫히면 다음 단계로 넘어갈 수 있습니다.
+            </p>
             <div className="ax-score-track" aria-label={`AX 수준 ${axLevelScore.toFixed(1)}점`}>
               <span style={{ width: `${Math.min((axLevelScore / 5) * 100, 100)}%` }} />
             </div>
