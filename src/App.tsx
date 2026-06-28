@@ -1672,7 +1672,6 @@ function GensparkUsageView({
   const insight = usageData.insightAnalysis;
   const claudeExport = usageData.chatGptExport;
   const topTopic = insight.topicInsights[0];
-  const maxClaudeSourceRecords = Math.max(...(claudeExport?.sourceFiles.map((source) => source.records) ?? [1]), 1);
   const maxClaudeAccountMessages = Math.max(...(claudeExport?.accountUsage.map((account) => account.messages) ?? [1]), 1);
   const maxDriveRepositoryFiles = Math.max(...driveRepositoryData.repositories.map((repository) => repository.fileCount), 1);
   const gensparkDrive = usageData.driveAnalysis;
@@ -1942,16 +1941,11 @@ function GensparkUsageView({
               <h2>Claude 사용 이력 원천 검증</h2>
             </div>
             <div className="panel-header-side">
-              <span className="state-pill ok">전체 파일 반영</span>
+              <span className="state-pill ok">전체 이력 반영</span>
               <span className="state-pill neutral">{claudeExport.source.period}</span>
             </div>
           </div>
           <div className="claude-export-summary-grid">
-            <article>
-              <span>원천 파일</span>
-              <strong>{numberFormat.format(claudeExport.sourceFiles.length)}개</strong>
-              <small>conversations, memories, users, projects</small>
-            </article>
             <article>
               <span>대화/메시지</span>
               <strong>{numberFormat.format(claudeExport.totalConversations)}개</strong>
@@ -2005,45 +1999,6 @@ function GensparkUsageView({
                 ))}
               </div>
             </div>
-          </div>
-
-          <div className="table-wrap claude-export-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>원천 파일</th>
-                  <th>유형</th>
-                  <th>레코드</th>
-                  <th>반영 내용</th>
-                  <th>확인 기준</th>
-                </tr>
-              </thead>
-              <tbody>
-                {claudeExport.sourceFiles.map((source) => (
-                  <tr key={source.fileName}>
-                    <td>
-                      <strong>{source.fileName}</strong>
-                    </td>
-                    <td>{source.sourceType}</td>
-                    <td>
-                      <div className="usage-meter-cell">
-                        <strong>{numberFormat.format(source.records)}건</strong>
-                        <div className="department-meter" aria-label={`${source.fileName} 레코드 수`}>
-                          <span style={{ width: `${Math.min((source.records / maxClaudeSourceRecords) * 100, 100)}%` }} />
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span>{source.role}</span>
-                      <small>{source.detail}</small>
-                    </td>
-                    <td>
-                      <span>{source.verification}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
 
           <div className="table-wrap claude-export-table">
