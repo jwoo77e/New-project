@@ -224,6 +224,65 @@ function formatApiForecastProviderSummary(forecast: ApiUsageRunRateForecast) {
   return summaries.length > 0 ? summaries.join(" · ") : "반복 API 비용 없음";
 }
 
+type ClaudeAccountIdentity = Pick<ClaudeTeamUsageData["users"][number], "displayName" | "email">;
+
+const CLAUDE_EXPORT_ACCOUNT_ALIASES = new Map<string, string>([
+  ["성진", "sieghaft"],
+]);
+
+function normalizeClaudeAccountKey(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, "");
+}
+
+function addClaudeAccountIdentity(
+  directory: Map<string, ClaudeAccountIdentity | null>,
+  key: string,
+  identity: ClaudeAccountIdentity,
+) {
+  const normalizedKey = normalizeClaudeAccountKey(key);
+  if (!normalizedKey) return;
+
+  const existingIdentity = directory.get(normalizedKey);
+  if (existingIdentity === undefined) {
+    directory.set(normalizedKey, identity);
+    return;
+  }
+
+  if (existingIdentity && existingIdentity.email !== identity.email) {
+    directory.set(normalizedKey, null);
+  }
+}
+
+function buildClaudeAccountIdentityDirectory(claudeTeamUsageData: ClaudeTeamUsageData) {
+  const directory = new Map<string, ClaudeAccountIdentity | null>();
+
+  claudeTeamUsageData.users.forEach((user) => {
+    const identity = {
+      displayName: user.displayName,
+      email: user.email,
+    };
+    const emailLocalPart = user.email.split("@")[0];
+    const personName = user.displayName.split(/\s+/)[0];
+
+    [user.email, emailLocalPart, user.displayName, personName].forEach((key) => {
+      addClaudeAccountIdentity(directory, key, identity);
+    });
+  });
+
+  return directory;
+}
+
+function getClaudeAccountIdentity(
+  directory: Map<string, ClaudeAccountIdentity | null>,
+  accountLabel: string,
+) {
+  const normalizedLabel = normalizeClaudeAccountKey(accountLabel);
+  const alias = CLAUDE_EXPORT_ACCOUNT_ALIASES.get(accountLabel) ?? CLAUDE_EXPORT_ACCOUNT_ALIASES.get(normalizedLabel);
+  const lookupKey = alias ? normalizeClaudeAccountKey(alias) : normalizedLabel;
+  const identity = directory.get(lookupKey);
+  return identity ?? null;
+}
+
 function apiStatusTone(status: ApiProviderStatus) {
   if (status === "정상") return "ok";
   if (status === "주의") return "warning";
@@ -1046,6 +1105,7 @@ function App() {
 
       {activeView === "genspark" && (
         <GensparkUsageView
+          claudeTeamUsageData={claudeTeamUsageData}
           driveRepositoryData={driveArtifactRepositoryData}
           usageData={initialGensparkUsageData}
         />
@@ -1663,15 +1723,18 @@ function DetailView({
 }
 
 function GensparkUsageView({
+  claudeTeamUsageData,
   driveRepositoryData,
   usageData,
 }: {
+  claudeTeamUsageData: ClaudeTeamUsageData;
   driveRepositoryData: DriveArtifactRepositoryData;
   usageData: GensparkUsageData;
 }) {
   const insight = usageData.insightAnalysis;
   const claudeExport = usageData.chatGptExport;
   const topTopic = insight.topicInsights[0];
+  const claudeAccountIdentityDirectory = buildClaudeAccountIdentityDirectory(claudeTeamUsageData);
   const maxClaudeAccountMessages = Math.max(...(claudeExport?.accountUsage.map((account) => account.messages) ?? [1]), 1);
   const maxDriveRepositoryFiles = Math.max(...driveRepositoryData.repositories.map((repository) => repository.fileCount), 1);
   const gensparkDrive = usageData.driveAnalysis;
@@ -1979,19 +2042,27 @@ function GensparkUsageView({
             <div className="chatgpt-export-column">
               <h3>계정별 사용 확인</h3>
               <div className="claude-account-list">
-                {claudeExport.accountUsage.map((account) => (
-                  <article key={account.accountLabel}>
-                    <div>
-                      <strong>{account.accountLabel}</strong>
-                      <span>{account.primaryUse}</span>
-                    </div>
-                    <b>{numberFormat.format(account.conversations)}대화</b>
-                    <div className="department-meter" aria-label={`${account.accountLabel} 메시지 비중`}>
-                      <span style={{ width: `${Math.min((account.messages / maxClaudeAccountMessages) * 100, 100)}%` }} />
-                    </div>
-                    <small>{numberFormat.format(account.messages)}메시지 · 첨부 {numberFormat.format(account.attachments)}개 · {account.verification}</small>
-                  </article>
-                ))}
+                {claudeExport.accountUsage.map((account) => {
+                  const identity = getClaudeAccountIdentity(claudeAccountIdentityDirectory, account.accountLabel);
+
+                  return (
+                    <article key={account.accountLabel}>
+                      <div>
+                        <strong>
+                          {account.accountLabel}
+                          {identity ? ` · ${identity.displayName}` : ""}
+                        </strong>
+                        {identity ? <span>{identity.email}</span> : null}
+                        <span>{account.primaryUse}</span>
+                      </div>
+                      <b>{numberFormat.format(account.conversations)}대화</b>
+                      <div className="department-meter" aria-label={`${account.accountLabel} 메시지 비중`}>
+                        <span style={{ width: `${Math.min((account.messages / maxClaudeAccountMessages) * 100, 100)}%` }} />
+                      </div>
+                      <small>{numberFormat.format(account.messages)}메시지 · 첨부 {numberFormat.format(account.attachments)}개 · {account.verification}</small>
+                    </article>
+                  );
+                })}
               </div>
             </div>
           </div>
