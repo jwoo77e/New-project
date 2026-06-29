@@ -5,6 +5,7 @@ import {
   buildGeminiBillingProjectFilter,
   parseGammaGenerationIds,
   parseClaudeCosts,
+  resolveAnthropicAdminKeys,
   resolveGeminiMonitoringProjectIds,
   resolveGeminiBillingUsageProjectIds,
 } from "./fetch-api-usage.mjs";
@@ -83,6 +84,42 @@ describe("Gemini billing project filters", () => {
 });
 
 describe("Claude cost parsing", () => {
+  it("resolves multiple Anthropic admin keys with dashboard labels", () => {
+    const keys = resolveAnthropicAdminKeys({
+      ANTHROPIC_ADMIN_API_KEY: "admin-key-a",
+      ANTHROPIC_ADMIN_API_KEY_LABEL: "리스크제로",
+      ANTHROPIC_ADMIN_API_KEY_2: "admin-key-b",
+      ANTHROPIC_ADMIN_API_KEY_2_LABEL: "스마트서비스",
+    });
+
+    expect(keys).toEqual([
+      {
+        key: "admin-key-a",
+        label: "리스크제로",
+        sourceEnvName: "ANTHROPIC_ADMIN_API_KEY",
+      },
+      {
+        key: "admin-key-b",
+        label: "스마트서비스",
+        sourceEnvName: "ANTHROPIC_ADMIN_API_KEY_2",
+      },
+    ]);
+  });
+
+  it("deduplicates Anthropic admin keys from numbered and bulk env values", () => {
+    const keys = resolveAnthropicAdminKeys({
+      ANTHROPIC_ADMIN_API_KEY_1: "admin-key-a",
+      ANTHROPIC_ADMIN_API_KEY_1_LABEL: "첫번째",
+      ANTHROPIC_ADMIN_API_KEYS: "admin-key-a,admin-key-b",
+      ANTHROPIC_ADMIN_API_KEY_LABELS: "중복,두번째",
+    });
+
+    expect(keys.map((key) => `${key.sourceEnvName}:${key.label}:${key.key}`)).toEqual([
+      "ANTHROPIC_ADMIN_API_KEY_1:첫번째:admin-key-a",
+      "ANTHROPIC_ADMIN_API_KEYS:두번째:admin-key-b",
+    ]);
+  });
+
   it("converts Anthropic Admin Cost API cent amounts into USD", () => {
     const costs = parseClaudeCosts({
       data: [

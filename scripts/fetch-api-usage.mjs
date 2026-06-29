@@ -66,7 +66,7 @@ export async function collectApiUsage({
   const [openai, gemini, claude, workspaceUsage, gammaUsage] = await Promise.all([
     collectOpenAI(env.OPENAI_ADMIN_KEY),
     collectGemini(env.GEMINI_API_KEY, env),
-    collectClaude(env.ANTHROPIC_ADMIN_API_KEY),
+    collectClaude(resolveAnthropicAdminKeys(env)),
     collectGeminiWorkspaceUsage(env),
     collectGamma(env.GAMMA_API_KEY, env),
   ]);
@@ -104,7 +104,7 @@ export async function collectApiUsage({
     providers,
     dailyUsage,
     models: [...openai.models, ...gemini.models, ...claude.models].sort((a, b) => b.costUsd - a.costUsd),
-    keyHealth: [openai.keyHealth, gemini.keyHealth, claude.keyHealth],
+    keyHealth: [openai.keyHealth, gemini.keyHealth, ...keyHealthRows(claude)],
     workspaceUsage,
     gammaUsage,
   };
@@ -322,10 +322,80 @@ async function collectGemini(apiKey, env) {
   };
 }
 
-async function collectClaude(apiKey) {
-  const providerName = "Claude";
-  if (!apiKey) return missingProvider(providerName, "ANTHROPIC_ADMIN_API_KEY가 없습니다.");
+export function resolveAnthropicAdminKeys(env = {}) {
+  const entries = [];
+  const seen = new Set();
 
+  const addEntry = ({ apiKey, label, sourceEnvName }) => {
+    const key = String(apiKey ?? "").trim();
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    entries.push({
+      key,
+      label: String(label ?? "").trim() || `Claude Admin ${entries.length + 1}`,
+      sourceEnvName,
+    });
+  };
+
+  addEntry({
+    apiKey: env.ANTHROPIC_ADMIN_API_KEY,
+    label: env.ANTHROPIC_ADMIN_API_KEY_LABEL ?? "Claude Admin 1",
+    sourceEnvName: "ANTHROPIC_ADMIN_API_KEY",
+  });
+
+  addEntry({
+    apiKey: env.ANTHROPIC_ADMIN_API_KEY_1,
+    label: env.ANTHROPIC_ADMIN_API_KEY_1_LABEL ?? env.ANTHROPIC_ADMIN_API_KEY_LABEL ?? "Claude Admin 1",
+    sourceEnvName: "ANTHROPIC_ADMIN_API_KEY_1",
+  });
+
+  Object.keys(env)
+    .map((key) => key.match(/^ANTHROPIC_ADMIN_API_KEY_(\d+)$/)?.[1])
+    .filter(Boolean)
+    .map(Number)
+    .filter((index) => index > 1)
+    .sort((a, b) => a - b)
+    .forEach((index) => {
+      addEntry({
+        apiKey: env[`ANTHROPIC_ADMIN_API_KEY_${index}`],
+        label: env[`ANTHROPIC_ADMIN_API_KEY_${index}_LABEL`] ?? `Claude Admin ${index}`,
+        sourceEnvName: `ANTHROPIC_ADMIN_API_KEY_${index}`,
+      });
+    });
+
+  const bulkKeys = splitEnvList(env.ANTHROPIC_ADMIN_API_KEYS);
+  const bulkLabels = splitLabelList(env.ANTHROPIC_ADMIN_API_KEY_LABELS);
+  bulkKeys.forEach((apiKey, index) => {
+    addEntry({
+      apiKey,
+      label: bulkLabels[index] ?? `Claude Admin ${entries.length + 1}`,
+      sourceEnvName: "ANTHROPIC_ADMIN_API_KEYS",
+    });
+  });
+
+  return entries;
+}
+
+async function collectClaude(adminKeys) {
+  const providerName = "Claude";
+  const keys = Array.isArray(adminKeys) ? adminKeys : [];
+  if (keys.length === 0) {
+    return missingProvider(providerName, "ANTHROPIC_ADMIN_API_KEY 또는 ANTHROPIC_ADMIN_API_KEY_2가 없습니다.");
+  }
+
+  const results = await Promise.all(keys.map((adminKey, index) => collectClaudeAdminKey(adminKey, index + 1)));
+  if (results.length === 1) {
+    return {
+      ...results[0],
+      keyHealth: [results[0].keyHealth],
+    };
+  }
+
+  return aggregateClaudeAdminResults(results, keys.length);
+}
+
+async function collectClaudeAdminKey(adminKey, index) {
+  const providerName = "Claude";
   const usageUrl = new URL("https://api.anthropic.com/v1/organizations/usage_report/messages");
   usageUrl.searchParams.set("starting_at", startingAt.toISOString());
   usageUrl.searchParams.set("ending_at", endingAt.toISOString());
@@ -338,13 +408,36 @@ async function collectClaude(apiKey) {
 
   const headers = {
     "anthropic-version": "2023-06-01",
-    "x-api-key": apiKey,
+    "x-api-key": adminKey.key,
   };
   const usageResult = await getJson(usageUrl, { headers });
   const costResult = await getJson(costUrl, { headers });
+  const keyName = `claude-admin-${index}: ${adminKey.label}`;
 
   if (!usageResult.ok && !costResult.ok) {
-    return errorProvider(providerName, "Claude Admin API 조회 실패", usageResult.error ?? costResult.error);
+    const error = usageResult.error ?? costResult.error;
+    return {
+      provider: makeProvider({
+        provider: providerName,
+        label: "Claude API",
+        requests: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        costUsd: 0,
+        activeKeys: 1,
+        status: "주의",
+        note: `${adminKey.label} Claude Admin API 조회 실패: ${shortenError(error)}`,
+      }),
+      daily: new Map(dayBuckets.map((bucket) => [bucket.date, emptyDaily()])),
+      models: [],
+      keyHealth: makeKeyHealth(providerName, {
+        name: keyName,
+        scope: "admin usage, costs",
+        requests: 0,
+        status: "확인필요",
+        note: `${adminKey.sourceEnvName}: ${shortenError(error)}`,
+      }),
+    };
   }
 
   const usage = usageResult.ok ? parseClaudeUsage(usageResult.data) : emptyUsage();
@@ -375,17 +468,72 @@ async function collectClaude(apiKey) {
       costUsd: costs.totalCostUsd,
       activeKeys: 1,
       status: "정상",
-      note: usageResult.ok ? "Admin Usage/Cost API 수집 완료" : "Cost API만 수집됨",
+      note: usageResult.ok
+        ? `${adminKey.label} Admin Usage/Cost API 수집 완료`
+        : `${adminKey.label} Cost API만 수집됨`,
     }),
     daily,
     models,
     keyHealth: makeKeyHealth(providerName, {
-      name: "claude-admin",
+      name: keyName,
       scope: "admin usage, costs",
       requests: usage.totalRequests,
       status: "정상",
-      note: "환경변수에서만 읽음",
+      note: `${adminKey.sourceEnvName}에서만 읽음`,
     }),
+  };
+}
+
+function aggregateClaudeAdminResults(results, activeKeys) {
+  const providerName = "Claude";
+  const totals = results.reduce(
+    (sum, result) => ({
+      requests: sum.requests + result.provider.requests,
+      inputTokens: sum.inputTokens + result.provider.inputTokens,
+      outputTokens: sum.outputTokens + result.provider.outputTokens,
+      costUsd: sum.costUsd + result.provider.costUsd,
+      ok: sum.ok + (result.provider.status === "정상" ? 1 : 0),
+    }),
+    { requests: 0, inputTokens: 0, outputTokens: 0, costUsd: 0, ok: 0 },
+  );
+
+  const daily = new Map();
+  for (const bucket of dayBuckets) {
+    const mergedDay = results.reduce((sum, result) => {
+      const day = result.daily.get(bucket.date) ?? emptyDaily();
+      return {
+        requests: sum.requests + day.requests,
+        tokens: sum.tokens + day.tokens,
+        costUsd: sum.costUsd + day.costUsd,
+      };
+    }, emptyDaily());
+    daily.set(bucket.date, {
+      ...mergedDay,
+      costUsd: roundMoney(mergedDay.costUsd),
+    });
+  }
+
+  const status = totals.ok === results.length ? "정상" : totals.ok > 0 ? "주의" : "주의";
+  const note =
+    totals.ok === results.length
+      ? `${results.length}개 Claude Admin 키 수집 완료`
+      : `${results.length}개 Claude Admin 키 중 ${totals.ok}개 수집 완료`;
+
+  return {
+    provider: makeProvider({
+      provider: providerName,
+      label: "Claude API",
+      requests: totals.requests,
+      inputTokens: totals.inputTokens,
+      outputTokens: totals.outputTokens,
+      costUsd: totals.costUsd,
+      activeKeys,
+      status,
+      note,
+    }),
+    daily,
+    models: combineModelRows(results.flatMap((result) => result.models)),
+    keyHealth: results.map((result) => result.keyHealth),
   };
 }
 
@@ -1421,6 +1569,34 @@ function makeKeyHealth(provider, { name, scope, requests, status, note }) {
   };
 }
 
+function keyHealthRows(result) {
+  return Array.isArray(result.keyHealth) ? result.keyHealth : [result.keyHealth];
+}
+
+function combineModelRows(models) {
+  const combined = new Map();
+  for (const model of models) {
+    const key = `${model.provider}:${model.model}`;
+    const current = combined.get(key) ?? {
+      provider: model.provider,
+      model: model.model,
+      requests: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+      costUsd: 0,
+      avgLatencyMs: 0,
+      errorRate: 0,
+    };
+    current.requests += model.requests;
+    current.inputTokens += model.inputTokens;
+    current.outputTokens += model.outputTokens;
+    current.costUsd = roundMoney(current.costUsd + model.costUsd);
+    combined.set(key, current);
+  }
+
+  return [...combined.values()].sort((a, b) => b.costUsd - a.costUsd || b.requests - a.requests);
+}
+
 function missingProvider(provider, note) {
   return {
     provider: makeProvider({
@@ -1714,6 +1890,20 @@ function formatKoreanTimestamp(date) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+function splitEnvList(value) {
+  return String(value ?? "")
+    .split(/[,\s]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function splitLabelList(value) {
+  return String(value ?? "")
+    .split(/[,\n]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 function shortenError(error) {
