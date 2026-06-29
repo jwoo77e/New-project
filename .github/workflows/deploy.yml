@@ -39,6 +39,9 @@ jobs:
       - name: Build
         env:
           ANTHROPIC_ADMIN_API_KEY: ${{ secrets.ANTHROPIC_ADMIN_API_KEY }}
+          ANTHROPIC_ADMIN_API_KEY_LABEL: ${{ secrets.ANTHROPIC_ADMIN_API_KEY_LABEL }}
+          ANTHROPIC_ADMIN_API_KEY_2: ${{ secrets.ANTHROPIC_ADMIN_API_KEY_2 }}
+          ANTHROPIC_ADMIN_API_KEY_2_LABEL: ${{ secrets.ANTHROPIC_ADMIN_API_KEY_2_LABEL }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}

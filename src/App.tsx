@@ -1348,20 +1348,14 @@ function MonthlyView({
                 <th>월</th>
                 <th>구분</th>
                 <th>실제 비용</th>
-                <th>예측 제외</th>
-                <th>실적 보정 기준</th>
                 <th>현재 월 고정비</th>
-                <th>API 실측/예산</th>
-                <th>API/고정비 반영</th>
                 <th>건수</th>
                 <th>고정비 기준</th>
-                <th>차이</th>
               </tr>
             </thead>
             <tbody>
               {monthlySeries.map((row) => {
                 const value = row.actual ?? row.forecast ?? row.operatingPlanForecast ?? 0;
-                const comparisonValue = row.forecastWithApi ?? row.forecastBasis ?? value;
                 return (
                   <tr key={row.label}>
                     <td>{row.label}</td>
@@ -1369,17 +1363,9 @@ function MonthlyView({
                       <span className={`run-status ${row.status}`}>{row.status}</span>
                     </td>
                     <td>{formatWon(value)}</td>
-                    <td>{row.adjustment === null ? "-" : formatWon(row.adjustment)}</td>
-                    <td>{row.forecastBasis === null ? "-" : formatWon(row.forecastBasis)}</td>
                     <td>{row.operatingPlanForecast === null ? "-" : formatWon(row.operatingPlanForecast)}</td>
-                    <td>
-                      {row.apiUsageForecast === null ? "-" : formatWon(row.apiUsageForecast)}
-                      {row.apiSourceLabel ? <small>{row.apiSourceLabel}</small> : null}
-                    </td>
-                    <td>{row.forecastWithApi === null ? "-" : formatWon(row.forecastWithApi)}</td>
                     <td>{row.transactions ?? "-"}</td>
                     <td>{formatWon(row.fixedPlan)}</td>
-                    <td>{formatWon(comparisonValue - row.fixedPlan)}</td>
                   </tr>
                 );
               })}
