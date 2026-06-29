@@ -611,3 +611,31 @@ export function isApiUsageData(value: unknown): value is ApiUsageData {
     Array.isArray(candidate.keyHealth)
   );
 }
+
+export function selectPreferredApiUsageData(current: ApiUsageData, candidate: ApiUsageData): ApiUsageData {
+  const currentClaudeCoverage = getClaudeAdminCoverage(current);
+  const candidateClaudeCoverage = getClaudeAdminCoverage(candidate);
+
+  if (candidateClaudeCoverage > currentClaudeCoverage) return candidate;
+  if (candidateClaudeCoverage < currentClaudeCoverage) return current;
+
+  if (isRuntimeApiSnapshot(candidate) && !isRuntimeApiSnapshot(current)) return candidate;
+  if (isCollectedApiSnapshot(candidate) && !isCollectedApiSnapshot(current)) return candidate;
+
+  return current;
+}
+
+function getClaudeAdminCoverage(data: ApiUsageData) {
+  const providerActiveKeys = data.providers.find((provider) => provider.provider === "Claude")?.activeKeys ?? 0;
+  const keyHealthRows = data.keyHealth.filter((key) => key.provider === "Claude" && key.name.startsWith("claude-admin"))
+    .length;
+  return Math.max(providerActiveKeys, keyHealthRows);
+}
+
+function isRuntimeApiSnapshot(data: ApiUsageData) {
+  return data.source.mode.includes("운영 런타임");
+}
+
+function isCollectedApiSnapshot(data: ApiUsageData) {
+  return !data.source.generatedAt.includes("연동 전") && !data.source.mode.includes("연동 대기");
+}

@@ -38,6 +38,7 @@ import {
 import {
   initialApiUsageData,
   isApiUsageData,
+  selectPreferredApiUsageData,
   type ApiKeyStatusValue,
   type ApiProviderStatus,
   type ApiUsageData,
@@ -398,17 +399,19 @@ function App() {
 
   useEffect(() => {
     let isMounted = true;
-    const snapshotUrls = ["/api/api-usage", `${import.meta.env.BASE_URL}api-usage-snapshot.local.json`];
+    const snapshotUrls = [`${import.meta.env.BASE_URL}api-usage-snapshot.local.json`, "/api/api-usage"];
 
     async function loadApiUsageData() {
+      let preferredSnapshot = initialApiUsageData;
+
       for (const url of snapshotUrls) {
         try {
           const response = await fetch(url, { cache: "no-store" });
           if (!response.ok) continue;
           const data: unknown = await response.json();
           if (isApiUsageData(data)) {
-            if (isMounted) setApiUsageData(data);
-            return;
+            preferredSnapshot = selectPreferredApiUsageData(preferredSnapshot, data);
+            if (isMounted) setApiUsageData(preferredSnapshot);
           }
         } catch {
           // The runtime API is optional for static deployments; try the next source.
