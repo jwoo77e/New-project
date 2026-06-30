@@ -57,6 +57,10 @@ const knownDepartmentMap: Record<string, { name: string; note: string }> = {
     name: "기술연구소(단독)",
     note: "개인/단독 AI 도구 사용료",
   },
+  기술연구소: {
+    name: "기술연구소(단독)",
+    note: "개인/단독 AI 도구 사용료",
+  },
 };
 
 const fallbackDepartments = [

@@ -146,4 +146,42 @@ describe("dashboardDataFromSheets", () => {
       ["Ollama", 31682],
     ]);
   });
+
+  it("groups 기술연구소 source rows into the existing 기술연구소 단독 department bucket", () => {
+    const data = dashboardDataFromSheets("2026년_5월_법인카드_AI.xlsx", [
+      {
+        sheet: "2026년 5월",
+        data: [
+          ["승인일자", "카드명", "전표적요", "승인금액", "가맹점", "차변계정", "부서", "월"],
+          [
+            "2026-05-12",
+            "하나카드기명식",
+            "AX업무 클루드사용료",
+            213160,
+            "CLAUDE.AI SUBSCRIPTION SAN FRANCISCO USA",
+            "지급수수료",
+            "김대일",
+            "5월",
+          ],
+          [
+            "2026-05-21",
+            "하나카드",
+            "chatGPT Pro 20x 사용료",
+            341560,
+            "OPENAI OPCO, LLC",
+            "지급수수료",
+            "기술연구소",
+            "5월",
+          ],
+        ],
+      },
+    ]);
+
+    expect(data.departmentCosts.find((row) => row.name === "기술연구소(단독)")).toMatchObject({
+      sourceName: "김대일",
+      transactions: 2,
+      total: 554720,
+      monthly: { "2026-05": 554720 },
+    });
+  });
 });
