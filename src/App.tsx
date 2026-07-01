@@ -57,6 +57,7 @@ import {
   initialGensparkUsageData,
   type GensparkUsageData,
 } from "./data/gensparkUsageData";
+import { chatGptUsageData } from "./data/chatGptUsageData";
 import { gammaDriveUsageData } from "./data/gammaDriveUsageData";
 import {
   driveArtifactRepositoryData,
@@ -500,6 +501,7 @@ function App() {
   const claudeTeamUsageData = initialClaudeTeamUsageData;
   const aiToolApprovalData = initialAiToolApprovalData;
   const aiUsageInsight = initialGensparkUsageData.insightAnalysis;
+  const detailedUsageRecords = aiUsageInsight.totalRecords + chatGptUsageData.totalConversations;
   const driveArtifactsByOwner = driveArtifactRepositoryData.repositories
     .map((repository) => `${repository.owner} ${numberFormat.format(repository.fileCount)}개`)
     .join(" · ");
@@ -964,8 +966,8 @@ function App() {
             icon={<Sparkles size={21} />}
             label="통합 분석 대상"
             tone="teal"
-            value={`${numberFormat.format(aiUsageInsight.totalRecords)}건`}
-            footer="작업·대화 로그를 업무 주제 기준으로 재분류"
+            value={`${numberFormat.format(detailedUsageRecords)}건`}
+            footer={`ChatGPT ${numberFormat.format(chatGptUsageData.totalConversations)}대화 + 기존 ${numberFormat.format(aiUsageInsight.totalRecords)}건`}
           />
           <MetricCard
             icon={<Search size={21} />}
@@ -980,6 +982,13 @@ function App() {
             tone="amber"
             value={`${numberFormat.format(driveArtifactRepositoryData.totals.files)}개`}
             footer={`${driveArtifactsByOwner} · zip 내부 ${numberFormat.format(driveArtifactRepositoryData.zipAnalysisPipeline.totals.extractedFiles)}개`}
+          />
+          <MetricCard
+            icon={<Bot size={21} />}
+            label="ChatGPT Export"
+            tone="steel"
+            value={`${numberFormat.format(chatGptUsageData.totalConversations)}대화`}
+            footer={`${numberFormat.format(chatGptUsageData.totalMessages)} messages · 자산 ${numberFormat.format(chatGptUsageData.conversationAssetFiles)}개`}
           />
         </section>
       ) : (
@@ -1661,6 +1670,15 @@ function GensparkUsageView({
   const insight = usageData.insightAnalysis;
   const claudeExport = usageData.chatGptExport;
   const topTopic = insight.topicInsights[0];
+  const chatGptTopTopic = chatGptUsageData.topicInsights[0];
+  const maxChatGptMonthConversations = Math.max(
+    ...chatGptUsageData.monthlyUsage.map((month) => month.conversations),
+    1,
+  );
+  const maxChatGptModelMessages = Math.max(
+    ...chatGptUsageData.modelUsage.map((model) => model.messages),
+    1,
+  );
   const maxDriveRepositoryFiles = Math.max(...driveRepositoryData.repositories.map((repository) => repository.fileCount), 1);
   const gensparkDrive = usageData.driveAnalysis;
   const maxGensparkDriveMonth = Math.max(...(gensparkDrive?.monthlyBreakdown.map((month) => month.tasks) ?? [1]), 1);
@@ -1743,6 +1761,145 @@ function GensparkUsageView({
               <strong>{summary}</strong>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">ChatGPT Export Audit</span>
+            <h2>ChatGPT 사용 내용 분석</h2>
+          </div>
+          <div className="panel-header-side">
+            <span className="state-pill ok">{chatGptUsageData.source.status}</span>
+            <span className="state-pill neutral">{chatGptUsageData.source.period}</span>
+          </div>
+        </div>
+        <p className="insight-lead">
+          ChatGPT는 주로 <strong>{chatGptTopTopic?.topic ?? "업무 분석"}</strong>에 쓰였고, 대화 기준 업무성
+          사용 비중은 <strong>{formatRate(chatGptUsageData.businessConversationShare)}</strong>입니다.
+        </p>
+        <div className="claude-export-summary-grid">
+          <article>
+            <span>대화/메시지</span>
+            <strong>{numberFormat.format(chatGptUsageData.totalConversations)}개</strong>
+            <small>
+              {numberFormat.format(chatGptUsageData.totalMessages)}메시지 · 활성 {numberFormat.format(chatGptUsageData.activeDays)}일
+            </small>
+          </article>
+          <article>
+            <span>업무성 사용</span>
+            <strong>{formatRate(chatGptUsageData.businessConversationShare)}</strong>
+            <small>개인·생활 질의 {formatRate(chatGptUsageData.topicInsights.find((topic) => topic.topic === "개인·생활/비업무")?.share ?? 0)}</small>
+          </article>
+          <article>
+            <span>파일 신호</span>
+            <strong>{numberFormat.format(chatGptUsageData.conversationAssetFiles)}개</strong>
+            <small>라이브러리 {numberFormat.format(chatGptUsageData.libraryFiles)}개 · ready {numberFormat.format(chatGptUsageData.readyLibraryFiles)}개</small>
+          </article>
+          <article>
+            <span>업무 시간 사용</span>
+            <strong>{formatRate(chatGptUsageData.workHourMessageShare)}</strong>
+            <small>09~18시 메시지 기준</small>
+          </article>
+        </div>
+
+        <div className="chatgpt-export-grid compact">
+          <div className="chatgpt-export-column">
+            <h3>어디에 쓰이고 있나</h3>
+            <div className="claude-topic-list">
+              {chatGptUsageData.topicInsights.map((topic) => (
+                <article className="claude-topic-item" key={topic.topic}>
+                  <MeterRow
+                    color={topic.color}
+                    label={`${topic.topic} · ${numberFormat.format(topic.conversations)}대화`}
+                    value={topic.share}
+                    valueLabel={`${numberFormat.format(topic.messages)}메시지 · ${formatRate(topic.share)}`}
+                  />
+                  <small>{topic.businessUse}</small>
+                  <small>근거: {topic.evidence}</small>
+                </article>
+              ))}
+            </div>
+          </div>
+          <div className="chatgpt-export-column">
+            <h3>월별 사용 흐름</h3>
+            <div className="claude-topic-list">
+              {chatGptUsageData.monthlyUsage.map((month) => (
+                <MeterRow
+                  color="#0f8b8d"
+                  key={month.month}
+                  label={`${month.month} · ${numberFormat.format(month.messages)}메시지`}
+                  value={(month.conversations / maxChatGptMonthConversations) * 100}
+                  valueLabel={`${numberFormat.format(month.conversations)}대화`}
+                />
+              ))}
+            </div>
+            <h3 className="section-subtitle">주요 모델</h3>
+            <div className="claude-topic-list">
+              {chatGptUsageData.modelUsage.slice(0, 6).map((model) => (
+                <MeterRow
+                  color="#5f6f8c"
+                  key={model.model}
+                  label={model.model}
+                  value={(model.messages / maxChatGptModelMessages) * 100}
+                  valueLabel={`${numberFormat.format(model.messages)}응답 · ${formatRate(model.share)}`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="drive-summary-grid">
+          {chatGptUsageData.fileSignals.map((signal) => (
+            <article key={signal.label}>
+              <span>{signal.label}</span>
+              <strong>{numberFormat.format(signal.value)}개</strong>
+              <small>{signal.note}</small>
+            </article>
+          ))}
+        </div>
+
+        <div className="table-wrap claude-export-table">
+          <table>
+            <thead>
+              <tr>
+                <th>대표 대화</th>
+                <th>일자</th>
+                <th>분류</th>
+                <th>메시지</th>
+                <th>첨부 참조</th>
+              </tr>
+            </thead>
+            <tbody>
+              {chatGptUsageData.representativeThreads.map((thread) => (
+                <tr key={`${thread.date}-${thread.title}`}>
+                  <td>
+                    <strong>{thread.title}</strong>
+                    <small>{thread.signal}</small>
+                  </td>
+                  <td>{thread.date}</td>
+                  <td>{thread.category}</td>
+                  <td>{numberFormat.format(thread.messages)}</td>
+                  <td>{numberFormat.format(thread.attachmentRefs)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="insight-box">
+          <FileText size={18} />
+          <div>
+            <strong>{chatGptUsageData.source.name}</strong>
+            <span>{chatGptUsageData.source.note}</span>
+            {chatGptUsageData.insights.map((insightText) => (
+              <span key={insightText}>{insightText}</span>
+            ))}
+            {chatGptUsageData.caveats.map((caveat) => (
+              <span key={caveat}>주의: {caveat}</span>
+            ))}
+          </div>
         </div>
       </section>
 

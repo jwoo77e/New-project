@@ -1113,6 +1113,10 @@ h2 {
   font-size: 0.95rem;
 }
 
+.section-subtitle {
+  margin-top: 18px !important;
+}
+
 .chatgpt-month-grid {
   display: grid;
   gap: 8px;
