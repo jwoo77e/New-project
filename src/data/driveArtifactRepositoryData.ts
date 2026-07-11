@@ -508,38 +508,38 @@ const jaewooArtifacts: DriveArtifact[] = [
 ];
 
 const jaewooZipFolderUrl = "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link";
-const jaewooZipModifiedAt = "2026-07-09T23:11:25.906Z";
+const jaewooZipModifiedAt = "2026-07-10T23:14:15.004Z";
 
 const jaewooZipArtifacts: DriveArtifact[] = [
   {
-    title: "2026-07-10 / AX_2026-07-10",
-    url: "https://docs.google.com/document/d/1GI3EW8Wbv29XUtscuTnbAS3XeRvaQStuNRkeBDqXbcg/edit?usp=drivesdk",
+    title: "2026-07-11 / AX_2026-07-11",
+    url: "https://docs.google.com/document/d/1mZqiQtrG5meo_AUtDkJ4VNyxn_SYLq7PrX9Sx99Q_U0/edit?usp=drivesdk",
     mimeType: "application/vnd.google-apps.document",
-    createdAt: "2026-07-09T23:11:24.411Z",
-    modifiedAt: "2026-07-09T23:11:25.906Z",
+    createdAt: "2026-07-10T23:14:13.664Z",
+    modifiedAt: "2026-07-10T23:14:15.004Z",
     kind: "프롬프트+응답",
     useCase: "AX 운영·KPI",
-    usageSignal: "7월 10일 AX 전환 현황판은 Chrome 확장 미연결로 자동 갱신 실패를 기록하고 7월 9일 실측값을 승계",
+    usageSignal: "7월 11일 AX 전환 현황판은 Chrome 제어 정상 재연결로 5탭 실측이 재개됐고 Drive 저장 산출물 66개를 보고",
   },
   {
-    title: "2026-07-10 / AX_대시보드분석_2026-07-10",
-    url: "https://docs.google.com/document/d/1NJ6Oy_Tfn5IZfQcXHChx7WRGOPeyH_GxCCmodIB6ONA/edit?usp=drivesdk",
+    title: "2026-07-11 / AX_대시보드분석_2026-07-11",
+    url: "https://docs.google.com/document/d/1Pabpf9GVgKkpJiEARQQbtRsXga6SHpW4kpTy63N9Ai4/edit?usp=drivesdk",
     mimeType: "application/vnd.google-apps.document",
-    createdAt: "2026-07-09T22:16:15.066Z",
-    modifiedAt: "2026-07-09T22:16:16.358Z",
+    createdAt: "2026-07-10T22:17:51.880Z",
+    modifiedAt: "2026-07-10T22:17:52.976Z",
     kind: "프롬프트+응답",
     useCase: "AX 운영·KPI",
-    usageSignal: "7월 10일 대시보드 분석본으로 Drive 저장소 69개, 김재우 53개, 이형배 16개 상태를 재점검",
+    usageSignal: "7월 11일 대시보드 분석본으로 Drive 저장 산출물 66개, 김재우 50개, 이형배 16개 상태를 재점검",
   },
   {
-    title: "2026-07-10 / AX_세션처리로그_2026-07-10.md",
-    url: "https://drive.google.com/file/d/1pD4i1UZAsWJSvFoLZc9HzOoK4z5QuP30/view?usp=drivesdk",
-    mimeType: "text/markdown",
-    createdAt: "2026-07-09T22:11:49.758Z",
-    modifiedAt: "2026-07-09T22:11:49.759Z",
+    title: "2026-07-11 / AX_세션처리로그_2026-07-11.md",
+    url: "https://drive.google.com/file/d/1km4DQe9BeneFHLjvAwziA9aptMoWqejH/view?usp=drivesdk",
+    mimeType: "text/plain",
+    createdAt: "2026-07-10T22:14:04.040Z",
+    modifiedAt: "2026-07-10T22:14:04.040Z",
     kind: "문서 산출물",
     useCase: "업무보고·지식관리",
-    usageSignal: "7월 10일 처리 로그로 신규 13건, 7월 9일 세션백업 폴더, 약 552KB 직접 업로드 방식을 추적",
+    usageSignal: "7월 11일 처리 로그로 신규 13건, 7월 10일 세션백업 폴더의 프롬프트·응답 26건과 원본 생성파일 15건, 총 41파일 약 544KB 직접 업로드 방식을 추적",
   },
   {
     title: "2026-07-09 / AX_2026-07-09",
@@ -1181,14 +1181,14 @@ function buildRepository(spec: DriveRepositorySpec): DriveArtifactRepository {
 }
 
 const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
-  collectedAt: "2026-07-10 23:08 KST",
+  collectedAt: "2026-07-11 23:04 KST",
   mode: "Drive에는 zip 분할 원본만 보존하고, 대시보드 수집 시 로컬 임시 영역에서만 결합·해제·분석합니다.",
   cleanupPolicy: "결합 zip과 압축 해제 폴더는 분석 완료 후 삭제하며 Drive 원본 zip part 파일은 삭제하거나 변환하지 않습니다.",
   stages: [
     {
       label: "1. Drive 원본 조회",
       action: "대상 폴더에서 zip.partNN, zip.001, z01+zip 패턴을 그룹화",
-      result: "김재우 폴더에서 7/10 AX Docs·처리로그, 7/9 세션백업 폴더, 최신 7/5 4-part AX_2026-07-05_백업.zip 원본을 확인. 이형배 폴더는 claude-backup-2026-07-09 날짜별 Docs 폴더 유지",
+      result: "김재우 폴더에서 7/11 AX Docs·처리로그, 7/10 세션백업 폴더, 최신 7/5 4-part AX_2026-07-05_백업.zip 원본을 확인. 이형배 폴더는 claude-backup-2026-07-09 날짜별 Docs 폴더 유지",
     },
     {
       label: "2. 임시 결합",
@@ -1203,7 +1203,7 @@ const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
     {
       label: "4. 임시 파일 삭제",
       action: "분석 후 결합 zip과 해제 폴더를 제거하고 요약 결과만 대시보드 데이터로 유지",
-      result: "Drive 원본은 변경하지 않았고, DNS 실패 후 /private/tmp/drive-zip-20260710.* 및 collector 임시 폴더가 남지 않았음을 확인",
+      result: "Drive 원본은 변경하지 않았고, DNS 실패 후 /private/tmp/drive-zip-20260711.* 임시 폴더가 남지 않았음을 확인",
     },
   ],
   totals: {
@@ -1286,8 +1286,8 @@ const repositories: DriveArtifactRepository[] = [
     utilizationLevel: "높음",
     artifacts: jaewooZipArtifacts,
     insights: [
-      "Drive 폴더에는 7/10 AX Docs·처리로그, 7/9 세션백업 폴더, 7/5 4-part AX_2026-07-05_백업.zip 원본이 보입니다.",
-      "7/10 처리로그는 zip/분할/base64 미사용, GDrive 마운트에 AX_세션백업_2026-07-09 세션 13건 하위폴더와 _세션요약.md를 약 552KB로 직접 기록했다고 설명합니다.",
+      "Drive 폴더에는 7/11 AX Docs·처리로그, 7/10 세션백업 폴더, 7/5 4-part AX_2026-07-05_백업.zip 원본이 보입니다.",
+      "7/11 처리로그는 zip/분할/base64 미사용, GDrive 마운트에 AX_세션백업_2026-07-10 세션 13건 하위폴더, _프롬프트/_응답 26건, 원본 생성파일 15건, 총 41파일 약 544KB를 직접 기록했다고 설명합니다.",
       "7/5 raw payload와 base64 본문은 connector에서 재확인됐지만 서비스 계정 토큰 발급 실패와 raw URL DNS 제약으로 repo collector 기반 로컬 결합·unzip 검증은 이번 실행에서 차단됐습니다.",
       "마지막 로컬 검증 archive는 6/29 백업이며 Ops_dashboard_tab2_3h_6fb565c4b3a1 프롬프트 파일 CRC 경고 1건을 계속 재검증 대상으로 표시합니다.",
     ],
@@ -1313,9 +1313,9 @@ const repositories: DriveArtifactRepository[] = [
 export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   source: {
     name: "Google Drive Claude 산출물 저장소",
-    collectedAt: "2026-07-10 23:08 KST",
-    period: "2026-06-21 ~ 2026-07-10",
-    note: "김재우 폴더는 7/10 AX Docs·처리로그, 7/9 세션백업 폴더, 7/5 4-part zip raw payload를 확인했지만 repo collector의 서비스 계정 토큰 fetch 실패와 raw URL DNS 제약으로 로컬 zip 검증은 차단됐고, 이형배 폴더는 claude-backup-2026-07-09 날짜 폴더 아래 현장·안전관리 분석에 직접 쓰이는 16개 Docs를 유지했습니다.",
+    collectedAt: "2026-07-11 23:04 KST",
+    period: "2026-06-21 ~ 2026-07-11",
+    note: "김재우 폴더는 7/11 AX Docs·처리로그, 7/10 세션백업 폴더, 7/5 4-part zip raw payload를 확인했지만 repo collector의 서비스 계정 토큰 fetch 실패와 raw URL DNS 제약으로 로컬 zip 검증은 차단됐고, 이형배 폴더는 claude-backup-2026-07-09 날짜 폴더 아래 현장·안전관리 분석에 직접 쓰이는 16개 Docs를 유지했습니다. 7/11 AX 문서는 Drive 저장 산출물 66개(김재우 50·이형배 16)를 보고하므로 기존 curated dashboard count와 차이가 있습니다.",
   },
   totals: {
     repositories: repositories.length,
