@@ -140,19 +140,6 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 8,
-    category: "Claude",
-    tool: "Claude Pro Max 5",
-    account: "박재현 상무님 전용",
-    linkedAccount: "없음",
-    owner: "박재현 상무 / 전략실",
-    department: "전략실",
-    monthlyUsd: 110,
-    monthlyKrw: 163350,
-    paymentMethod: "AI 전용 카드",
-    note: "",
-  },
-  {
     no: 9,
     category: "Claude",
     tool: "Claude Pro Max 20",
@@ -162,7 +149,7 @@ const records: AiToolApprovalRecord[] = [
     department: "전략실",
     monthlyUsd: 220,
     monthlyKrw: 326700,
-    paymentMethod: "공용 법인 카드",
+    paymentMethod: "AI 전용 카드",
     note: "",
   },
   {
@@ -435,7 +422,7 @@ const records: AiToolApprovalRecord[] = [
     department: "전략실",
     monthlyUsd: 15.12,
     monthlyKrw: 22453.2,
-    paymentMethod: "공용 법인 카드",
+    paymentMethod: "AI 전용 카드",
     note: "",
   },
   {
@@ -479,6 +466,7 @@ const records: AiToolApprovalRecord[] = [
   },
 ];
 
+const normalizedRecords = records.map((record, index) => ({ ...record, no: index + 1 }));
 const totalMonthlyUsd = sum(records, "monthlyUsd");
 const totalMonthlyKrw = sum(records, "monthlyKrw");
 const paymentSummary = summarize(records, "paymentMethod", totalMonthlyKrw);
@@ -506,12 +494,12 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
   categorySummary: summarize(records, "category", totalMonthlyKrw),
   paymentSummary,
   departmentSummary: summarize(records, "department", totalMonthlyKrw),
-  records,
+  records: normalizedRecords,
   insights: [
-    "등록된 AI 도구 결재 계정은 33개이며 월 구독료 합계는 $2,605.71 / 3,869,479원입니다.",
-    "AI 전용 카드 결재가 31개 계정, 3,520,326원으로 전체 월액의 91.0%를 차지합니다.",
-    "공용 법인 카드는 2개 계정, 349,153원이며 전략실 전용 Claude·Gemini 항목에 집중되어 있습니다.",
-    "Claude 계열은 22개 계정, 2,472,525원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
+    "등록된 AI 도구 결재 계정은 32개이며 월 구독료 합계는 $2,495.71 / 3,706,129원입니다.",
+    "AI 전용 카드 결재가 32개 계정, 3,706,129원으로 전체 월액의 100.0%를 차지합니다.",
+    "기존 공용 법인 카드 2개 항목은 모두 AI 전용 카드로 전환했습니다.",
+    "Claude 계열은 21개 계정, 2,309,175원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
     "변경 반영: jaewoo.kim@riskzero.kr Claude Team Premium 변경, 김재우 부장 GPT Pro 5배 추가.",
   ],
 };
