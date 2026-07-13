@@ -401,6 +401,19 @@ const records: AiToolApprovalRecord[] = [
   },
   {
     no: 29,
+    category: "Claude",
+    tool: "Claude Team Plan Standard",
+    account: "mjlee0828@riskzero.kr",
+    linkedAccount: "없음",
+    owner: "이민재 부장 / 플랫폼개발",
+    department: "플랫폼개발",
+    monthlyUsd: 25,
+    monthlyKrw: 37125,
+    paymentMethod: "AI 전용 카드",
+    note: "",
+  },
+  {
+    no: 30,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "ai.marketing@riskzero.kr",
@@ -413,7 +426,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 30,
+    no: 31,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "james@riskzero.kr",
@@ -426,7 +439,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 31,
+    no: 32,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "bigone@riskzero.kr",
@@ -439,7 +452,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 32,
+    no: 33,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "riskzero@riskzero.kr",
@@ -452,7 +465,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 33,
+    no: 34,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "전략실장님 전용",
@@ -465,7 +478,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 34,
+    no: 35,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "ai.smartservice@riskzero.kr",
@@ -478,7 +491,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 35,
+    no: 36,
     category: "Genspark",
     tool: "Genspark Pro",
     account: "riskzero.marketing@gmail.com",
@@ -491,7 +504,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 36,
+    no: 37,
     category: "Gamma",
     tool: "Gamma AI Pro",
     account: "riskzero.marketing@gmail.com",
@@ -535,11 +548,11 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
   departmentSummary: summarize(records, "department", totalMonthlyKrw),
   records: normalizedRecords,
   insights: [
-    "등록된 AI 도구 결재 계정은 35개이며 월 구독료 합계는 $2,570.71 / 3,817,504원입니다.",
-    "AI 전용 카드 결재가 35개 계정, 3,817,504원으로 전체 월액의 100.0%를 차지합니다.",
+    "등록된 AI 도구 결재 계정은 36개이며 월 구독료 합계는 $2,595.71 / 3,854,629원입니다.",
+    "AI 전용 카드 결재가 36개 계정, 3,854,629원으로 전체 월액의 100.0%를 차지합니다.",
     "기존 공용 법인 카드 2개 항목은 모두 AI 전용 카드로 전환했습니다.",
-    "Claude 계열은 24개 계정, 2,420,550원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
-    "변경 반영: 윤영관 과장, 박정원 차장, 심지섭 대리 Claude Team Plan Standard 추가.",
+    "Claude 계열은 25개 계정, 2,457,675원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
+    "변경 반영: 이민재 부장 Claude Team Plan Standard 추가.",
   ],
 };
 
