@@ -508,38 +508,38 @@ const jaewooArtifacts: DriveArtifact[] = [
 ];
 
 const jaewooZipFolderUrl = "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link";
-const jaewooZipModifiedAt = "2026-07-11T23:13:31.784Z";
+const jaewooZipModifiedAt = "2026-07-12T23:17:34.586Z";
 
 const jaewooZipArtifacts: DriveArtifact[] = [
   {
-    title: "2026-07-12 / AX_2026-07-12",
-    url: "https://docs.google.com/document/d/1PGsLmxmJ8gIZEjcrNf9q5WPbUmPsHnQD9Wr_DAmFfvM/edit?usp=drivesdk",
+    title: "2026-07-13 / AX_2026-07-13",
+    url: "https://docs.google.com/document/d/1RaZD6CgDUygLA5IMy5JxTp8OVC25C8_DxcjO1wqGX6Y/edit?usp=drivesdk",
     mimeType: "application/vnd.google-apps.document",
-    createdAt: "2026-07-11T23:13:30.395Z",
-    modifiedAt: "2026-07-11T23:13:31.784Z",
+    createdAt: "2026-07-12T23:17:33.180Z",
+    modifiedAt: "2026-07-12T23:17:34.586Z",
     kind: "프롬프트+응답",
     useCase: "AX 운영·KPI",
-    usageSignal: "7월 12일 AX 전환 현황판은 5탭 실측 정상 수행과 Drive 저장 산출물 69개, 김재우 53개, 이형배 16개 상태를 보고",
+    usageSignal: "7월 13일 AX 전환 현황판은 5탭 실측 정상 수행과 Drive 저장 산출물 69개, 김재우 53개, 이형배 16개 보합 상태를 보고",
   },
   {
-    title: "2026-07-12 / AX_대시보드분석_2026-07-12",
-    url: "https://docs.google.com/document/d/1lCA2WEBcQVvs8b4HgzqpozBW7rCPtMc68AJcgDHLrH4/edit?usp=drivesdk",
+    title: "2026-07-13 / AX_대시보드분석_2026-07-13",
+    url: "https://docs.google.com/document/d/1ZzWsmJIk6mC6dfywLIaJ1KG2bxWVC0m4ORKImR4nAfs/edit?usp=drivesdk",
     mimeType: "application/vnd.google-apps.document",
-    createdAt: "2026-07-11T22:15:29.893Z",
-    modifiedAt: "2026-07-11T22:15:31.089Z",
+    createdAt: "2026-07-12T22:14:50.494Z",
+    modifiedAt: "2026-07-12T22:14:51.731Z",
     kind: "프롬프트+응답",
     useCase: "AX 운영·KPI",
-    usageSignal: "7월 12일 대시보드 분석본으로 ChatGPT Export 통합, Drive 산출물 66개에서 69개 증가, 김재우 50개에서 53개 증가를 재점검",
+    usageSignal: "7월 13일 대시보드 분석본으로 통합 분석 1,776건과 Drive 산출물 69개, 김재우 53개, 이형배 16개 불변 상태를 재점검",
   },
   {
-    title: "2026-07-12 / AX_세션처리로그_2026-07-12.md",
-    url: "https://drive.google.com/file/d/1EGciiWX2fWf4yFoGkOwblx8mO3jIy6JK/view?usp=drivesdk",
+    title: "2026-07-13 / AX_세션처리로그_2026-07-13.md",
+    url: "https://drive.google.com/file/d/1v5SIDWsyrcq-xQwFBNIT1s-2IUdaG3ZR/view?usp=drivesdk",
     mimeType: "text/plain",
-    createdAt: "2026-07-11T22:13:50.210Z",
-    modifiedAt: "2026-07-11T22:13:50.210Z",
+    createdAt: "2026-07-12T22:11:18.496Z",
+    modifiedAt: "2026-07-12T22:11:18.496Z",
     kind: "문서 산출물",
     useCase: "업무보고·지식관리",
-    usageSignal: "7월 12일 처리 로그로 신규 11건, 7월 11일 세션백업 폴더의 프롬프트·응답 22건과 원본 생성파일 13건, 총 35파일 직접 업로드 방식을 추적",
+    usageSignal: "7월 13일 처리 로그로 신규 9건, 7월 12일 세션백업 폴더의 프롬프트·응답 17건과 원본 생성파일 3건, 직접 업로드 방식을 추적",
   },
   {
     title: "2026-07-09 / AX_2026-07-09",
@@ -1181,19 +1181,19 @@ function buildRepository(spec: DriveRepositorySpec): DriveArtifactRepository {
 }
 
 const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
-  collectedAt: "2026-07-12 23:04 KST",
+  collectedAt: "2026-07-13 23:13 KST",
   mode: "Drive에는 zip 분할 원본만 보존하고, 대시보드 수집 시 로컬 임시 영역에서만 결합·해제·분석합니다.",
   cleanupPolicy: "결합 zip과 압축 해제 폴더는 분석 완료 후 삭제하며 Drive 원본 zip part 파일은 삭제하거나 변환하지 않습니다.",
   stages: [
     {
       label: "1. Drive 원본 조회",
       action: "대상 폴더에서 zip.partNN, zip.001, z01+zip 패턴을 그룹화",
-      result: "김재우 폴더에서 7/12 AX Docs·처리로그, 7/11 세션백업 폴더, 최신 7/5 4-part AX_2026-07-05_백업.zip 원본을 확인. 이형배 폴더는 claude-backup-2026-07-09 날짜별 Docs 폴더 유지",
+      result: "김재우 폴더에서 7/13 AX Docs·처리로그, 7/12 세션백업 폴더, 최신 7/5 4-part AX_2026-07-05_백업.zip 원본을 확인. 이형배 폴더는 claude-backup-2026-07-09 날짜별 Docs 폴더 유지",
     },
     {
       label: "2. 임시 결합",
       action: "part 번호 순서대로 /private/tmp 영역에서 단일 zip으로 결합",
-      result: "7/5 4개 part raw payload와 base64 본문은 Drive connector에서 재확인됐지만 sdmntprwestus2/3.oaiusercontent.com DNS 실패로 로컬 결합 검증은 차단됨. 직전 로컬 검증 상태는 6/29 백업",
+      result: "7/5 4개 part raw payload와 base64 본문은 Drive connector에서 재확인됐지만 sdmntprwestus2.oaiusercontent.com DNS 실패로 로컬 결합 검증은 차단됨. 직전 로컬 검증 상태는 6/29 백업",
     },
     {
       label: "3. 압축 해제 분석",
@@ -1203,7 +1203,7 @@ const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
     {
       label: "4. 임시 파일 삭제",
       action: "분석 후 결합 zip과 해제 폴더를 제거하고 요약 결과만 대시보드 데이터로 유지",
-      result: "Drive 원본은 변경하지 않았고, DNS 실패 후 /private/tmp/drive-zip-20260712.* 임시 폴더가 남지 않았음을 확인",
+      result: "Drive 원본은 변경하지 않았고, DNS 실패 후 /private/tmp/drive-zip-20260713.* 임시 폴더가 남지 않았음을 확인",
     },
   ],
   totals: {
@@ -1286,8 +1286,8 @@ const repositories: DriveArtifactRepository[] = [
     utilizationLevel: "높음",
     artifacts: jaewooZipArtifacts,
     insights: [
-      "Drive 폴더에는 7/12 AX Docs·처리로그, 7/11 세션백업 폴더, 7/5 4-part AX_2026-07-05_백업.zip 원본이 보입니다.",
-      "7/12 처리로그는 zip/분할/base64 미사용, GDrive 마운트에 AX_세션백업_2026-07-11 세션 11건 하위폴더, _프롬프트/_응답 22건, 원본 생성파일 13건, 총 35파일을 직접 기록했다고 설명합니다.",
+      "Drive 폴더에는 7/13 AX Docs·처리로그, 7/12 세션백업 폴더, 7/5 4-part AX_2026-07-05_백업.zip 원본이 보입니다.",
+      "7/13 처리로그는 zip/분할/base64 미사용, GDrive 마운트에 AX_세션백업_2026-07-12 세션 9건 하위폴더, _프롬프트/_응답 17건, 원본 생성파일 3건을 직접 기록했다고 설명합니다.",
       "7/5 raw payload와 base64 본문은 connector에서 재확인됐지만 raw URL DNS 제약으로 repo collector 기반 로컬 결합·unzip 검증은 이번 실행에서 차단됐습니다.",
       "마지막 로컬 검증 archive는 6/29 백업이며 Ops_dashboard_tab2_3h_6fb565c4b3a1 프롬프트 파일 CRC 경고 1건을 계속 재검증 대상으로 표시합니다.",
     ],
@@ -1313,9 +1313,9 @@ const repositories: DriveArtifactRepository[] = [
 export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   source: {
     name: "Google Drive Claude 산출물 저장소",
-    collectedAt: "2026-07-12 23:04 KST",
-    period: "2026-06-21 ~ 2026-07-12",
-    note: "김재우 폴더는 7/12 AX Docs·처리로그, 7/11 세션백업 폴더, 7/5 4-part zip raw payload를 확인했지만 raw URL DNS 제약으로 로컬 zip 검증은 차단됐고, 이형배 폴더는 claude-backup-2026-07-09 날짜 폴더 아래 현장·안전관리 분석에 직접 쓰이는 16개 Docs를 유지했습니다. 7/12 AX 문서는 Drive 저장 산출물 69개(김재우 53·이형배 16)를 보고합니다.",
+    collectedAt: "2026-07-13 23:13 KST",
+    period: "2026-06-21 ~ 2026-07-13",
+    note: "김재우 폴더는 7/13 AX Docs·처리로그, 7/12 세션백업 폴더, 7/5 4-part zip raw payload를 확인했지만 raw URL DNS 제약으로 로컬 zip 검증은 차단됐고, 이형배 폴더는 claude-backup-2026-07-09 날짜 폴더 아래 현장·안전관리 분석에 직접 쓰이는 16개 Docs를 유지했습니다. 7/13 AX 문서는 Drive 저장 산출물 69개(김재우 53·이형배 16)를 보고합니다.",
   },
   totals: {
     repositories: repositories.length,
