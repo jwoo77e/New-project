@@ -1684,7 +1684,6 @@ function GensparkUsageView({
   );
   const maxDriveRepositoryFiles = Math.max(...driveRepositoryData.repositories.map((repository) => repository.fileCount), 1);
   const gensparkDrive = usageData.driveAnalysis;
-  const maxGensparkDriveMonth = Math.max(...(gensparkDrive?.monthlyBreakdown.map((month) => month.tasks) ?? [1]), 1);
   const gammaDeckCount = gammaDriveUsageData.deckCount;
   const gammaTotalSlides = gammaDriveUsageData.totalSlides;
   const gammaTopArtifact = gammaDriveUsageData.artifacts[0];
@@ -1920,54 +1919,52 @@ function GensparkUsageView({
           </div>
           <div className="drive-summary-grid">
             <article>
-              <span>세션</span>
-              <strong>{numberFormat.format(gensparkDrive.totalSessions)}건</strong>
-              <small>{gensparkDrive.source.accountLabel}</small>
+              <span>Drive 산출물</span>
+              <strong>{numberFormat.format(gensparkDrive.totalFiles)}개</strong>
+              <small>{gensparkDrive.source.period}</small>
             </article>
             <article>
-              <span>완료/실패</span>
-              <strong>
-                {numberFormat.format(gensparkDrive.finishedSessions)} / {numberFormat.format(gensparkDrive.failedSessions)}
-              </strong>
-              <small>대기 {numberFormat.format(gensparkDrive.pendingSessions)}건</small>
+              <span>최상위 프로젝트</span>
+              <strong>{numberFormat.format(gensparkDrive.projectCount)}개</strong>
+              <small>폴더 {gensparkDrive.folderCount}개 · 개별 파일 {gensparkDrive.rootFileCount}개</small>
             </article>
             <article>
-              <span>최다 유형</span>
+              <span>저장 규모</span>
+              <strong>{gensparkDrive.totalSizeLabel}</strong>
+              <small>최신 산출 {gensparkDrive.latestOutputDate}</small>
+            </article>
+            <article>
+              <span>최다 파일 유형</span>
               <strong>{gensparkDrive.typeBreakdown[0]?.name ?? "-"}</strong>
               <small>{numberFormat.format(gensparkDrive.typeBreakdown[0]?.tasks ?? 0)}건 · {formatRate(gensparkDrive.typeBreakdown[0]?.share ?? 0)}</small>
-            </article>
-            <article>
-              <span>Drive 산출물</span>
-              <strong>{numberFormat.format(gensparkDrive.representativeFiles.length)}개 대표</strong>
-              <small>{gensparkDrive.directFileSignal}</small>
             </article>
           </div>
 
           <div className="chatgpt-export-grid compact">
             <div className="chatgpt-export-column">
-              <h3>무엇에 쓰였나</h3>
+              <h3>산출물 유형</h3>
               <div className="claude-topic-list">
-                {gensparkDrive.purposeBreakdown.map((purpose) => (
+                {gensparkDrive.typeBreakdown.map((fileType) => (
                   <MeterRow
-                    color={purpose.color}
-                    key={purpose.name}
-                    label={`${purpose.name} · ${numberFormat.format(purpose.tasks)}건`}
-                    value={purpose.share}
-                    valueLabel={formatRate(purpose.share)}
+                    color={fileType.color}
+                    key={fileType.name}
+                    label={`${fileType.name} · ${fileType.note}`}
+                    value={fileType.share}
+                    valueLabel={`${numberFormat.format(fileType.tasks)}개`}
                   />
                 ))}
               </div>
             </div>
             <div className="chatgpt-export-column">
-              <h3>월별 집중도</h3>
+              <h3>프로젝트별 산출물</h3>
               <div className="claude-topic-list">
-                {gensparkDrive.monthlyBreakdown.map((month) => (
+                {gensparkDrive.projectBreakdown.map((project) => (
                   <MeterRow
-                    color={month.color}
-                    key={month.name}
-                    label={`${month.name} · ${month.note}`}
-                    value={(month.tasks / maxGensparkDriveMonth) * 100}
-                    valueLabel={`${numberFormat.format(month.tasks)}건`}
+                    color={project.color}
+                    key={project.name}
+                    label={`${project.name} · ${project.note}`}
+                    value={project.share}
+                    valueLabel={`${numberFormat.format(project.tasks)}개`}
                   />
                 ))}
               </div>
