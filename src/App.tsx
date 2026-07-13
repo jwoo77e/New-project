@@ -1058,6 +1058,7 @@ function App() {
 
       {activeView === "genspark" && (
         <GensparkUsageView
+          claudeTeamUsageData={claudeTeamUsageData}
           driveRepositoryData={driveArtifactRepositoryData}
           usageData={initialGensparkUsageData}
         />
@@ -1661,9 +1662,11 @@ function DetailView({
 }
 
 function GensparkUsageView({
+  claudeTeamUsageData,
   driveRepositoryData,
   usageData,
 }: {
+  claudeTeamUsageData: ClaudeTeamUsageData;
   driveRepositoryData: DriveArtifactRepositoryData;
   usageData: GensparkUsageData;
 }) {
@@ -2101,6 +2104,20 @@ function GensparkUsageView({
               <strong>{numberFormat.format(claudeExport.userDirectory.activeAccounts)}개</strong>
               <small>{claudeExport.userDirectory.domain} 사용자 {numberFormat.format(claudeExport.userDirectory.totalUsers)}명 중 매핑</small>
             </article>
+            <article>
+              <span>Team Spend 원천</span>
+              <strong>{numberFormat.format(claudeTeamUsageData.source.verification.spendRecords)}행</strong>
+              <small>
+                {numberFormat.format(claudeTeamUsageData.spendUsers)}계정 · 요청 {numberFormat.format(claudeTeamUsageData.totalRequests)}건 · {formatPreciseUsd(claudeTeamUsageData.totalNetSpendUsd)}
+              </small>
+            </article>
+            <article>
+              <span>Code Lines 원천</span>
+              <strong>{numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄</strong>
+              <small>
+                {numberFormat.format(claudeTeamUsageData.codeUsers)}계정 · Spend 교차 {numberFormat.format(claudeTeamUsageData.source.verification.matchedAccounts)}계정
+              </small>
+            </article>
           </div>
 
           <div className="chatgpt-export-grid compact">
@@ -2133,6 +2150,17 @@ function GensparkUsageView({
                   {memory.accountLabel}: {numberFormat.format(memory.characters)}자 memory · {memory.signal}
                 </span>
               ))}
+            </div>
+          </div>
+          <div className="insight-box">
+            <LineChart size={18} />
+            <div>
+              <strong>Claude Team CSV 원천 대조</strong>
+              <span>{claudeTeamUsageData.source.note}</span>
+              <span>
+                Spend {numberFormat.format(claudeTeamUsageData.source.verification.spendRecords)}행 · Code Lines {numberFormat.format(claudeTeamUsageData.source.verification.codeLineAccounts)}계정 · 교차 {numberFormat.format(claudeTeamUsageData.source.verification.matchedAccounts)}계정
+              </span>
+              <span>{claudeTeamUsageData.source.verification.note}</span>
             </div>
           </div>
         </section>
@@ -2879,7 +2907,7 @@ function AdoptionView({
           <article className="api-summary-item">
             <span>활성 사용자</span>
             <strong>{numberFormat.format(claudeTeamUsageData.activeUsers)}명</strong>
-            <span>좌석 {numberFormat.format(claudeTeamUsageData.licensedUsers)}명 기준</span>
+            <span>결재 등록 {numberFormat.format(claudeTeamUsageData.licensedUsers)}명 · CSV 활성 {numberFormat.format(claudeTeamUsageData.activeUsers)}명</span>
           </article>
           <article className="api-summary-item">
             <span>Spend report</span>
