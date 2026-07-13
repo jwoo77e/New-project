@@ -364,7 +364,7 @@ export const initialClaudeTeamUsageData: ClaudeTeamUsageData = {
     },
     {
       email: "jisub1221@riskzero.kr",
-      displayName: "미확인",
+      displayName: "심지섭 대리",
       requests: 1981,
       promptTokens: 165046273,
       completionTokens: 862253,
@@ -424,7 +424,7 @@ export const initialClaudeTeamUsageData: ClaudeTeamUsageData = {
     },
     {
       email: "crow326@riskzero.kr",
-      displayName: "미확인",
+      displayName: "박정원 차장",
       requests: 1593,
       promptTokens: 494222268,
       completionTokens: 1034370,
@@ -484,7 +484,7 @@ export const initialClaudeTeamUsageData: ClaudeTeamUsageData = {
     },
     {
       email: "ykchj1011@riskzero.kr",
-      displayName: "미확인",
+      displayName: "윤영관 과장",
       requests: 460,
       promptTokens: 64016765,
       completionTokens: 198131,
