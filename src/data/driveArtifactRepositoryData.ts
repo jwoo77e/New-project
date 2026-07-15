@@ -508,38 +508,38 @@ const jaewooArtifacts: DriveArtifact[] = [
 ];
 
 const jaewooZipFolderUrl = "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link";
-const jaewooZipModifiedAt = "2026-07-13T23:33:18.882Z";
+const jaewooZipModifiedAt = "2026-07-14T23:22:01.420Z";
 
 const jaewooZipArtifacts: DriveArtifact[] = [
   {
-    title: "2026-07-14 / AX_2026-07-14",
-    url: "https://docs.google.com/document/d/1cf6cpW2C-c8UuPaOgVkFqOerKHi2_KwhQxOc80PjKaM/edit?usp=drivesdk",
+    title: "2026-07-15 / AX_2026-07-15",
+    url: "https://docs.google.com/document/d/1VPo0Tsuu__lakFXP7Aax6f3Li26VerhT4EXUYsscAw0/edit?usp=drivesdk",
     mimeType: "application/vnd.google-apps.document",
-    createdAt: "2026-07-13T23:14:53.669Z",
-    modifiedAt: "2026-07-13T23:14:55.035Z",
+    createdAt: "2026-07-14T23:13:05.139Z",
+    modifiedAt: "2026-07-14T23:13:06.541Z",
     kind: "프롬프트+응답",
     useCase: "AX 운영·KPI",
-    usageSignal: "7월 14일 AX 전환 현황판은 5탭 실측 정상 수행과 Drive 저장 산출물 69개, 김재우 53개, 이형배 16개 보합 상태를 보고",
+    usageSignal: "7월 15일 AX 전환 현황판은 5탭 실측 정상 수행과 Drive 저장 산출물 69개, 김재우 53개, 이형배 16개 보합 상태를 보고",
   },
   {
-    title: "2026-07-14 / AX_대시보드분석_2026-07-14",
-    url: "https://docs.google.com/document/d/1EHJff1TxJbmurUoDiXUZTH8_nxfyCprr7v-F9fzlsJ0/edit?usp=drivesdk",
+    title: "2026-07-15 / AX_대시보드분석_2026-07-15",
+    url: "https://docs.google.com/document/d/1m7crkyuII4luuB7ZFeLnm6b3RT5xfpKbVzMNfAQ9PD4/edit?usp=drivesdk",
     mimeType: "application/vnd.google-apps.document",
-    createdAt: "2026-07-13T23:33:17.685Z",
-    modifiedAt: "2026-07-13T23:33:18.882Z",
+    createdAt: "2026-07-14T23:22:00.012Z",
+    modifiedAt: "2026-07-14T23:22:01.420Z",
     kind: "프롬프트+응답",
     useCase: "AX 운영·KPI",
-    usageSignal: "7월 14일 대시보드 분석본으로 통합 분석 1,776건과 Drive 산출물 69개, 김재우 53개, 이형배 16개 보합 상태를 재점검",
+    usageSignal: "7월 15일 대시보드 분석본으로 통합 분석 1,776건과 Drive 산출물 70개, 김재우 53개, 이형배 17개 상태를 재점검",
   },
   {
-    title: "2026-07-14 / AX_세션처리로그_2026-07-14.md",
-    url: "https://drive.google.com/file/d/1uP9Xw2lr-YhQaCGPNOkEZbbh0Y_k8idS/view?usp=drivesdk",
-    mimeType: "text/markdown",
-    createdAt: "2026-07-13T23:29:22.951Z",
-    modifiedAt: "2026-07-13T23:29:22.952Z",
+    title: "2026-07-15 / AX_세션처리로그_2026-07-15.md",
+    url: "https://drive.google.com/file/d/1DHBRt9uDW1hax2o3fAYIoGwaEToKIIeE/view?usp=drivesdk",
+    mimeType: "text/plain",
+    createdAt: "2026-07-14T23:18:43.383Z",
+    modifiedAt: "2026-07-14T23:18:43.383Z",
     kind: "문서 산출물",
     useCase: "업무보고·지식관리",
-    usageSignal: "7월 14일 처리 로그로 신규 20건, 7월 13일 세션백업 폴더의 세션 18개, 프롬프트·응답 36건, 원본 생성파일 7건, 직접 업로드 방식을 추적",
+    usageSignal: "7월 15일 처리 로그로 신규 13건, 7월 14일 세션백업 폴더의 세션 12개, 프롬프트·응답 24건, 생성 md 3건, blog 바이너리·스크립트 5건과 업로드 지연 검증 이슈를 추적",
   },
   {
     title: "2026-07-09 / AX_2026-07-09",
@@ -1043,10 +1043,10 @@ const jaewooZipArtifacts: DriveArtifact[] = [
   },
 ];
 
-const hyungbaeDateFolderUrl = "https://drive.google.com/drive/folders/1rKQOjOrBN-GQbjzhfvq_36xMwYLK6k29?usp=sharing";
+const hyungbaeDateFolderUrl = "https://drive.google.com/drive/folders/1KQyA5mxYf8tGA9m10Rz5v2ovkmfY4TiB?usp=sharing";
 const hyungbaeDocsCreatedAt = "2026-07-08T18:08:49.521Z";
 const hyungbaeDocsModifiedAt = "2026-07-08T18:17:08.270Z";
-const hyungbaeRepositoryModifiedAt = "2026-07-14T01:01:09.758Z";
+const hyungbaeRepositoryModifiedAt = "2026-07-15T06:07:51.152Z";
 
 function hyungbaeDoc(
   title: string,
@@ -1068,14 +1068,24 @@ function hyungbaeDoc(
 
 const hyungbaeArtifacts: DriveArtifact[] = [
   {
-    title: "2026-07-14 / 건설현장 점검사진 분석",
-    url: "https://docs.google.com/document/d/1illYqLT44LVt93MNRoqOGGsADr4Uq6aFhzUmnY9VgXU/edit?usp=drivesdk",
+    title: "2026-07-15 / 건설현장 점검사진 분석",
+    url: "https://docs.google.com/document/d/1SwG3P6BROQvXEbcZFljTOr1YPQRtxfIa7MK075MGxHQ/edit?usp=drivesdk",
     mimeType: "application/vnd.google-apps.document",
-    createdAt: "2026-07-14T00:41:46.881Z",
-    modifiedAt: "2026-07-14T00:41:49.726Z",
+    createdAt: "2026-07-15T01:00:29.277Z",
+    modifiedAt: "2026-07-15T01:00:31.105Z",
     kind: "데이터 파일",
     useCase: "현장 안전관리 자료",
-    usageSignal: "건설현장 점검사진 4장과 산업안전보건 법규 PDF 5종을 입력으로 유해·위험요인, 법규 조항, 안전대책, 사고유형을 매칭한 분석완료 XLSX 1건을 생성",
+    usageSignal: "건설현장 점검사진 4장, 법령 PDF 5개, 분석 템플릿 1개를 입력으로 유해·위험요인, 법규 조항, 안전대책, 사고유형을 매칭한 분석완료 XLSX 1건을 생성하고 크기 대조 완료",
+  },
+  {
+    title: "2026-07-15 / Main Agent",
+    url: "https://docs.google.com/document/d/1Tr4AHK0p2rxXQSlNZioCwpBgpsCEJeuEQQCBFWiM-6g/edit?usp=drivesdk",
+    mimeType: "application/vnd.google-apps.document",
+    createdAt: "2026-07-15T01:00:00.606Z",
+    modifiedAt: "2026-07-15T01:00:03.567Z",
+    kind: "데이터 파일",
+    useCase: "현장 안전관리 자료",
+    usageSignal: "CSI 건설사고 분류기준 XLSX 1건과 안전보건 브리핑·보고 텍스트 4건을 업로드하고 정상본 기준 무결성을 확인",
   },
   hyungbaeDoc(
     "2026-07-09 / Collect data from all station resource pages (b6a9200d)",
@@ -1192,19 +1202,19 @@ function buildRepository(spec: DriveRepositorySpec): DriveArtifactRepository {
 }
 
 const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
-  collectedAt: "2026-07-14 23:11 KST",
+  collectedAt: "2026-07-15 23:08 KST",
   mode: "Drive에는 zip 분할 원본만 보존하고, 대시보드 수집 시 로컬 임시 영역에서만 결합·해제·분석합니다.",
   cleanupPolicy: "결합 zip과 압축 해제 폴더는 분석 완료 후 삭제하며 Drive 원본 zip part 파일은 삭제하거나 변환하지 않습니다.",
   stages: [
     {
       label: "1. Drive 원본 조회",
       action: "대상 폴더에서 zip.partNN, zip.001, z01+zip 패턴을 그룹화",
-      result: "김재우 폴더에서 7/14 AX Docs·처리로그, 7/13 세션백업 폴더, 최신 7/5 4-part AX_2026-07-05_백업.zip 원본을 확인. 이형배 폴더는 신규 2026-07-14 건설현장 점검사진 분석 폴더와 기존 claude-backup-2026-07-09 Docs 폴더를 함께 유지",
+      result: "김재우 폴더에서 7/15 AX Docs·처리로그, 7/14 세션백업 폴더, 최신 7/5 4-part AX_2026-07-05_백업.zip 원본을 확인. 이형배 폴더는 신규 2026-07-15 건설현장 점검사진 분석·Main Agent 폴더와 기존 claude-backup-2026-07-09 Docs 폴더를 함께 유지",
     },
     {
       label: "2. 임시 결합",
       action: "part 번호 순서대로 /private/tmp 영역에서 단일 zip으로 결합",
-      result: "7/5 4개 part raw payload와 base64 본문은 Drive connector에서 재확인됐지만 sdmntprwestus3.oaiusercontent.com DNS 실패로 shell raw URL 다운로드와 로컬 결합 검증은 차단됨. 직전 로컬 검증 상태는 6/29 백업",
+      result: "7/5 4개 part raw payload와 base64 본문은 Drive connector에서 재확인됐지만 sdmntprcentralus.oaiusercontent.com DNS 실패로 shell raw URL 다운로드와 로컬 결합 검증은 차단됨. 직전 로컬 검증 상태는 6/29 백업",
     },
     {
       label: "3. 압축 해제 분석",
@@ -1214,7 +1224,7 @@ const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
     {
       label: "4. 임시 파일 삭제",
       action: "분석 후 결합 zip과 해제 폴더를 제거하고 요약 결과만 대시보드 데이터로 유지",
-      result: "Drive 원본은 변경하지 않았고, DNS 실패 후 /private/tmp/drive-zip-20260714.* 임시 폴더가 남지 않았음을 확인",
+      result: "Drive 원본은 변경하지 않았고, DNS 실패 후 /private/tmp/drive-zip-20260715-rawurl.* 임시 폴더 삭제를 수행",
     },
   ],
   totals: {
@@ -1297,9 +1307,9 @@ const repositories: DriveArtifactRepository[] = [
     utilizationLevel: "높음",
     artifacts: jaewooZipArtifacts,
     insights: [
-      "Drive 폴더에는 7/14 AX Docs·처리로그, 7/13 세션백업 폴더, 7/5 4-part AX_2026-07-05_백업.zip 원본이 보입니다.",
-      "7/14 처리로그는 zip/분할/base64 미사용, GDrive 마운트에 AX_세션백업_2026-07-13 세션 18건 하위폴더, _프롬프트/_응답 36건, 원본 생성파일 7건을 직접 기록했다고 설명합니다.",
-      "7/5 raw payload와 base64 본문은 connector에서 재확인됐지만 sdmntprwestus3.oaiusercontent.com raw URL DNS 제약으로 repo collector 기반 로컬 결합·unzip 검증은 이번 실행에서 차단됐습니다.",
+      "Drive 폴더에는 7/15 AX Docs·처리로그, 7/14 세션백업 폴더, 7/5 4-part AX_2026-07-05_백업.zip 원본이 보입니다.",
+      "7/15 처리로그는 zip/분할/base64 미사용, Drive 날짜폴더에 AX_세션백업_2026-07-14 세션 12개 하위폴더, 프롬프트·응답 24건, 생성 md 3건, blog 바이너리·스크립트 5건을 기록했다고 설명합니다.",
+      "7/5 raw payload와 base64 본문은 connector에서 재확인됐지만 sdmntprcentralus.oaiusercontent.com raw URL DNS 제약으로 repo collector 기반 로컬 결합·unzip 검증은 이번 실행에서 차단됐습니다.",
       "마지막 로컬 검증 archive는 6/29 백업이며 Ops_dashboard_tab2_3h_6fb565c4b3a1 프롬프트 파일 CRC 경고 1건을 계속 재검증 대상으로 표시합니다.",
     ],
   }),
@@ -1314,9 +1324,9 @@ const repositories: DriveArtifactRepository[] = [
     utilizationLevel: "높음",
     artifacts: hyungbaeArtifacts,
     insights: [
-      "최신 2026-07-14 폴더에서 건설현장 점검사진 분석 README, 입력 XLSX·사진·법규 폴더, 분석완료 XLSX를 확인했고, 기존 claude-backup-2026-07-09 현장·안전관리 Docs 16개도 유지했습니다.",
-      "7/14 프로젝트는 프롬프트·응답 원문 파일 없이 입력자료와 Claude 생성 결과물을 README가 대신 요약하는 구조라 검증 단위가 Docs 본문이 아니라 결과 XLSX와 입력 폴더입니다.",
-      "주요 작업은 TBM 263건, 노사협의체 18건, 근골격계 조사 2건, 안전관리비 계획·집행, 위험성평가·재난대응·안전보고 체계 수집, 점검사진 위험요인 분석으로 묶입니다.",
+      "최신 2026-07-15 폴더에서 건설현장 점검사진 분석 README, Main Agent README, 입력·생성결과물 폴더를 확인했고, 기존 claude-backup-2026-07-09 현장·안전관리 Docs 16개도 유지했습니다.",
+      "7/15 건설현장 점검사진 분석은 입력자료 10개와 분석완료 XLSX 1개를 Drive API 크기 대조까지 완료했고, Main Agent는 CSI 분류기준 XLSX 1개와 안전보건 브리핑 텍스트 4건을 보존합니다.",
+      "주요 작업은 TBM 263건, 노사협의체 18건, 근골격계 조사 2건, 안전관리비 계획·집행, 위험성평가·재난대응·안전보고 체계 수집, 점검사진 위험요인 분석, 안전보건 동향 브리핑으로 묶입니다.",
     ],
   }),
 ];
@@ -1324,9 +1334,9 @@ const repositories: DriveArtifactRepository[] = [
 export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   source: {
     name: "Google Drive Claude 산출물 저장소",
-    collectedAt: "2026-07-14 23:11 KST",
-    period: "2026-06-21 ~ 2026-07-14",
-    note: "김재우 폴더는 7/14 AX Docs·처리로그, 7/13 세션백업 폴더, 7/5 4-part zip raw payload를 확인했지만 raw URL DNS 제약으로 로컬 zip 검증은 차단됐습니다. 이형배 폴더는 신규 2026-07-14 건설현장 점검사진 분석 폴더 1건과 claude-backup-2026-07-09 현장·안전관리 Docs 16개를 함께 유지합니다. 7/14 AX 문서는 Drive 저장 산출물 69개(김재우 53·이형배 16)를 보고하지만, 이형배 신규 폴더가 이후 확인되어 curated dashboard 모델은 70개(김재우 53·이형배 17)로 갱신했습니다.",
+    collectedAt: "2026-07-15 23:08 KST",
+    period: "2026-06-21 ~ 2026-07-15",
+    note: "김재우 폴더는 7/15 AX Docs·처리로그, 7/14 세션백업 폴더, 7/5 4-part zip raw payload를 확인했지만 raw URL DNS 제약으로 로컬 zip 검증은 차단됐습니다. 이형배 폴더는 신규 2026-07-15 건설현장 점검사진 분석·Main Agent 폴더 2건과 claude-backup-2026-07-09 현장·안전관리 Docs 16개를 함께 유지합니다. 7/15 AX 분석 문서는 Drive 저장 산출물 70개(김재우 53·이형배 17)를 보고하지만, live 7/15 이형배 폴더에서 Main Agent 패키지가 추가 확인되어 curated dashboard 모델은 71개(김재우 53·이형배 18)로 갱신했습니다.",
   },
   totals: {
     repositories: repositories.length,
@@ -1340,7 +1350,7 @@ export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   zipAnalysisPipeline,
   insights: [
     "김재우 폴더는 Drive에 zip part 원본만 남기고, 대시보드 수집 시 임시 해제 분석 결과만 저장하는 구조로 운영합니다.",
-    `이형배 폴더는 ${hyungbaeDateFolderUrl} 하위의 2026-07-14 프로젝트 폴더와 기존 날짜별 Docs 백업 구조를 병행해 입력자료·생성결과물·세션별 본문을 함께 추적합니다.`,
-    "최신 김재우 7/5 4-part zip은 live Drive listing과 connector raw payload/base64 존재만 재확인됐고, 로컬 결합·해제 검증은 sdmntprwestus3.oaiusercontent.com DNS 제약으로 차단됐습니다.",
+    `이형배 폴더는 ${hyungbaeDateFolderUrl} 하위의 2026-07-15 프로젝트 폴더와 기존 날짜별 Docs 백업 구조를 병행해 입력자료·생성결과물·세션별 본문을 함께 추적합니다.`,
+    "최신 김재우 7/5 4-part zip은 live Drive listing과 connector raw payload/base64 존재만 재확인됐고, 로컬 결합·해제 검증은 sdmntprcentralus.oaiusercontent.com DNS 제약으로 차단됐습니다.",
   ],
 };
