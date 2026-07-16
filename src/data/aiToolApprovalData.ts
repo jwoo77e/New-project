@@ -51,13 +51,13 @@ const records: AiToolApprovalRecord[] = [
   {
     no: 1,
     category: "ChatGPT",
-    tool: "chatGPT Pro(20배)",
+    tool: "chatGPT Pro(5배)",
     account: "riskzeroriskzero@gmail.com",
     linkedAccount: "없음",
     owner: "전사",
     department: "전사",
-    monthlyUsd: 220,
-    monthlyKrw: 326700,
+    monthlyUsd: 110,
+    monthlyKrw: 163350,
     paymentMethod: "AI 전용 카드",
     note: "",
   },
@@ -548,11 +548,11 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
   departmentSummary: summarize(records, "department", totalMonthlyKrw),
   records: normalizedRecords,
   insights: [
-    "등록된 AI 도구 결재 계정은 36개이며 월 구독료 합계는 $2,595.71 / 3,854,629원입니다.",
-    "AI 전용 카드 결재가 36개 계정, 3,854,629원으로 전체 월액의 100.0%를 차지합니다.",
+    "등록된 AI 도구 결재 계정은 36개이며 월 구독료 합계는 $2,485.71 / 3,691,279원입니다.",
+    "AI 전용 카드 결재가 36개 계정, 3,691,279원으로 전체 월액의 100.0%를 차지합니다.",
     "기존 공용 법인 카드 2개 항목은 모두 AI 전용 카드로 전환했습니다.",
     "Claude 계열은 25개 계정, 2,457,675원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
-    "변경 반영: 이민재 부장 Claude Team Plan Standard 추가.",
+    "변경 반영: 전사 chatGPT Pro를 20배에서 5배로 변경했습니다.",
   ],
 };
 
