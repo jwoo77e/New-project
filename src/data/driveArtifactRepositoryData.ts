@@ -508,38 +508,38 @@ const jaewooArtifacts: DriveArtifact[] = [
 ];
 
 const jaewooZipFolderUrl = "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link";
-const jaewooZipModifiedAt = "2026-07-17T02:29:23.279Z";
+const jaewooZipModifiedAt = "2026-07-18T02:18:11.802Z";
 
 const jaewooZipArtifacts: DriveArtifact[] = [
   {
-    title: "2026-07-17 / AX_2026-07-17",
-    url: "https://docs.google.com/document/d/1Qkm_TidHwlKBHSZ4wZUA7cVOjgJp1gnobwCyFGUE-C4/edit?usp=drivesdk",
+    title: "2026-07-18 / AX_2026-07-18",
+    url: "https://docs.google.com/document/d/1lQY4-hvyMIHiUhQeX3xyrp03JEMKkCB1uceyUHw_JDU/edit?usp=drivesdk",
     mimeType: "application/vnd.google-apps.document",
-    createdAt: "2026-07-17T02:24:50.565Z",
-    modifiedAt: "2026-07-17T02:24:51.924Z",
+    createdAt: "2026-07-17T23:14:39.732Z",
+    modifiedAt: "2026-07-17T23:14:41.384Z",
     kind: "프롬프트+응답",
     useCase: "AX 운영·KPI",
-    usageSignal: "7월 17일 AX 전환 현황판은 5탭 실측 정상 수행, Drive 저장 산출물 71개, 김재우 53개, 이형배 18개와 zip 내부 6개 상태를 유지한다고 보고",
+    usageSignal: "7월 18일 AX 전환 현황판은 Chrome 직접 크롤링 5탭 정상 수집, Drive 저장 산출물 71개, 김재우 53개, 이형배 18개와 zip 내부 6개 상태를 유지한다고 보고",
   },
   {
-    title: "2026-07-17 / AX_대시보드분석_2026-07-17",
-    url: "https://docs.google.com/document/d/1VMHCiyxGV_GvBAAan5VurEa_iY1dMWPL1jFn4d_U3jM/edit?usp=drivesdk",
+    title: "2026-07-18 / AX_대시보드분석_2026-07-18",
+    url: "https://docs.google.com/document/d/1WYMGnJXJUtsbwmAl20j1h3KyKx9wyCb9JUoQS_D-H-A/edit?usp=drivesdk",
     mimeType: "application/vnd.google-apps.document",
-    createdAt: "2026-07-17T02:29:21.614Z",
-    modifiedAt: "2026-07-17T02:29:23.279Z",
+    createdAt: "2026-07-18T02:18:09.580Z",
+    modifiedAt: "2026-07-18T02:18:11.802Z",
     kind: "프롬프트+응답",
     useCase: "AX 운영·KPI",
-    usageSignal: "7월 17일 대시보드 분석본으로 통합 분석 1,776건, 실무 산출형 91건, Drive 저장 산출물 71개, 김재우 53개와 이형배 18개 상태를 재점검",
+    usageSignal: "7월 18일 대시보드 분석본으로 통합 분석 1,776건, 실무 산출형 91건, Drive 저장 산출물 71개, 김재우 53개와 이형배 18개 상태를 재점검",
   },
   {
-    title: "2026-07-17 / AX_세션처리로그_2026-07-17.md",
-    url: "https://drive.google.com/file/d/1AizURcmQ3lOd1QXRRD5_9q7CMZ4Zw0XH/view?usp=drivesdk",
+    title: "2026-07-18 / AX_세션처리로그_2026-07-18.md",
+    url: "https://drive.google.com/file/d/1KT-MHktRA923PftKyi_Izk18gfCjjelt/view?usp=drivesdk",
     mimeType: "text/markdown",
-    createdAt: "2026-07-17T02:24:05.127Z",
-    modifiedAt: "2026-07-17T02:24:05.131Z",
+    createdAt: "2026-07-18T02:13:44.370Z",
+    modifiedAt: "2026-07-18T02:13:44.370Z",
     kind: "문서 산출물",
     useCase: "업무보고·지식관리",
-    usageSignal: "7월 17일 처리 로그로 7월 16일 대상 신규 8건, 세션 하위폴더 7개와 _세션요약.md를 기록했고 zip·분할·base64·세션백업 Docs 미사용을 명시",
+    usageSignal: "7월 18일 처리 로그로 7월 17일 대상 신규 11건, AX_세션백업_2026-07-17 하위폴더 7개와 _세션요약.md를 기록했고 zip·분할·base64·세션백업 Docs 미사용을 명시",
   },
   {
     title: "2026-07-09 / AX_2026-07-09",
@@ -1043,10 +1043,10 @@ const jaewooZipArtifacts: DriveArtifact[] = [
   },
 ];
 
-const hyungbaeDateFolderUrl = "https://drive.google.com/drive/folders/1xiChb_b5JJhefeiqVL4TyI-n8F8JyvkV?usp=sharing";
+const hyungbaeDateFolderUrl = "https://drive.google.com/drive/folders/1YtJ-stWUfvIzKSLpLiyiOR3wkjbXaTjF?usp=sharing";
 const hyungbaeDocsCreatedAt = "2026-07-08T18:08:49.521Z";
 const hyungbaeDocsModifiedAt = "2026-07-08T18:17:08.270Z";
-const hyungbaeRepositoryModifiedAt = "2026-07-17T10:08:37.244Z";
+const hyungbaeRepositoryModifiedAt = "2026-07-18T10:06:30.898Z";
 
 function hyungbaeDoc(
   title: string,
@@ -1202,29 +1202,29 @@ function buildRepository(spec: DriveRepositorySpec): DriveArtifactRepository {
 }
 
 const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
-  collectedAt: "2026-07-17 23:20 KST",
+  collectedAt: "2026-07-18 23:25 KST",
   mode: "Drive에는 zip 분할 원본만 보존하고, 대시보드 수집 시 로컬 임시 영역에서만 결합·해제·분석합니다.",
   cleanupPolicy: "결합 zip과 압축 해제 폴더는 분석 완료 후 삭제하며 Drive 원본 zip part 파일은 삭제하거나 변환하지 않습니다.",
   stages: [
     {
       label: "1. Drive 원본 조회",
       action: "대상 폴더에서 zip.partNN, zip.001, z01+zip 패턴을 그룹화",
-      result: "김재우 폴더에서 7/17 AX Docs·처리로그, 7/16 세션백업 폴더, 최신 7/5 4-part AX_2026-07-05_백업.zip 원본을 확인. 이형배 폴더는 2026-07-17 건설현장 점검사진 분석·Main Agent 폴더와 기존 claude-backup-2026-07-09 Docs 폴더를 함께 유지",
+      result: "연결된 Drive 목록에서 김재우 7/18 AX Docs·처리로그, 7/17 세션백업 폴더, 최신 7/5 4-part AX_2026-07-05_백업.zip 원본을 확인. 이형배 폴더는 2026-07-18 건설현장 점검사진 분석·Main Agent 폴더와 기존 claude-backup-2026-07-09 Docs 폴더를 함께 유지",
     },
     {
       label: "2. 임시 결합",
       action: "part 번호 순서대로 /private/tmp 영역에서 단일 zip으로 결합",
-      result: "서비스 계정 토큰 발급이 fetch 실패로 막혀 shell collector 다운로드는 차단됨. 7/17 처리로그는 zip·분할·base64 미사용을 명시하므로 직전 로컬 검증 상태는 6/29 백업으로 유지",
+      result: "shell collector는 네트워크 허용 후 토큰 발급은 통과했지만 서비스 계정 프로젝트 840640478190의 Google Drive API 비활성화로 Drive 폴더 조회가 차단됨. 7/18 처리로그는 zip·분할·base64 미사용을 명시하므로 직전 로컬 검증 상태는 6/29 백업으로 유지",
     },
     {
       label: "3. 압축 해제 분석",
       action: "프롬프트·응답·SKILL·엑셀 산출물의 파일명, 크기, 본문 요약을 추출",
-      result: "7/17 신규 산출물은 폴더·Docs 기반이라 새 zip 해제 대상이 없음. 마지막으로 검증된 6/29 zip 내부에서는 6개 파일, 2개 작업 묶음, 프롬프트 2개와 응답 2개를 확인했고 Ops_dashboard_tab2_3h 프롬프트 1개에서 CRC 경고가 발생",
+      result: "7/18 신규 산출물은 폴더·Docs 기반이라 새 zip 해제 대상이 없음. 마지막으로 검증된 6/29 zip 내부에서는 6개 파일, 2개 작업 묶음, 프롬프트 2개와 응답 2개를 확인했고 Ops_dashboard_tab2_3h 프롬프트 1개에서 CRC 경고가 발생",
     },
     {
       label: "4. 임시 파일 삭제",
       action: "분석 후 결합 zip과 해제 폴더를 제거하고 요약 결과만 대시보드 데이터로 유지",
-      result: "Drive 원본은 변경하지 않았고, 이번 실행에서 shell collector는 토큰 발급 전에 실패해 결합 zip이나 해제 폴더를 남기지 않음",
+      result: "Drive 원본은 변경하지 않았고, 이번 실행에서 shell collector는 Drive 폴더 조회 전에 실패해 결합 zip이나 해제 폴더를 남기지 않음. connector file reference probe도 로컬 파일로 해석되지 않아 별도 결합은 수행하지 않음",
     },
   ],
   totals: {
@@ -1307,9 +1307,9 @@ const repositories: DriveArtifactRepository[] = [
     utilizationLevel: "높음",
     artifacts: jaewooZipArtifacts,
     insights: [
-      "Drive 폴더에는 7/17 AX Docs·처리로그, 7/16 세션백업 폴더, 7/5 4-part AX_2026-07-05_백업.zip 원본이 보입니다.",
-      "7/17 처리로그는 zip/분할/base64 미사용, Drive 날짜폴더에 AX_세션백업_2026-07-16 세션 하위폴더 7개와 _세션요약.md, 처리 신규 세션 8건을 기록했다고 설명합니다.",
-      "Shell collector의 Google 서비스 계정 토큰 발급은 fetch 실패로 차단되어 repo collector 기반 로컬 결합·unzip 검증은 이번 실행에서 갱신되지 않았습니다.",
+      "Drive 폴더에는 7/18 AX Docs·처리로그, 7/17 세션백업 폴더, 7/5 4-part AX_2026-07-05_백업.zip 원본이 보입니다.",
+      "7/18 처리로그는 zip/분할/base64 미사용, Drive 날짜폴더에 AX_세션백업_2026-07-17 세션 하위폴더 7개와 _세션요약.md, 처리 신규 세션 11건을 기록했다고 설명합니다.",
+      "Shell collector는 네트워크 허용 후 Google 토큰 발급은 통과했지만 서비스 계정 프로젝트의 Drive API 비활성화로 repo collector 기반 로컬 결합·unzip 검증은 이번 실행에서 갱신되지 않았습니다.",
       "마지막 로컬 검증 archive는 6/29 백업이며 Ops_dashboard_tab2_3h_6fb565c4b3a1 프롬프트 파일 CRC 경고 1건을 계속 재검증 대상으로 표시합니다.",
     ],
   }),
@@ -1324,7 +1324,7 @@ const repositories: DriveArtifactRepository[] = [
     utilizationLevel: "높음",
     artifacts: hyungbaeArtifacts,
     insights: [
-      "최신 2026-07-17 폴더에서 건설현장 점검사진 분석, Main Agent 패키지 폴더를 확인했고, 기존 claude-backup-2026-07-09 현장·안전관리 Docs 16개도 유지했습니다.",
+      "최신 2026-07-18 폴더에서 건설현장 점검사진 분석, Main Agent 패키지 폴더를 확인했고, 기존 claude-backup-2026-07-09 현장·안전관리 Docs 16개도 유지했습니다.",
       "7/15 건설현장 점검사진 분석은 입력자료 10개와 분석완료 XLSX 1개를 Drive API 크기 대조까지 완료했고, Main Agent는 CSI 분류기준 XLSX 1개와 안전보건 브리핑 텍스트 4건을 보존합니다.",
       "주요 작업은 TBM 263건, 노사협의체 18건, 근골격계 조사 2건, 안전관리비 계획·집행, 위험성평가·재난대응·안전보고 체계 수집, 점검사진 위험요인 분석, 안전보건 동향 브리핑으로 묶입니다.",
     ],
@@ -1334,9 +1334,9 @@ const repositories: DriveArtifactRepository[] = [
 export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   source: {
     name: "Google Drive Claude 산출물 저장소",
-    collectedAt: "2026-07-17 23:20 KST",
-    period: "2026-06-21 ~ 2026-07-17",
-    note: "김재우 폴더는 7/17 AX Docs·처리로그, 7/16 세션백업 폴더, 7/5 4-part zip 원본을 확인했지만 서비스 계정 토큰 발급 fetch 실패로 로컬 zip 검증은 갱신되지 않았습니다. 이형배 폴더는 2026-07-17 건설현장 점검사진 분석·Main Agent 폴더 2건과 claude-backup-2026-07-09 현장·안전관리 Docs 16개를 함께 유지합니다. 7/17 AX 분석 문서는 Drive 저장 산출물 71개(김재우 53·이형배 18·zip 내부 6)를 보고해 curated dashboard 모델도 71개를 유지합니다.",
+    collectedAt: "2026-07-18 23:25 KST",
+    period: "2026-06-21 ~ 2026-07-18",
+    note: "김재우 폴더는 7/18 AX Docs·처리로그, 7/17 세션백업 폴더, 7/5 4-part zip 원본을 확인했지만 서비스 계정 프로젝트의 Drive API 비활성화로 로컬 zip 검증은 갱신되지 않았습니다. 이형배 폴더는 2026-07-18 건설현장 점검사진 분석·Main Agent 폴더 2건과 claude-backup-2026-07-09 현장·안전관리 Docs 16개를 함께 유지합니다. 7/18 AX 분석 문서는 Drive 저장 산출물 71개(김재우 53·이형배 18·zip 내부 6)를 보고해 curated dashboard 모델도 71개를 유지합니다.",
   },
   totals: {
     repositories: repositories.length,
@@ -1350,7 +1350,7 @@ export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   zipAnalysisPipeline,
   insights: [
     "김재우 폴더는 Drive에 zip part 원본만 남기고, 대시보드 수집 시 임시 해제 분석 결과만 저장하는 구조로 운영합니다.",
-    `이형배 폴더는 ${hyungbaeDateFolderUrl} 하위의 2026-07-17 프로젝트 폴더와 기존 날짜별 Docs 백업 구조를 병행해 입력자료·생성결과물·세션별 본문을 함께 추적합니다.`,
-    "최신 김재우 7/5 4-part zip은 live Drive listing으로 유지 확인됐고, 로컬 결합·해제 검증은 서비스 계정 토큰 발급 fetch 실패로 갱신되지 않았습니다.",
+    `이형배 폴더는 ${hyungbaeDateFolderUrl} 하위의 2026-07-18 프로젝트 폴더와 기존 날짜별 Docs 백업 구조를 병행해 입력자료·생성결과물·세션별 본문을 함께 추적합니다.`,
+    "최신 김재우 7/5 4-part zip은 connected Drive listing으로 유지 확인됐고, 로컬 결합·해제 검증은 서비스 계정 프로젝트의 Drive API 비활성화로 갱신되지 않았습니다.",
   ],
 };
