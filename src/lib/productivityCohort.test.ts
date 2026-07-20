@@ -31,10 +31,20 @@ describe("buildProductivityExecutiveModel", () => {
 
   it("aligns observable monthly usage with the same cost month", () => {
     expect(model.costUsageSeries.find((item) => item.month === "2026-06")?.chatGptConversations).toBe(37);
-    expect(model.activationRate).toBeCloseTo((18 / 19) * 100);
+    expect(model.activeUsers).toBe(19);
+    expect(model.licensedUsers).toBe(19);
+    expect(model.activationRate).toBe(100);
     expect(model.observableRepositoryOutputs).toBe(
       driveArtifactRepositoryData.totals.outputs + (initialGensparkUsageData.driveAnalysis?.totalFiles ?? 0),
     );
+  });
+
+  it("separates active Claude seats from accounts with spend activity", () => {
+    expect(initialClaudeTeamUsageData.source.verification.memberAccounts).toBe(19);
+    expect(initialClaudeTeamUsageData.source.verification.activeMemberAccounts).toBe(19);
+    expect(initialClaudeTeamUsageData.users).toHaveLength(19);
+    expect(initialClaudeTeamUsageData.activeUsers).toBe(19);
+    expect(initialClaudeTeamUsageData.spendUsers).toBe(18);
   });
 
   it("reconciles monthly, department, and category totals to the source total", () => {

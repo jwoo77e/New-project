@@ -39,8 +39,10 @@ export type ClaudeTeamSourceVerification = {
   codeLineAccounts: number;
   matchedAccounts: number;
   approvedAccounts: number;
+  memberAccounts: number;
+  activeMemberAccounts: number;
   rawOnlyAccounts: number;
-  approvedButInactive: number;
+  approvedButNoUsage: number;
   note: string;
 };
 
@@ -49,6 +51,7 @@ export type ClaudeTeamUsageData = {
     name: string;
     period: string;
     generatedAt: string;
+    membersFile: string;
     spendFile: string;
     codeLinesFile: string;
     note: string;
@@ -342,6 +345,21 @@ const claudeTeamUsers: ClaudeTeamUserUsage[] = [
     level: "Low",
     note: "Spend report 요청 10건, Code Lines 0줄",
   },
+  {
+    email: "mjlee0828@riskzero.kr",
+    displayName: "이민재 부장",
+    requests: 0,
+    promptTokens: 0,
+    completionTokens: 0,
+    totalTokens: 0,
+    netSpendUsd: 0,
+    grossSpendUsd: 0,
+    codeLines: 0,
+    products: [],
+    models: [],
+    level: "Low",
+    note: "멤버 CSV Active · 7월 1-19일 Spend 및 Code Lines 사용 이력 없음",
+  },
 ];
 
 const accountsUsing = (key: string, type: "products" | "models") =>
@@ -350,23 +368,26 @@ const accountsUsing = (key: string, type: "products" | "models") =>
 export const initialClaudeTeamUsageData: ClaudeTeamUsageData = {
   source: {
     name: "Claude Team Plan 사용 현황",
-    period: "Spend 2026-07-01~19 · Lines 2026-07-01~31",
+    period: "Members 2026-07-20 · Spend 2026-07-01~19 · Lines 2026-07-01~31",
     generatedAt: "2026-07-20",
+    membersFile: "members-e59c75bc-469e-466f-bef9-c311748c1df8-2026-07-20.csv",
     spendFile: "spend-report-e59c75bc-469e-466f-bef9-c311748c1df8-2026-07-01-to-2026-07-19.csv",
     codeLinesFile: "claude_code_team_2026_07_01_to_2026_07_31.csv",
-    note: "Claude Spend report(7월 1-19일)와 Claude Code lines export(7월 1-31일)를 user email 기준으로 결합하고, AI 도구 결재 현황의 Team 계정 19개와 대조",
+    note: "Claude 멤버 목록(7월 20일), Spend report(7월 1-19일), Claude Code lines export(7월 1-31일)를 email 기준으로 결합하고 AI 도구 결재 현황의 Team 계정 19개와 대조",
     verification: {
       spendRecords: 102,
       codeLineAccounts: 16,
       matchedAccounts: 16,
       approvedAccounts: 19,
+      memberAccounts: 19,
+      activeMemberAccounts: 19,
       rawOnlyAccounts: 0,
-      approvedButInactive: 1,
-      note: "Spend 18개 계정과 Code Lines 16개 계정 중 16개가 교차 확인되었습니다. 원천 확인 계정은 모두 결재 등록되었고, 7월 미활성 결재 계정은 mjlee0828@riskzero.kr 1개입니다.",
+      approvedButNoUsage: 1,
+      note: "멤버 CSV의 19개 계정은 모두 Active입니다. Spend 사용 계정은 18개, Code Lines 사용 계정은 16개이며, mjlee0828@riskzero.kr은 활성 멤버이지만 집계 기간 사용 이력이 없습니다.",
     },
   },
   licensedUsers: 19,
-  activeUsers: 18,
+  activeUsers: 19,
   spendUsers: 18,
   codeUsers: 16,
   totalRequests: 63426,
@@ -394,10 +415,11 @@ export const initialClaudeTeamUsageData: ClaudeTeamUsageData = {
   ],
   users: claudeTeamUsers,
   insights: [
-    "7월 1-19일 Claude Spend report 기준 활성 사용자는 18명이며 총 63,426건의 요청과 $739.46 순지출이 확인됩니다.",
+    "7월 20일 Claude 멤버 CSV 기준 19명 전원이 Active로 확인되어 활성률은 100%입니다.",
+    "7월 1-19일 Claude Spend report에서 실제 사용 계정 18명, 총 63,426건의 요청과 $739.46 순지출이 확인됩니다.",
     "7월 1-31일 Claude Code lines export 기준 코드 라인은 총 204,744줄이고, 16명이 1줄 이상 사용했습니다.",
     "Spend는 Cowork $638.82(86.4%)에 집중되고, Code Lines는 wody@riskzero.kr 32,503줄, hhlee0227@riskzero.kr 29,268줄 순으로 높습니다.",
     "Spend report와 Code lines export 기간이 달라 비용·토큰은 7월 1-19일, 코드 라인은 7월 전체 기준으로 해석합니다.",
-    "결재 등록 Team 계정 19개와 원천 계정을 대조해 원천 확인 계정 전체의 결재 등록과 7월 미활성 결재 계정 1개를 확인했습니다.",
+    "결재 등록 Team 계정 19개와 멤버 CSV 19개가 일치하며, 이민재 부장 계정은 Active 상태이나 집계 기간 사용 이력은 없습니다.",
   ],
 };

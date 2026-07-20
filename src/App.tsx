@@ -879,7 +879,7 @@ function App() {
             label={`${productivityModel.currentMonthLabel} Claude 활성`}
             tone="teal"
             value={`${productivityModel.activeUsers}/${productivityModel.licensedUsers}명`}
-            footer={`활성률 ${formatRate(productivityModel.activationRate)} · 잠정`}
+            footer={`활성률 ${formatRate(productivityModel.activationRate)} · 멤버 CSV ${initialClaudeTeamUsageData.source.generatedAt}`}
           />
           <MetricCard
             icon={<FileText size={21} />}
@@ -3230,7 +3230,7 @@ function AdoptionView({
           <article className="api-summary-item">
             <span>활성 사용자</span>
             <strong>{numberFormat.format(claudeTeamUsageData.activeUsers)}명</strong>
-            <span>결재 등록 {numberFormat.format(claudeTeamUsageData.licensedUsers)}명 · CSV 활성 {numberFormat.format(claudeTeamUsageData.activeUsers)}명</span>
+            <span>결재 등록 {numberFormat.format(claudeTeamUsageData.licensedUsers)}명 · 멤버 CSV Active {numberFormat.format(claudeTeamUsageData.activeUsers)}명</span>
           </article>
           <article className="api-summary-item">
             <span>Spend report</span>
@@ -3370,8 +3370,8 @@ function AdoptionView({
                     )}
                   </td>
                   <td>
-                    <strong>{user.products.length > 0 ? user.products.join(", ") : "Claude Code"}</strong>
-                    <small>{user.models.length > 0 ? user.models.join(", ") : "lines export only"}</small>
+                    <strong>{user.products.length > 0 ? user.products.join(", ") : "사용 이력 없음"}</strong>
+                    <small>{user.models.length > 0 ? user.models.join(", ") : "집계 기간 기준"}</small>
                   </td>
                   <td>{user.note}</td>
                 </tr>
