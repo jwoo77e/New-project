@@ -84,8 +84,13 @@ import {
   type ApiUsageRunRateForecast,
 } from "./lib/apiForecast";
 import { dashboardDataFromExcel } from "./lib/excelDashboard";
+import {
+  buildProductivityExecutiveModel,
+  type ProductivityExecutiveModel,
+  type ProductivitySourceFreshness,
+} from "./lib/productivityCohort";
 
-type ViewKey = "monthly" | "adoption" | "genspark" | "approval" | "api";
+type ViewKey = "overview" | "monthly" | "adoption" | "genspark" | "approval" | "api";
 
 type ForecastPoint = {
   month: string;
@@ -390,7 +395,7 @@ function apiForecastActualCostUsd(forecast: ApiUsageRunRateForecast) {
 
 function App() {
   const [initialState] = useState(loadInitialDashboardState);
-  const [activeView, setActiveView] = useState<ViewKey>("adoption");
+  const [activeView, setActiveView] = useState<ViewKey>("overview");
   const [query, setQuery] = useState("");
   const [toast, setToast] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -500,6 +505,18 @@ function App() {
   const gammaUsageData = apiUsageData.gammaUsage ?? initialApiUsageData.gammaUsage!;
   const claudeTeamUsageData = initialClaudeTeamUsageData;
   const aiToolApprovalData = initialAiToolApprovalData;
+  const productivityModel = useMemo(
+    () =>
+      buildProductivityExecutiveModel({
+        monthlyActuals,
+        approvalData: aiToolApprovalData,
+        chatGptData: chatGptUsageData,
+        claudeTeamData: claudeTeamUsageData,
+        driveData: driveArtifactRepositoryData,
+        gensparkData: initialGensparkUsageData,
+      }),
+    [monthlyActuals],
+  );
   const aiUsageInsight = initialGensparkUsageData.insightAnalysis;
   const detailedUsageRecords = aiUsageInsight.totalRecords + chatGptUsageData.totalConversations;
   const driveArtifactsByOwner = driveArtifactRepositoryData.repositories
@@ -806,6 +823,14 @@ function App() {
 
       <nav className="view-tabs" aria-label="대시보드 보기">
         <button
+          className={activeView === "overview" ? "is-active" : ""}
+          type="button"
+          onClick={() => setActiveView("overview")}
+        >
+          <Activity size={17} />
+          경영 인사이트
+        </button>
+        <button
           className={activeView === "adoption" ? "is-active" : ""}
           type="button"
           onClick={() => setActiveView("adoption")}
@@ -847,7 +872,38 @@ function App() {
         </button>
       </nav>
 
-      {activeView === "api" ? (
+      {activeView === "overview" ? (
+        <section className="metric-grid" aria-label="비용과 생산성 핵심 지표">
+          <MetricCard
+            icon={<UserCheck size={21} />}
+            label={`${productivityModel.currentMonthLabel} Claude 활성`}
+            tone="teal"
+            value={`${productivityModel.activeUsers}/${productivityModel.licensedUsers}명`}
+            footer={`활성률 ${formatRate(productivityModel.activationRate)} · 잠정`}
+          />
+          <MetricCard
+            icon={<FileText size={21} />}
+            label="저장소 누적 산출 신호"
+            tone="green"
+            value={`${numberFormat.format(productivityModel.observableRepositoryOutputs)}개`}
+            footer={`Claude Drive ${numberFormat.format(productivityModel.driveOutputs)} · Genspark ${numberFormat.format(productivityModel.gensparkOutputs)}`}
+          />
+          <MetricCard
+            icon={<CircleDollarSign size={21} />}
+            label={`${productivityModel.currentMonthLabel} 최소 비용`}
+            tone="amber"
+            value={formatManWon(productivityModel.currentFixedCostKrw)}
+            footer="현재 고정 구독비 · API/변동비 미포함"
+          />
+          <MetricCard
+            icon={<ShieldCheck size={21} />}
+            label={`${productivityModel.lastClosedMonthLabel} 최근 확정 비용`}
+            tone="steel"
+            value={formatManWon(productivityModel.lastClosedCostKrw)}
+            footer={`사용 데이터 대비 ${productivityModel.lagMonths}개월 후행`}
+          />
+        </section>
+      ) : activeView === "api" ? (
         <section className="metric-grid" aria-label="API 사용 핵심 지표">
           <MetricCard
             icon={<Bot size={21} />}
@@ -1047,6 +1103,8 @@ function App() {
         />
       )}
 
+      {activeView === "overview" && <ExecutiveOverviewView model={productivityModel} />}
+
       {activeView === "adoption" && (
         <AdoptionView
           claudeTeamUsageData={claudeTeamUsageData}
@@ -1071,6 +1129,274 @@ function App() {
       {toast && <div className="toast">{toast}</div>}
     </main>
   );
+}
+
+function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel }) {
+  const latestCohort = model.cohorts[model.cohorts.length - 1];
+
+  return (
+    <div className="content-grid executive-view">
+      <section className="panel panel-large">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Cohort Trend</span>
+            <h2>사용월 기준 비용과 활동</h2>
+          </div>
+          <div className="panel-header-side">
+            <span className="state-pill ok">비용 확정월 정렬</span>
+            <span className="state-pill neutral">ChatGPT 활동은 부분 생산성 지표</span>
+          </div>
+        </div>
+        <p className="insight-lead">
+          청구 확인월이 아니라 실제 사용월에 비용을 연결합니다. 활동량은 현재 연속 월 데이터가 있는 ChatGPT 대화를 사용하며,
+          인과적 생산성이나 전체 AI 사용량으로 해석하지 않습니다.
+        </p>
+        <div className="executive-chart-frame">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={model.costUsageSeries} margin={{ top: 18, right: 12, left: 6, bottom: 4 }}>
+              <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} />
+              <YAxis
+                yAxisId="cost"
+                tickFormatter={formatAxisWon}
+                tickLine={false}
+                axisLine={false}
+                width={62}
+              />
+              <YAxis
+                yAxisId="usage"
+                orientation="right"
+                tickLine={false}
+                axisLine={false}
+                width={42}
+                allowDecimals={false}
+              />
+              <Tooltip
+                formatter={(value, name) => [
+                  name === "확정 AI 비용" ? formatWon(Number(value)) : `${numberFormat.format(Number(value))}대화`,
+                  name,
+                ]}
+              />
+              <Bar
+                dataKey="chatGptConversations"
+                name="ChatGPT 대화"
+                yAxisId="usage"
+                fill="#2f8f46"
+                radius={[5, 5, 0, 0]}
+                maxBarSize={46}
+              />
+              <Line
+                dataKey="costKrw"
+                name="확정 AI 비용"
+                yAxisId="cost"
+                type="monotone"
+                stroke="#e85d4f"
+                strokeWidth={3}
+                dot={{ r: 4, fill: "#e85d4f" }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="insight-box">
+          <CalendarRange size={18} />
+          <div>
+            <strong>{model.lastClosedMonthLabel}까지 비용 확정</strong>
+            <span>
+              최신 사용월은 {model.currentMonthLabel}이며 비용 원천은 {model.lagMonths}개월 후행합니다. 비용 자료가 들어오면
+              해당 사용월 코호트만 재계산합니다.
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Current Pulse</span>
+            <h2>{model.currentMonthLabel} 생산성 잠정치</h2>
+          </div>
+          <span className="state-pill warning">잠정</span>
+        </div>
+        <div className="productivity-meter-list">
+          <MeterRow
+            color="#0f8b8d"
+            label="Claude Team 활성률"
+            value={model.activationRate}
+            valueLabel={formatRate(model.activationRate)}
+          />
+          <MeterRow
+            color="#2f8f46"
+            label="Claude Code 사용 계정률"
+            value={model.codeUserRate}
+            valueLabel={formatRate(model.codeUserRate)}
+          />
+          <MeterRow
+            color="#5f6f8c"
+            label="Claude Drive 산출 비중"
+            value={(model.driveOutputs / model.observableRepositoryOutputs) * 100}
+            valueLabel={`${numberFormat.format(model.driveOutputs)}개`}
+          />
+          <MeterRow
+            color="#c58612"
+            label="Genspark 산출 비중"
+            value={(model.gensparkOutputs / model.observableRepositoryOutputs) * 100}
+            valueLabel={`${numberFormat.format(model.gensparkOutputs)}개`}
+          />
+        </div>
+        <div className="current-output-grid">
+          <div>
+            <span>Claude 요청</span>
+            <strong>{numberFormat.format(model.requests)}건</strong>
+          </div>
+          <div>
+            <span>Claude Code</span>
+            <strong>{numberFormat.format(model.codeLines)}줄</strong>
+          </div>
+        </div>
+        <div className="insight-box compact-insight">
+          <Activity size={18} />
+          <div>
+            <strong>사용 확산은 확인, 생산성 효과는 잠정</strong>
+            <span>실제 업무 채택·재사용·절감시간 데이터가 추가되기 전에는 ROI로 확정하지 않습니다.</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Cost Interpretation</span>
+            <h2>비용 판단 기준</h2>
+          </div>
+        </div>
+        <div className="plan-stack cost-rule-stack">
+          <div className="rule-row">
+            <span>현재 월 최소 비용</span>
+            <strong>{formatWon(model.currentFixedCostKrw)}</strong>
+          </div>
+          <div className="rule-row">
+            <span>최근 확정 비용</span>
+            <strong>{formatWon(model.lastClosedCostKrw)}</strong>
+          </div>
+          <div className="rule-row">
+            <span>비용 후행 시차</span>
+            <strong>{model.lagMonths}개월</strong>
+          </div>
+          <div className="rule-row">
+            <span>당월 변동비</span>
+            <strong>확정 대기</strong>
+          </div>
+        </div>
+        <div className="insight-box compact-insight">
+          <CircleDollarSign size={18} />
+          <div>
+            <strong>고정비는 최소값, API 비용은 별도</strong>
+            <span>Claude Team Spend와 시트 구독료는 청구 의미가 확인되기 전까지 중복 합산하지 않습니다.</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel panel-wide cohort-panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Monthly Cohorts</span>
+            <h2>확정·비용 대기·잠정 월 구분</h2>
+          </div>
+          <span className="state-pill neutral">{model.cohorts.length}개 월 코호트</span>
+        </div>
+        <div className="cohort-grid">
+          {model.cohorts.map((cohort) => (
+            <article className="cohort-column" key={cohort.month}>
+              <div className="cohort-head">
+                <div>
+                  <span>{cohort.label}</span>
+                  <strong>{cohort.costKrw === null ? "비용 대기" : formatManWon(cohort.costKrw)}</strong>
+                </div>
+                <span className={`state-pill ${cohortStatusTone(cohort.status)}`}>{cohort.status}</span>
+              </div>
+              <small>{cohort.costBasis}</small>
+              <div className="cohort-signal-group">
+                <b>사용 신호</b>
+                {cohort.usageSignals.length > 0 ? (
+                  cohort.usageSignals.map((signal) => <span key={signal}>{signal}</span>)
+                ) : (
+                  <span>동일 월 사용 원천 없음</span>
+                )}
+              </div>
+              <div className="cohort-signal-group">
+                <b>산출 신호</b>
+                {cohort.outputSignals.length > 0 ? (
+                  cohort.outputSignals.map((signal) => <span key={signal}>{signal}</span>)
+                ) : (
+                  <span>검증 가능한 산출 원천 없음</span>
+                )}
+              </div>
+              <p>{cohort.interpretation}</p>
+            </article>
+          ))}
+        </div>
+        {latestCohort && (
+          <div className="cohort-footer-note">
+            <ShieldCheck size={17} />
+            <span>
+              {latestCohort.label}은 {latestCohort.status} 상태입니다. 다음 비용 원천이 들어오면 게시월이 아니라 사용월에
+              연결해 효율 지표를 갱신합니다.
+            </span>
+          </div>
+        )}
+      </section>
+
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Source Freshness</span>
+            <h2>생산성·비용 원천 상태</h2>
+          </div>
+          <span className="state-pill neutral">상세 파일 목록 비노출</span>
+        </div>
+        <div className="table-wrap freshness-table">
+          <table>
+            <thead>
+              <tr>
+                <th>원천</th>
+                <th>수집 범위</th>
+                <th>기준 시각</th>
+                <th>상태</th>
+                <th>해석 기준</th>
+              </tr>
+            </thead>
+            <tbody>
+              {model.sourceFreshness.map((source) => (
+                <tr key={source.source}>
+                  <td>
+                    <strong>{source.source}</strong>
+                  </td>
+                  <td>{source.coverage}</td>
+                  <td>{source.asOf}</td>
+                  <td>
+                    <span className={`state-pill ${freshnessStatusTone(source)}`}>{source.status}</span>
+                  </td>
+                  <td>{source.note}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function cohortStatusTone(status: "확정" | "비용 대기" | "잠정") {
+  if (status === "확정") return "ok";
+  if (status === "잠정") return "warning";
+  return "neutral";
+}
+
+function freshnessStatusTone(source: ProductivitySourceFreshness) {
+  if (source.status === "확정") return "ok";
+  if (source.status === "수집 점검") return "warning";
+  return "neutral";
 }
 
 function MonthlyView({
