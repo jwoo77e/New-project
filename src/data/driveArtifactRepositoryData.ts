@@ -512,6 +512,39 @@ const jaewooZipModifiedAt = "2026-07-19T02:20:06.536Z";
 
 const jaewooZipArtifacts: DriveArtifact[] = [
   {
+    title: "2026-07-20 / AX_2026-07-20",
+    url: "https://docs.google.com/document/d/1rUpVm-cYVLa_U9thDoITYSldF6i62W_xVMnkCnV9yA8/edit?usp=drivesdk",
+    mimeType: "application/vnd.google-apps.document",
+    createdAt: "2026-07-19T23:13:51.956Z",
+    modifiedAt: "2026-07-19T23:13:53.395Z",
+    kind: "프롬프트+응답",
+    useCase: "AX 운영·KPI",
+    usageSignal:
+      "7월 20일 AX 전환 현황판은 Chrome 제어 5탭 직접 크롤링, API 탭 08:08 갱신, 최근 7일 API 비용 $70.4와 Drive 저장 산출물 71개 기준을 승계했다고 보고",
+  },
+  {
+    title: "2026-07-20 / AX_대시보드분석_2026-07-20",
+    url: "https://docs.google.com/document/d/1YQQzBZAzh9SmDPnHKLIsm5L0HUImG4SH1023iSd1qyM/edit?usp=drivesdk",
+    mimeType: "application/vnd.google-apps.document",
+    createdAt: "2026-07-19T23:28:11.415Z",
+    modifiedAt: "2026-07-19T23:28:12.670Z",
+    kind: "프롬프트+응답",
+    useCase: "AX 운영·KPI",
+    usageSignal:
+      "7월 20일 대시보드 분석 문서로 통합 분석 1,776건, 실무 산출형 91건, Drive 저장 산출물 71개, 김재우 53개와 이형배 18개 기준을 재확인",
+  },
+  {
+    title: "2026-07-20 / AX_세션처리로그_2026-07-20.md",
+    url: "https://drive.google.com/file/d/1P5XORmoaf0gkGvHnfgxcjmWUoJeA_4zn/view?usp=drivesdk",
+    mimeType: "text/markdown",
+    createdAt: "2026-07-19T23:24:04.195Z",
+    modifiedAt: "2026-07-19T23:24:04.197Z",
+    kind: "문서 산출물",
+    useCase: "업무보고·지식관리",
+    usageSignal:
+      "7월 20일 처리 로그로 7월 19일 대상 신규 8건, AX_세션백업_2026-07-19 하위폴더 7개와 _세션요약.md, Iris·Blog·AItrend·Genspark 생성파일 cp를 기록했고 zip·분할·base64·세션백업 Docs 미사용을 명시",
+  },
+  {
     title: "2026-07-19 / AX_2026-07-19",
     url: "https://docs.google.com/document/d/1owN3xSXBVx5bVKXZLDz0CqVH4agb0n-MfWJM2KxoLOI/edit?usp=drivesdk",
     mimeType: "application/vnd.google-apps.document",
@@ -1202,19 +1235,19 @@ function buildRepository(spec: DriveRepositorySpec): DriveArtifactRepository {
 }
 
 const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
-  collectedAt: "2026-07-20 08:05 KST",
+  collectedAt: "2026-07-20 23:03 KST",
   mode: "Drive에는 zip 분할 원본만 보존하고, 대시보드 수집 시 로컬 임시 영역에서만 결합·해제·분석합니다.",
   cleanupPolicy: "결합 zip과 압축 해제 폴더는 분석 완료 후 삭제하며 Drive 원본 zip part 파일은 삭제하거나 변환하지 않습니다.",
   stages: [
     {
       label: "1. Drive 원본 조회",
       action: "대상 폴더에서 zip.partNN, zip.001, z01+zip 패턴을 그룹화",
-      result: "연결된 Drive 목록에서 김재우 7/19 AX Docs·처리로그, 7/18 세션백업 폴더, 최신 7/5 4-part AX_2026-07-05_백업.zip 원본을 확인. 이형배 폴더는 2026-07-19 건설현장 점검사진 분석·Main Agent 폴더와 기존 claude-backup-2026-07-09 Docs 폴더를 함께 유지",
+      result: "연결된 Drive 목록에서 김재우 7/20 AX Docs·처리로그, 7/19 세션백업 폴더, 최신 split 원본인 7/5 4-part AX_2026-07-05_백업.zip을 확인. 이형배 폴더는 2026-07-20 날짜 폴더가 추가됐지만 루트 split zip은 없고 2026-07-19 건설현장 점검사진 분석·Main Agent 폴더와 기존 claude-backup-2026-07-09 Docs 폴더를 유지",
     },
     {
       label: "2. 임시 결합",
       action: "part 번호 순서대로 /private/tmp 영역에서 단일 zip으로 결합",
-      result: "connector raw byte handle로 7/5 part00~part03 사본을 /private/tmp/drive-zip-20260719에 내려받아 23,988바이트 단일 zip으로 결합. Drive 원본 part는 변경하지 않음",
+      result: "service-account collector는 Google Drive API disabled 오류로 다운로드 단계에 진입하지 못했고, connector raw byte handle로 7/5 part00 접근 가능성을 재확인. 새 split part는 없어 마지막 로컬 결합 검증 상태를 유지. Drive 원본 part는 변경하지 않음",
     },
     {
       label: "3. 압축 해제 분석",
@@ -1224,7 +1257,7 @@ const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
     {
       label: "4. 임시 파일 삭제",
       action: "분석 후 결합 zip과 해제 폴더를 제거하고 요약 결과만 대시보드 데이터로 유지",
-      result: "Drive 원본은 변경하지 않았고, 7/5 결합 zip·다운로드 part 사본·repair probe 산출물·해제 폴더는 분석 후 /private/tmp에서 삭제 대상으로 처리",
+      result: "이번 실행에서 service-account 다운로드는 실패 전 종료됐고 connector raw fetch는 대화권 임시 handle만 사용. /private/tmp 결합 zip·해제 폴더는 남기지 않았으며 Drive 원본은 변경하지 않음",
     },
   ],
   totals: {
@@ -1255,8 +1288,8 @@ const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
       skillFiles: 0,
       dataFiles: 0,
       crcWarningFiles: [],
-      cleanupStatus: "결합 zip과 part 사본은 /private/tmp/drive-zip-20260719 안에서 검증 후 삭제 대상으로 처리. Drive 원본 part는 변경하지 않음",
-      verificationStatus: "4개 part를 내려받아 결합했지만 unzip -t와 unzip -Z가 End-of-central-directory signature not found로 실패했고 zip -FF는 누락된 AX_2026-07-05_백업.z01 split을 요구. Drive 검색에서 part04는 발견되지 않음",
+      cleanupStatus: "이번 실행은 service-account Drive API disabled 오류로 결합 전 종료됐고 /private/tmp 결합 zip·해제 폴더는 남기지 않음. Drive 원본 part는 변경하지 않음",
+      verificationStatus: "Drive 목록에서 4개 part가 유지되고 connector raw byte handle로 part00 접근은 확인했지만 service-account 다운로드는 Google Drive API disabled 오류로 실패. 이전 로컬 검증에서 unzip -t와 unzip -Z가 End-of-central-directory signature not found로 실패했고 zip -FF는 누락된 AX_2026-07-05_백업.z01 split을 요구",
       taskGroups: [],
     },
     {
@@ -1330,9 +1363,9 @@ const repositories: DriveArtifactRepository[] = [
     utilizationLevel: "높음",
     artifacts: jaewooZipArtifacts,
     insights: [
-      "Drive 폴더에는 7/19 AX Docs·처리로그, 7/18 세션백업 폴더, 7/5 4-part AX_2026-07-05_백업.zip 원본이 보입니다.",
-      "7/19 처리로그는 zip/분할/base64 미사용, Drive 날짜폴더에 AX_세션백업_2026-07-18 세션 하위폴더 10개와 _세션요약.md, 생성 파일 13건 cp, 처리 신규 세션 11건을 기록했다고 설명합니다.",
-      "7/5 4-part zip은 connector raw byte handle로 로컬 결합까지 수행했지만 중앙 디렉터리 누락으로 unzip 검증에 실패했고, zip -FF도 누락된 z01 split을 요구했습니다.",
+      "Drive 폴더에는 7/20 AX Docs·처리로그, 7/19 세션백업 폴더, 7/5 4-part AX_2026-07-05_백업.zip 원본이 보입니다.",
+      "7/20 처리로그는 zip/분할/base64 미사용, Drive 날짜폴더에 AX_세션백업_2026-07-19 세션 하위폴더 7개와 _세션요약.md, Iris·Blog·AItrend·Genspark 생성 파일 cp, 처리 신규 세션 8건을 기록했다고 설명합니다.",
+      "7/5 4-part zip은 이번 실행에서 connector raw byte handle 접근은 확인했지만 service-account 직접 다운로드가 Google Drive API disabled 오류로 막혔고, 마지막 로컬 결합 검증에서는 중앙 디렉터리 누락과 누락 z01 split 요구가 있었습니다.",
       "마지막 로컬 검증 archive는 6/29 백업이며 Ops_dashboard_tab2_3h_6fb565c4b3a1 프롬프트 파일 CRC 경고 1건을 계속 재검증 대상으로 표시합니다.",
     ],
   }),
@@ -1357,9 +1390,9 @@ const repositories: DriveArtifactRepository[] = [
 export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   source: {
     name: "Google Drive Claude 산출물 저장소",
-    collectedAt: "2026-07-20 08:05 KST",
-    period: "2026-06-21 ~ 2026-07-19",
-    note: "김재우 폴더는 7/19 AX Docs·처리로그, 7/18 세션백업 폴더, 7/5 4-part zip 원본을 확인했습니다. 7/5 zip은 로컬 임시 영역에서 part00~part03을 결합했지만 중앙 디렉터리 누락으로 unzip 검증에 실패했고, 마지막 성공 해제 상태는 6/29 백업 6개 파일로 유지합니다. 이형배 폴더는 2026-07-19 건설현장 점검사진 분석·Main Agent 폴더 2건과 claude-backup-2026-07-09 현장·안전관리 Docs 16개를 함께 유지합니다. 7/19 AX 분석 문서는 Drive 저장 산출물 71개(김재우 53·이형배 18·zip 내부 6)를 보고해 curated dashboard 모델도 71개를 유지합니다.",
+    collectedAt: "2026-07-20 23:03 KST",
+    period: "2026-06-21 ~ 2026-07-20",
+    note: "김재우 폴더는 7/20 AX Docs·처리로그, 7/19 세션백업 폴더, 7/5 4-part zip 원본을 확인했습니다. 7/20 처리로그는 신규 8건과 생성파일 cp 백업을 기록하되 zip·분할·base64 미사용을 명시합니다. 7/5 zip은 이번 실행에서 service-account 직접 다운로드가 Google Drive API disabled 오류로 막혔고, 마지막 로컬 결합 검증 상태는 중앙 디렉터리 누락 실패로 유지합니다. 마지막 성공 해제 상태는 6/29 백업 6개 파일입니다. 이형배 폴더는 2026-07-20 날짜 폴더가 추가됐지만 루트 split zip은 없고 2026-07-19 건설현장 점검사진 분석·Main Agent 폴더 2건과 claude-backup-2026-07-09 현장·안전관리 Docs 16개를 함께 유지합니다. 7/20 AX 분석 문서는 Drive 저장 산출물 71개(김재우 53·이형배 18·zip 내부 6)를 보고하지만, connected Drive 최신 top-level 산출물 3건을 curated 모델에 추가해 repository 파일 수는 김재우 56개와 이형배 18개로 갱신합니다.",
   },
   totals: {
     repositories: repositories.length,
@@ -1374,6 +1407,6 @@ export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   insights: [
     "김재우 폴더는 Drive에 zip part 원본만 남기고, 대시보드 수집 시 임시 해제 분석 결과만 저장하는 구조로 운영합니다.",
     `이형배 폴더는 ${hyungbaeDateFolderUrl} 하위의 2026-07-19 프로젝트 폴더와 기존 날짜별 Docs 백업 구조를 병행해 입력자료·생성결과물·세션별 본문을 함께 추적합니다.`,
-    "최신 김재우 7/5 4-part zip은 connected Drive listing과 connector raw byte handle로 유지 확인됐지만 로컬 결합본은 중앙 디렉터리 누락으로 해제되지 않았습니다.",
+    "최신 김재우 7/5 4-part zip은 connected Drive listing과 connector raw byte handle로 유지 확인됐지만 이번 service-account 다운로드는 Google Drive API disabled 오류로 막혔고, 기존 로컬 결합본은 중앙 디렉터리 누락으로 해제되지 않았습니다.",
   ],
 };
