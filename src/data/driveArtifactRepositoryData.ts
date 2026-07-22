@@ -508,9 +508,42 @@ const jaewooArtifacts: DriveArtifact[] = [
 ];
 
 const jaewooZipFolderUrl = "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link";
-const jaewooZipModifiedAt = "2026-07-21T02:18:06.970Z";
+const jaewooZipModifiedAt = "2026-07-22T02:17:36.314Z";
 
 const jaewooZipArtifacts: DriveArtifact[] = [
+  {
+    title: "2026-07-22 / AX_2026-07-22",
+    url: "https://docs.google.com/document/d/1l6PouazdPQVNpKgw4FXpllLrnM3eN8UUYuSytAfihCg/edit?usp=drivesdk",
+    mimeType: "application/vnd.google-apps.document",
+    createdAt: "2026-07-21T23:15:56.508Z",
+    modifiedAt: "2026-07-21T23:15:57.931Z",
+    kind: "프롬프트+응답",
+    useCase: "AX 운영·KPI",
+    usageSignal:
+      "7월 22일 AX 전환 현황판은 Chrome 제어 직접 크롤링으로 6탭을 수집했고 API 7일 비용 $82.8, Claude API 단일 모델 스파이크, 집계창 1~6월 전진을 기록. Drive 저장소는 전일 모델을 승계하되 오늘 백업 폴더와 처리로그가 추가됨",
+  },
+  {
+    title: "2026-07-22 / AX_대시보드분석_2026-07-22",
+    url: "https://docs.google.com/document/d/1l6ap98q5p_H0rPiMwkAboVBFZgX42A47aElLfGVztrY/edit?usp=drivesdk",
+    mimeType: "application/vnd.google-apps.document",
+    createdAt: "2026-07-22T02:17:35.084Z",
+    modifiedAt: "2026-07-22T02:17:36.314Z",
+    kind: "프롬프트+응답",
+    useCase: "AX 운영·KPI",
+    usageSignal:
+      "7월 22일 대시보드 분석 문서로 AI 활용 상세 분석 탭의 Drive 저장 산출물 79개(김재우 59·이형배 20)와 이형배 일부 바이너리 미업로드·크기 불일치 재업로드 권고를 재확인",
+  },
+  {
+    title: "2026-07-22 / AX_세션처리로그_2026-07-22.md",
+    url: "https://drive.google.com/file/d/1Bdsz2U2y-_smel31k-VoDX4zhsfRyEMC/view?usp=drivesdk",
+    mimeType: "text/markdown",
+    createdAt: "2026-07-22T02:13:34.701Z",
+    modifiedAt: "2026-07-22T02:13:34.701Z",
+    kind: "문서 산출물",
+    useCase: "업무보고·지식관리",
+    usageSignal:
+      "7월 22일 처리 로그로 7월 21일 대상 신규 13건, AX_세션백업_2026-07-21 세션폴더 12개와 _세션요약.md, 국책·Genspark·AI트렌드·Blog·KPI·CEO·IRIS 바이너리 cp를 기록했고 zip·분할·base64·세션백업 Docs 미사용을 명시",
+  },
   {
     title: "2026-07-21 / AX_2026-07-21",
     url: "https://docs.google.com/document/d/1MK6p-1mQ6ZTYB9MnOdbI042dr9LqMlyzypMe7Frqe34/edit?usp=drivesdk",
@@ -1109,10 +1142,10 @@ const jaewooZipArtifacts: DriveArtifact[] = [
   },
 ];
 
-const hyungbaeDateFolderUrl = "https://drive.google.com/drive/folders/1CgjPEMt-5nczLx5OlZ9iw1M8JaF4cyzB?usp=sharing";
+const hyungbaeDateFolderUrl = "https://drive.google.com/drive/folders/1n87stddMKhfup7y7eV5gh0pqjeIZMMQ3?usp=sharing";
 const hyungbaeDocsCreatedAt = "2026-07-08T18:08:49.521Z";
 const hyungbaeDocsModifiedAt = "2026-07-08T18:17:08.270Z";
-const hyungbaeRepositoryModifiedAt = "2026-07-21T10:08:11.144Z";
+const hyungbaeRepositoryModifiedAt = "2026-07-22T10:35:13.333Z";
 
 function hyungbaeDoc(
   title: string,
@@ -1133,6 +1166,28 @@ function hyungbaeDoc(
 }
 
 const hyungbaeArtifacts: DriveArtifact[] = [
+  {
+    title: "2026-07-22 / 건설현장 점검사진 분석",
+    url: "https://docs.google.com/document/d/1DyuMTi74Vdx0fIyXQP_X9h4SBElj2xaoEUUE8a4a-1c/edit?usp=drivesdk",
+    mimeType: "application/vnd.google-apps.document",
+    createdAt: "2026-07-22T10:35:11.236Z",
+    modifiedAt: "2026-07-22T10:35:13.333Z",
+    kind: "프롬프트+응답",
+    useCase: "현장 안전관리 자료",
+    usageSignal:
+      "7월 22일 README 기준 건설현장 점검사진 15매 판독 결과로 직접·추론 위험요인, 사고유형, 산안법·안전보건규칙 조항, 안전대책을 분석완료 XLSX로 정리. 대화기록 3건은 업로드됐지만 사진·법령 PDF·원본/최종 XLSX는 base64 한도로 미업로드",
+  },
+  {
+    title: "2026-07-22 / Main Agent",
+    url: "https://docs.google.com/document/d/1XXUkWXYdR2q81-3a8m6w07tc-Q8Sk6ZZkiK50OyAOso/edit?usp=drivesdk",
+    mimeType: "application/vnd.google-apps.document",
+    createdAt: "2026-07-22T10:34:48.535Z",
+    modifiedAt: "2026-07-22T10:34:50.968Z",
+    kind: "프롬프트+응답",
+    useCase: "현장 안전관리 자료",
+    usageSignal:
+      "7월 22일 README 기준 RiskZero 안전보건 자동 브리핑과 HD현대 울산조선소 곤돌라 협착 사망사고 분석 산출물. 텍스트 브리핑 6건과 대화기록 1건은 업로드됐고 CSI XLSX·7/21 데일리브리핑 DOCX는 바이너리 업로드 한도로 미업로드",
+  },
   {
     title: "2026-07-20 / 건설현장 점검사진 분석",
     url: "https://docs.google.com/document/d/1BNX4RymtA959bEndrn6c6ZAtmYYN-qJcrgl1Ul8vUv4/edit?usp=drivesdk",
@@ -1290,19 +1345,19 @@ function buildRepository(spec: DriveRepositorySpec): DriveArtifactRepository {
 }
 
 const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
-  collectedAt: "2026-07-21 23:10 KST",
+  collectedAt: "2026-07-22 23:10 KST",
   mode: "Drive에는 zip 분할 원본만 보존하고, 대시보드 수집 시 로컬 임시 영역에서만 결합·해제·분석합니다.",
   cleanupPolicy: "결합 zip과 압축 해제 폴더는 분석 완료 후 삭제하며 Drive 원본 zip part 파일은 삭제하거나 변환하지 않습니다.",
   stages: [
     {
       label: "1. Drive 원본 조회",
       action: "대상 폴더에서 zip.partNN, zip.001, z01+zip 패턴을 그룹화",
-      result: "연결된 Drive 목록에서 김재우 7/21 AX Docs·처리로그, 7/20 세션백업 폴더, 최신 split 원본인 7/5 4-part AX_2026-07-05_백업.zip을 확인. 이형배 폴더는 2026-07-21 날짜 폴더가 추가됐지만 하위 결과·대화 폴더는 비어 있고 루트 split zip은 없음. 2026-07-20 건설현장 점검사진 분석·Main Agent README 2건을 새로 확인",
+      result: "연결된 Drive 목록에서 김재우 7/22 AX Docs·처리로그, 7/21 세션백업 폴더, 최신 split 원본인 7/5 4-part AX_2026-07-05_백업.zip을 확인. 이형배 폴더는 2026-07-22 날짜 폴더가 추가됐고 건설현장 점검사진 분석·Main Agent README 2건과 업로드 완료 텍스트/대화기록 파일을 확인. 이형배 루트 split zip은 없음",
     },
     {
       label: "2. 임시 결합",
       action: "part 번호 순서대로 /private/tmp 영역에서 단일 zip으로 결합",
-      result: "connector raw byte handle로 7/5 part00~part03을 /private/tmp/drive-zip-20260721에 다운로드하고 23,988-byte zip으로 결합. 새 split part는 없었고 Drive 원본 part는 변경하지 않음",
+      result: "connector raw byte handle로 7/5 part00~part03을 /private/tmp/drive-zip-20260722에 다운로드하고 23,988-byte zip으로 결합. 새 split part는 없었고 Drive 원본 part는 변경하지 않음",
     },
     {
       label: "3. 압축 해제 분석",
@@ -1312,7 +1367,7 @@ const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
     {
       label: "4. 임시 파일 삭제",
       action: "분석 후 결합 zip과 해제 폴더를 제거하고 요약 결과만 대시보드 데이터로 유지",
-      result: "이번 실행의 /private/tmp/drive-zip-20260721 결합 zip·part 파일·repair 출력은 검증 후 삭제 대상으로 표시했고 Drive 원본은 변경하지 않음",
+      result: "이번 실행의 /private/tmp/drive-zip-20260722 결합 zip·part 파일·repair 출력은 검증 후 삭제했고 cleanup 확인은 TEMP_CLEAN. Drive 원본은 변경하지 않음",
     },
   ],
   totals: {
@@ -1343,7 +1398,7 @@ const zipAnalysisPipeline: DriveZipAnalysisPipeline = {
       skillFiles: 0,
       dataFiles: 0,
       crcWarningFiles: [],
-      cleanupStatus: "이번 실행에서 connector raw byte handle로 받은 4개 part를 /private/tmp/drive-zip-20260721 안에서만 결합·검증했고 cleanup 단계에서 삭제. Drive 원본 part는 변경하지 않음",
+      cleanupStatus: "이번 실행에서 connector raw byte handle로 받은 4개 part를 /private/tmp/drive-zip-20260722 안에서만 결합·검증했고 cleanup 단계에서 삭제. Drive 원본 part는 변경하지 않음",
       verificationStatus: "Drive 목록에서 4개 part가 유지되고 connector raw byte handle로 part00~part03을 내려받아 23,988 bytes로 결합했지만 unzip -t와 unzip -Z가 End-of-central-directory signature not found로 실패. zip -FF는 누락된 AX_2026-07-05_백업.z01 split을 요구",
       taskGroups: [],
     },
@@ -1418,8 +1473,8 @@ const repositories: DriveArtifactRepository[] = [
     utilizationLevel: "높음",
     artifacts: jaewooZipArtifacts,
     insights: [
-      "Drive 폴더에는 7/21 AX Docs·처리로그, 7/20 세션백업 폴더, 7/5 4-part AX_2026-07-05_백업.zip 원본이 보입니다.",
-      "7/21 처리로그는 zip/분할/base64 미사용, Drive 날짜폴더에 AX_세션백업_2026-07-20 세션 하위폴더 14개와 _세션요약.md, 생성파일 cp 12건, 처리 신규 세션 14건을 기록했다고 설명합니다.",
+      "Drive 폴더에는 7/22 AX Docs·처리로그, 7/21 세션백업 폴더, 7/5 4-part AX_2026-07-05_백업.zip 원본이 보입니다.",
+      "7/22 처리로그는 zip/분할/base64 미사용, Drive 날짜폴더에 AX_세션백업_2026-07-21 세션 하위폴더 12개와 _세션요약.md, 국책·Genspark·AI트렌드·Blog·KPI·CEO·IRIS 바이너리 cp를 기록했고 처리 신규 세션 13건을 설명합니다.",
       "7/5 4-part zip은 이번 실행에서 connector raw byte handle로 로컬 결합까지 재검증했지만 중앙 디렉터리 누락과 누락 z01 split 요구가 반복됐습니다.",
       "마지막 로컬 검증 archive는 6/29 백업이며 Ops_dashboard_tab2_3h_6fb565c4b3a1 프롬프트 파일 CRC 경고 1건을 계속 재검증 대상으로 표시합니다.",
     ],
@@ -1435,9 +1490,9 @@ const repositories: DriveArtifactRepository[] = [
     utilizationLevel: "높음",
     artifacts: hyungbaeArtifacts,
     insights: [
-      "최신 2026-07-21 폴더는 건설현장 점검사진 분석·Main Agent 하위 입력자료/생성결과물/대화기록 폴더 구조만 있고 직접 결과·대화 폴더는 비어 있어 파일 수에 반영하지 않았습니다.",
-      "2026-07-20 폴더에서 건설현장 점검사진 분석, Main Agent README 2건을 확인했고, 7/20 README는 대화기록 백업과 바이너리 미업로드·손상 가능성을 명시합니다.",
-      "7/20 건설현장 점검사진 분석은 대화기록 4건을 업로드했지만 사진·PDF·원본/최종 XLSX는 base64 전송 제약으로 미업로드했습니다. Main Agent는 안전보건 브리핑 텍스트 6건과 대화기록 2건을 보존했고 CSI XLSX는 크기 불일치로 재업로드 권장 상태입니다.",
+      "최신 2026-07-22 폴더는 건설현장 점검사진 분석·Main Agent README 2건과 실제 업로드된 텍스트/대화기록 파일을 포함해 파일 수에 반영했습니다.",
+      "2026-07-22 건설현장 점검사진 분석은 대화기록 3건을 업로드했지만 사진·법령 PDF·원본/최종 XLSX는 base64 전송 제약으로 미업로드했습니다.",
+      "2026-07-22 Main Agent는 안전보건 브리핑 텍스트 6건과 HD현대 울산조선소 곤돌라 협착 사망사고 대화기록 1건을 보존했고 CSI XLSX·7/21 데일리브리핑 DOCX는 바이너리 업로드 한도로 미업로드했습니다.",
       "주요 작업은 TBM 263건, 노사협의체 18건, 근골격계 조사 2건, 안전관리비 계획·집행, 위험성평가·재난대응·안전보고 체계 수집, 점검사진 위험요인 분석, 안전보건 동향 브리핑으로 묶입니다.",
     ],
   }),
@@ -1446,9 +1501,9 @@ const repositories: DriveArtifactRepository[] = [
 export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   source: {
     name: "Google Drive Claude 산출물 저장소",
-    collectedAt: "2026-07-21 23:10 KST",
-    period: "2026-06-21 ~ 2026-07-21",
-    note: "김재우 폴더는 7/21 AX Docs·처리로그, 7/20 세션백업 폴더, 7/5 4-part zip 원본을 확인했습니다. 7/21 처리로그는 신규 14건과 생성파일 cp 12건을 기록하되 zip·분할·base64 미사용을 명시합니다. 7/5 zip은 이번 실행에서 connector raw byte handle로 4개 part를 /private/tmp에 내려받아 23,988 bytes로 결합했지만 중앙 디렉터리 누락 실패와 누락 z01 요구가 반복됐습니다. 마지막 성공 해제 상태는 6/29 백업 6개 파일입니다. 이형배 폴더는 2026-07-21 날짜 폴더가 추가됐지만 직접 결과·대화 폴더는 비어 있었고 루트 split zip은 없습니다. 2026-07-20 건설현장 점검사진 분석·Main Agent README 2건을 curated 모델에 추가해 repository 파일 수는 김재우 59개와 이형배 20개로 갱신합니다.",
+    collectedAt: "2026-07-22 23:10 KST",
+    period: "2026-06-21 ~ 2026-07-22",
+    note: "김재우 폴더는 7/22 AX Docs·처리로그, 7/21 세션백업 폴더, 7/5 4-part zip 원본을 확인했습니다. 7/22 처리로그는 신규 13건, 세션폴더 12개, 국책·Genspark·AI트렌드·Blog·KPI·CEO·IRIS 바이너리 cp를 기록하되 zip·분할·base64 미사용을 명시합니다. 7/5 zip은 이번 실행에서 connector raw byte handle로 4개 part를 /private/tmp에 내려받아 23,988 bytes로 결합했지만 중앙 디렉터리 누락 실패와 누락 z01 요구가 반복됐습니다. 마지막 성공 해제 상태는 6/29 백업 6개 파일입니다. 이형배 폴더는 2026-07-22 날짜 폴더에서 건설현장 점검사진 분석·Main Agent README 2건과 텍스트/대화기록 파일을 확인했고 루트 split zip은 없습니다. repository 파일 수는 김재우 62개와 이형배 22개로 갱신합니다.",
   },
   totals: {
     repositories: repositories.length,
