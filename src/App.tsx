@@ -1545,7 +1545,9 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
                   <strong>결과 생성과 전환</strong>
                 </div>
               </div>
-              <span className="state-pill warning">검증 필요</span>
+              <span className={`state-pill ${model.axKpis.output.dailyGrowthRate >= 0 ? "ok" : "warning"}`}>
+                {model.axKpis.output.dailyGrowthRate >= 0 ? "증가" : "감소"}
+              </span>
             </div>
             <div className="ax-kpi-headline">
               <strong>{model.axKpis.output.outputsPerConversation.toFixed(2)}개</strong>
