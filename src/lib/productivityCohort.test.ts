@@ -37,6 +37,9 @@ describe("buildProductivityExecutiveModel", () => {
     expect(model.observableRepositoryOutputs).toBe(
       driveArtifactRepositoryData.totals.outputs + (initialGensparkUsageData.driveAnalysis?.totalFiles ?? 0),
     );
+    expect(model.sourceFreshness.find((source) => source.source === "Claude Drive")).toMatchObject({
+      status: "전체 폴더 집계",
+    });
   });
 
   it("separates active Claude seats from accounts with spend activity", () => {

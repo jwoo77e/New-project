@@ -5,6 +5,10 @@ type DriveArtifactTrendInput = {
   repositories: Array<{
     owner: string;
     artifacts: Array<Pick<DriveArtifact, "createdAt" | "kind">>;
+    inventory?: {
+      metadataDateAnomalyCount: number;
+      dailyCounts: Array<{ date: string; count: number }>;
+    };
   }>;
 };
 
@@ -21,6 +25,7 @@ export type DriveArtifactDailyTrendPoint = {
 export type DriveArtifactDailyTrend = {
   owners: string[];
   points: DriveArtifactDailyTrendPoint[];
+  openingFiles: number;
   activeDays: number;
   peakDay: DriveArtifactDailyTrendPoint | null;
   latestDay: DriveArtifactDailyTrendPoint | null;
@@ -46,14 +51,35 @@ function shortDateLabel(dateKey: string) {
 export function buildDriveArtifactDailyTrend(data: DriveArtifactTrendInput): DriveArtifactDailyTrend {
   const owners = data.repositories.map((repository) => repository.owner);
   const periodDates = data.source.period.match(/\d{4}-\d{2}-\d{2}/g) ?? [];
-  const artifacts = data.repositories.flatMap((repository) =>
-    repository.artifacts.map((artifact) => ({ ...artifact, owner: repository.owner, date: toKstDateKey(artifact.createdAt) })),
-  );
+  const usesInventory = data.repositories.every((repository) => repository.inventory);
+  const inventoryCounts = usesInventory
+    ? data.repositories.flatMap((repository) =>
+        (repository.inventory?.dailyCounts ?? []).map((dailyCount) => ({
+          ...dailyCount,
+          owner: repository.owner,
+        })),
+      )
+    : [];
+  const openingFiles = usesInventory
+    ? data.repositories.reduce(
+        (sum, repository) => sum + (repository.inventory?.metadataDateAnomalyCount ?? 0),
+        0,
+      )
+    : 0;
+  const artifacts = usesInventory
+    ? []
+    : data.repositories.flatMap((repository) =>
+        repository.artifacts.map((artifact) => ({
+          ...artifact,
+          owner: repository.owner,
+          date: toKstDateKey(artifact.createdAt),
+        })),
+      );
   const artifactDates = artifacts.map((artifact) => artifact.date).filter(Boolean);
-  const allDates = [...periodDates, ...artifactDates].sort();
+  const allDates = [...periodDates, ...artifactDates, ...inventoryCounts.map((dailyCount) => dailyCount.date)].sort();
 
   if (allDates.length === 0) {
-    return { owners, points: [], activeDays: 0, peakDay: null, latestDay: null };
+    return { owners, points: [], openingFiles, activeDays: 0, peakDay: null, latestDay: null };
   }
 
   const startDate = allDates[0];
@@ -73,16 +99,25 @@ export function buildDriveArtifactDailyTrend(data: DriveArtifactTrendInput): Dri
     });
   }
 
-  for (const artifact of artifacts) {
-    const bucket = buckets.get(artifact.date);
-    if (!bucket) continue;
-    bucket.total += 1;
-    bucket.ownerCounts[artifact.owner] = (bucket.ownerCounts[artifact.owner] ?? 0) + 1;
-    if (artifact.kind === "프롬프트" || artifact.kind === "프롬프트+응답") bucket.prompts += 1;
-    if (artifact.kind !== "프롬프트") bucket.outputs += 1;
+  if (usesInventory) {
+    for (const dailyCount of inventoryCounts) {
+      const bucket = buckets.get(dailyCount.date);
+      if (!bucket) continue;
+      bucket.total += dailyCount.count;
+      bucket.ownerCounts[dailyCount.owner] = (bucket.ownerCounts[dailyCount.owner] ?? 0) + dailyCount.count;
+    }
+  } else {
+    for (const artifact of artifacts) {
+      const bucket = buckets.get(artifact.date);
+      if (!bucket) continue;
+      bucket.total += 1;
+      bucket.ownerCounts[artifact.owner] = (bucket.ownerCounts[artifact.owner] ?? 0) + 1;
+      if (artifact.kind === "프롬프트" || artifact.kind === "프롬프트+응답") bucket.prompts += 1;
+      if (artifact.kind !== "프롬프트") bucket.outputs += 1;
+    }
   }
 
-  let cumulative = 0;
+  let cumulative = openingFiles;
   const points = [...buckets.values()].map((bucket) => {
     cumulative += bucket.total;
     return {
@@ -100,6 +135,7 @@ export function buildDriveArtifactDailyTrend(data: DriveArtifactTrendInput): Dri
   return {
     owners,
     points,
+    openingFiles,
     activeDays: activePoints.length,
     peakDay,
     latestDay: activePoints[activePoints.length - 1] ?? null,

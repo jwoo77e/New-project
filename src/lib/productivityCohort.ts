@@ -29,7 +29,7 @@ export type ProductivitySourceFreshness = {
   source: string;
   coverage: string;
   asOf: string;
-  status: "확정" | "잠정" | "부분 집계" | "수집 점검";
+  status: "확정" | "잠정" | "부분 집계" | "수집 점검" | "전체 폴더 집계";
   note: string;
 };
 
@@ -157,7 +157,7 @@ export function buildProductivityExecutiveModel({
       usageSignals.push(`Claude 요청 ${claudeTeamData.totalRequests.toLocaleString("ko-KR")}건`);
     }
     if (driveOutputCount > 0) {
-      outputSignals.push(`Claude Drive 산출 신호 ${driveOutputCount.toLocaleString("ko-KR")}개`);
+      outputSignals.push(`Claude Drive 대표 검증 산출 신호 ${driveOutputCount.toLocaleString("ko-KR")}개`);
     }
     if (gensparkOutputCount > 0) {
       outputSignals.push(`Genspark 대표 작업 산출 형식 ${gensparkOutputCount.toLocaleString("ko-KR")}개`);
@@ -232,8 +232,8 @@ export function buildProductivityExecutiveModel({
         source: "Claude Drive",
         coverage: driveData.source.period,
         asOf: driveData.source.collectedAt,
-        status: "부분 집계",
-        note: "저장소 메타데이터와 검증된 압축 분석을 분리",
+        status: "전체 폴더 집계",
+        note: `${driveData.totals.folders.toLocaleString("ko-KR")}개 폴더 재귀 완료 · 파일 ${driveData.totals.files.toLocaleString("ko-KR")}개 · 중복 추정 ${driveData.totals.duplicateCopies.toLocaleString("ko-KR")}개 분리`,
       },
       {
         source: "Genspark Drive",

@@ -18,6 +18,27 @@ export type DriveArtifactBreakdown = {
   color: string;
 };
 
+export type DriveArtifactDailyCount = {
+  date: string;
+  count: number;
+};
+
+export type DriveArtifactInventory = {
+  fileCount: number;
+  directFileCount: number;
+  nestedFileCount: number;
+  folderCount: number;
+  maxDepth: number;
+  uniqueFileCount: number;
+  duplicateCopyCount: number;
+  metadataDateAnomalyCount: number;
+  documentCount: number;
+  dataFileCount: number;
+  typeCounts: Record<string, number>;
+  useCaseCounts: Record<string, number>;
+  dailyCounts: DriveArtifactDailyCount[];
+};
+
 export type DriveArtifactRepository = {
   owner: string;
   folderName: string;
@@ -32,6 +53,7 @@ export type DriveArtifactRepository = {
   dataFileCount: number;
   utilizationScore: number;
   utilizationLevel: string;
+  inventory: DriveArtifactInventory;
   typeBreakdown: DriveArtifactBreakdown[];
   useCaseBreakdown: DriveArtifactBreakdown[];
   artifacts: DriveArtifact[];
@@ -52,6 +74,12 @@ export type DriveArtifactRepositoryData = {
     outputs: number;
     documents: number;
     dataFiles: number;
+    folders: number;
+    directFiles: number;
+    nestedFiles: number;
+    uniqueFiles: number;
+    duplicateCopies: number;
+    metadataDateAnomalies: number;
   };
   repositories: DriveArtifactRepository[];
   zipAnalysisPipeline: DriveZipAnalysisPipeline;
@@ -112,13 +140,13 @@ export type DriveZipAnalysisPipeline = {
   archives: DriveZipArchiveAnalysis[];
 };
 
-const kindColors: Record<DriveArtifactKind, string> = {
-  프롬프트: "#0f8b8d",
-  "프롬프트+응답": "#0f8b8d",
-  응답: "#2f8f46",
-  업무보고: "#c58612",
-  "데이터 파일": "#5f6f8c",
-  "문서 산출물": "#e85d4f",
+const inventoryTypeColors: Record<string, string> = {
+  "Google Docs": "#0f8b8d",
+  "세션 텍스트": "#5f6f8c",
+  "이미지·미디어": "#e85d4f",
+  "Office·데이터": "#2f8f46",
+  "코드·구성": "#7d6ca7",
+  "압축·분할 보관": "#c58612",
 };
 
 const useCaseColors: Record<string, string> = {
@@ -1278,16 +1306,11 @@ const hyungbaeArtifacts: DriveArtifact[] = [
   hyungbaeDoc("2026-07-09 / Collect risk assessment data from all sites (bad3d43a)", "1alP8IlwWCEMZi61zKgfnmIww9CZGw44jlNRfxbxqJH0", "현장 안전관리 자료", "전체 현장 위험성평가 자료를 수집·검증한 별도 세션"),
 ];
 
-function buildBreakdown<T extends string>(
-  values: T[],
+function buildCountBreakdown(
+  counts: Record<string, number>,
   total: number,
   colorMap: Record<string, string>,
 ): DriveArtifactBreakdown[] {
-  const counts = values.reduce<Record<string, number>>((acc, value) => {
-    acc[value] = (acc[value] ?? 0) + 1;
-    return acc;
-  }, {});
-
   return Object.entries(counts)
     .map(([label, count]) => ({
       label,
@@ -1317,10 +1340,10 @@ function buildRepository(spec: DriveRepositorySpec): DriveArtifactRepository {
         }
       : artifact,
   );
-  const fileCount = artifacts.length;
+  const fileCount = repositorySpec.inventory.fileCount;
   const promptCount = artifacts.filter((artifact) => artifact.kind === "프롬프트" || artifact.kind === "프롬프트+응답").length;
-  const dataFileCount = artifacts.filter((artifact) => artifact.kind === "데이터 파일").length;
-  const documentCount = artifacts.filter((artifact) => artifact.mimeType === "application/vnd.google-apps.document").length;
+  const dataFileCount = repositorySpec.inventory.dataFileCount;
+  const documentCount = repositorySpec.inventory.documentCount;
   const outputCount = artifacts.filter((artifact) => artifact.kind !== "프롬프트").length;
 
   return {
@@ -1331,13 +1354,13 @@ function buildRepository(spec: DriveRepositorySpec): DriveArtifactRepository {
     outputCount,
     documentCount,
     dataFileCount,
-    typeBreakdown: buildBreakdown(
-      artifacts.map((artifact) => artifact.kind),
+    typeBreakdown: buildCountBreakdown(
+      repositorySpec.inventory.typeCounts,
       fileCount,
-      kindColors,
+      inventoryTypeColors,
     ),
-    useCaseBreakdown: buildBreakdown(
-      artifacts.map((artifact) => artifact.useCase),
+    useCaseBreakdown: buildCountBreakdown(
+      repositorySpec.inventory.useCaseCounts,
       fileCount,
       useCaseColors,
     ),
@@ -1467,16 +1490,76 @@ const repositories: DriveArtifactRepository[] = [
     folderName: "김재우",
     folderId: "1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ",
     folderUrl: "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link",
-    role: "Claude 세션 분할 zip 및 AX Docs 산출물 저장소",
-    folderModifiedAt: jaewooZipModifiedAt,
+    role: "Claude 세션·AX 산출물 재귀 저장소",
+    folderModifiedAt: "2026-07-22T23:13:55.718Z",
     utilizationScore: 88,
     utilizationLevel: "높음",
+    inventory: {
+      fileCount: 1004,
+      directFileCount: 159,
+      nestedFileCount: 845,
+      folderCount: 253,
+      maxDepth: 7,
+      uniqueFileCount: 951,
+      duplicateCopyCount: 53,
+      metadataDateAnomalyCount: 85,
+      documentCount: 76,
+      dataFileCount: 39,
+      typeCounts: {
+        "세션 텍스트": 521,
+        "이미지·미디어": 177,
+        "코드·구성": 93,
+        "Office·데이터": 78,
+        "Google Docs": 76,
+        "압축·분할 보관": 59,
+      },
+      useCaseCounts: {
+        "AX 운영·KPI": 318,
+        "산업·AI 트렌드": 275,
+        "초안·문서화": 182,
+        "업무보고·지식관리": 162,
+        "IRIS·공고 데이터": 67,
+      },
+      dailyCounts: [
+        { date: "2026-06-23", count: 4 },
+        { date: "2026-06-24", count: 12 },
+        { date: "2026-06-25", count: 7 },
+        { date: "2026-06-26", count: 19 },
+        { date: "2026-06-27", count: 6 },
+        { date: "2026-06-28", count: 7 },
+        { date: "2026-06-29", count: 15 },
+        { date: "2026-06-30", count: 6 },
+        { date: "2026-07-01", count: 8 },
+        { date: "2026-07-02", count: 7 },
+        { date: "2026-07-03", count: 10 },
+        { date: "2026-07-04", count: 7 },
+        { date: "2026-07-05", count: 4 },
+        { date: "2026-07-06", count: 25 },
+        { date: "2026-07-07", count: 63 },
+        { date: "2026-07-08", count: 174 },
+        { date: "2026-07-09", count: 58 },
+        { date: "2026-07-10", count: 35 },
+        { date: "2026-07-11", count: 45 },
+        { date: "2026-07-12", count: 39 },
+        { date: "2026-07-13", count: 32 },
+        { date: "2026-07-14", count: 41 },
+        { date: "2026-07-15", count: 50 },
+        { date: "2026-07-16", count: 29 },
+        { date: "2026-07-17", count: 34 },
+        { date: "2026-07-18", count: 31 },
+        { date: "2026-07-19", count: 24 },
+        { date: "2026-07-20", count: 30 },
+        { date: "2026-07-21", count: 65 },
+        { date: "2026-07-22", count: 31 },
+        { date: "2026-07-23", count: 1 },
+      ],
+    },
     artifacts: jaewooZipArtifacts,
     insights: [
-      "Drive 폴더에는 7/22 AX Docs·처리로그, 7/21 세션백업 폴더, 7/5 4-part AX_2026-07-05_백업.zip 원본이 보입니다.",
-      "7/22 처리로그는 zip/분할/base64 미사용, Drive 날짜폴더에 AX_세션백업_2026-07-21 세션 하위폴더 12개와 _세션요약.md, 국책·Genspark·AI트렌드·Blog·KPI·CEO·IRIS 바이너리 cp를 기록했고 처리 신규 세션 13건을 설명합니다.",
-      "7/5 4-part zip은 이번 실행에서 connector raw byte handle로 로컬 결합까지 재검증했지만 중앙 디렉터리 누락과 누락 z01 split 요구가 반복됐습니다.",
-      "마지막 로컬 검증 archive는 6/29 백업이며 Ops_dashboard_tab2_3h_6fb565c4b3a1 프롬프트 파일 CRC 경고 1건을 계속 재검증 대상으로 표시합니다.",
+      "루트 파일 159개와 모든 하위 폴더의 파일 845개를 합쳐 1,004개를 확인했습니다. 253개 폴더를 최대 7단계까지 재귀 탐색했고 조회 오류는 없었습니다.",
+      "파일명·크기·MIME 조합 기준 중복 추정 사본 53개를 분리하면 고유 파일 신호는 951개입니다.",
+      "전체 경로 분류에서 AX 운영·KPI 318개, 산업·AI 트렌드 275개, 초안·문서화 182개 순으로 나타났습니다.",
+      "1980년 생성시각으로 보존된 85개 파일은 실제 업무 생성일로 해석하지 않고 날짜 추이의 시작 잔액으로 분리했습니다.",
     ],
   }),
   buildRepository({
@@ -1484,16 +1567,65 @@ const repositories: DriveArtifactRepository[] = [
     folderName: "이형배",
     folderId: "1OFfN4APAViKNtgURnmn9W51jSvcxy6fg",
     folderUrl: "https://drive.google.com/drive/folders/1OFfN4APAViKNtgURnmn9W51jSvcxy6fg?usp=sharing",
-    role: "Claude 세션 날짜별 Google Docs 저장소",
+    role: "Claude 날짜별 백업·현장 산출물 재귀 저장소",
     folderModifiedAt: hyungbaeRepositoryModifiedAt,
     utilizationScore: 86,
     utilizationLevel: "높음",
+    inventory: {
+      fileCount: 690,
+      directFileCount: 1,
+      nestedFileCount: 689,
+      folderCount: 91,
+      maxDepth: 5,
+      uniqueFileCount: 520,
+      duplicateCopyCount: 170,
+      metadataDateAnomalyCount: 0,
+      documentCount: 576,
+      dataFileCount: 8,
+      typeCounts: {
+        "Google Docs": 576,
+        "세션 텍스트": 87,
+        "Office·데이터": 18,
+        "이미지·미디어": 8,
+        "코드·구성": 1,
+      },
+      useCaseCounts: {
+        "V1 초안 정리": 409,
+        "현장 안전관리 자료": 217,
+        "안전관리 계획·비용": 49,
+        "자료실·현장 데이터 수집": 15,
+      },
+      dailyCounts: [
+        { date: "2026-06-25", count: 29 },
+        { date: "2026-06-26", count: 28 },
+        { date: "2026-06-27", count: 27 },
+        { date: "2026-06-28", count: 32 },
+        { date: "2026-06-29", count: 33 },
+        { date: "2026-06-30", count: 35 },
+        { date: "2026-07-01", count: 38 },
+        { date: "2026-07-02", count: 40 },
+        { date: "2026-07-03", count: 42 },
+        { date: "2026-07-04", count: 43 },
+        { date: "2026-07-05", count: 44 },
+        { date: "2026-07-06", count: 45 },
+        { date: "2026-07-07", count: 47 },
+        { date: "2026-07-08", count: 50 },
+        { date: "2026-07-09", count: 51 },
+        { date: "2026-07-14", count: 12 },
+        { date: "2026-07-15", count: 25 },
+        { date: "2026-07-16", count: 13 },
+        { date: "2026-07-17", count: 12 },
+        { date: "2026-07-19", count: 9 },
+        { date: "2026-07-20", count: 22 },
+        { date: "2026-07-22", count: 13 },
+      ],
+    },
     artifacts: hyungbaeArtifacts,
     insights: [
-      "최신 2026-07-22 폴더는 건설현장 점검사진 분석·Main Agent README 2건과 실제 업로드된 텍스트/대화기록 파일을 포함해 파일 수에 반영했습니다.",
-      "2026-07-22 건설현장 점검사진 분석은 대화기록 3건을 업로드했지만 사진·법령 PDF·원본/최종 XLSX는 base64 전송 제약으로 미업로드했습니다.",
-      "2026-07-22 Main Agent는 안전보건 브리핑 텍스트 6건과 HD현대 울산조선소 곤돌라 협착 사망사고 대화기록 1건을 보존했고 CSI XLSX·7/21 데일리브리핑 DOCX는 바이너리 업로드 한도로 미업로드했습니다.",
-      "주요 작업은 TBM 263건, 노사협의체 18건, 근골격계 조사 2건, 안전관리비 계획·집행, 위험성평가·재난대응·안전보고 체계 수집, 점검사진 위험요인 분석, 안전보건 동향 브리핑으로 묶입니다.",
+      "루트 파일 1개와 모든 하위 폴더의 파일 689개를 합쳐 690개를 확인했습니다. 91개 폴더를 최대 5단계까지 재귀 탐색했고 조회 오류는 없었습니다.",
+      "파일명·크기·MIME 조합 기준 중복 추정 사본 170개를 분리하면 고유 파일 신호는 520개입니다.",
+      "Google Docs 576개가 날짜별 백업 폴더에 축적되어 있으며, 전체 경로 분류에서 현장 안전관리 217개와 안전관리 계획·비용 49개가 확인됩니다.",
+      "날짜별 백업은 같은 자료가 여러 회차에 포함될 수 있으므로 전체 보관 파일 수와 중복 추정 제외 수를 함께 봐야 합니다.",
     ],
   }),
 ];
@@ -1501,9 +1633,9 @@ const repositories: DriveArtifactRepository[] = [
 export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   source: {
     name: "Google Drive Claude 산출물 저장소",
-    collectedAt: "2026-07-22 23:10 KST",
-    period: "2026-06-21 ~ 2026-07-22",
-    note: "김재우 폴더는 7/22 AX Docs·처리로그, 7/21 세션백업 폴더, 7/5 4-part zip 원본을 확인했습니다. 7/22 처리로그는 신규 13건, 세션폴더 12개, 국책·Genspark·AI트렌드·Blog·KPI·CEO·IRIS 바이너리 cp를 기록하되 zip·분할·base64 미사용을 명시합니다. 7/5 zip은 이번 실행에서 connector raw byte handle로 4개 part를 /private/tmp에 내려받아 23,988 bytes로 결합했지만 중앙 디렉터리 누락 실패와 누락 z01 요구가 반복됐습니다. 마지막 성공 해제 상태는 6/29 백업 6개 파일입니다. 이형배 폴더는 2026-07-22 날짜 폴더에서 건설현장 점검사진 분석·Main Agent README 2건과 텍스트/대화기록 파일을 확인했고 루트 split zip은 없습니다. repository 파일 수는 김재우 62개와 이형배 22개로 갱신합니다.",
+    collectedAt: "2026-07-23 11:18 KST",
+    period: "2026-06-21 ~ 2026-07-23",
+    note: "두 Drive 루트에서 폴더가 더 이상 발견되지 않을 때까지 재귀 조회했습니다. 김재우는 파일 1,004개·폴더 253개, 이형배는 파일 690개·폴더 91개이며 조회 오류는 0건입니다. 총 1,694개 중 루트 직접 파일은 160개, 하위 폴더 파일은 1,534개입니다. 중복 추정은 파일명·크기·MIME 조합 기준이며 콘텐츠 해시와 동일하지 않습니다. 업무 유형은 전체 파일 경로·파일명 기준으로 분류하고, 상세 의미는 기존 대표 검증 자료를 유지합니다.",
   },
   totals: {
     repositories: repositories.length,
@@ -1512,12 +1644,22 @@ export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
     outputs: repositories.reduce((sum, repository) => sum + repository.outputCount, 0),
     documents: repositories.reduce((sum, repository) => sum + repository.documentCount, 0),
     dataFiles: repositories.reduce((sum, repository) => sum + repository.dataFileCount, 0),
+    folders: repositories.reduce((sum, repository) => sum + repository.inventory.folderCount, 0),
+    directFiles: repositories.reduce((sum, repository) => sum + repository.inventory.directFileCount, 0),
+    nestedFiles: repositories.reduce((sum, repository) => sum + repository.inventory.nestedFileCount, 0),
+    uniqueFiles: repositories.reduce((sum, repository) => sum + repository.inventory.uniqueFileCount, 0),
+    duplicateCopies: repositories.reduce((sum, repository) => sum + repository.inventory.duplicateCopyCount, 0),
+    metadataDateAnomalies: repositories.reduce(
+      (sum, repository) => sum + repository.inventory.metadataDateAnomalyCount,
+      0,
+    ),
   },
   repositories,
   zipAnalysisPipeline,
   insights: [
-    "김재우 폴더는 Drive에 zip part 원본만 남기고, 대시보드 수집 시 임시 해제 분석 결과만 저장하는 구조로 운영합니다.",
-    `이형배 폴더는 ${hyungbaeDateFolderUrl} 하위의 최신 날짜별 프로젝트 폴더와 기존 날짜별 Docs 백업 구조를 병행해 입력자료·생성결과물·세션별 본문을 함께 추적합니다.`,
-    "최신 김재우 7/5 4-part zip은 connected Drive listing과 connector raw byte handle로 유지 확인됐고 이번에도 로컬 결합 검증을 수행했지만 중앙 디렉터리 누락과 누락 z01 요구로 해제되지 않았습니다.",
+    "기존 84개 직접·선별 집계에서 전체 하위 폴더 재귀 집계 1,694개로 범위를 교체했습니다.",
+    "하위 폴더 파일이 전체의 90.6%이므로 루트 직접 목록만 조회하면 실제 저장 현황을 크게 누락합니다.",
+    "반복 백업 사본을 생산성 산출물로 과대 해석하지 않도록 전체 1,694개와 중복 추정 제외 1,471개를 분리합니다.",
+    `이형배 폴더는 ${hyungbaeDateFolderUrl} 하위 날짜별 프로젝트와 claude-backup 폴더를 모두 포함해 집계했습니다.`,
   ],
 };

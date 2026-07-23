@@ -8,11 +8,36 @@ describe("buildDriveArtifactDailyTrend", () => {
 
     expect(trend.owners).toEqual(["김재우", "이형배"]);
     expect(trend.points[0]?.date).toBe("2026-06-21");
-    expect(trend.points[trend.points.length - 1]?.date).toBe("2026-07-22");
+    expect(trend.points[trend.points.length - 1]?.date).toBe("2026-07-23");
     expect(trend.points.reduce((sum, point) => sum + point.total, 0)).toBe(
-      driveArtifactRepositoryData.totals.files,
+      driveArtifactRepositoryData.totals.files - trend.openingFiles,
     );
     expect(trend.points[trend.points.length - 1]?.cumulative).toBe(driveArtifactRepositoryData.totals.files);
+    expect(trend.openingFiles).toBe(85);
+    expect(trend.peakDay).toMatchObject({ date: "2026-07-08", total: 224 });
+    expect(trend.latestDay).toMatchObject({ date: "2026-07-23", total: 1 });
+  });
+
+  it("keeps recursive inventory totals internally consistent", () => {
+    expect(driveArtifactRepositoryData.totals).toMatchObject({
+      files: 1694,
+      folders: 344,
+      directFiles: 160,
+      nestedFiles: 1534,
+      uniqueFiles: 1471,
+      duplicateCopies: 223,
+      metadataDateAnomalies: 85,
+    });
+
+    for (const repository of driveArtifactRepositoryData.repositories) {
+      expect(repository.inventory.directFileCount + repository.inventory.nestedFileCount).toBe(repository.fileCount);
+      expect(repository.inventory.uniqueFileCount + repository.inventory.duplicateCopyCount).toBe(repository.fileCount);
+      expect(repository.useCaseBreakdown.reduce((sum, item) => sum + item.count, 0)).toBe(repository.fileCount);
+      expect(
+        repository.inventory.dailyCounts.reduce((sum, item) => sum + item.count, 0) +
+          repository.inventory.metadataDateAnomalyCount,
+      ).toBe(repository.fileCount);
+    }
   });
 
   it("groups UTC timestamps by their calendar date in Korea", () => {
@@ -34,5 +59,6 @@ describe("buildDriveArtifactDailyTrend", () => {
       ["2026-07-02", 1],
     ]);
     expect(trend.points[trend.points.length - 1]?.cumulative).toBe(2);
+    expect(trend.openingFiles).toBe(0);
   });
 });

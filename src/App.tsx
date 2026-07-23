@@ -884,10 +884,10 @@ function App() {
           />
           <MetricCard
             icon={<FileText size={21} />}
-            label="저장소 누적 산출 신호"
+            label="대표 검증 산출 신호"
             tone="green"
             value={`${numberFormat.format(productivityModel.observableRepositoryOutputs)}개`}
-            footer={`Claude Drive ${numberFormat.format(productivityModel.driveOutputs)} · Genspark ${numberFormat.format(productivityModel.gensparkOutputs)}`}
+            footer={`Claude Drive 대표 ${numberFormat.format(productivityModel.driveOutputs)} · Genspark ${numberFormat.format(productivityModel.gensparkOutputs)}`}
           />
           <MetricCard
             icon={<CircleDollarSign size={21} />}
@@ -1038,7 +1038,7 @@ function App() {
             label="Drive 저장 산출물"
             tone="amber"
             value={`${numberFormat.format(driveArtifactRepositoryData.totals.files)}개`}
-            footer={`${driveArtifactsByOwner} · zip 내부 ${numberFormat.format(driveArtifactRepositoryData.zipAnalysisPipeline.totals.extractedFiles)}개`}
+            footer={`${driveArtifactsByOwner} · 하위 폴더 ${numberFormat.format(driveArtifactRepositoryData.totals.nestedFiles)}개`}
           />
           <MetricCard
             icon={<Bot size={21} />}
@@ -1233,7 +1233,7 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
           />
           <MeterRow
             color="#5f6f8c"
-            label="Claude Drive 산출 비중"
+            label="Claude Drive 대표 검증 신호 비중"
             value={(model.driveOutputs / model.observableRepositoryOutputs) * 100}
             valueLabel={`${numberFormat.format(model.driveOutputs)}개`}
           />
@@ -1395,7 +1395,7 @@ function cohortStatusTone(status: "확정" | "비용 대기" | "잠정") {
 }
 
 function freshnessStatusTone(source: ProductivitySourceFreshness) {
-  if (source.status === "확정") return "ok";
+  if (source.status === "확정" || source.status === "전체 폴더 집계") return "ok";
   if (source.status === "수집 점검") return "warning";
   return "neutral";
 }
@@ -2010,6 +2010,10 @@ function GensparkUsageView({
     1,
   );
   const maxDriveRepositoryFiles = Math.max(...driveRepositoryData.repositories.map((repository) => repository.fileCount), 1);
+  const maxDriveRepositoryDepth = Math.max(
+    ...driveRepositoryData.repositories.map((repository) => repository.inventory.maxDepth),
+    1,
+  );
   const driveArtifactTrend = useMemo(
     () => buildDriveArtifactDailyTrend(driveRepositoryData),
     [driveRepositoryData],
@@ -2523,21 +2527,21 @@ function GensparkUsageView({
           <article>
             <span>총 파일</span>
             <strong>{numberFormat.format(driveRepositoryData.totals.files)}개</strong>
-            <small>Google Drive 직접 포함 파일 기준</small>
+            <small>루트와 모든 하위 폴더 재귀 집계</small>
           </article>
           <article>
-            <span>프롬프트/산출물</span>
+            <span>직접/하위 파일</span>
             <strong>
-              {numberFormat.format(driveRepositoryData.totals.prompts)} / {numberFormat.format(driveRepositoryData.totals.outputs)}
+              {numberFormat.format(driveRepositoryData.totals.directFiles)} / {numberFormat.format(driveRepositoryData.totals.nestedFiles)}
             </strong>
-            <small>프롬프트 원문과 응답·문서·데이터 파일</small>
+            <small>하위 폴더 포함률 {formatRate((driveRepositoryData.totals.nestedFiles / driveRepositoryData.totals.files) * 100)}</small>
           </article>
           <article>
-            <span>Docs/데이터 파일</span>
+            <span>고유/중복 추정</span>
             <strong>
-              {numberFormat.format(driveRepositoryData.totals.documents)} / {numberFormat.format(driveRepositoryData.totals.dataFiles)}
+              {numberFormat.format(driveRepositoryData.totals.uniqueFiles)} / {numberFormat.format(driveRepositoryData.totals.duplicateCopies)}
             </strong>
-            <small>Google Docs 문서와 엑셀 산출물</small>
+            <small>파일명·크기·형식 조합 기준</small>
           </article>
         </div>
 
@@ -2603,7 +2607,9 @@ function GensparkUsageView({
             </ResponsiveContainer>
           </div>
           <div className="drive-trend-note">
-            <span>막대는 한국시간 기준 일별 신규 저장 파일, 선은 전체 누적 파일입니다.</span>
+            <span>
+              막대는 한국시간 기준 일별 신규 저장 파일, 선은 전체 누적 파일입니다. 기간 이전 생성시각 {numberFormat.format(driveArtifactTrend.openingFiles)}개는 시작 잔액입니다.
+            </span>
             <strong>누적 {numberFormat.format(driveArtifactTrend.points[driveArtifactTrend.points.length - 1]?.cumulative ?? 0)}개 · 원천 {numberFormat.format(driveRepositoryData.totals.files)}개 일치</strong>
           </div>
         </div>
@@ -2627,7 +2633,8 @@ function GensparkUsageView({
               </div>
               <div className="drive-repository-stats">
                 <span>{numberFormat.format(repository.fileCount)}개 파일</span>
-                <span>프롬프트 {numberFormat.format(repository.promptCount)}건</span>
+                <span>하위 {numberFormat.format(repository.inventory.nestedFileCount)}개</span>
+                <span>폴더 {numberFormat.format(repository.inventory.folderCount)}개</span>
                 <span>활용도 {repository.utilizationScore}점</span>
               </div>
               <div className="usage-meter-cell">
@@ -2635,7 +2642,9 @@ function GensparkUsageView({
                 <div className="department-meter" aria-label={`${repository.owner} 저장 파일 비중`}>
                   <span style={{ width: `${Math.min((repository.fileCount / maxDriveRepositoryFiles) * 100, 100)}%` }} />
                 </div>
-                <small>폴더 수정 {formatKstDateTime(repository.folderModifiedAt)}</small>
+                <small>
+                  최대 {repository.inventory.maxDepth}/{maxDriveRepositoryDepth}단계 · 최근 수정 {formatKstDateTime(repository.folderModifiedAt)}
+                </small>
               </div>
               <div className="drive-use-case-list">
                 {repository.useCaseBreakdown.map((useCase) => (
