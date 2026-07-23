@@ -65,6 +65,35 @@ describe("buildProductivityExecutiveModel", () => {
     ).toBe(830);
   });
 
+  it("builds separate adoption, activity, and output KPI stages", () => {
+    expect(model.axKpis.adoption).toMatchObject({
+      evidenceContributors: 2,
+    });
+    expect(model.axKpis.adoption.evidenceCoverageRate).toBeCloseTo((2 / 19) * 100, 5);
+
+    expect(model.axKpis.activity).toMatchObject({
+      observedDays: 23,
+      activeDays: 22,
+      topContributor: "김재우",
+    });
+    expect(model.axKpis.activity.activeDayRate).toBeCloseTo((22 / 23) * 100, 5);
+    expect(model.axKpis.activity.conversationsPerActiveDay).toBeCloseTo(223 / 22, 5);
+    expect(model.axKpis.activity.previousConversationsPerActiveDay).toBeCloseTo(33 / 6, 5);
+    expect(model.axKpis.activity.dailyGrowthRate).toBeCloseTo(84.2975, 3);
+
+    expect(model.axKpis.output).toMatchObject({
+      observedDays: 23,
+      outputDays: 23,
+      peakDate: "2026-07-08",
+      peakOutputs: 240,
+    });
+    expect(model.axKpis.output.outputsPerObservedDay).toBeCloseTo(771 / 23, 5);
+    expect(model.axKpis.output.previousOutputsPerObservedDay).toBeCloseTo(58 / 7, 5);
+    expect(model.axKpis.output.outputsPerConversation).toBeCloseTo(771 / 223, 5);
+    expect(model.axKpis.output.yieldGrowthRate).toBeCloseTo(96.714, 3);
+    expect(model.axKpis.output.peakShare).toBeCloseTo((240 / 771) * 100, 5);
+  });
+
   it("separates active Claude seats from accounts with spend activity", () => {
     expect(initialClaudeTeamUsageData.source.verification.memberAccounts).toBe(19);
     expect(initialClaudeTeamUsageData.source.verification.activeMemberAccounts).toBe(19);

@@ -44,6 +44,36 @@ export type ProductivitySourceFreshness = {
   note: string;
 };
 
+export type AxKpiOverview = {
+  adoption: {
+    evidenceContributors: number;
+    evidenceCoverageRate: number;
+  };
+  activity: {
+    observedDays: number;
+    activeDays: number;
+    activeDayRate: number;
+    conversationsPerActiveDay: number;
+    previousConversationsPerActiveDay: number;
+    dailyGrowthRate: number;
+    topContributor: string;
+    topContributorShare: number;
+  };
+  output: {
+    observedDays: number;
+    outputDays: number;
+    outputsPerObservedDay: number;
+    previousOutputsPerObservedDay: number;
+    dailyGrowthRate: number;
+    outputsPerConversation: number;
+    previousOutputsPerConversation: number;
+    yieldGrowthRate: number;
+    peakDate: string;
+    peakOutputs: number;
+    peakShare: number;
+  };
+};
+
 export type ProductivityExecutiveModel = {
   currentMonth: string;
   currentMonthLabel: string;
@@ -70,6 +100,7 @@ export type ProductivityExecutiveModel = {
   cohorts: ProductivityCohort[];
   costUsageSeries: CostUsagePoint[];
   dailyDriveActivity: DriveDailyActivityPoint[];
+  axKpis: AxKpiOverview;
   sourceFreshness: ProductivitySourceFreshness[];
 };
 
@@ -126,6 +157,10 @@ function representativeGensparkOutputsByMonth(gensparkData: GensparkUsageData) {
   }
 
   return counts;
+}
+
+function rateChange(current: number, previous: number) {
+  return previous > 0 ? ((current - previous) / previous) * 100 : 0;
 }
 
 export function buildProductivityExecutiveModel({
@@ -219,6 +254,40 @@ export function buildProductivityExecutiveModel({
   if (!costUsageMonths.includes(currentMonth)) {
     costUsageMonths.push(currentMonth);
   }
+  const previousUsageMonth = addMonths(currentMonth, -1);
+  const currentDailyActivity = driveData.activityAnalysis.dailyCounts.filter((item) =>
+    item.date.startsWith(currentMonth),
+  );
+  const previousDailyActivity = driveData.activityAnalysis.dailyCounts.filter((item) =>
+    item.date.startsWith(previousUsageMonth),
+  );
+  const currentConversationActiveDays = currentDailyActivity.filter((item) => item.conversations > 0).length;
+  const previousConversationActiveDays = previousDailyActivity.filter((item) => item.conversations > 0).length;
+  const currentOutputDays = currentDailyActivity.filter((item) => item.outputSignals > 0).length;
+  const currentConversations = claudeConversationsByMonth.get(currentMonth) ?? 0;
+  const previousConversations = claudeConversationsByMonth.get(previousUsageMonth) ?? 0;
+  const currentOutputs = driveOutputsByMonth.get(currentMonth) ?? 0;
+  const previousOutputs = driveOutputsByMonth.get(previousUsageMonth) ?? 0;
+  const currentConversationsPerActiveDay =
+    currentConversationActiveDays > 0 ? currentConversations / currentConversationActiveDays : 0;
+  const previousConversationsPerActiveDay =
+    previousConversationActiveDays > 0 ? previousConversations / previousConversationActiveDays : 0;
+  const currentOutputsPerObservedDay =
+    currentDailyActivity.length > 0 ? currentOutputs / currentDailyActivity.length : 0;
+  const previousOutputsPerObservedDay =
+    previousDailyActivity.length > 0 ? previousOutputs / previousDailyActivity.length : 0;
+  const currentOutputsPerConversation = currentConversations > 0 ? currentOutputs / currentConversations : 0;
+  const previousOutputsPerConversation =
+    previousConversations > 0 ? previousOutputs / previousConversations : 0;
+  const topContributor = [...driveData.activityAnalysis.byOwner].sort(
+    (a, b) => b.conversations - a.conversations,
+  )[0];
+  const evidenceContributors = driveData.activityAnalysis.byOwner.filter(
+    (item) => item.conversations > 0,
+  ).length;
+  const peakOutputDay = [...currentDailyActivity].sort(
+    (a, b) => b.outputSignals - a.outputSignals,
+  )[0];
 
   return {
     currentMonth,
@@ -263,6 +332,44 @@ export function buildProductivityExecutiveModel({
       jaewooConversations: item.jaewooConversations,
       hyungbaeConversations: item.hyungbaeConversations,
     })),
+    axKpis: {
+      adoption: {
+        evidenceContributors,
+        evidenceCoverageRate: activeUsers > 0 ? (evidenceContributors / activeUsers) * 100 : 0,
+      },
+      activity: {
+        observedDays: currentDailyActivity.length,
+        activeDays: currentConversationActiveDays,
+        activeDayRate:
+          currentDailyActivity.length > 0
+            ? (currentConversationActiveDays / currentDailyActivity.length) * 100
+            : 0,
+        conversationsPerActiveDay: currentConversationsPerActiveDay,
+        previousConversationsPerActiveDay,
+        dailyGrowthRate: rateChange(
+          currentConversationsPerActiveDay,
+          previousConversationsPerActiveDay,
+        ),
+        topContributor: topContributor?.owner ?? "-",
+        topContributorShare:
+          driveData.activityAnalysis.totalConversations > 0
+            ? ((topContributor?.conversations ?? 0) / driveData.activityAnalysis.totalConversations) * 100
+            : 0,
+      },
+      output: {
+        observedDays: currentDailyActivity.length,
+        outputDays: currentOutputDays,
+        outputsPerObservedDay: currentOutputsPerObservedDay,
+        previousOutputsPerObservedDay,
+        dailyGrowthRate: rateChange(currentOutputsPerObservedDay, previousOutputsPerObservedDay),
+        outputsPerConversation: currentOutputsPerConversation,
+        previousOutputsPerConversation,
+        yieldGrowthRate: rateChange(currentOutputsPerConversation, previousOutputsPerConversation),
+        peakDate: peakOutputDay?.date ?? "",
+        peakOutputs: peakOutputDay?.outputSignals ?? 0,
+        peakShare: currentOutputs > 0 ? ((peakOutputDay?.outputSignals ?? 0) / currentOutputs) * 100 : 0,
+      },
+    },
     sourceFreshness: [
       {
         source: "비용 원천",

@@ -1134,6 +1134,21 @@ function App() {
 
 function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel }) {
   const latestCohort = model.cohorts[model.cohorts.length - 1];
+  const activityScale = Math.max(
+    model.axKpis.activity.conversationsPerActiveDay,
+    model.axKpis.activity.previousConversationsPerActiveDay,
+    1,
+  );
+  const outputScale = Math.max(
+    model.axKpis.output.outputsPerObservedDay,
+    model.axKpis.output.previousOutputsPerObservedDay,
+    1,
+  );
+  const outputYieldScale = Math.max(
+    model.axKpis.output.outputsPerConversation,
+    model.axKpis.output.previousOutputsPerConversation,
+    1,
+  );
 
   return (
     <div className="content-grid executive-view">
@@ -1400,6 +1415,221 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
             <strong>고정비는 최소값, API 비용은 별도</strong>
             <span>Claude Team Spend와 시트 구독료는 청구 의미가 확인되기 전까지 중복 합산하지 않습니다.</span>
           </div>
+        </div>
+      </section>
+
+      <section className="panel panel-wide ax-kpi-panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">AX Execution KPI</span>
+            <h2>도입·활동·산출 단계별 현황</h2>
+          </div>
+          <div className="panel-header-side">
+            <span className="state-pill ok">자동 계산</span>
+            <span className="state-pill neutral">성과·품질은 별도 검증</span>
+          </div>
+        </div>
+        <p className="insight-lead">
+          단일 종합점수로 섞지 않고 AX 실행 과정을 세 단계로 분리합니다. 도입은 계정 활성, 활동은 프롬프트 기반 대화,
+          산출은 중복 제거된 Drive 결과 파일 신호를 사용합니다.
+        </p>
+        <div className="ax-kpi-stage-grid">
+          <section className="ax-kpi-stage">
+            <div className="ax-kpi-stage-head">
+              <div className="ax-kpi-stage-title">
+                <span className="ax-kpi-step">1</span>
+                <div>
+                  <span>도입 KPI</span>
+                  <strong>접근성과 사용 기반</strong>
+                </div>
+              </div>
+              <span className="state-pill ok">높음</span>
+            </div>
+            <div className="ax-kpi-headline">
+              <strong>{formatRate(model.activationRate)}</strong>
+              <span>Claude 활성률</span>
+            </div>
+            <div className="ax-kpi-meter-list">
+              <MeterRow
+                color="#0f8b8d"
+                label="Claude 활성 계정"
+                value={model.activationRate}
+                valueLabel={`${model.activeUsers}/${model.licensedUsers}명`}
+              />
+              <MeterRow
+                color="#2f8f46"
+                label="Claude Code 사용 계정"
+                value={model.codeUserRate}
+                valueLabel={`${model.codeUsers}/${model.licensedUsers}명`}
+              />
+              <MeterRow
+                color="#7d6ca7"
+                label="Drive 대화 증빙 커버리지"
+                value={model.axKpis.adoption.evidenceCoverageRate}
+                valueLabel={`${model.axKpis.adoption.evidenceContributors}/${model.activeUsers}명`}
+              />
+            </div>
+            <p className="ax-kpi-interpretation">
+              계정 도입은 충분하지만, 대화·산출 증빙이 연결된 사용자는 {model.axKpis.adoption.evidenceContributors}명입니다.
+              전사 활용 비교를 위해 저장소 연결 범위를 넓혀야 합니다.
+            </p>
+          </section>
+
+          <section className="ax-kpi-stage">
+            <div className="ax-kpi-stage-head">
+              <div className="ax-kpi-stage-title">
+                <span className="ax-kpi-step">2</span>
+                <div>
+                  <span>활동 KPI</span>
+                  <strong>사용 지속성과 강도</strong>
+                </div>
+              </div>
+              <span className="state-pill ok">증가</span>
+            </div>
+            <div className="ax-kpi-headline">
+              <strong>{model.axKpis.activity.conversationsPerActiveDay.toFixed(1)}건</strong>
+              <span>현재 월 활성일 평균 대화</span>
+            </div>
+            <div className="ax-kpi-comparison" aria-label="월별 일평균 대화 비교">
+              <div>
+                <span>이전 월</span>
+                <div className="ax-kpi-comparison-track">
+                  <i
+                    style={{
+                      width: `${(model.axKpis.activity.previousConversationsPerActiveDay / activityScale) * 100}%`,
+                      background: "#93a39b",
+                    }}
+                  />
+                </div>
+                <strong>{model.axKpis.activity.previousConversationsPerActiveDay.toFixed(1)}</strong>
+              </div>
+              <div>
+                <span>현재 월</span>
+                <div className="ax-kpi-comparison-track">
+                  <i
+                    style={{
+                      width: `${(model.axKpis.activity.conversationsPerActiveDay / activityScale) * 100}%`,
+                      background: "#0f8b8d",
+                    }}
+                  />
+                </div>
+                <strong>{model.axKpis.activity.conversationsPerActiveDay.toFixed(1)}</strong>
+              </div>
+            </div>
+            <div className="ax-kpi-meter-list compact">
+              <MeterRow
+                color="#0f8b8d"
+                label="대화 지속률"
+                value={model.axKpis.activity.activeDayRate}
+                valueLabel={`${model.axKpis.activity.activeDays}/${model.axKpis.activity.observedDays}일`}
+              />
+              <MeterRow
+                color="#c58612"
+                label="상위 사용자 집중도"
+                value={model.axKpis.activity.topContributorShare}
+                valueLabel={`${model.axKpis.activity.topContributor} ${formatRate(model.axKpis.activity.topContributorShare)}`}
+              />
+            </div>
+            <p className="ax-kpi-interpretation">
+              활성일 평균 대화는 이전 월보다 {formatRate(model.axKpis.activity.dailyGrowthRate, true)} 증가했습니다. 활동은
+              지속적이지만 Drive 증빙이 특정 사용자에게 집중돼 있습니다.
+            </p>
+          </section>
+
+          <section className="ax-kpi-stage">
+            <div className="ax-kpi-stage-head">
+              <div className="ax-kpi-stage-title">
+                <span className="ax-kpi-step">3</span>
+                <div>
+                  <span>산출 KPI</span>
+                  <strong>결과 생성과 전환</strong>
+                </div>
+              </div>
+              <span className="state-pill warning">검증 필요</span>
+            </div>
+            <div className="ax-kpi-headline">
+              <strong>{model.axKpis.output.outputsPerConversation.toFixed(2)}개</strong>
+              <span>Claude 대화당 Drive 산출 신호</span>
+            </div>
+            <div className="ax-kpi-dual-comparison">
+              <div>
+                <span>일평균 산출</span>
+                <div className="ax-kpi-comparison">
+                  <div>
+                    <span>이전</span>
+                    <div className="ax-kpi-comparison-track">
+                      <i
+                        style={{
+                          width: `${(model.axKpis.output.previousOutputsPerObservedDay / outputScale) * 100}%`,
+                          background: "#93a39b",
+                        }}
+                      />
+                    </div>
+                    <strong>{model.axKpis.output.previousOutputsPerObservedDay.toFixed(1)}</strong>
+                  </div>
+                  <div>
+                    <span>현재</span>
+                    <div className="ax-kpi-comparison-track">
+                      <i
+                        style={{
+                          width: `${(model.axKpis.output.outputsPerObservedDay / outputScale) * 100}%`,
+                          background: "#c58612",
+                        }}
+                      />
+                    </div>
+                    <strong>{model.axKpis.output.outputsPerObservedDay.toFixed(1)}</strong>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <span>대화당 산출</span>
+                <div className="ax-kpi-comparison">
+                  <div>
+                    <span>이전</span>
+                    <div className="ax-kpi-comparison-track">
+                      <i
+                        style={{
+                          width: `${(model.axKpis.output.previousOutputsPerConversation / outputYieldScale) * 100}%`,
+                          background: "#93a39b",
+                        }}
+                      />
+                    </div>
+                    <strong>{model.axKpis.output.previousOutputsPerConversation.toFixed(2)}</strong>
+                  </div>
+                  <div>
+                    <span>현재</span>
+                    <div className="ax-kpi-comparison-track">
+                      <i
+                        style={{
+                          width: `${(model.axKpis.output.outputsPerConversation / outputYieldScale) * 100}%`,
+                          background: "#2f8f46",
+                        }}
+                      />
+                    </div>
+                    <strong>{model.axKpis.output.outputsPerConversation.toFixed(2)}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <MeterRow
+              color="#e85d4f"
+              label="최대 산출일 비중"
+              value={model.axKpis.output.peakShare}
+              valueLabel={`${model.axKpis.output.peakDate.slice(5)} · ${model.axKpis.output.peakOutputs}개`}
+            />
+            <p className="ax-kpi-interpretation">
+              일평균 산출은 {formatRate(model.axKpis.output.dailyGrowthRate, true)}, 대화당 산출은{" "}
+              {formatRate(model.axKpis.output.yieldGrowthRate, true)} 증가했습니다. 배치 작업과 최종 채택 여부는 별도
+              확인이 필요합니다.
+            </p>
+          </section>
+        </div>
+        <div className="ax-kpi-boundary">
+          <ShieldCheck size={17} />
+          <span>
+            1~3단계는 자동 수집 가능한 실행 선행지표입니다. 시간 절감, 1차 승인, 재작업, 품질과 ROI는 업무 단위
+            검증 데이터가 연결된 뒤 성과 KPI로 추가합니다.
+          </span>
         </div>
       </section>
 
