@@ -1057,6 +1057,56 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.drive-trend-section {
+  min-width: 0;
+  margin: 20px 0;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.drive-trend-head,
+.drive-trend-note {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.drive-trend-head h3 {
+  margin: 5px 0 0;
+  color: var(--ink);
+  font-size: 1.08rem;
+}
+
+.drive-trend-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  justify-content: flex-end;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.drive-trend-stats strong,
+.drive-trend-note strong {
+  color: var(--ink);
+}
+
+.drive-trend-chart {
+  width: 100%;
+  height: 320px;
+  min-width: 0;
+  margin-top: 10px;
+}
+
+.drive-trend-note {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 .drive-repository-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2096,6 +2146,20 @@ td strong {
   }
 
   .executive-chart-frame {
+    height: 280px;
+  }
+
+  .drive-trend-head,
+  .drive-trend-note {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .drive-trend-stats {
+    justify-content: flex-start;
+  }
+
+  .drive-trend-chart {
     height: 280px;
   }
 

@@ -89,6 +89,7 @@ import {
   type ProductivityExecutiveModel,
   type ProductivitySourceFreshness,
 } from "./lib/productivityCohort";
+import { buildDriveArtifactDailyTrend } from "./lib/driveArtifactTrend";
 
 type ViewKey = "overview" | "monthly" | "adoption" | "genspark" | "approval" | "api";
 
@@ -2009,6 +2010,19 @@ function GensparkUsageView({
     1,
   );
   const maxDriveRepositoryFiles = Math.max(...driveRepositoryData.repositories.map((repository) => repository.fileCount), 1);
+  const driveArtifactTrend = useMemo(
+    () => buildDriveArtifactDailyTrend(driveRepositoryData),
+    [driveRepositoryData],
+  );
+  const driveArtifactTrendData = useMemo(
+    () =>
+      driveArtifactTrend.points.map((point) => ({
+        ...point,
+        ...point.ownerCounts,
+      })),
+    [driveArtifactTrend],
+  );
+  const driveOwnerColors = ["#0f8b8d", "#e85d4f", "#5f6f8c", "#c58612"];
   const gensparkDrive = usageData.driveAnalysis;
   const gammaDeckCount = gammaDriveUsageData.deckCount;
   const gammaTotalSlides = gammaDriveUsageData.totalSlides;
@@ -2525,6 +2539,73 @@ function GensparkUsageView({
             </strong>
             <small>Google Docs 문서와 엑셀 산출물</small>
           </article>
+        </div>
+
+        <div className="drive-trend-section">
+          <div className="drive-trend-head">
+            <div>
+              <span className="eyebrow">Daily Creation</span>
+              <h3>날짜별 저장 파일 증감</h3>
+            </div>
+            <div className="drive-trend-stats">
+              <span>
+                최근 생성 <strong>{driveArtifactTrend.latestDay?.label ?? "-"}</strong> · {numberFormat.format(driveArtifactTrend.latestDay?.total ?? 0)}개
+              </span>
+              <span>
+                일일 최고 <strong>{driveArtifactTrend.peakDay?.label ?? "-"}</strong> · {numberFormat.format(driveArtifactTrend.peakDay?.total ?? 0)}개
+              </span>
+              <span>
+                생성 발생일 <strong>{numberFormat.format(driveArtifactTrend.activeDays)}일</strong>
+              </span>
+            </div>
+          </div>
+          <div className="drive-trend-chart" aria-label="Claude Drive 날짜별 신규 저장 파일과 누적 파일 추이">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={driveArtifactTrendData} margin={{ top: 18, right: 16, left: 4, bottom: 2 }}>
+                <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} minTickGap={18} />
+                <YAxis yAxisId="daily" tickLine={false} axisLine={false} allowDecimals={false} width={36} />
+                <YAxis
+                  yAxisId="cumulative"
+                  orientation="right"
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                  width={42}
+                />
+                <Tooltip
+                  labelFormatter={(label) => `${label} 생성`}
+                  formatter={(value, name) => [`${numberFormat.format(Number(value))}개`, name]}
+                />
+                <Legend iconType="circle" />
+                {driveArtifactTrend.owners.map((owner, index) => (
+                  <Bar
+                    dataKey={owner}
+                    fill={driveOwnerColors[index % driveOwnerColors.length]}
+                    key={owner}
+                    name={`${owner} 신규`}
+                    stackId="owner"
+                    yAxisId="daily"
+                    radius={index === driveArtifactTrend.owners.length - 1 ? [4, 4, 0, 0] : 0}
+                    maxBarSize={38}
+                  />
+                ))}
+                <Line
+                  dataKey="cumulative"
+                  name="전체 누적"
+                  yAxisId="cumulative"
+                  type="monotone"
+                  stroke="#2f8f46"
+                  strokeWidth={3}
+                  dot={false}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="drive-trend-note">
+            <span>막대는 한국시간 기준 일별 신규 저장 파일, 선은 전체 누적 파일입니다.</span>
+            <strong>누적 {numberFormat.format(driveArtifactTrend.points[driveArtifactTrend.points.length - 1]?.cumulative ?? 0)}개 · 원천 {numberFormat.format(driveRepositoryData.totals.files)}개 일치</strong>
+          </div>
         </div>
 
         <div className="drive-repository-grid">
