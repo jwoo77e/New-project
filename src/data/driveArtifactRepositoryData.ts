@@ -23,6 +23,32 @@ export type DriveArtifactDailyCount = {
   count: number;
 };
 
+export type DriveArtifactActivityDailyCount = {
+  date: string;
+  conversations: number;
+  outputSignals: number;
+  jaewooConversations: number;
+  hyungbaeConversations: number;
+};
+
+export type DriveArtifactActivityAnalysis = {
+  collectedAt: string;
+  scannedFiles: number;
+  scannedFolders: number;
+  scanErrors: number;
+  totalConversations: number;
+  totalOutputSignals: number;
+  undatedOutputSignals: number;
+  method: string;
+  outputDefinition: string;
+  byOwner: Array<{
+    owner: string;
+    conversations: number;
+    outputSignals: number;
+  }>;
+  dailyCounts: DriveArtifactActivityDailyCount[];
+};
+
 export type DriveArtifactInventory = {
   fileCount: number;
   directFileCount: number;
@@ -82,6 +108,7 @@ export type DriveArtifactRepositoryData = {
     metadataDateAnomalies: number;
   };
   repositories: DriveArtifactRepository[];
+  activityAnalysis: DriveArtifactActivityAnalysis;
   zipAnalysisPipeline: DriveZipAnalysisPipeline;
   insights: string[];
 };
@@ -1630,6 +1657,56 @@ const repositories: DriveArtifactRepository[] = [
   }),
 ];
 
+const activityAnalysis: DriveArtifactActivityAnalysis = {
+  collectedAt: "2026-07-23 12:04 KST",
+  scannedFiles: 1726,
+  scannedFolders: 357,
+  scanErrors: 0,
+  totalConversations: 256,
+  totalOutputSignals: 830,
+  undatedOutputSignals: 1,
+  method:
+    "모든 하위 폴더에서 프롬프트 파일과 프롬프트·응답 Google Docs를 찾고 세션 식별자 기준으로 중복 제거했습니다. 날짜는 파일명, 상위 날짜 폴더, KST 생성일 순으로 판정했습니다.",
+  outputDefinition:
+    "프롬프트, 압축·분할 파일, 처리 로그, 세션 요약, README·설정 파일을 제외하고 파일명·크기·MIME 및 세션 식별자로 중복 제거한 Drive 결과 파일 신호입니다. 최종 채택이나 품질을 의미하지 않습니다.",
+  byOwner: [
+    { owner: "김재우", conversations: 205, outputSignals: 709 },
+    { owner: "이형배", conversations: 51, outputSignals: 121 },
+  ],
+  dailyCounts: [
+    { date: "2026-06-24", conversations: 0, outputSignals: 5, jaewooConversations: 0, hyungbaeConversations: 0 },
+    { date: "2026-06-25", conversations: 26, outputSignals: 30, jaewooConversations: 0, hyungbaeConversations: 26 },
+    { date: "2026-06-26", conversations: 1, outputSignals: 8, jaewooConversations: 0, hyungbaeConversations: 1 },
+    { date: "2026-06-27", conversations: 2, outputSignals: 4, jaewooConversations: 0, hyungbaeConversations: 2 },
+    { date: "2026-06-28", conversations: 1, outputSignals: 4, jaewooConversations: 0, hyungbaeConversations: 1 },
+    { date: "2026-06-29", conversations: 1, outputSignals: 3, jaewooConversations: 0, hyungbaeConversations: 1 },
+    { date: "2026-06-30", conversations: 2, outputSignals: 4, jaewooConversations: 0, hyungbaeConversations: 2 },
+    { date: "2026-07-01", conversations: 2, outputSignals: 12, jaewooConversations: 0, hyungbaeConversations: 2 },
+    { date: "2026-07-02", conversations: 2, outputSignals: 9, jaewooConversations: 0, hyungbaeConversations: 2 },
+    { date: "2026-07-03", conversations: 3, outputSignals: 12, jaewooConversations: 0, hyungbaeConversations: 3 },
+    { date: "2026-07-04", conversations: 3, outputSignals: 6, jaewooConversations: 0, hyungbaeConversations: 3 },
+    { date: "2026-07-05", conversations: 8, outputSignals: 13, jaewooConversations: 7, hyungbaeConversations: 1 },
+    { date: "2026-07-06", conversations: 22, outputSignals: 42, jaewooConversations: 21, hyungbaeConversations: 1 },
+    { date: "2026-07-07", conversations: 13, outputSignals: 31, jaewooConversations: 11, hyungbaeConversations: 2 },
+    { date: "2026-07-08", conversations: 21, outputSignals: 240, jaewooConversations: 19, hyungbaeConversations: 2 },
+    { date: "2026-07-09", conversations: 15, outputSignals: 35, jaewooConversations: 13, hyungbaeConversations: 2 },
+    { date: "2026-07-10", conversations: 13, outputSignals: 28, jaewooConversations: 13, hyungbaeConversations: 0 },
+    { date: "2026-07-11", conversations: 11, outputSignals: 25, jaewooConversations: 11, hyungbaeConversations: 0 },
+    { date: "2026-07-12", conversations: 8, outputSignals: 15, jaewooConversations: 8, hyungbaeConversations: 0 },
+    { date: "2026-07-13", conversations: 18, outputSignals: 29, jaewooConversations: 18, hyungbaeConversations: 0 },
+    { date: "2026-07-14", conversations: 12, outputSignals: 37, jaewooConversations: 12, hyungbaeConversations: 0 },
+    { date: "2026-07-15", conversations: 8, outputSignals: 34, jaewooConversations: 8, hyungbaeConversations: 0 },
+    { date: "2026-07-16", conversations: 7, outputSignals: 26, jaewooConversations: 7, hyungbaeConversations: 0 },
+    { date: "2026-07-17", conversations: 7, outputSignals: 21, jaewooConversations: 7, hyungbaeConversations: 0 },
+    { date: "2026-07-18", conversations: 10, outputSignals: 23, jaewooConversations: 10, hyungbaeConversations: 0 },
+    { date: "2026-07-19", conversations: 7, outputSignals: 28, jaewooConversations: 7, hyungbaeConversations: 0 },
+    { date: "2026-07-20", conversations: 12, outputSignals: 39, jaewooConversations: 12, hyungbaeConversations: 0 },
+    { date: "2026-07-21", conversations: 12, outputSignals: 38, jaewooConversations: 12, hyungbaeConversations: 0 },
+    { date: "2026-07-22", conversations: 9, outputSignals: 26, jaewooConversations: 9, hyungbaeConversations: 0 },
+    { date: "2026-07-23", conversations: 0, outputSignals: 2, jaewooConversations: 0, hyungbaeConversations: 0 },
+  ],
+};
+
 export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   source: {
     name: "Google Drive Claude 산출물 저장소",
@@ -1655,6 +1732,7 @@ export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
     ),
   },
   repositories,
+  activityAnalysis,
   zipAnalysisPipeline,
   insights: [
     "기존 84개 직접·선별 집계에서 전체 하위 폴더 재귀 집계 1,694개로 범위를 교체했습니다.",

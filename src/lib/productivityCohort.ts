@@ -21,8 +21,19 @@ export type ProductivityCohort = {
 export type CostUsagePoint = {
   month: string;
   label: string;
-  costKrw: number;
+  costKrw: number | null;
   chatGptConversations: number;
+  claudeConversations: number;
+  driveOutputSignals: number;
+};
+
+export type DriveDailyActivityPoint = {
+  date: string;
+  label: string;
+  claudeConversations: number;
+  driveOutputSignals: number;
+  jaewooConversations: number;
+  hyungbaeConversations: number;
 };
 
 export type ProductivitySourceFreshness = {
@@ -48,11 +59,17 @@ export type ProductivityExecutiveModel = {
   codeUserRate: number;
   codeLines: number;
   requests: number;
+  claudeConversations: number;
+  currentMonthClaudeConversations: number;
+  currentMonthDriveOutputs: number;
+  conversationActiveDays: number;
+  conversationDailyAverage: number;
   observableRepositoryOutputs: number;
   driveOutputs: number;
   gensparkOutputs: number;
   cohorts: ProductivityCohort[];
   costUsageSeries: CostUsagePoint[];
+  dailyDriveActivity: DriveDailyActivityPoint[];
   sourceFreshness: ProductivitySourceFreshness[];
 };
 
@@ -86,13 +103,15 @@ function latestDate(value: string) {
   return sorted[sorted.length - 1] ?? "";
 }
 
-function outputCountByMonth(driveData: DriveArtifactRepositoryData) {
+function driveActivityCountByMonth(
+  driveData: DriveArtifactRepositoryData,
+  field: "conversations" | "outputSignals",
+) {
   const counts = new Map<string, number>();
 
-  for (const artifact of driveData.repositories.flatMap((repository) => repository.artifacts)) {
-    if (artifact.kind === "프롬프트") continue;
-    const month = artifact.createdAt.slice(0, 7);
-    counts.set(month, (counts.get(month) ?? 0) + 1);
+  for (const item of driveData.activityAnalysis.dailyCounts) {
+    const month = item.date.slice(0, 7);
+    counts.set(month, (counts.get(month) ?? 0) + item[field]);
   }
 
   return counts;
@@ -135,7 +154,8 @@ export function buildProductivityExecutiveModel({
   const currentMonth = latestUsageDate?.slice(0, 7) || lastClosedActual.month;
   const lagMonths = monthDistance(lastClosedActual.month, currentMonth);
   const chatGptByMonth = new Map(chatGptData.monthlyUsage.map((item) => [item.month, item]));
-  const driveOutputsByMonth = outputCountByMonth(driveData);
+  const claudeConversationsByMonth = driveActivityCountByMonth(driveData, "conversations");
+  const driveOutputsByMonth = driveActivityCountByMonth(driveData, "outputSignals");
   const gensparkRepresentativeOutputs = representativeGensparkOutputsByMonth(gensparkData);
   const cohorts: ProductivityCohort[] = [];
 
@@ -152,12 +172,16 @@ export function buildProductivityExecutiveModel({
     if (chatGptMonth) {
       usageSignals.push(`ChatGPT ${chatGptMonth.conversations.toLocaleString("ko-KR")}대화`);
     }
+    const claudeConversationCount = claudeConversationsByMonth.get(month) ?? 0;
+    if (claudeConversationCount > 0) {
+      usageSignals.push(`Claude Drive 프롬프트 추정 ${claudeConversationCount.toLocaleString("ko-KR")}대화`);
+    }
     if (isCurrent) {
       usageSignals.push(`Claude Team 활성 ${claudeTeamData.activeUsers}/${claudeTeamData.licensedUsers}명`);
       usageSignals.push(`Claude 요청 ${claudeTeamData.totalRequests.toLocaleString("ko-KR")}건`);
     }
     if (driveOutputCount > 0) {
-      outputSignals.push(`Claude Drive 대표 검증 산출 신호 ${driveOutputCount.toLocaleString("ko-KR")}개`);
+      outputSignals.push(`Claude Drive 결과·산출 신호 ${driveOutputCount.toLocaleString("ko-KR")}개`);
     }
     if (gensparkOutputCount > 0) {
       outputSignals.push(`Genspark 대표 작업 산출 형식 ${gensparkOutputCount.toLocaleString("ko-KR")}개`);
@@ -185,8 +209,16 @@ export function buildProductivityExecutiveModel({
 
   const activeUsers = claudeTeamData.activeUsers;
   const licensedUsers = claudeTeamData.licensedUsers;
-  const driveOutputs = driveData.totals.outputs;
+  const driveOutputs = driveData.activityAnalysis.totalOutputSignals;
   const gensparkOutputs = gensparkDrive?.totalFiles ?? 0;
+  const conversationActiveDays = driveData.activityAnalysis.dailyCounts.filter(
+    (item) => item.conversations > 0,
+  ).length;
+  const monthlyActualByMonth = new Map(monthlyActuals.map((item) => [item.month, item]));
+  const costUsageMonths = monthlyActuals.map((item) => item.month);
+  if (!costUsageMonths.includes(currentMonth)) {
+    costUsageMonths.push(currentMonth);
+  }
 
   return {
     currentMonth,
@@ -203,15 +235,33 @@ export function buildProductivityExecutiveModel({
     codeUserRate: licensedUsers > 0 ? (claudeTeamData.codeUsers / licensedUsers) * 100 : 0,
     codeLines: claudeTeamData.totalCodeLines,
     requests: claudeTeamData.totalRequests,
+    claudeConversations: driveData.activityAnalysis.totalConversations,
+    currentMonthClaudeConversations: claudeConversationsByMonth.get(currentMonth) ?? 0,
+    currentMonthDriveOutputs: driveOutputsByMonth.get(currentMonth) ?? 0,
+    conversationActiveDays,
+    conversationDailyAverage:
+      conversationActiveDays > 0
+        ? driveData.activityAnalysis.totalConversations / conversationActiveDays
+        : 0,
     observableRepositoryOutputs: driveOutputs + gensparkOutputs,
     driveOutputs,
     gensparkOutputs,
     cohorts,
-    costUsageSeries: monthlyActuals.map((actual) => ({
-      month: actual.month,
-      label: actual.label,
-      costKrw: actual.amount,
-      chatGptConversations: chatGptByMonth.get(actual.month)?.conversations ?? 0,
+    costUsageSeries: costUsageMonths.map((month) => ({
+      month,
+      label: monthlyActualByMonth.get(month)?.label ?? `${Number(month.slice(5, 7))}월`,
+      costKrw: monthlyActualByMonth.get(month)?.amount ?? null,
+      chatGptConversations: chatGptByMonth.get(month)?.conversations ?? 0,
+      claudeConversations: claudeConversationsByMonth.get(month) ?? 0,
+      driveOutputSignals: driveOutputsByMonth.get(month) ?? 0,
+    })),
+    dailyDriveActivity: driveData.activityAnalysis.dailyCounts.map((item) => ({
+      date: item.date,
+      label: `${Number(item.date.slice(5, 7))}/${Number(item.date.slice(8, 10))}`,
+      claudeConversations: item.conversations,
+      driveOutputSignals: item.outputSignals,
+      jaewooConversations: item.jaewooConversations,
+      hyungbaeConversations: item.hyungbaeConversations,
     })),
     sourceFreshness: [
       {
@@ -231,9 +281,9 @@ export function buildProductivityExecutiveModel({
       {
         source: "Claude Drive",
         coverage: driveData.source.period,
-        asOf: driveData.source.collectedAt,
+        asOf: driveData.activityAnalysis.collectedAt,
         status: "전체 폴더 집계",
-        note: `${driveData.totals.folders.toLocaleString("ko-KR")}개 폴더 재귀 완료 · 파일 ${driveData.totals.files.toLocaleString("ko-KR")}개 · 중복 추정 ${driveData.totals.duplicateCopies.toLocaleString("ko-KR")}개 분리`,
+        note: `${driveData.activityAnalysis.scannedFolders.toLocaleString("ko-KR")}개 폴더·파일 ${driveData.activityAnalysis.scannedFiles.toLocaleString("ko-KR")}개 재귀 조회 · Claude 추정 대화 ${driveData.activityAnalysis.totalConversations.toLocaleString("ko-KR")}건 · 결과 신호 ${driveData.activityAnalysis.totalOutputSignals.toLocaleString("ko-KR")}개 · 오류 ${driveData.activityAnalysis.scanErrors}건`,
       },
       {
         source: "Genspark Drive",

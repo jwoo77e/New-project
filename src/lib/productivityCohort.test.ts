@@ -30,16 +30,39 @@ describe("buildProductivityExecutiveModel", () => {
   });
 
   it("aligns observable monthly usage with the same cost month", () => {
-    expect(model.costUsageSeries.find((item) => item.month === "2026-06")?.chatGptConversations).toBe(37);
+    expect(model.costUsageSeries.find((item) => item.month === "2026-06")).toMatchObject({
+      chatGptConversations: 37,
+      claudeConversations: 33,
+      driveOutputSignals: 58,
+    });
+    expect(model.costUsageSeries.find((item) => item.month === "2026-07")).toMatchObject({
+      costKrw: null,
+      chatGptConversations: 0,
+      claudeConversations: 223,
+      driveOutputSignals: 771,
+    });
     expect(model.activeUsers).toBe(19);
     expect(model.licensedUsers).toBe(19);
     expect(model.activationRate).toBe(100);
     expect(model.observableRepositoryOutputs).toBe(
-      driveArtifactRepositoryData.totals.outputs + (initialGensparkUsageData.driveAnalysis?.totalFiles ?? 0),
+      driveArtifactRepositoryData.activityAnalysis.totalOutputSignals +
+        (initialGensparkUsageData.driveAnalysis?.totalFiles ?? 0),
     );
     expect(model.sourceFreshness.find((source) => source.source === "Claude Drive")).toMatchObject({
       status: "전체 폴더 집계",
     });
+  });
+
+  it("uses deduplicated Drive prompts as daily Claude conversation activity", () => {
+    expect(model.claudeConversations).toBe(256);
+    expect(model.currentMonthClaudeConversations).toBe(223);
+    expect(model.currentMonthDriveOutputs).toBe(771);
+    expect(model.conversationActiveDays).toBe(28);
+    expect(model.dailyDriveActivity.reduce((sum, item) => sum + item.claudeConversations, 0)).toBe(256);
+    expect(
+      model.dailyDriveActivity.reduce((sum, item) => sum + item.driveOutputSignals, 0) +
+        driveArtifactRepositoryData.activityAnalysis.undatedOutputSignals,
+    ).toBe(830);
   });
 
   it("separates active Claude seats from accounts with spend activity", () => {

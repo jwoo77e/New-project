@@ -884,10 +884,10 @@ function App() {
           />
           <MetricCard
             icon={<FileText size={21} />}
-            label="대표 검증 산출 신호"
+            label="관측 산출 신호"
             tone="green"
             value={`${numberFormat.format(productivityModel.observableRepositoryOutputs)}개`}
-            footer={`Claude Drive 대표 ${numberFormat.format(productivityModel.driveOutputs)} · Genspark ${numberFormat.format(productivityModel.gensparkOutputs)}`}
+            footer={`Claude Drive 결과 ${numberFormat.format(productivityModel.driveOutputs)} · Genspark ${numberFormat.format(productivityModel.gensparkOutputs)}`}
           />
           <MetricCard
             icon={<CircleDollarSign size={21} />}
@@ -1145,12 +1145,12 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
           </div>
           <div className="panel-header-side">
             <span className="state-pill ok">비용 확정월 정렬</span>
-            <span className="state-pill neutral">ChatGPT 활동은 부분 생산성 지표</span>
+            <span className="state-pill neutral">대화 활동 + Drive 결과 신호</span>
           </div>
         </div>
         <p className="insight-lead">
-          청구 확인월이 아니라 실제 사용월에 비용을 연결합니다. 활동량은 현재 연속 월 데이터가 있는 ChatGPT 대화를 사용하며,
-          인과적 생산성이나 전체 AI 사용량으로 해석하지 않습니다.
+          청구 확인월이 아니라 실제 사용월에 비용을 연결합니다. 활동은 ChatGPT Export 대화와 Drive 프롬프트에서
+          중복 제거한 Claude 추정 대화이며, 결과는 압축·로그·프롬프트를 제외한 Drive 산출 파일 신호입니다.
         </p>
         <div className="executive-chart-frame">
           <ResponsiveContainer width="100%" height="100%">
@@ -1174,17 +1174,37 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
               />
               <Tooltip
                 formatter={(value, name) => [
-                  name === "확정 AI 비용" ? formatWon(Number(value)) : `${numberFormat.format(Number(value))}대화`,
+                  name === "확정 AI 비용"
+                    ? formatWon(Number(value))
+                    : `${numberFormat.format(Number(value))}${String(name).includes("대화") ? "대화" : "개"}`,
                   name,
                 ]}
               />
+              <Legend />
               <Bar
                 dataKey="chatGptConversations"
                 name="ChatGPT 대화"
                 yAxisId="usage"
                 fill="#2f8f46"
-                radius={[5, 5, 0, 0]}
-                maxBarSize={46}
+                stackId="conversations"
+                maxBarSize={34}
+              />
+              <Bar
+                dataKey="claudeConversations"
+                name="Claude 추정 대화"
+                yAxisId="usage"
+                fill="#0f8b8d"
+                stackId="conversations"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={34}
+              />
+              <Bar
+                dataKey="driveOutputSignals"
+                name="Drive 산출 신호"
+                yAxisId="usage"
+                fill="#c58612"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={34}
               />
               <Line
                 dataKey="costKrw"
@@ -1197,6 +1217,84 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
               />
             </ComposedChart>
           </ResponsiveContainer>
+        </div>
+        <div className="daily-activity-block">
+          <div className="daily-activity-head">
+            <div>
+              <span className="eyebrow">Drive Prompt Activity</span>
+              <h3>Claude 일별 추정 대화와 산출 신호</h3>
+            </div>
+            <span className="state-pill neutral">세션 식별자 중복 제거</span>
+          </div>
+          <div className="daily-activity-summary">
+            <div>
+              <span>추정 대화</span>
+              <strong>{numberFormat.format(model.claudeConversations)}건</strong>
+            </div>
+            <div>
+              <span>대화 발생일</span>
+              <strong>{numberFormat.format(model.conversationActiveDays)}일</strong>
+            </div>
+            <div>
+              <span>활성일 평균</span>
+              <strong>{model.conversationDailyAverage.toFixed(1)}건</strong>
+            </div>
+            <div>
+              <span>Drive 결과 신호</span>
+              <strong>{numberFormat.format(model.driveOutputs)}개</strong>
+            </div>
+          </div>
+          <div className="daily-activity-chart">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={model.dailyDriveActivity} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} minTickGap={24} />
+                <YAxis
+                  yAxisId="conversations"
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                  width={34}
+                />
+                <YAxis
+                  yAxisId="outputs"
+                  orientation="right"
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                  width={38}
+                />
+                <Tooltip
+                  formatter={(value, name) => [
+                    `${numberFormat.format(Number(value))}${name === "Claude 추정 대화" ? "대화" : "개"}`,
+                    name,
+                  ]}
+                  labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ""}
+                />
+                <Bar
+                  dataKey="claudeConversations"
+                  name="Claude 추정 대화"
+                  yAxisId="conversations"
+                  fill="#0f8b8d"
+                  radius={[3, 3, 0, 0]}
+                  maxBarSize={18}
+                />
+                <Line
+                  dataKey="driveOutputSignals"
+                  name="Drive 산출 신호"
+                  yAxisId="outputs"
+                  type="monotone"
+                  stroke="#c58612"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+          <small className="daily-activity-note">
+            프롬프트 파일과 프롬프트·응답 Google Docs를 대화로 추정했습니다. 결과 신호는 저장 파일 기준이며 실제 채택,
+            재사용, 품질 확정 건수는 아닙니다.
+          </small>
         </div>
         <div className="insight-box">
           <CalendarRange size={18} />
@@ -1233,7 +1331,7 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
           />
           <MeterRow
             color="#5f6f8c"
-            label="Claude Drive 대표 검증 신호 비중"
+            label="Claude Drive 결과·산출 신호 비중"
             value={(model.driveOutputs / model.observableRepositoryOutputs) * 100}
             valueLabel={`${numberFormat.format(model.driveOutputs)}개`}
           />
@@ -1245,6 +1343,14 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
           />
         </div>
         <div className="current-output-grid">
+          <div>
+            <span>{model.currentMonthLabel} Claude 추정 대화</span>
+            <strong>{numberFormat.format(model.currentMonthClaudeConversations)}건</strong>
+          </div>
+          <div>
+            <span>{model.currentMonthLabel} Drive 산출 신호</span>
+            <strong>{numberFormat.format(model.currentMonthDriveOutputs)}개</strong>
+          </div>
           <div>
             <span>Claude 요청</span>
             <strong>{numberFormat.format(model.requests)}건</strong>
