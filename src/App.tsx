@@ -2,20 +2,29 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
   Activity,
+  AlertTriangle,
+  ArrowRight,
   Bot,
   CalendarRange,
+  CheckCircle2,
+  ChevronRight,
   CircleDollarSign,
+  Columns3,
   Cpu,
+  Database,
   Download,
   FileText,
   FileSpreadsheet,
   Gauge,
   KeyRound,
+  LayoutDashboard,
   LineChart,
+  ListOrdered,
   RotateCcw,
   Search,
   ShieldCheck,
   Sparkles,
+  Table2,
   TrendingUp,
   Upload,
   UserCheck,
@@ -92,6 +101,22 @@ import {
 import { buildDriveArtifactDailyTrend } from "./lib/driveArtifactTrend";
 
 type ViewKey = "overview" | "monthly" | "adoption" | "genspark" | "approval" | "api";
+type LayoutMode = "command" | "editorial" | "signal";
+type ViewHeaderMetric = {
+  label: string;
+  value: string;
+  detail: string;
+  tone: MetricTone;
+  icon: ReactNode;
+};
+
+type ViewHeaderModel = {
+  eyebrow: string;
+  title: string;
+  description: string;
+  freshness: string;
+  metrics: ViewHeaderMetric[];
+};
 
 type ForecastPoint = {
   month: string;
@@ -124,6 +149,7 @@ type ApiMonthForecastSelection = {
 };
 
 const chartColors = ["#0f8b8d", "#e85d4f", "#c58612", "#2f8f46"];
+const DASHBOARD_LAYOUT_KEY = "ai-control-hub-layout";
 const API_FORECAST_MONTH_DAYS = 30.4;
 const API_FORECAST_USD_TO_KRW = 1400;
 const OPERATING_PLAN_START_MONTH = "2026-05";
@@ -149,6 +175,14 @@ function loadInitialDashboardState() {
   };
 }
 
+function loadInitialLayoutMode(): LayoutMode {
+  if (typeof window === "undefined") return "signal";
+  const stored = window.localStorage.getItem(DASHBOARD_LAYOUT_KEY);
+  return stored === "command" || stored === "editorial" || stored === "signal"
+    ? stored
+    : "signal";
+}
+
 function formatWon(value: number) {
   return `${numberFormat.format(Math.round(value))}원`;
 }
@@ -167,7 +201,10 @@ function formatRate(value: number, signed = false) {
 }
 
 function formatKstDateTime(value: string) {
-  return new Date(value).toLocaleString("ko-KR", {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleString("ko-KR", {
     timeZone: "Asia/Seoul",
     month: "2-digit",
     day: "2-digit",
@@ -397,6 +434,7 @@ function apiForecastActualCostUsd(forecast: ApiUsageRunRateForecast) {
 function App() {
   const [initialState] = useState(loadInitialDashboardState);
   const [activeView, setActiveView] = useState<ViewKey>("overview");
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>(loadInitialLayoutMode);
   const [query, setQuery] = useState("");
   const [toast, setToast] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -432,6 +470,10 @@ function App() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(DASHBOARD_LAYOUT_KEY, layoutMode);
+  }, [layoutMode]);
 
   const {
     sourceMeta,
@@ -774,51 +816,315 @@ function App() {
     window.setTimeout(() => setToast(""), 2400);
   };
 
+  let viewHeader: ViewHeaderModel;
+  if (activeView === "overview") {
+    viewHeader = {
+      eyebrow: "Executive Overview",
+      title: "경영 인사이트",
+      description: "확정 비용과 최신 활동·산출 신호를 같은 월 기준으로 연결해 경영 판단에 필요한 변화만 보여줍니다.",
+      freshness: `${productivityModel.currentMonthLabel} 활동 · ${productivityModel.lastClosedMonthLabel} 비용 확정`,
+      metrics: [
+        {
+          icon: <ShieldCheck size={19} />,
+          label: "최근 확정 비용",
+          value: formatManWon(productivityModel.lastClosedCostKrw),
+          detail: `${productivityModel.lagMonths}개월 후행`,
+          tone: "steel",
+        },
+        {
+          icon: <CircleDollarSign size={19} />,
+          label: "현재 월 최소 비용",
+          value: formatManWon(productivityModel.currentFixedCostKrw),
+          detail: "API·변동비 미포함",
+          tone: "amber",
+        },
+        {
+          icon: <UserCheck size={19} />,
+          label: "Claude 활성",
+          value: `${productivityModel.activeUsers}/${productivityModel.licensedUsers}명`,
+          detail: `활성률 ${formatRate(productivityModel.activationRate)}`,
+          tone: "teal",
+        },
+        {
+          icon: <FileText size={19} />,
+          label: "관측 산출 신호",
+          value: `${numberFormat.format(productivityModel.observableRepositoryOutputs)}개`,
+          detail: `Drive ${numberFormat.format(productivityModel.driveOutputs)} · Genspark ${numberFormat.format(productivityModel.gensparkOutputs)}`,
+          tone: "green",
+        },
+      ],
+    };
+  } else if (activeView === "adoption") {
+    viewHeader = {
+      eyebrow: "Adoption & Utilization",
+      title: "활용성",
+      description: "서비스 설치 여부보다 실제 활성 계정, 사용 강도, 산출 연결 범위를 기준으로 활용 수준을 비교합니다.",
+      freshness: `${claudeTeamUsageData.source.period} · 5개 서비스 원천`,
+      metrics: [
+        {
+          icon: <UserCheck size={19} />,
+          label: "Claude 활성",
+          value: `${claudeTeamUsageData.activeUsers}/${claudeTeamUsageData.licensedUsers}명`,
+          detail: "멤버 기준 100% 활성",
+          tone: "teal",
+        },
+        {
+          icon: <Bot size={19} />,
+          label: "Claude Code",
+          value: claudeTeamUsageData.totalCodeLines > 0
+            ? `${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄`
+            : formatTokens(claudeTeamUsageData.totalTokens),
+          detail: `${claudeTeamUsageData.codeUsers}명 사용`,
+          tone: "steel",
+        },
+        {
+          icon: <Sparkles size={19} />,
+          label: "분석된 활용 기록",
+          value: `${numberFormat.format(aiUsageInsight.totalRecords)}건`,
+          detail: "Claude Export + Genspark",
+          tone: "green",
+        },
+        {
+          icon: <FileSpreadsheet size={19} />,
+          label: "Gamma Drive 산출",
+          value: `${numberFormat.format(gammaDriveUsageData.deckCount)}개`,
+          detail: `약 ${numberFormat.format(gammaDriveUsageData.totalSlides)}장`,
+          tone: "amber",
+        },
+      ],
+    };
+  } else if (activeView === "genspark") {
+    viewHeader = {
+      eyebrow: "Work Pattern Analysis",
+      title: "AI 활용 상세 분석",
+      description: "대화량보다 어떤 업무에 AI를 사용했고 어떤 파일과 결과가 남았는지 원천별로 추적합니다.",
+      freshness: `${driveArtifactRepositoryData.source.period} · 하위 폴더 포함`,
+      metrics: [
+        {
+          icon: <Sparkles size={19} />,
+          label: "통합 분석 대상",
+          value: `${numberFormat.format(detailedUsageRecords)}건`,
+          detail: "대화 + 작업 로그",
+          tone: "teal",
+        },
+        {
+          icon: <Search size={19} />,
+          label: "실무 산출형 활용",
+          value: `${numberFormat.format(aiUsageInsight.outputOrientedRecords)}건`,
+          detail: "제안·개발·문서·데이터",
+          tone: "green",
+        },
+        {
+          icon: <FileSpreadsheet size={19} />,
+          label: "Drive 저장 산출물",
+          value: `${numberFormat.format(driveArtifactRepositoryData.totals.files)}개`,
+          detail: driveArtifactsByOwner,
+          tone: "amber",
+        },
+        {
+          icon: <Bot size={19} />,
+          label: "ChatGPT 대화",
+          value: `${numberFormat.format(chatGptUsageData.totalConversations)}건`,
+          detail: `자산 ${numberFormat.format(chatGptUsageData.conversationAssetFiles)}개`,
+          tone: "steel",
+        },
+      ],
+    };
+  } else if (activeView === "approval") {
+    const leadingCategory = aiToolApprovalData.categorySummary[0];
+    viewHeader = {
+      eyebrow: "Subscription Control",
+      title: "AI 도구 결재 현황",
+      description: "계정·결재수단·서비스·부서별 월 고정비를 한 번에 확인하고 비용 집중 구간을 관리합니다.",
+      freshness: aiToolApprovalData.source.period,
+      metrics: [
+        {
+          icon: <CircleDollarSign size={19} />,
+          label: "월 구독료",
+          value: formatManWon(aiToolApprovalData.totalMonthlyKrw),
+          detail: formatPreciseUsd(aiToolApprovalData.totalMonthlyUsd),
+          tone: "green",
+        },
+        {
+          icon: <WalletCards size={19} />,
+          label: "결재 계정",
+          value: `${numberFormat.format(aiToolApprovalData.totalAccounts)}개`,
+          detail: "월 구독 기준",
+          tone: "teal",
+        },
+        {
+          icon: <ShieldCheck size={19} />,
+          label: "AI 전용 카드",
+          value: `${numberFormat.format(aiToolApprovalData.aiDedicatedCardAccounts)}개`,
+          detail: formatWon(aiToolApprovalData.aiDedicatedCardKrw),
+          tone: "amber",
+        },
+        {
+          icon: <Gauge size={19} />,
+          label: "최대 비용 계열",
+          value: leadingCategory?.key ?? "-",
+          detail: leadingCategory ? `${formatWon(leadingCategory.monthlyKrw)} · ${formatRate(leadingCategory.share)}` : "-",
+          tone: "steel",
+        },
+      ],
+    };
+  } else if (activeView === "monthly") {
+    viewHeader = {
+      eyebrow: "Cost & Forecast",
+      title: "월별 비용과 예측",
+      description: "확정 실적, 현재 월 고정비, 실측 API를 분리해 월별 비용 흐름과 다음 분기 최소 지출을 보여줍니다.",
+      freshness: `${actualRange} 확정 · ${forecastRange} 예측`,
+      metrics: [
+        {
+          icon: <CircleDollarSign size={19} />,
+          label: `${lastActual.label} 확정 비용`,
+          value: formatManWon(lastActual.amount),
+          detail: `전월 대비 ${formatRate(lastMoM, true)}`,
+          tone: "coral",
+        },
+        {
+          icon: <FileSpreadsheet size={19} />,
+          label: `${actualRange} 누적`,
+          value: formatManWon(sourceMeta.totalActual),
+          detail: `${numberFormat.format(sourceMeta.recordCount)}건`,
+          tone: "teal",
+        },
+        {
+          icon: <CalendarRange size={19} />,
+          label: `${forecastRange} 예측`,
+          value: formatManWon(apiAdjustedForecastTotal),
+          detail: "고정비 + API",
+          tone: "amber",
+        },
+        {
+          icon: <WalletCards size={19} />,
+          label: "현재 월 고정비",
+          value: formatManWon(operatingPlanSubscriptionKrw),
+          detail: "예측 최소 기준",
+          tone: "steel",
+        },
+      ],
+    };
+  } else {
+    const healthyProviders = apiUsageData.providers.filter((provider) => provider.status === "정상").length;
+    viewHeader = {
+      eyebrow: "API Operations",
+      title: "API 사용",
+      description: "공급자별 토큰·요청·비용·키 상태를 분리해 이상 사용과 수집 누락을 빠르게 확인합니다.",
+      freshness: `${apiUsageData.source.period} · ${formatKstDateTime(apiUsageData.source.generatedAt)}`,
+      metrics: [
+        {
+          icon: <CircleDollarSign size={19} />,
+          label: "추정 API 비용",
+          value: formatUsd(apiTotals.totalCostUsd),
+          detail: apiUsageData.source.mode,
+          tone: "amber",
+        },
+        {
+          icon: <Bot size={19} />,
+          label: "API 토큰",
+          value: formatTokens(apiTotals.totalTokens),
+          detail: "OpenAI · Gemini · Claude",
+          tone: "teal",
+        },
+        {
+          icon: <Cpu size={19} />,
+          label: "수집된 요청",
+          value: `${numberFormat.format(apiTotals.totalRequests)}건`,
+          detail: "Claude 요청 수 미제공",
+          tone: "green",
+        },
+        {
+          icon: <KeyRound size={19} />,
+          label: "정상 공급자",
+          value: `${healthyProviders}/${apiUsageData.providers.length}`,
+          detail: `활성 키 ${apiTotals.activeKeys}개`,
+          tone: "steel",
+        },
+      ],
+    };
+  }
+
   return (
-    <main className="app-shell">
+    <main className={`app-shell layout-${layoutMode}`}>
       <header className="topbar">
         <div className="brand-block">
           <div className="brand-mark" aria-hidden="true">
             <Gauge size={24} />
           </div>
           <div>
-            <h1>전사 AI 사용 현황 대시보드</h1>
-            <p>
-              {sourceMeta.period} · 원천 {sourceMeta.sourceSheet} {sourceMeta.recordCount}건
-            </p>
+            <h1>AI CONTROL HUB</h1>
+            <p>전사 AI 비용 · 활용 · 산출 운영 대시보드</p>
           </div>
         </div>
-        <div className="top-actions">
-          <div className="source-chip" title={sourceMeta.fileName}>
-            <FileSpreadsheet size={17} />
-            {isStoredData ? "저장된 업로드 데이터" : "기본 원천 데이터"}
+        <div className="topbar-tools">
+          <div className="layout-switcher" role="radiogroup" aria-label="대시보드 레이아웃">
+            <button
+              aria-checked={layoutMode === "command"}
+              className={layoutMode === "command" ? "is-selected" : ""}
+              role="radio"
+              title="옵션 1 · 경영 지휘센터"
+              type="button"
+              onClick={() => setLayoutMode("command")}
+            >
+              <LayoutDashboard size={16} />
+              <span>1 지휘센터</span>
+            </button>
+            <button
+              aria-checked={layoutMode === "editorial"}
+              className={layoutMode === "editorial" ? "is-selected" : ""}
+              role="radio"
+              title="옵션 2 · 투자에서 성과까지 흐름 보드"
+              type="button"
+              onClick={() => setLayoutMode("editorial")}
+            >
+              <Columns3 size={16} />
+              <span>2 흐름보드</span>
+            </button>
+            <button
+              aria-checked={layoutMode === "signal"}
+              className={layoutMode === "signal" ? "is-selected" : ""}
+              role="radio"
+              title="옵션 3 · 운영 신호 매트릭스"
+              type="button"
+              onClick={() => setLayoutMode("signal")}
+            >
+              <Table2 size={16} />
+              <span>3 신호매트릭스</span>
+            </button>
           </div>
-          <label className="upload-button">
-            <Upload size={17} />
-            {isUploading ? "읽는 중" : "엑셀 업로드"}
-            <input
-              accept=".xlsx"
-              type="file"
-              onChange={(event) => {
-                void handleUpload(event.currentTarget.files?.[0] ?? null);
-                event.currentTarget.value = "";
-              }}
-            />
-          </label>
-          <button className="command-button" type="button" onClick={exportSnapshot}>
-            <Download size={17} />
-            내보내기
-          </button>
-          <button
-            className="command-button"
-            disabled={!isStoredData}
-            title={isStoredData ? "기본 데이터로 되돌리기" : "저장된 업로드 데이터가 없습니다."}
-            type="button"
-            onClick={resetDashboard}
-          >
-            <RotateCcw size={17} />
-            초기화
-          </button>
+          <div className="top-actions">
+            <div className="source-chip" title={sourceMeta.fileName}>
+              <FileSpreadsheet size={17} />
+              {isStoredData ? "업로드 데이터" : "기본 데이터"}
+            </div>
+            <label className="upload-button" title="AI 비용 엑셀 업로드">
+              <Upload size={17} />
+              <span>{isUploading ? "읽는 중" : "업로드"}</span>
+              <input
+                accept=".xlsx"
+                type="file"
+                onChange={(event) => {
+                  void handleUpload(event.currentTarget.files?.[0] ?? null);
+                  event.currentTarget.value = "";
+                }}
+              />
+            </label>
+            <button className="command-button" title="현재 스냅샷 내보내기" type="button" onClick={exportSnapshot}>
+              <Download size={17} />
+              <span>스냅샷</span>
+            </button>
+            <button
+              className="command-button icon-command"
+              disabled={!isStoredData}
+              title={isStoredData ? "기본 데이터로 되돌리기" : "저장된 업로드 데이터가 없습니다."}
+              type="button"
+              onClick={resetDashboard}
+            >
+              <RotateCcw size={17} />
+              <span className="sr-only">초기화</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -872,6 +1178,8 @@ function App() {
           API 사용
         </button>
       </nav>
+
+      <DashboardViewHeader model={viewHeader} />
 
       {activeView === "overview" ? (
         <section className="metric-grid" aria-label="비용과 생산성 핵심 지표">
@@ -1104,7 +1412,9 @@ function App() {
         />
       )}
 
-      {activeView === "overview" && <ExecutiveOverviewView model={productivityModel} />}
+      {activeView === "overview" && (
+        <ExecutiveDesignOverview layoutMode={layoutMode} model={productivityModel} />
+      )}
 
       {activeView === "adoption" && (
         <AdoptionView
@@ -1129,6 +1439,431 @@ function App() {
 
       {toast && <div className="toast">{toast}</div>}
     </main>
+  );
+}
+
+function DashboardViewHeader({ model }: { model: ViewHeaderModel }) {
+  return (
+    <section className="view-summary" aria-labelledby="view-summary-title">
+      <div className="view-summary-copy">
+        <div>
+          <span className="eyebrow">{model.eyebrow}</span>
+          <h2 id="view-summary-title">{model.title}</h2>
+          <p>{model.description}</p>
+        </div>
+        <span className="view-freshness">
+          <Database size={15} />
+          {model.freshness}
+        </span>
+      </div>
+      <div className="view-summary-metrics">
+        {model.metrics.map((metric) => (
+          <article className={`view-summary-metric ${metric.tone}`} key={metric.label}>
+            <span className="view-summary-icon">{metric.icon}</span>
+            <div>
+              <span>{metric.label}</span>
+              <strong>{metric.value}</strong>
+              <small>{metric.detail}</small>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ExecutiveDesignOverview({
+  layoutMode,
+  model,
+}: {
+  layoutMode: LayoutMode;
+  model: ProductivityExecutiveModel;
+}) {
+  const [range, setRange] = useState<"3m" | "6m" | "all">("6m");
+  const trendSeries = useMemo(
+    () =>
+      model.costUsageSeries.map((item) => ({
+        ...item,
+        conversations: item.chatGptConversations + item.claudeConversations,
+        outputSignals: item.driveOutputSignals,
+      })),
+    [model.costUsageSeries],
+  );
+  const visibleSeries =
+    range === "all" ? trendSeries : trendSeries.slice(range === "3m" ? -3 : -6);
+  const fixedCostChange =
+    model.lastClosedCostKrw > 0
+      ? ((model.currentFixedCostKrw - model.lastClosedCostKrw) / model.lastClosedCostKrw) * 100
+      : 0;
+  const outputDirection = model.axKpis.output.dailyGrowthRate >= 0 ? "증가" : "감소";
+  const activityDirection = model.axKpis.activity.dailyGrowthRate >= 0 ? "증가" : "감소";
+
+  const chart = (
+    <div className="decision-chart">
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={visibleSeries} margin={{ top: 16, right: 10, left: 0, bottom: 2 }}>
+          <CartesianGrid stroke="#dce3e7" strokeDasharray="4 4" vertical={false} />
+          <XAxis dataKey="label" tickLine={false} axisLine={false} />
+          <YAxis
+            yAxisId="cost"
+            tickFormatter={formatAxisWon}
+            tickLine={false}
+            axisLine={false}
+            width={58}
+          />
+          <YAxis
+            yAxisId="signal"
+            orientation="right"
+            tickLine={false}
+            axisLine={false}
+            width={40}
+            allowDecimals={false}
+          />
+          <Tooltip
+            formatter={(value, name) => [
+              name === "AI 비용"
+                ? formatWon(Number(value))
+                : `${numberFormat.format(Number(value))}${name === "활성 계정" ? "명" : "건"}`,
+              name,
+            ]}
+          />
+          <Legend />
+          <Bar
+            dataKey="costKrw"
+            name="AI 비용"
+            yAxisId="cost"
+            fill="#2563eb"
+            maxBarSize={40}
+            radius={[4, 4, 0, 0]}
+          />
+          <Line
+            dataKey="conversations"
+            name="대화·프롬프트"
+            yAxisId="signal"
+            type="monotone"
+            stroke="#ef5a47"
+            strokeWidth={2.5}
+            dot={{ r: 3, fill: "#ef5a47" }}
+          />
+          <Line
+            dataKey="outputSignals"
+            name="Drive 산출 신호"
+            yAxisId="signal"
+            type="monotone"
+            stroke="#169c74"
+            strokeWidth={2.5}
+            dot={{ r: 3, fill: "#169c74" }}
+          />
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  );
+
+  const rangeControl = (
+    <div className="range-switch" aria-label="차트 기간" role="group">
+      <button className={range === "3m" ? "is-active" : ""} type="button" onClick={() => setRange("3m")}>
+        3개월
+      </button>
+      <button className={range === "6m" ? "is-active" : ""} type="button" onClick={() => setRange("6m")}>
+        6개월
+      </button>
+      <button className={range === "all" ? "is-active" : ""} type="button" onClick={() => setRange("all")}>
+        누적
+      </button>
+    </div>
+  );
+
+  const stageSignals = [
+    {
+      step: "1",
+      label: "도입",
+      value: formatRate(model.activationRate),
+      detail: `${model.activeUsers}/${model.licensedUsers}명 활성`,
+      direction: "유지",
+      tone: "teal",
+    },
+    {
+      step: "2",
+      label: "활동",
+      value: `${model.axKpis.activity.conversationsPerActiveDay.toFixed(1)}건`,
+      detail: "활성일 평균 대화",
+      direction: activityDirection,
+      tone: "blue",
+    },
+    {
+      step: "3",
+      label: "산출",
+      value: `${model.axKpis.output.outputsPerConversation.toFixed(2)}개`,
+      detail: "대화당 Drive 산출",
+      direction: outputDirection,
+      tone: "green",
+    },
+  ];
+
+  if (layoutMode === "command") {
+    return (
+      <section className="design-overview command-overview" aria-label="경영 지휘센터">
+        <div className="overview-title-row">
+          <div>
+            <span className="eyebrow">Executive Command Center</span>
+            <h2>비용·활동·산출을 한 화면에서 판단</h2>
+          </div>
+          {rangeControl}
+        </div>
+        <div className="command-grid">
+          <section className="command-chart-area">
+            <div className="section-heading">
+              <div>
+                <strong>비용 대비 AX 신호 추이</strong>
+                <span>확정 비용과 관측 가능한 활동·산출 선행지표</span>
+              </div>
+              <span className="state-pill neutral">비용 후행 보정</span>
+            </div>
+            {chart}
+          </section>
+          <aside className="decision-rail" aria-label="이번 주 판단">
+            <div className="section-heading">
+              <div>
+                <strong>이번 주 판단</strong>
+                <span>우선순위가 높은 관리 신호</span>
+              </div>
+            </div>
+            <ol>
+              <li>
+                <span className="decision-rank coral">1</span>
+                <div>
+                  <b>7월 최소 비용 {formatRate(fixedCostChange, true)}</b>
+                  <p>고정 구독비 기준이며 API·변동비 확정 전입니다.</p>
+                </div>
+                <ChevronRight size={17} />
+              </li>
+              <li>
+                <span className="decision-rank amber">2</span>
+                <div>
+                  <b>활동 강도 {activityDirection}</b>
+                  <p>활성일 평균 대화가 전월 대비 {formatRate(model.axKpis.activity.dailyGrowthRate, true)}입니다.</p>
+                </div>
+                <ChevronRight size={17} />
+              </li>
+              <li>
+                <span className="decision-rank green">3</span>
+                <div>
+                  <b>산출 신호 {outputDirection}</b>
+                  <p>일평균 산출 신호가 전월 대비 {formatRate(model.axKpis.output.dailyGrowthRate, true)}입니다.</p>
+                </div>
+                <ChevronRight size={17} />
+              </li>
+            </ol>
+          </aside>
+        </div>
+        <AxStageStrip stages={stageSignals} />
+      </section>
+    );
+  }
+
+  if (layoutMode === "editorial") {
+    return (
+      <section className="design-overview editorial-overview" aria-label="투자에서 성과까지 흐름 보드">
+        <div className="overview-title-row editorial-title-row">
+          <div>
+            <span className="eyebrow">Investment to Outcome</span>
+            <h2>AI 투자에서 산출 신호까지, 흐름으로 읽는 운영 보드</h2>
+          </div>
+          {rangeControl}
+        </div>
+        <div className="editorial-flow" aria-label="AI 투자 흐름">
+          {[
+            ["비용", formatManWon(model.currentFixedCostKrw), "현재 월 최소"],
+            ["활성", formatRate(model.activationRate), `${model.activeUsers}/${model.licensedUsers}명`],
+            ["활동", `${model.axKpis.activity.conversationsPerActiveDay.toFixed(1)}건`, "활성일 평균"],
+            ["산출", `${model.observableRepositoryOutputs.toLocaleString("ko-KR")}건`, "관측 신호"],
+          ].map(([label, value, detail], index) => (
+            <div className={`flow-step flow-step-${index + 1}`} key={label}>
+              <span>{label}</span>
+              <strong>{value}</strong>
+              <small>{detail}</small>
+              {index < 3 && <ArrowRight size={20} aria-hidden="true" />}
+            </div>
+          ))}
+        </div>
+        <div className="editorial-chart-area">
+          <div className="section-heading">
+            <div>
+              <strong>월별 비용·활동·산출 추이</strong>
+              <span>비용은 확정월, 활동과 산출은 최신 수집 시점 기준</span>
+            </div>
+          </div>
+          {chart}
+        </div>
+        <div className="editorial-bottom">
+          <AxStageStrip stages={stageSignals} />
+          <section className="management-notes">
+            <div className="section-heading">
+              <div>
+                <strong>경영 판단 메모</strong>
+                <span>측정값과 잠정 신호를 분리해 해석합니다.</span>
+              </div>
+            </div>
+            <ol>
+              <li>
+                <span>01</span>
+                <p>Claude Team 활성률은 {formatRate(model.activationRate)}로 도입 기반이 안정적입니다.</p>
+              </li>
+              <li>
+                <span>02</span>
+                <p>활동 강도는 {activityDirection}, 산출 신호는 {outputDirection} 흐름입니다.</p>
+              </li>
+              <li>
+                <span>03</span>
+                <p>시간 절감·품질·ROI는 업무 단위 검증 데이터 연결 후 확정합니다.</p>
+              </li>
+            </ol>
+          </section>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="design-overview signal-overview" aria-label="운영 신호 매트릭스">
+      <div className="overview-title-row">
+        <div>
+          <span className="eyebrow">Signal Matrix</span>
+          <h2>비용 대비 AX 신호</h2>
+        </div>
+        {rangeControl}
+      </div>
+      <div className="signal-main-grid">
+        <section className="signal-chart-area">
+          <div className="section-heading">
+            <div>
+              <strong>비용·대화·Drive 산출 신호</strong>
+              <span>동일한 월 축에서 실행 선행지표를 비교합니다.</span>
+            </div>
+          </div>
+          {chart}
+        </section>
+        <section className="signal-summary">
+          <div className="section-heading">
+            <div>
+              <strong>신호 요약</strong>
+              <span>AX 1~3단계 자동 집계</span>
+            </div>
+          </div>
+          <div className="signal-stage-list">
+            {stageSignals.map((stage) => (
+              <div className="signal-stage-row" key={stage.step}>
+                <span className={`signal-step ${stage.tone}`}>{stage.step}</span>
+                <div>
+                  <b>AX {stage.step}단계 · {stage.label}</b>
+                  <small>{stage.detail}</small>
+                </div>
+                <strong>{stage.value}</strong>
+                <span className={`direction-badge ${stage.direction === "감소" ? "down" : ""}`}>
+                  {stage.direction}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="attention-list">
+            <strong>
+              <AlertTriangle size={16} /> 주의 필요
+            </strong>
+            <p>당월 비용은 고정 구독비 최소값이며 API·변동비는 확정 대기입니다.</p>
+            <p>활동·산출 건수는 생산성·품질 확정치가 아닌 관측 신호입니다.</p>
+          </div>
+        </section>
+      </div>
+      <div className="signal-bottom-grid">
+        <section className="source-matrix">
+          <div className="section-heading">
+            <div>
+              <strong>소스 및 커버리지</strong>
+              <span>최신 수집 상태와 해석 범위</span>
+            </div>
+          </div>
+          <div className="source-matrix-table" role="table" aria-label="데이터 소스 커버리지">
+            {model.sourceFreshness.slice(0, 4).map((source) => (
+              <div className="source-matrix-row" role="row" key={source.source}>
+                <strong role="cell">{source.source}</strong>
+                <span role="cell">
+                  <CheckCircle2 size={15} /> {source.status}
+                </span>
+                <span role="cell">{source.asOf}</span>
+                <small role="cell">{source.coverage}</small>
+              </div>
+            ))}
+          </div>
+        </section>
+        <section className="manager-actions">
+          <div className="section-heading">
+            <div>
+              <strong>관리자 액션</strong>
+              <span>이번 주 우선 확인 항목</span>
+            </div>
+          </div>
+          <ol>
+            <li>
+              <span>1</span>
+              <div>
+                <b>비용 확정 시 월 코호트 연결</b>
+                <small>{model.currentMonthLabel} 변동비 반영 대기</small>
+              </div>
+            </li>
+            <li>
+              <span>2</span>
+              <div>
+                <b>활동 증빙 커버리지 확대</b>
+                <small>{model.axKpis.adoption.evidenceContributors}/{model.activeUsers}명 저장소 연결</small>
+              </div>
+            </li>
+            <li>
+              <span>3</span>
+              <div>
+                <b>성과 KPI 검증 데이터 연결</b>
+                <small>시간 절감·승인·재작업·품질</small>
+              </div>
+            </li>
+          </ol>
+        </section>
+      </div>
+    </section>
+  );
+}
+
+function AxStageStrip({
+  stages,
+}: {
+  stages: Array<{
+    step: string;
+    label: string;
+    value: string;
+    detail: string;
+    direction: string;
+    tone: string;
+  }>;
+}) {
+  return (
+    <section className="ax-stage-strip" aria-label="AX 단계별 현황">
+      <div className="ax-stage-strip-title">
+        <ListOrdered size={18} />
+        <div>
+          <strong>AX 단계별 실행 현황</strong>
+          <small>도입 → 활동 → 산출</small>
+        </div>
+      </div>
+      {stages.map((stage, index) => (
+        <div className="ax-stage-summary" key={stage.step}>
+          <span className={`signal-step ${stage.tone}`}>{stage.step}</span>
+          <div>
+            <small>{stage.label} KPI</small>
+            <strong>{stage.value}</strong>
+            <span>{stage.detail} · {stage.direction}</span>
+          </div>
+          {index < stages.length - 1 && <ArrowRight size={18} aria-hidden="true" />}
+        </div>
+      ))}
+    </section>
   );
 }
 
@@ -1828,39 +2563,16 @@ function MonthlyView({
               <Tooltip formatter={(value) => formatWon(Number(value))} />
               <Legend />
               <Bar dataKey="actual" name="실적" fill="#0f8b8d" radius={[5, 5, 0, 0]} />
-              <Bar dataKey="forecast" name="기존 예측" stackId="forecast" fill="#c58612" radius={[5, 5, 0, 0]} />
               <Bar
-                dataKey="operatingPlanForecast"
-                name="현재 월 고정비"
-                stackId="forecast"
-                fill="#5f6f8c"
-                radius={[5, 5, 0, 0]}
-              />
-              <Bar
-                dataKey="apiUsageForecast"
-                name="API 실측/예산"
-                stackId="forecast"
-                fill="#2f8f46"
-                radius={[5, 5, 0, 0]}
-              />
-              <Line
                 dataKey="forecastWithApi"
-                name="API/고정비 반영 예측"
-                stroke="#2f8f46"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-              />
-              <Line
-                dataKey="forecastBasis"
-                name="실적 보정 기준"
-                stroke="#e85d4f"
-                strokeWidth={2}
-                dot={{ r: 3 }}
+                name="고정비·API 반영 예측"
+                fill="#66758f"
+                radius={[5, 5, 0, 0]}
               />
               <Line
                 dataKey="fixedPlan"
                 name="현재 월 고정비 기준"
-                stroke="#5f6f8c"
+                stroke="#c58612"
                 strokeDasharray="6 4"
                 strokeWidth={2}
                 dot={false}
@@ -3033,28 +3745,13 @@ function AiToolApprovalView({ approvalData }: { approvalData: AiToolApprovalData
         <div className="panel-header">
           <div>
             <span className="eyebrow">Payment Control</span>
-            <h2>결재수단별 월 구독료</h2>
+            <h2>서비스 계열별 월 구독료</h2>
           </div>
           <div className="panel-header-side">
             <span className="state-pill neutral">{approvalData.source.period}</span>
           </div>
         </div>
-        <div className="approval-payment-grid">
-          {approvalData.paymentSummary.map((payment, index) => (
-            <article className="approval-payment-card" key={payment.key}>
-              <span>{payment.key}</span>
-              <strong>{formatWon(payment.monthlyKrw)}</strong>
-              <small>
-                {numberFormat.format(payment.count)}개 계정 · {formatPreciseUsd(payment.monthlyUsd)} · {formatRate(payment.share)}
-              </small>
-              <div className="department-meter" aria-label={`${payment.key} 결재 비중`}>
-                <span style={{ width: `${Math.min(payment.share, 100)}%`, background: approvalPalette(index) }} />
-              </div>
-            </article>
-          ))}
-        </div>
         <div className="approval-meter-list">
-          <h3>서비스 계열별 부담</h3>
           {approvalData.categorySummary.map((category, index) => (
             <MeterRow
               color={approvalPalette(index)}
@@ -3083,7 +3780,7 @@ function AiToolApprovalView({ approvalData }: { approvalData: AiToolApprovalData
           </div>
         </div>
         <div className="insight-signal-list">
-          {approvalData.insights.map((insight, index) => (
+          {approvalData.insights.slice(2).map((insight, index) => (
             <article className="insight-signal-card" key={insight}>
               <span>{index + 1}</span>
               <strong>{insight}</strong>
@@ -3435,19 +4132,19 @@ function AdoptionView({
         <div className="ax-insight-columns">
           <div className="ax-insight-column">
             <h3>잘된 점</h3>
-            {axStrengths.map((item) => (
+            {axStrengths.slice(0, 3).map((item) => (
               <p key={item}>{item}</p>
             ))}
           </div>
           <div className="ax-insight-column">
             <h3>미비점</h3>
-            {axGaps.map((item) => (
+            {axGaps.slice(0, 3).map((item) => (
               <p key={item}>{item}</p>
             ))}
           </div>
           <div className="ax-insight-column">
             <h3>보완 대책</h3>
-            {axActions.map((item) => (
+            {axActions.slice(0, 3).map((item) => (
               <p key={item}>{item}</p>
             ))}
           </div>
