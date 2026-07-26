@@ -155,15 +155,7 @@ const API_FORECAST_USD_TO_KRW = 1400;
 const OPERATING_PLAN_START_MONTH = "2026-05";
 const OPERATING_PLAN_USD_TO_KRW = 1485;
 const OPERATING_PLAN_API_BUDGET_KRW = 280000;
-const operatingPlanSubscriptions = [
-  { label: "ChatGPT Pro", quantity: 2, unitUsd: 220 },
-  { label: "Claude Max 5x", quantity: 1, unitUsd: 110 },
-  { label: "Gemini Pro", quantity: 9, unitUsd: 15.12 },
-  { label: "Genspark Pro", quantity: 2, unitUsd: 275 },
-  { label: "Gamma AI Pro", quantity: 1, unitUsd: 25 },
-  { label: "Claude Team Premium", quantity: 3, unitUsd: 137.5 },
-  { label: "Claude Team Standard", quantity: 6, unitUsd: 27.5 },
-];
+const GAMMA_MONTHLY_PLAN_USD = 25;
 
 const numberFormat = new Intl.NumberFormat("ko-KR");
 
@@ -3913,8 +3905,7 @@ function AdoptionView({
   const claudeTopUser = [...claudeTeamUsageData.users].sort((a, b) =>
     hasClaudeCodeLines ? b.codeLines - a.codeLines : b.netSpendUsd - a.netSpendUsd,
   )[0];
-  const gammaPlan = operatingPlanSubscriptions.find((item) => item.label.includes("Gamma"));
-  const gammaMonthlyUsd = gammaPlan ? gammaPlan.quantity * gammaPlan.unitUsd : 0;
+  const gammaMonthlyUsd = GAMMA_MONTHLY_PLAN_USD;
   const gammaDeckCount = gammaDriveUsageData.deckCount;
   const gammaTotalSlides = gammaDriveUsageData.totalSlides;
   const gammaTrackedLabel =

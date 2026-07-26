@@ -311,26 +311,26 @@ const records: AiToolApprovalRecord[] = [
   {
     no: 22,
     category: "Claude",
-    tool: "Claude Team Plan Standard",
+    tool: "Claude Team Plan Premium",
     account: "staycurious@riskzero.kr",
     linkedAccount: "없음",
     owner: "김하나 과장 / 플랫폼개발",
     department: "플랫폼개발",
-    monthlyUsd: 25,
-    monthlyKrw: 37125,
+    monthlyUsd: 125,
+    monthlyKrw: 185625,
     paymentMethod: "AI 전용 카드",
     note: "",
   },
   {
     no: 23,
     category: "Claude",
-    tool: "Claude Team Plan Standard",
+    tool: "Claude Team Plan Premium",
     account: "woosung.jeon@riskzero.kr",
     linkedAccount: "없음",
     owner: "전우성 부장 / 플랫폼개발",
     department: "플랫폼개발",
-    monthlyUsd: 25,
-    monthlyKrw: 37125,
+    monthlyUsd: 125,
+    monthlyKrw: 185625,
     paymentMethod: "AI 전용 카드",
     note: "",
   },
@@ -522,17 +522,21 @@ const normalizedRecords = records.map((record, index) => ({ ...record, no: index
 const totalMonthlyUsd = sum(records, "monthlyUsd");
 const totalMonthlyKrw = sum(records, "monthlyKrw");
 const paymentSummary = summarize(records, "paymentMethod", totalMonthlyKrw);
+const toolSummary = summarize(records, "tool", totalMonthlyKrw);
+const categorySummary = summarize(records, "category", totalMonthlyKrw);
+const departmentSummary = summarize(records, "department", totalMonthlyKrw);
 const aiDedicatedCard = paymentSummary.find((item) => item.key === "AI 전용 카드");
 const namedCorporateCard = paymentSummary.find((item) => item.key === "공용 법인 카드");
+const claudeCategory = categorySummary.find((item) => item.key === "Claude");
 
 export const initialAiToolApprovalData: AiToolApprovalData = {
   source: {
     name: "사내 AI도구 결재 현황",
     fileName: "사내 AI도구 현황조사표_V3.0.xlsx",
     sheetName: "전사 AI도구 현황조사표",
-    collectedAt: "2026-07-13",
+    collectedAt: "2026-07-27",
     period: "월 구독 기준 · USD 1 = 1,485원",
-    note: "계정 ID, 주사용자/부서, 구독료, 결재수단을 반영했으며 비밀번호, 이중인증 전화번호, 비고 내용은 결재 현황 지표에서 제외",
+    note: "계정 ID, 주사용자/부서, 구독료, 결재수단을 반영했으며 2026-07-27 Claude Team 좌석 변경과 비고 제외 기준을 적용",
   },
   exchangeRate,
   totalAccounts: records.length,
@@ -542,17 +546,17 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
   aiDedicatedCardKrw: aiDedicatedCard?.monthlyKrw ?? 0,
   namedCorporateCardAccounts: namedCorporateCard?.count ?? 0,
   namedCorporateCardKrw: namedCorporateCard?.monthlyKrw ?? 0,
-  toolSummary: summarize(records, "tool", totalMonthlyKrw),
-  categorySummary: summarize(records, "category", totalMonthlyKrw),
+  toolSummary,
+  categorySummary,
   paymentSummary,
-  departmentSummary: summarize(records, "department", totalMonthlyKrw),
+  departmentSummary,
   records: normalizedRecords,
   insights: [
-    "등록된 AI 도구 결재 계정은 36개이며 월 구독료 합계는 $2,485.71 / 3,691,279원입니다.",
-    "AI 전용 카드 결재가 36개 계정, 3,691,279원으로 전체 월액의 100.0%를 차지합니다.",
+    `등록된 AI 도구 결재 계정은 ${records.length}개이며 월 구독료 합계는 ${formatUsd(totalMonthlyUsd)} / ${formatKrw(totalMonthlyKrw)}입니다.`,
+    `AI 전용 카드 결재가 ${aiDedicatedCard?.count ?? 0}개 계정, ${formatKrw(aiDedicatedCard?.monthlyKrw ?? 0)}으로 전체 월액의 ${(aiDedicatedCard?.share ?? 0).toFixed(1)}%를 차지합니다.`,
     "기존 공용 법인 카드 2개 항목은 모두 AI 전용 카드로 전환했습니다.",
-    "Claude 계열은 25개 계정, 2,457,675원으로 수량과 비용 모두 가장 큰 결재 묶음입니다.",
-    "변경 반영: 전사 chatGPT Pro를 20배에서 5배로 변경했습니다.",
+    `Claude 계열은 ${claudeCategory?.count ?? 0}개 계정, ${formatKrw(claudeCategory?.monthlyKrw ?? 0)}으로 수량과 비용 모두 가장 큰 결재 묶음입니다.`,
+    "변경 반영: 김하나 과장과 전우성 부장의 Claude Team Plan을 Standard에서 Premium으로 변경했습니다.",
   ],
 };
 
@@ -586,6 +590,17 @@ function summarize(recordsToSummarize: AiToolApprovalRecord[], key: keyof AiTool
 
 function sum(recordsToSum: AiToolApprovalRecord[], field: "monthlyUsd" | "monthlyKrw") {
   return roundMoney(recordsToSum.reduce((total, record) => total + record[field], 0));
+}
+
+function formatUsd(value: number) {
+  return `$${value.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function formatKrw(value: number) {
+  return `${Math.round(value).toLocaleString("ko-KR")}원`;
 }
 
 function roundMoney(value: number) {
