@@ -1,6 +1,6 @@
 import type { DriveArtifact, DriveArtifactRepositoryData } from "../data/driveArtifactRepositoryData";
 
-type DriveArtifactTrendInput = {
+export type DriveArtifactTrendInput = {
   source: Pick<DriveArtifactRepositoryData["source"], "period">;
   repositories: Array<{
     owner: string;

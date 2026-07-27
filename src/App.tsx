@@ -99,6 +99,11 @@ import {
   type ProductivitySourceFreshness,
 } from "./lib/productivityCohort";
 import { buildDriveArtifactDailyTrend } from "./lib/driveArtifactTrend";
+import {
+  isDriveArtifactTrendSnapshot,
+  selectPreferredDriveArtifactTrendSnapshot,
+  type DriveArtifactTrendSnapshot,
+} from "./lib/driveArtifactTrendSnapshot";
 
 type ViewKey = "overview" | "monthly" | "adoption" | "genspark" | "approval" | "api";
 type LayoutMode = "command" | "editorial" | "signal";
@@ -156,6 +161,7 @@ const OPERATING_PLAN_START_MONTH = "2026-05";
 const OPERATING_PLAN_USD_TO_KRW = 1485;
 const OPERATING_PLAN_API_BUDGET_KRW = 280000;
 const GAMMA_MONTHLY_PLAN_USD = 25;
+const DRIVE_TREND_POLL_INTERVAL_MS = 15 * 60 * 1000;
 
 const numberFormat = new Intl.NumberFormat("ko-KR");
 
@@ -433,6 +439,8 @@ function App() {
   const [dashboardData, setDashboardData] = useState<DashboardData>(initialState.data);
   const [isStoredData, setIsStoredData] = useState(initialState.isStoredData);
   const [apiUsageData, setApiUsageData] = useState<ApiUsageData>(initialApiUsageData);
+  const [driveArtifactTrendSnapshot, setDriveArtifactTrendSnapshot] =
+    useState<DriveArtifactTrendSnapshot | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -460,6 +468,41 @@ function App() {
 
     return () => {
       isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const snapshotUrls = [
+      `${import.meta.env.BASE_URL}drive-artifact-trend-snapshot.local.json`,
+      "/api/drive-artifact-trend",
+    ];
+
+    async function loadDriveArtifactTrendSnapshot() {
+      for (const url of snapshotUrls) {
+        try {
+          const response = await fetch(url, { cache: "no-store" });
+          if (!response.ok) continue;
+          const data: unknown = await response.json();
+          if (!isDriveArtifactTrendSnapshot(data) || !isMounted) continue;
+          setDriveArtifactTrendSnapshot((current) =>
+            selectPreferredDriveArtifactTrendSnapshot(current, data),
+          );
+        } catch {
+          // Static deployments can omit the runtime API; retain the last verified graph.
+        }
+      }
+    }
+
+    void loadDriveArtifactTrendSnapshot();
+    const pollId = window.setInterval(
+      () => void loadDriveArtifactTrendSnapshot(),
+      DRIVE_TREND_POLL_INTERVAL_MS,
+    );
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(pollId);
     };
   }, []);
 
@@ -554,6 +597,8 @@ function App() {
   );
   const aiUsageInsight = initialGensparkUsageData.insightAnalysis;
   const detailedUsageRecords = aiUsageInsight.totalRecords + chatGptUsageData.totalConversations;
+  const latestDriveFileTotal =
+    driveArtifactTrendSnapshot?.totals.files ?? driveArtifactRepositoryData.totals.files;
   const driveArtifactsByOwner = driveArtifactRepositoryData.repositories
     .map((repository) => `${repository.owner} ${numberFormat.format(repository.fileCount)}개`)
     .join(" · ");
@@ -890,7 +935,9 @@ function App() {
       eyebrow: "Work Pattern Analysis",
       title: "AI 활용 상세 분석",
       description: "대화량보다 어떤 업무에 AI를 사용했고 어떤 파일과 결과가 남았는지 원천별로 추적합니다.",
-      freshness: `${driveArtifactRepositoryData.source.period} · 하위 폴더 포함`,
+      freshness: `${
+        driveArtifactTrendSnapshot?.source.period ?? driveArtifactRepositoryData.source.period
+      } · 날짜 그래프 매일 21:00 갱신`,
       metrics: [
         {
           icon: <Sparkles size={19} />,
@@ -909,7 +956,7 @@ function App() {
         {
           icon: <FileSpreadsheet size={19} />,
           label: "Drive 저장 산출물",
-          value: `${numberFormat.format(driveArtifactRepositoryData.totals.files)}개`,
+          value: `${numberFormat.format(latestDriveFileTotal)}개`,
           detail: driveArtifactsByOwner,
           tone: "amber",
         },
@@ -1337,7 +1384,7 @@ function App() {
             icon={<FileSpreadsheet size={21} />}
             label="Drive 저장 산출물"
             tone="amber"
-            value={`${numberFormat.format(driveArtifactRepositoryData.totals.files)}개`}
+            value={`${numberFormat.format(latestDriveFileTotal)}개`}
             footer={`${driveArtifactsByOwner} · 하위 폴더 ${numberFormat.format(driveArtifactRepositoryData.totals.nestedFiles)}개`}
           />
           <MetricCard
@@ -1421,6 +1468,7 @@ function App() {
         <GensparkUsageView
           claudeTeamUsageData={claudeTeamUsageData}
           driveRepositoryData={driveArtifactRepositoryData}
+          driveTrendSnapshot={driveArtifactTrendSnapshot}
           usageData={initialGensparkUsageData}
         />
       )}
@@ -3033,10 +3081,12 @@ function DetailView({
 function GensparkUsageView({
   claudeTeamUsageData,
   driveRepositoryData,
+  driveTrendSnapshot,
   usageData,
 }: {
   claudeTeamUsageData: ClaudeTeamUsageData;
   driveRepositoryData: DriveArtifactRepositoryData;
+  driveTrendSnapshot: DriveArtifactTrendSnapshot | null;
   usageData: GensparkUsageData;
 }) {
   const insight = usageData.insightAnalysis;
@@ -3056,9 +3106,10 @@ function GensparkUsageView({
     ...driveRepositoryData.repositories.map((repository) => repository.inventory.maxDepth),
     1,
   );
+  const driveArtifactTrendSource = driveTrendSnapshot ?? driveRepositoryData;
   const driveArtifactTrend = useMemo(
-    () => buildDriveArtifactDailyTrend(driveRepositoryData),
-    [driveRepositoryData],
+    () => buildDriveArtifactDailyTrend(driveArtifactTrendSource),
+    [driveArtifactTrendSource],
   );
   const driveArtifactTrendData = useMemo(
     () =>
@@ -3069,6 +3120,12 @@ function GensparkUsageView({
     [driveArtifactTrend],
   );
   const driveOwnerColors = ["#0f8b8d", "#e85d4f", "#5f6f8c", "#c58612"];
+  const driveTrendTotalFiles =
+    driveTrendSnapshot?.totals.files ?? driveRepositoryData.totals.files;
+  const driveTrendDirectFiles =
+    driveTrendSnapshot?.totals.directFiles ?? driveRepositoryData.totals.directFiles;
+  const driveTrendNestedFiles =
+    driveTrendSnapshot?.totals.nestedFiles ?? driveRepositoryData.totals.nestedFiles;
   const gensparkDrive = usageData.driveAnalysis;
   const gammaDeckCount = gammaDriveUsageData.deckCount;
   const gammaTotalSlides = gammaDriveUsageData.totalSlides;
@@ -3557,7 +3614,9 @@ function GensparkUsageView({
           </div>
           <div className="panel-header-side">
             <span className="state-pill ok">Drive 조회</span>
-            <span className="state-pill neutral">{driveRepositoryData.source.period}</span>
+            <span className="state-pill neutral">
+              {driveTrendSnapshot?.source.period ?? driveRepositoryData.source.period}
+            </span>
           </div>
         </div>
         <div className="drive-summary-grid">
@@ -3568,22 +3627,29 @@ function GensparkUsageView({
           </article>
           <article>
             <span>총 파일</span>
-            <strong>{numberFormat.format(driveRepositoryData.totals.files)}개</strong>
-            <small>루트와 모든 하위 폴더 재귀 집계</small>
+            <strong>{numberFormat.format(driveTrendTotalFiles)}개</strong>
+            <small>그래프 원천 · 루트와 모든 하위 폴더 재귀 집계</small>
           </article>
           <article>
             <span>직접/하위 파일</span>
             <strong>
-              {numberFormat.format(driveRepositoryData.totals.directFiles)} / {numberFormat.format(driveRepositoryData.totals.nestedFiles)}
+              {numberFormat.format(driveTrendDirectFiles)} / {numberFormat.format(driveTrendNestedFiles)}
             </strong>
-            <small>하위 폴더 포함률 {formatRate((driveRepositoryData.totals.nestedFiles / driveRepositoryData.totals.files) * 100)}</small>
+            <small>
+              하위 폴더 포함률{" "}
+              {formatRate(
+                driveTrendTotalFiles > 0
+                  ? (driveTrendNestedFiles / driveTrendTotalFiles) * 100
+                  : 0,
+              )}
+            </small>
           </article>
           <article>
             <span>고유/중복 추정</span>
             <strong>
               {numberFormat.format(driveRepositoryData.totals.uniqueFiles)} / {numberFormat.format(driveRepositoryData.totals.duplicateCopies)}
             </strong>
-            <small>파일명·크기·형식 조합 기준</small>
+            <small>최근 콘텐츠 분석 · 파일명·크기·형식 조합 기준</small>
           </article>
         </div>
 
@@ -3594,6 +3660,10 @@ function GensparkUsageView({
               <h3>날짜별 저장 파일 증감</h3>
             </div>
             <div className="drive-trend-stats">
+              <span>
+                <strong>{driveTrendSnapshot ? "자동 갱신" : "기본 집계"}</strong> ·{" "}
+                {driveTrendSnapshot?.source.collectedAt ?? driveRepositoryData.source.collectedAt}
+              </span>
               <span>
                 최근 생성 <strong>{driveArtifactTrend.latestDay?.label ?? "-"}</strong> · {numberFormat.format(driveArtifactTrend.latestDay?.total ?? 0)}개
               </span>
@@ -3652,7 +3722,7 @@ function GensparkUsageView({
             <span>
               막대는 한국시간 기준 일별 신규 저장 파일, 선은 전체 누적 파일입니다. 기간 이전 생성시각 {numberFormat.format(driveArtifactTrend.openingFiles)}개는 시작 잔액입니다.
             </span>
-            <strong>누적 {numberFormat.format(driveArtifactTrend.points[driveArtifactTrend.points.length - 1]?.cumulative ?? 0)}개 · 원천 {numberFormat.format(driveRepositoryData.totals.files)}개 일치</strong>
+            <strong>누적 {numberFormat.format(driveArtifactTrend.points[driveArtifactTrend.points.length - 1]?.cumulative ?? 0)}개 · 그래프 원천 {numberFormat.format(driveTrendTotalFiles)}개 일치</strong>
           </div>
         </div>
 

@@ -1,0 +1,296 @@
+import { existsSync } from "node:fs";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  formatKoreanTimestamp,
+  getGoogleAccessToken,
+  getJson,
+  readLocalEnv,
+} from "./collect-drive-zip-artifacts.mjs";
+
+const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const folderMimeType = "application/vnd.google-apps.folder";
+const kstOffsetMs = 9 * 60 * 60 * 1000;
+
+export const defaultDriveTrendRepositories = [
+  {
+    owner: "김재우",
+    folderId: "1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ",
+    folderUrl:
+      "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link",
+  },
+  {
+    owner: "이형배",
+    folderId: "1OFfN4APAViKNtgURnmn9W51jSvcxy6fg",
+    folderUrl:
+      "https://drive.google.com/drive/folders/1OFfN4APAViKNtgURnmn9W51jSvcxy6fg?usp=sharing",
+  },
+];
+
+export async function collectDriveArtifactTrend({
+  repositories = defaultDriveTrendRepositories,
+  collectedAt = new Date(),
+  env = process.env,
+} = {}) {
+  const accessToken = await getGoogleAccessToken(env, {
+    scopes: ["https://www.googleapis.com/auth/drive.readonly"],
+  });
+  const repositoryScans = [];
+
+  for (const repository of repositories) {
+    repositoryScans.push(
+      await scanDriveRepository({
+        ...repository,
+        accessToken,
+      }),
+    );
+  }
+
+  return buildDriveArtifactTrendSnapshot({ repositoryScans, collectedAt });
+}
+
+export async function scanDriveRepository({
+  owner,
+  folderId,
+  folderUrl,
+  accessToken,
+}) {
+  const queue = [{ id: folderId, depth: 0, path: owner }];
+  const seenFolderIds = new Set();
+  const files = [];
+  let folderCount = 0;
+  let maxDepth = 0;
+
+  while (queue.length > 0) {
+    const folder = queue.shift();
+    if (!folder || seenFolderIds.has(folder.id)) continue;
+    seenFolderIds.add(folder.id);
+
+    const children = await listDriveFolderChildren({
+      folderId: folder.id,
+      accessToken,
+      folderPath: folder.path,
+    });
+
+    for (const child of children) {
+      if (child.mimeType === folderMimeType) {
+        folderCount += 1;
+        maxDepth = Math.max(maxDepth, folder.depth + 1);
+        queue.push({
+          id: child.id,
+          depth: folder.depth + 1,
+          path: `${folder.path}/${child.name}`,
+        });
+        continue;
+      }
+
+      files.push({
+        id: child.id,
+        name: child.name,
+        createdTime: child.createdTime ?? "",
+        depth: folder.depth,
+      });
+    }
+  }
+
+  return {
+    owner,
+    folderId,
+    folderUrl,
+    files,
+    folderCount,
+    maxDepth,
+  };
+}
+
+export function buildDriveArtifactTrendSnapshot({
+  repositoryScans,
+  collectedAt = new Date(),
+}) {
+  const collectedDate = toKstDateKey(collectedAt.toISOString());
+  const repositories = repositoryScans.map((scan) => {
+    const dailyCounts = new Map();
+    let metadataDateAnomalyCount = 0;
+
+    for (const file of scan.files) {
+      if (isMetadataDateAnomaly(file.createdTime, collectedAt)) {
+        metadataDateAnomalyCount += 1;
+        continue;
+      }
+      const date = toKstDateKey(file.createdTime);
+      dailyCounts.set(date, (dailyCounts.get(date) ?? 0) + 1);
+    }
+
+    const sortedDailyCounts = [...dailyCounts.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([date, count]) => ({ date, count }));
+    const directFileCount = scan.files.filter((file) => file.depth === 0).length;
+
+    return {
+      owner: scan.owner,
+      folderId: scan.folderId,
+      folderUrl: scan.folderUrl,
+      artifacts: [],
+      inventory: {
+        fileCount: scan.files.length,
+        directFileCount,
+        nestedFileCount: scan.files.length - directFileCount,
+        folderCount: scan.folderCount,
+        maxDepth: scan.maxDepth,
+        metadataDateAnomalyCount,
+        dailyCounts: sortedDailyCounts,
+      },
+    };
+  });
+  const validDates = repositories
+    .flatMap((repository) => repository.inventory.dailyCounts.map((item) => item.date))
+    .sort();
+  const startDate = validDates[0] ?? collectedDate;
+  const totals = repositories.reduce(
+    (summary, repository) => ({
+      files: summary.files + repository.inventory.fileCount,
+      directFiles: summary.directFiles + repository.inventory.directFileCount,
+      nestedFiles: summary.nestedFiles + repository.inventory.nestedFileCount,
+      folders: summary.folders + repository.inventory.folderCount,
+      metadataDateAnomalies:
+        summary.metadataDateAnomalies + repository.inventory.metadataDateAnomalyCount,
+    }),
+    {
+      files: 0,
+      directFiles: 0,
+      nestedFiles: 0,
+      folders: 0,
+      metadataDateAnomalies: 0,
+    },
+  );
+
+  return {
+    version: 1,
+    source: {
+      name: "Claude Drive 날짜별 저장 파일 증감",
+      status: "정상",
+      collectedAt: formatKoreanTimestamp(collectedAt),
+      generatedAt: collectedAt.toISOString(),
+      period: `${startDate} ~ ${collectedDate}`,
+      schedule: "매일 21:00 KST",
+      note:
+        "김재우·이형배 Drive 루트의 모든 하위 폴더를 읽기 전용으로 재귀 조회하고 파일 생성일을 한국시간 기준으로 집계합니다.",
+    },
+    repositories,
+    totals,
+  };
+}
+
+export function isDriveArtifactTrendSnapshot(value) {
+  if (!value || typeof value !== "object") return false;
+  if (value.version !== 1 || value.source?.status !== "정상") return false;
+  if (!Array.isArray(value.repositories) || value.repositories.length === 0) return false;
+  if (!Number.isFinite(value.totals?.files)) return false;
+
+  const repositoryFiles = value.repositories.reduce((sum, repository) => {
+    const inventory = repository?.inventory;
+    if (!inventory || !Array.isArray(inventory.dailyCounts)) return Number.NaN;
+    const datedFiles = inventory.dailyCounts.reduce(
+      (dailySum, item) =>
+        /^\d{4}-\d{2}-\d{2}$/.test(item.date) && Number.isFinite(item.count)
+          ? dailySum + item.count
+          : Number.NaN,
+      0,
+    );
+    if (datedFiles + inventory.metadataDateAnomalyCount !== inventory.fileCount) {
+      return Number.NaN;
+    }
+    return sum + inventory.fileCount;
+  }, 0);
+
+  return Number.isFinite(repositoryFiles) && repositoryFiles === value.totals.files;
+}
+
+export async function writeDriveArtifactTrendSnapshot(
+  snapshot,
+  { targetRootDir = rootDir } = {},
+) {
+  if (!isDriveArtifactTrendSnapshot(snapshot)) {
+    throw new Error("Claude Drive 날짜별 그래프 스냅샷 검증에 실패했습니다.");
+  }
+
+  const paths = [
+    path.join(targetRootDir, "public", "drive-artifact-trend-snapshot.local.json"),
+  ];
+  if (existsSync(path.join(targetRootDir, "dist"))) {
+    paths.push(
+      path.join(targetRootDir, "dist", "drive-artifact-trend-snapshot.local.json"),
+    );
+  }
+
+  for (const outputPath of paths) {
+    await mkdir(path.dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, `${JSON.stringify(snapshot, null, 2)}\n`);
+  }
+}
+
+export async function loadDriveArtifactTrendEnv({ targetRootDir = rootDir } = {}) {
+  return {
+    ...process.env,
+    ...(await readLocalEnv(path.join(targetRootDir, ".env.local"))),
+  };
+}
+
+async function listDriveFolderChildren({ folderId, accessToken, folderPath }) {
+  const files = [];
+  let pageToken = "";
+
+  do {
+    const url = new URL("https://www.googleapis.com/drive/v3/files");
+    url.searchParams.set("q", `'${folderId}' in parents and trashed = false`);
+    url.searchParams.set("pageSize", "1000");
+    url.searchParams.set("supportsAllDrives", "true");
+    url.searchParams.set("includeItemsFromAllDrives", "true");
+    url.searchParams.set(
+      "fields",
+      "nextPageToken,files(id,name,mimeType,size,createdTime,modifiedTime)",
+    );
+    if (pageToken) url.searchParams.set("pageToken", pageToken);
+
+    const result = await getJson(url, {
+      headers: { authorization: `Bearer ${accessToken}` },
+    });
+    if (!result.ok) {
+      throw new Error(`Drive 재귀 조회 실패 (${folderPath}): ${result.error}`);
+    }
+    files.push(...(result.data.files ?? []));
+    pageToken = result.data.nextPageToken ?? "";
+  } while (pageToken);
+
+  return files;
+}
+
+function isMetadataDateAnomaly(value, collectedAt) {
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return true;
+  const year = new Date(timestamp).getUTCFullYear();
+  return year < 2000 || timestamp > collectedAt.getTime() + 24 * 60 * 60 * 1000;
+}
+
+function toKstDateKey(value) {
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return "";
+  return new Date(timestamp + kstOffsetMs).toISOString().slice(0, 10);
+}
+
+async function main() {
+  const env = await loadDriveArtifactTrendEnv();
+  const snapshot = await collectDriveArtifactTrend({ env });
+  await writeDriveArtifactTrendSnapshot(snapshot);
+  console.log(
+    `Claude Drive trend snapshot written: ${snapshot.totals.files} file(s), ${snapshot.totals.folders} folder(s), ${snapshot.source.period}`,
+  );
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  });
+}

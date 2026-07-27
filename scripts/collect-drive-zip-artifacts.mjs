@@ -520,7 +520,7 @@ function run(command, args, { allowFailure = false } = {}) {
   });
 }
 
-async function getGoogleAccessToken(env, { scopes }) {
+export async function getGoogleAccessToken(env, { scopes }) {
   const serviceAccount = await readGoogleServiceAccount(env);
   const tokenUri = serviceAccount.token_uri ?? "https://oauth2.googleapis.com/token";
   const nowSeconds = Math.floor(Date.now() / 1000);
@@ -552,7 +552,7 @@ async function getGoogleAccessToken(env, { scopes }) {
   return tokenResult.data.access_token;
 }
 
-async function getJson(url, options = {}) {
+export async function getJson(url, options = {}) {
   try {
     const response = await fetch(url, options);
     const text = await response.text();
@@ -608,7 +608,7 @@ function base64Url(value) {
   return Buffer.from(value).toString("base64url");
 }
 
-async function readLocalEnv(envPath) {
+export async function readLocalEnv(envPath) {
   if (!existsSync(envPath)) return {};
   const text = await readFile(envPath, "utf8");
   const entries = {};
@@ -624,7 +624,7 @@ async function readLocalEnv(envPath) {
   return entries;
 }
 
-function formatKoreanTimestamp(date) {
+export function formatKoreanTimestamp(date) {
   const formatter = new Intl.DateTimeFormat("ko-KR", {
     timeZone: "Asia/Seoul",
     year: "numeric",

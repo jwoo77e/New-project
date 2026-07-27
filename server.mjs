@@ -8,6 +8,12 @@ import {
   loadNotionPromptEnv,
   writeNotionPromptUsageSnapshot,
 } from "./scripts/fetch-notion-prompt-usage.mjs";
+import {
+  collectDriveArtifactTrend,
+  isDriveArtifactTrendSnapshot,
+  loadDriveArtifactTrendEnv,
+  writeDriveArtifactTrendSnapshot,
+} from "./scripts/collect-drive-artifact-trend.mjs";
 
 const rootDir = process.cwd();
 const distDir = path.join(rootDir, "dist");
@@ -15,6 +21,7 @@ const port = Number(process.env.PORT ?? 4173);
 const apiUsageCacheMs = Number(process.env.API_USAGE_CACHE_MS ?? 5 * 60 * 1000);
 const notionPromptCacheMs = Number(process.env.NOTION_PROMPT_USAGE_CACHE_MS ?? 24 * 60 * 60 * 1000);
 const notionPromptRefreshHourKst = Number(process.env.NOTION_PROMPT_USAGE_REFRESH_HOUR_KST ?? 8);
+const driveTrendRefreshHourKst = Number(process.env.DRIVE_ARTIFACT_TREND_REFRESH_HOUR_KST ?? 21);
 
 let apiUsageCache = {
   expiresAt: 0,
@@ -24,6 +31,11 @@ let apiUsageCache = {
 
 let notionPromptUsageCache = {
   expiresAt: 0,
+  promise: null,
+  snapshot: null,
+};
+
+let driveArtifactTrendCache = {
   promise: null,
   snapshot: null,
 };
@@ -54,6 +66,11 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (url.pathname === "/api/drive-artifact-trend") {
+      await handleDriveArtifactTrend(url, response);
+      return;
+    }
+
     if (url.pathname === "/api/health") {
       sendJson(response, 200, {
         ok: true,
@@ -74,6 +91,7 @@ const server = createServer(async (request, response) => {
 server.listen(port, "0.0.0.0", () => {
   console.log(`AI cost dashboard listening on http://0.0.0.0:${port}`);
   scheduleDailyNotionPromptRefresh();
+  scheduleDailyDriveArtifactTrendRefresh();
 });
 
 async function handleApiUsage(url, response) {
@@ -152,6 +170,66 @@ async function collectRuntimeNotionPromptUsage() {
   return snapshot;
 }
 
+async function handleDriveArtifactTrend(url, response) {
+  const refresh = url.searchParams.get("refresh") === "1";
+  response.setHeader("cache-control", "no-store");
+
+  if (!refresh && driveArtifactTrendCache.snapshot) {
+    sendJson(response, 200, driveArtifactTrendCache.snapshot);
+    return;
+  }
+
+  if (!refresh) {
+    const savedSnapshot = await readSavedDriveArtifactTrendSnapshot();
+    if (savedSnapshot) {
+      driveArtifactTrendCache.snapshot = savedSnapshot;
+      sendJson(response, 200, savedSnapshot);
+      return;
+    }
+    sendJson(response, 503, {
+      error: "Claude Drive 날짜별 그래프 스냅샷이 아직 생성되지 않았습니다.",
+    });
+    return;
+  }
+
+  if (!driveArtifactTrendCache.promise) {
+    driveArtifactTrendCache.promise = collectRuntimeDriveArtifactTrend().finally(() => {
+      driveArtifactTrendCache.promise = null;
+    });
+  }
+
+  const snapshot = await driveArtifactTrendCache.promise;
+  driveArtifactTrendCache.snapshot = snapshot;
+  sendJson(response, 200, snapshot);
+}
+
+async function collectRuntimeDriveArtifactTrend() {
+  const env = await loadDriveArtifactTrendEnv({ targetRootDir: rootDir });
+  const snapshot = await collectDriveArtifactTrend({
+    env,
+    collectedAt: new Date(),
+  });
+  await writeDriveArtifactTrendSnapshot(snapshot, { targetRootDir: rootDir });
+  return snapshot;
+}
+
+async function readSavedDriveArtifactTrendSnapshot() {
+  const candidates = [
+    path.join(distDir, "drive-artifact-trend-snapshot.local.json"),
+    path.join(rootDir, "public", "drive-artifact-trend-snapshot.local.json"),
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      const snapshot = JSON.parse(await readFile(candidate, "utf8"));
+      if (isDriveArtifactTrendSnapshot(snapshot)) return snapshot;
+    } catch {
+      // Try the next saved snapshot.
+    }
+  }
+  return null;
+}
+
 function scheduleDailyNotionPromptRefresh() {
   const firstDelayMs = msUntilNextKstHour(notionPromptRefreshHourKst);
   console.log(
@@ -164,6 +242,39 @@ function scheduleDailyNotionPromptRefresh() {
       void refreshNotionPromptUsageCache();
     }, 24 * 60 * 60 * 1000);
   }, firstDelayMs);
+}
+
+function scheduleDailyDriveArtifactTrendRefresh() {
+  const firstDelayMs = msUntilNextKstHour(driveTrendRefreshHourKst);
+  console.log(
+    `Claude Drive trend refresh scheduled daily at ${String(driveTrendRefreshHourKst).padStart(2, "0")}:00 KST`,
+  );
+
+  setTimeout(() => {
+    void refreshDriveArtifactTrendCache();
+    setInterval(() => {
+      void refreshDriveArtifactTrendCache();
+    }, 24 * 60 * 60 * 1000);
+  }, firstDelayMs);
+}
+
+async function refreshDriveArtifactTrendCache() {
+  try {
+    const snapshot = await collectRuntimeDriveArtifactTrend();
+    driveArtifactTrendCache = {
+      promise: null,
+      snapshot,
+    };
+    console.log(
+      `Claude Drive trend refreshed: ${snapshot.totals.files} files · ${snapshot.source.period}`,
+    );
+  } catch (error) {
+    console.warn(
+      `Claude Drive trend refresh failed; preserved prior snapshot: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
 }
 
 async function refreshNotionPromptUsageCache() {
