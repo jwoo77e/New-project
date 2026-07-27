@@ -14,6 +14,21 @@ describe("initialAiToolApprovalData", () => {
     }
   });
 
+  it("assigns Lim Sungbeom to Claude Pro Max 20", () => {
+    expect(
+      initialAiToolApprovalData.records.find(
+        (record) =>
+          record.account === "riskzero.marketing@gmail.com" &&
+          record.category === "Claude",
+      ),
+    ).toMatchObject({
+      owner: "임성범 부장 / 전략사업팀",
+      tool: "Claude Pro Max 20",
+      monthlyUsd: 220,
+      monthlyKrw: 326_700,
+    });
+  });
+
   it("reconciles the updated plan mix and monthly totals", () => {
     expect(
       initialAiToolApprovalData.toolSummary.find(
@@ -33,8 +48,26 @@ describe("initialAiToolApprovalData", () => {
       monthlyUsd: 350,
       monthlyKrw: 519_750,
     });
-    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(2_685.71);
-    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(3_988_279.35);
+    expect(
+      initialAiToolApprovalData.toolSummary.find(
+        (item) => item.key === "Claude Pro Max 5",
+      ),
+    ).toMatchObject({
+      count: 3,
+      monthlyUsd: 330,
+      monthlyKrw: 490_050,
+    });
+    expect(
+      initialAiToolApprovalData.toolSummary.find(
+        (item) => item.key === "Claude Pro Max 20",
+      ),
+    ).toMatchObject({
+      count: 3,
+      monthlyUsd: 660,
+      monthlyKrw: 980_100,
+    });
+    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(2_795.71);
+    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(4_151_629.35);
   });
 
   it("keeps category and payment totals aligned with the updated total", () => {
@@ -42,8 +75,8 @@ describe("initialAiToolApprovalData", () => {
       initialAiToolApprovalData.categorySummary.find((item) => item.key === "Claude"),
     ).toMatchObject({
       count: 25,
-      monthlyUsd: 1_855,
-      monthlyKrw: 2_754_675,
+      monthlyUsd: 1_965,
+      monthlyKrw: 2_918_025,
     });
     expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(36);
     expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(

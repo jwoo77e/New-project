@@ -129,13 +129,13 @@ const records: AiToolApprovalRecord[] = [
   {
     no: 7,
     category: "Claude",
-    tool: "Claude Pro Max 5",
+    tool: "Claude Pro Max 20",
     account: "riskzero.marketing@gmail.com",
     linkedAccount: "riskzero.marketing@gmail.com",
     owner: "임성범 부장 / 전략사업팀",
     department: "전략사업팀",
-    monthlyUsd: 110,
-    monthlyKrw: 163350,
+    monthlyUsd: 220,
+    monthlyKrw: 326700,
     paymentMethod: "AI 전용 카드",
     note: "",
   },
@@ -536,7 +536,7 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     sheetName: "전사 AI도구 현황조사표",
     collectedAt: "2026-07-27",
     period: "월 구독 기준 · USD 1 = 1,485원",
-    note: "계정 ID, 주사용자/부서, 구독료, 결재수단을 반영했으며 2026-07-27 Claude Team 좌석 변경과 비고 제외 기준을 적용",
+    note: "계정 ID, 주사용자/부서, 구독료, 결재수단을 반영했으며 2026-07-27 Claude Team 좌석 및 임성범 부장 Claude Pro Max 20 변경 기준을 적용",
   },
   exchangeRate,
   totalAccounts: records.length,
@@ -557,6 +557,7 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     "기존 공용 법인 카드 2개 항목은 모두 AI 전용 카드로 전환했습니다.",
     `Claude 계열은 ${claudeCategory?.count ?? 0}개 계정, ${formatKrw(claudeCategory?.monthlyKrw ?? 0)}으로 수량과 비용 모두 가장 큰 결재 묶음입니다.`,
     "변경 반영: 김하나 과장과 전우성 부장의 Claude Team Plan을 Standard에서 Premium으로 변경했습니다.",
+    "변경 반영: 임성범 부장의 Claude Pro Max 5를 Claude Pro Max 20으로 변경하고 월 고정비 예산을 조정했습니다.",
   ],
 };
 
