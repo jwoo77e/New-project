@@ -1,6 +1,4 @@
-import type { DriveArtifactTrendInput } from "./driveArtifactTrend";
-
-export type DriveArtifactTrendSnapshot = DriveArtifactTrendInput & {
+export type DriveArtifactTrendSnapshot = {
   version: 1;
   source: {
     name: string;

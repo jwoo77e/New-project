@@ -474,6 +474,7 @@ function App() {
   useEffect(() => {
     let isMounted = true;
     const snapshotUrls = [
+      `${import.meta.env.BASE_URL}drive-artifact-trend-snapshot.json`,
       `${import.meta.env.BASE_URL}drive-artifact-trend-snapshot.local.json`,
       "/api/drive-artifact-trend",
     ];
@@ -599,9 +600,16 @@ function App() {
   const detailedUsageRecords = aiUsageInsight.totalRecords + chatGptUsageData.totalConversations;
   const latestDriveFileTotal =
     driveArtifactTrendSnapshot?.totals.files ?? driveArtifactRepositoryData.totals.files;
-  const driveArtifactsByOwner = driveArtifactRepositoryData.repositories
-    .map((repository) => `${repository.owner} ${numberFormat.format(repository.fileCount)}개`)
-    .join(" · ");
+  const driveArtifactsByOwner = driveArtifactTrendSnapshot
+    ? driveArtifactTrendSnapshot.repositories
+        .map(
+          (repository) =>
+            `${repository.owner} ${numberFormat.format(repository.inventory.fileCount)}개`,
+        )
+        .join(" · ")
+    : driveArtifactRepositoryData.repositories
+        .map((repository) => `${repository.owner} ${numberFormat.format(repository.fileCount)}개`)
+        .join(" · ");
   const isApiUsageCollected = apiUsageData.source.generatedAt !== initialApiUsageData.source.generatedAt;
   const apiForecast = useMemo(() => {
     if (!isApiUsageCollected) {

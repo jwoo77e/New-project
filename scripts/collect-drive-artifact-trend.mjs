@@ -216,11 +216,11 @@ export async function writeDriveArtifactTrendSnapshot(
   }
 
   const paths = [
-    path.join(targetRootDir, "public", "drive-artifact-trend-snapshot.local.json"),
+    path.join(targetRootDir, "public", "drive-artifact-trend-snapshot.json"),
   ];
   if (existsSync(path.join(targetRootDir, "dist"))) {
     paths.push(
-      path.join(targetRootDir, "dist", "drive-artifact-trend-snapshot.local.json"),
+      path.join(targetRootDir, "dist", "drive-artifact-trend-snapshot.json"),
     );
   }
 

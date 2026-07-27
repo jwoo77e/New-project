@@ -1,7 +1,11 @@
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   buildDriveArtifactTrendSnapshot,
   isDriveArtifactTrendSnapshot,
+  writeDriveArtifactTrendSnapshot,
 } from "./collect-drive-artifact-trend.mjs";
 
 describe("collect-drive-artifact-trend", () => {
@@ -83,5 +87,43 @@ describe("collect-drive-artifact-trend", () => {
     };
 
     expect(isDriveArtifactTrendSnapshot(invalidSnapshot)).toBe(false);
+  });
+
+  it("writes a deployable public snapshot", async () => {
+    const targetRootDir = await mkdtemp(path.join(os.tmpdir(), "drive-trend-"));
+    const snapshot = buildDriveArtifactTrendSnapshot({
+      collectedAt: new Date("2026-07-27T12:00:00.000Z"),
+      repositoryScans: [
+        {
+          owner: "김재우",
+          folderId: "jaewoo",
+          folderUrl: "https://drive.google.com/jaewoo",
+          folderCount: 0,
+          maxDepth: 0,
+          files: [
+            {
+              id: "1",
+              name: "artifact.md",
+              createdTime: "2026-07-27T01:00:00.000Z",
+              depth: 0,
+            },
+          ],
+        },
+      ],
+    });
+
+    try {
+      await writeDriveArtifactTrendSnapshot(snapshot, { targetRootDir });
+
+      const saved = JSON.parse(
+        await readFile(
+          path.join(targetRootDir, "public", "drive-artifact-trend-snapshot.json"),
+          "utf8",
+        ),
+      );
+      expect(saved).toEqual(snapshot);
+    } finally {
+      await rm(targetRootDir, { recursive: true, force: true });
+    }
   });
 });

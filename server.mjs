@@ -216,18 +216,28 @@ async function collectRuntimeDriveArtifactTrend() {
 async function readSavedDriveArtifactTrendSnapshot() {
   const candidates = [
     path.join(distDir, "drive-artifact-trend-snapshot.local.json"),
+    path.join(distDir, "drive-artifact-trend-snapshot.json"),
     path.join(rootDir, "public", "drive-artifact-trend-snapshot.local.json"),
+    path.join(rootDir, "public", "drive-artifact-trend-snapshot.json"),
   ];
+  let preferredSnapshot = null;
 
   for (const candidate of candidates) {
     try {
       const snapshot = JSON.parse(await readFile(candidate, "utf8"));
-      if (isDriveArtifactTrendSnapshot(snapshot)) return snapshot;
+      if (
+        isDriveArtifactTrendSnapshot(snapshot) &&
+        (!preferredSnapshot ||
+          Date.parse(snapshot.source.generatedAt) >
+            Date.parse(preferredSnapshot.source.generatedAt))
+      ) {
+        preferredSnapshot = snapshot;
+      }
     } catch {
       // Try the next saved snapshot.
     }
   }
-  return null;
+  return preferredSnapshot;
 }
 
 function scheduleDailyNotionPromptRefresh() {
