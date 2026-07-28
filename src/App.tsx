@@ -104,6 +104,11 @@ import {
   selectPreferredDriveArtifactTrendSnapshot,
   type DriveArtifactTrendSnapshot,
 } from "./lib/driveArtifactTrendSnapshot";
+import {
+  isGensparkDriveSnapshot,
+  selectPreferredGensparkDriveSnapshot,
+  type GensparkDriveSnapshot,
+} from "./lib/gensparkDriveSnapshot";
 
 type ViewKey = "overview" | "monthly" | "adoption" | "genspark" | "approval" | "api";
 type LayoutMode = "command" | "editorial" | "signal";
@@ -162,6 +167,7 @@ const OPERATING_PLAN_USD_TO_KRW = 1485;
 const OPERATING_PLAN_API_BUDGET_KRW = 280000;
 const GAMMA_MONTHLY_PLAN_USD = 25;
 const DRIVE_TREND_POLL_INTERVAL_MS = 15 * 60 * 1000;
+const GENSPARK_DRIVE_POLL_INTERVAL_MS = 15 * 60 * 1000;
 
 const numberFormat = new Intl.NumberFormat("ko-KR");
 
@@ -441,6 +447,8 @@ function App() {
   const [apiUsageData, setApiUsageData] = useState<ApiUsageData>(initialApiUsageData);
   const [driveArtifactTrendSnapshot, setDriveArtifactTrendSnapshot] =
     useState<DriveArtifactTrendSnapshot | null>(null);
+  const [gensparkDriveSnapshot, setGensparkDriveSnapshot] =
+    useState<GensparkDriveSnapshot | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -468,6 +476,42 @@ function App() {
 
     return () => {
       isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const snapshotUrls = [
+      `${import.meta.env.BASE_URL}genspark-drive-artifacts-snapshot.json`,
+      `${import.meta.env.BASE_URL}genspark-drive-artifacts-snapshot.local.json`,
+      "/api/genspark-drive-artifacts",
+    ];
+
+    async function loadGensparkDriveSnapshot() {
+      for (const url of snapshotUrls) {
+        try {
+          const response = await fetch(url, { cache: "no-store" });
+          if (!response.ok) continue;
+          const data: unknown = await response.json();
+          if (!isGensparkDriveSnapshot(data) || !isMounted) continue;
+          setGensparkDriveSnapshot((current) =>
+            selectPreferredGensparkDriveSnapshot(current, data),
+          );
+        } catch {
+          // Static deployments can omit the runtime API; retain the last verified snapshot.
+        }
+      }
+    }
+
+    void loadGensparkDriveSnapshot();
+    const pollId = window.setInterval(
+      () => void loadGensparkDriveSnapshot(),
+      GENSPARK_DRIVE_POLL_INTERVAL_MS,
+    );
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(pollId);
     };
   }, []);
 
@@ -584,6 +628,14 @@ function App() {
   const gammaUsageData = apiUsageData.gammaUsage ?? initialApiUsageData.gammaUsage!;
   const claudeTeamUsageData = initialClaudeTeamUsageData;
   const aiToolApprovalData = initialAiToolApprovalData;
+  const gensparkUsageData = useMemo<GensparkUsageData>(
+    () => ({
+      ...initialGensparkUsageData,
+      driveAnalysis:
+        gensparkDriveSnapshot ?? initialGensparkUsageData.driveAnalysis,
+    }),
+    [gensparkDriveSnapshot],
+  );
   const productivityModel = useMemo(
     () =>
       buildProductivityExecutiveModel({
@@ -592,11 +644,11 @@ function App() {
         chatGptData: chatGptUsageData,
         claudeTeamData: claudeTeamUsageData,
         driveData: driveArtifactRepositoryData,
-        gensparkData: initialGensparkUsageData,
+        gensparkData: gensparkUsageData,
       }),
-    [monthlyActuals],
+    [gensparkUsageData, monthlyActuals],
   );
-  const aiUsageInsight = initialGensparkUsageData.insightAnalysis;
+  const aiUsageInsight = gensparkUsageData.insightAnalysis;
   const detailedUsageRecords = aiUsageInsight.totalRecords + chatGptUsageData.totalConversations;
   const latestDriveFileTotal =
     driveArtifactTrendSnapshot?.totals.files ?? driveArtifactRepositoryData.totals.files;
@@ -830,7 +882,7 @@ function App() {
       categoryCosts,
       vendorCosts,
       apiUsageData,
-      gensparkUsageData: initialGensparkUsageData,
+      gensparkUsageData,
       aiToolApprovalData,
       apiForecast,
       apiAdjustedForecast,
@@ -1467,7 +1519,7 @@ function App() {
         <AdoptionView
           claudeTeamUsageData={claudeTeamUsageData}
           gammaUsageData={gammaUsageData}
-          gensparkUsageData={initialGensparkUsageData}
+          gensparkUsageData={gensparkUsageData}
           workspaceUsageData={workspaceUsageData}
         />
       )}
@@ -1477,7 +1529,7 @@ function App() {
           claudeTeamUsageData={claudeTeamUsageData}
           driveRepositoryData={driveArtifactRepositoryData}
           driveTrendSnapshot={driveArtifactTrendSnapshot}
-          usageData={initialGensparkUsageData}
+          usageData={gensparkUsageData}
         />
       )}
 
@@ -3364,15 +3416,26 @@ function GensparkUsageView({
               <h2>Genspark 폴더 사용 내역</h2>
             </div>
             <div className="panel-header-side">
-              <span className="state-pill ok">Drive 조회</span>
+              <span className="state-pill ok">
+                {gensparkDrive.source.schedule ?? "Drive 조회"}
+              </span>
               <span className="state-pill neutral">{gensparkDrive.source.period}</span>
             </div>
           </div>
           <div className="drive-summary-grid">
             <article>
-              <span>Drive 산출물</span>
+              <span>Drive 파일</span>
               <strong>{numberFormat.format(gensparkDrive.totalFiles)}개</strong>
-              <small>{gensparkDrive.source.period}</small>
+              <small>
+                개별 산출{" "}
+                {numberFormat.format(
+                  gensparkDrive.individualArtifacts ?? gensparkDrive.totalFiles,
+                )}
+                개
+                {typeof gensparkDrive.archiveFiles === "number"
+                  ? ` · 아카이브 ${numberFormat.format(gensparkDrive.archiveFiles)}개`
+                  : ""}
+              </small>
             </article>
             <article>
               <span>최상위 프로젝트</span>
@@ -3456,6 +3519,7 @@ function GensparkUsageView({
             <div>
               <strong>{gensparkDrive.source.name}</strong>
               <span>{gensparkDrive.source.note}</span>
+              <span>{gensparkDrive.directFileSignal}</span>
               {gensparkDrive.insights.map((driveInsight) => (
                 <span key={driveInsight}>{driveInsight}</span>
               ))}

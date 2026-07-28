@@ -245,7 +245,8 @@ export function buildProductivityExecutiveModel({
   const activeUsers = claudeTeamData.activeUsers;
   const licensedUsers = claudeTeamData.licensedUsers;
   const driveOutputs = driveData.activityAnalysis.totalOutputSignals;
-  const gensparkOutputs = gensparkDrive?.totalFiles ?? 0;
+  const gensparkOutputs =
+    gensparkDrive?.individualArtifacts ?? gensparkDrive?.totalFiles ?? 0;
   const conversationActiveDays = driveData.activityAnalysis.dailyCounts.filter(
     (item) => item.conversations > 0,
   ).length;
@@ -396,8 +397,11 @@ export function buildProductivityExecutiveModel({
         source: "Genspark Drive",
         coverage: gensparkDrive?.source.period ?? gensparkData.source.period,
         asOf: gensparkDrive?.source.collectedAt ?? gensparkData.source.collectedAt,
-        status: "수집 점검",
-        note: "Drive 최신 요약 확인 · 서비스 계정 자동수집은 API 활성화 필요",
+        status: gensparkDrive?.source.status === "정상" ? "전체 폴더 집계" : "수집 점검",
+        note:
+          gensparkDrive?.source.status === "정상"
+            ? `${gensparkDrive.source.schedule ?? "매일 자동수집"} · ${gensparkDrive.directFileSignal}`
+            : "Drive 최신 요약 확인 · 자동수집 스냅샷 대기",
       },
       {
         source: "ChatGPT Export",

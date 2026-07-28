@@ -55,11 +55,18 @@ export type GensparkDriveAnalysis = {
     name: string;
     folderUrl: string;
     collectedAt: string;
+    generatedAt?: string;
     period: string;
     accountLabel: string;
+    status?: "정상";
+    schedule?: string;
+    mode?: string;
     note: string;
   };
   totalFiles: number;
+  individualArtifacts?: number;
+  archiveFiles?: number;
+  newArtifacts?: number;
   projectCount: number;
   folderCount: number;
   rootFileCount: number;

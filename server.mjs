@@ -14,6 +14,12 @@ import {
   loadDriveArtifactTrendEnv,
   writeDriveArtifactTrendSnapshot,
 } from "./scripts/collect-drive-artifact-trend.mjs";
+import {
+  collectGensparkDriveArtifacts,
+  isGensparkDriveSnapshot,
+  loadGensparkDriveEnv,
+  writeGensparkDriveSnapshot,
+} from "./scripts/collect-genspark-drive-artifacts.mjs";
 
 const rootDir = process.cwd();
 const distDir = path.join(rootDir, "dist");
@@ -22,6 +28,7 @@ const apiUsageCacheMs = Number(process.env.API_USAGE_CACHE_MS ?? 5 * 60 * 1000);
 const notionPromptCacheMs = Number(process.env.NOTION_PROMPT_USAGE_CACHE_MS ?? 24 * 60 * 60 * 1000);
 const notionPromptRefreshHourKst = Number(process.env.NOTION_PROMPT_USAGE_REFRESH_HOUR_KST ?? 8);
 const driveTrendRefreshHourKst = Number(process.env.DRIVE_ARTIFACT_TREND_REFRESH_HOUR_KST ?? 21);
+const gensparkDriveRefreshHourKst = Number(process.env.GENSPARK_DRIVE_REFRESH_HOUR_KST ?? 22);
 
 let apiUsageCache = {
   expiresAt: 0,
@@ -36,6 +43,11 @@ let notionPromptUsageCache = {
 };
 
 let driveArtifactTrendCache = {
+  promise: null,
+  snapshot: null,
+};
+
+let gensparkDriveCache = {
   promise: null,
   snapshot: null,
 };
@@ -71,6 +83,11 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (url.pathname === "/api/genspark-drive-artifacts") {
+      await handleGensparkDriveArtifacts(url, response);
+      return;
+    }
+
     if (url.pathname === "/api/health") {
       sendJson(response, 200, {
         ok: true,
@@ -92,6 +109,7 @@ server.listen(port, "0.0.0.0", () => {
   console.log(`AI cost dashboard listening on http://0.0.0.0:${port}`);
   scheduleDailyNotionPromptRefresh();
   scheduleDailyDriveArtifactTrendRefresh();
+  scheduleDailyGensparkDriveRefresh();
 });
 
 async function handleApiUsage(url, response) {
@@ -240,6 +258,76 @@ async function readSavedDriveArtifactTrendSnapshot() {
   return preferredSnapshot;
 }
 
+async function handleGensparkDriveArtifacts(url, response) {
+  const refresh = url.searchParams.get("refresh") === "1";
+  response.setHeader("cache-control", "no-store");
+
+  if (!refresh && gensparkDriveCache.snapshot) {
+    sendJson(response, 200, gensparkDriveCache.snapshot);
+    return;
+  }
+
+  if (!refresh) {
+    const savedSnapshot = await readSavedGensparkDriveSnapshot();
+    if (savedSnapshot) {
+      gensparkDriveCache.snapshot = savedSnapshot;
+      sendJson(response, 200, savedSnapshot);
+      return;
+    }
+    sendJson(response, 503, {
+      error: "Genspark Drive 스냅샷이 아직 생성되지 않았습니다.",
+    });
+    return;
+  }
+
+  if (!gensparkDriveCache.promise) {
+    gensparkDriveCache.promise = collectRuntimeGensparkDriveArtifacts().finally(() => {
+      gensparkDriveCache.promise = null;
+    });
+  }
+
+  const snapshot = await gensparkDriveCache.promise;
+  gensparkDriveCache.snapshot = snapshot;
+  sendJson(response, 200, snapshot);
+}
+
+async function collectRuntimeGensparkDriveArtifacts() {
+  const env = await loadGensparkDriveEnv({ targetRootDir: rootDir });
+  const snapshot = await collectGensparkDriveArtifacts({
+    env,
+    collectedAt: new Date(),
+  });
+  await writeGensparkDriveSnapshot(snapshot, { targetRootDir: rootDir });
+  return snapshot;
+}
+
+async function readSavedGensparkDriveSnapshot() {
+  const candidates = [
+    path.join(distDir, "genspark-drive-artifacts-snapshot.local.json"),
+    path.join(distDir, "genspark-drive-artifacts-snapshot.json"),
+    path.join(rootDir, "public", "genspark-drive-artifacts-snapshot.local.json"),
+    path.join(rootDir, "public", "genspark-drive-artifacts-snapshot.json"),
+  ];
+  let preferredSnapshot = null;
+
+  for (const candidate of candidates) {
+    try {
+      const snapshot = JSON.parse(await readFile(candidate, "utf8"));
+      if (
+        isGensparkDriveSnapshot(snapshot) &&
+        (!preferredSnapshot ||
+          Date.parse(snapshot.source.generatedAt) >
+            Date.parse(preferredSnapshot.source.generatedAt))
+      ) {
+        preferredSnapshot = snapshot;
+      }
+    } catch {
+      // Try the next saved snapshot.
+    }
+  }
+  return preferredSnapshot;
+}
+
 function scheduleDailyNotionPromptRefresh() {
   const firstDelayMs = msUntilNextKstHour(notionPromptRefreshHourKst);
   console.log(
@@ -268,6 +356,20 @@ function scheduleDailyDriveArtifactTrendRefresh() {
   }, firstDelayMs);
 }
 
+function scheduleDailyGensparkDriveRefresh() {
+  const firstDelayMs = msUntilNextKstHour(gensparkDriveRefreshHourKst);
+  console.log(
+    `Genspark Drive refresh scheduled daily at ${String(gensparkDriveRefreshHourKst).padStart(2, "0")}:00 KST`,
+  );
+
+  setTimeout(() => {
+    void refreshGensparkDriveCache();
+    setInterval(() => {
+      void refreshGensparkDriveCache();
+    }, 24 * 60 * 60 * 1000);
+  }, firstDelayMs);
+}
+
 async function refreshDriveArtifactTrendCache() {
   try {
     const snapshot = await collectRuntimeDriveArtifactTrend();
@@ -281,6 +383,25 @@ async function refreshDriveArtifactTrendCache() {
   } catch (error) {
     console.warn(
       `Claude Drive trend refresh failed; preserved prior snapshot: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+}
+
+async function refreshGensparkDriveCache() {
+  try {
+    const snapshot = await collectRuntimeGensparkDriveArtifacts();
+    gensparkDriveCache = {
+      promise: null,
+      snapshot,
+    };
+    console.log(
+      `Genspark Drive refreshed: ${snapshot.totalFiles} outputs · latest ${snapshot.latestOutputDate}`,
+    );
+  } catch (error) {
+    console.warn(
+      `Genspark Drive refresh failed; preserved prior snapshot: ${
         error instanceof Error ? error.message : String(error)
       }`,
     );
