@@ -27,7 +27,7 @@ describe("buildProductivityExecutiveModel", () => {
   it("uses current subscriptions only as the open-month minimum cost", () => {
     expect(model.cohorts[0].costKrw).toBe(3_486_961);
     expect(model.cohorts[1].costKrw).toBe(initialAiToolApprovalData.totalMonthlyKrw);
-    expect(model.currentFixedCostKrw).toBe(4_151_629.35);
+    expect(model.currentFixedCostKrw).toBe(4_300_129.35);
   });
 
   it("aligns observable monthly usage with the same cost month", () => {

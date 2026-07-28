@@ -14,6 +14,19 @@ describe("initialAiToolApprovalData", () => {
     }
   });
 
+  it("assigns Gu Munyoung to Claude Team Premium", () => {
+    expect(
+      initialAiToolApprovalData.records.find(
+        (record) => record.account === "mygu@riskzero.kr",
+      ),
+    ).toMatchObject({
+      owner: "구문영 사원 / 플랫폼개발",
+      tool: "Claude Team Plan Premium",
+      monthlyUsd: 125,
+      monthlyKrw: 185_625,
+    });
+  });
+
   it("assigns Lim Sungbeom to Claude Pro Max 20", () => {
     expect(
       initialAiToolApprovalData.records.find(
@@ -35,18 +48,18 @@ describe("initialAiToolApprovalData", () => {
         (item) => item.key === "Claude Team Plan Premium",
       ),
     ).toMatchObject({
-      count: 5,
-      monthlyUsd: 625,
-      monthlyKrw: 928_125,
+      count: 6,
+      monthlyUsd: 750,
+      monthlyKrw: 1_113_750,
     });
     expect(
       initialAiToolApprovalData.toolSummary.find(
         (item) => item.key === "Claude Team Plan Standard",
       ),
     ).toMatchObject({
-      count: 14,
-      monthlyUsd: 350,
-      monthlyKrw: 519_750,
+      count: 13,
+      monthlyUsd: 325,
+      monthlyKrw: 482_625,
     });
     expect(
       initialAiToolApprovalData.toolSummary.find(
@@ -66,8 +79,8 @@ describe("initialAiToolApprovalData", () => {
       monthlyUsd: 660,
       monthlyKrw: 980_100,
     });
-    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(2_795.71);
-    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(4_151_629.35);
+    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(2_895.71);
+    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(4_300_129.35);
   });
 
   it("keeps category and payment totals aligned with the updated total", () => {
@@ -75,8 +88,8 @@ describe("initialAiToolApprovalData", () => {
       initialAiToolApprovalData.categorySummary.find((item) => item.key === "Claude"),
     ).toMatchObject({
       count: 25,
-      monthlyUsd: 1_965,
-      monthlyKrw: 2_918_025,
+      monthlyUsd: 2_065,
+      monthlyKrw: 3_066_525,
     });
     expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(36);
     expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(
