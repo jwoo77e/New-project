@@ -3,216 +3,195 @@
   "source": {
     "name": "Genspark AI Drive 산출물 분석",
     "folderUrl": "https://drive.google.com/drive/folders/1MFJpVf9QfLNbzwLIE27N3b9yua9uYsa2",
-    "collectedAt": "2026-07-28 11:19 KST",
-    "generatedAt": "2026-07-28T02:19:48.406Z",
-    "period": "2025-12-17 ~ 2026-07-27",
+    "collectedAt": "2026-07-29 22:04 KST",
+    "generatedAt": "2026-07-29T13:04:05.549Z",
+    "period": "2025-12-17 ~ 2026-07-28",
     "accountLabel": "Genspark AI Drive · riskzero.marketing@gmail.com",
     "status": "정상",
     "schedule": "매일 22:00 KST",
     "mode": "Drive 전체 하위 폴더 재귀 조회 + 최신 요약 분석",
     "note": "Genspark Drive 루트와 모든 하위 폴더를 읽기 전용으로 재귀 조회하고 최신 요약 파일의 유형·프로젝트 집계와 실제 Drive 파일 메타데이터를 함께 검증합니다."
   },
-  "totalFiles": 147,
-  "individualArtifacts": 139,
+  "totalFiles": 173,
+  "individualArtifacts": 165,
   "archiveFiles": 8,
-  "newArtifacts": 9,
-  "projectCount": 8,
-  "folderCount": 7,
+  "newArtifacts": 26,
+  "projectCount": 5,
+  "folderCount": 8,
   "rootFileCount": 3,
-  "totalSizeLabel": "약 2.1 GB",
-  "latestOutputDate": "2026-07-27",
-  "directFileSignal": "루트 포함 1개 폴더를 재귀 조회해 Drive 파일 166개를 확인하고 최신 요약 genspark_sessions_요약_20260728.md을 대조",
+  "totalSizeLabel": "약 2.0 GB",
+  "latestOutputDate": "2026-07-28",
+  "directFileSignal": "루트 포함 1개 폴더를 재귀 조회해 Drive 파일 193개를 확인하고 최신 요약 genspark_sessions_요약_20260729.md을 대조",
   "typeBreakdown": [
     {
       "name": "PPTX",
-      "tasks": 99,
-      "share": 67.3,
+      "tasks": 125,
+      "share": 72.3,
       "note": "제안서, 발표자료, 비교 분석 보고서",
       "color": "#2f8f46"
     },
     {
       "name": "PNG",
       "tasks": 16,
-      "share": 10.9,
+      "share": 9.2,
       "note": "슬라이드·제안서용 시각자료",
       "color": "#0f8b8d"
     },
     {
       "name": "DOCX",
       "tasks": 13,
-      "share": 8.8,
+      "share": 7.5,
       "note": "제안서, 보고서, 회의록, 운영 문서",
       "color": "#c58612"
     },
     {
       "name": "ZIP",
       "tasks": 8,
-      "share": 5.4,
+      "share": 4.6,
       "note": "대용량 폴더 내보내기 아카이브",
       "color": "#7d6ca7"
     },
     {
       "name": "XLSX",
       "tasks": 5,
-      "share": 3.4,
+      "share": 2.9,
       "note": "사업금액·기능점수·데이터 산출",
       "color": "#5f6f8c"
     },
     {
       "name": "PDF",
       "tasks": 4,
-      "share": 2.7,
+      "share": 2.3,
       "note": "제안서와 검토 보고서",
       "color": "#e85d4f"
     },
     {
       "name": "HTML",
       "tasks": 2,
-      "share": 1.4,
+      "share": 1.2,
       "note": "영업 대시보드·웹 산출물",
       "color": "#9a6b36"
     }
   ],
   "projectBreakdown": [
     {
-      "name": "Genspark / AI Slides",
-      "tasks": 100,
-      "share": 68,
-      "note": "AI Slides 제안서·발표자료",
+      "name": "Genspark",
+      "tasks": 150,
+      "share": 86.7,
+      "note": "Genspark 루트 산출물",
       "color": "#2f8f46"
     },
     {
       "name": "AI사고예측 스마트안전관리시스템 발표자료",
       "tasks": 18,
-      "share": 12.2,
+      "share": 10.4,
       "note": "사고예측·스마트안전 발표자료",
       "color": "#0f8b8d"
     },
     {
-      "name": "Genspark / AI Docs",
-      "tasks": 16,
-      "share": 10.9,
-      "note": "AI Docs 문서·회의록",
-      "color": "#c58612"
-    },
-    {
-      "name": "Genspark / AI Sheets",
-      "tasks": 6,
-      "share": 4.1,
-      "note": "AI Sheets 데이터·시트",
-      "color": "#7d6ca7"
-    },
-    {
       "name": "루트 파일",
       "tasks": 3,
-      "share": 2,
+      "share": 1.7,
       "note": "루트에 저장된 개별 산출물",
-      "color": "#5f6f8c"
-    },
-    {
-      "name": "Genspark",
-      "tasks": 2,
-      "share": 1.4,
-      "note": "Genspark 프로젝트 산출물",
-      "color": "#e85d4f"
+      "color": "#c58612"
     },
     {
       "name": "제안서작성",
       "tasks": 1,
-      "share": 0.7,
+      "share": 0.6,
       "note": "대용량 제안서 산출",
-      "color": "#9a6b36"
+      "color": "#7d6ca7"
     },
     {
       "name": "zerobee_project",
       "tasks": 1,
-      "share": 0.7,
+      "share": 0.6,
       "note": "ZeroBee 관련 산출",
-      "color": "#6b8f71"
+      "color": "#5f6f8c"
     }
   ],
   "representativeFiles": [
     {
-      "title": "회의록_AI_Workspace_2_0_도입_전사프로세스_표준화.docx",
-      "url": "https://docs.google.com/document/d/1Ry_IPGik7iBQIPVAlaF7P-hEHerBLm6f/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
-      "fileType": "DOCX",
-      "purpose": "회의록·통화 정리",
-      "sizeLabel": "46.0 KB",
-      "modifiedAt": "2026-07-28T00:47:05.372Z"
-    },
-    {
-      "title": "포스코그룹_AI_스마트안전관리솔루션_리스크제로_3_0__도입_제안서_20260727054208.pptx",
-      "url": "https://docs.google.com/presentation/d/19KOsErcKsOJX43yOLrRQsqDjtIWYt6Rf/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
+      "title": "포스코그룹_구조적_근본원인___리스크제로_솔루션_매핑_20260728061935.pptx",
+      "url": "https://docs.google.com/presentation/d/1FU8_Uz1kG2uorUQqNJygVMXPNW0kMiQZ/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
       "fileType": "PPTX",
       "purpose": "스마트 안전관리 제안/영업",
-      "sizeLabel": "274.9 KB",
-      "modifiedAt": "2026-07-28T00:47:03.699Z"
+      "sizeLabel": "122.2 KB",
+      "modifiedAt": "2026-07-29T00:45:43.227Z"
     },
     {
-      "title": "포스코그룹_AI_스마트안전관리솔루션_리스크제로_3_0__도입_제안서_20260727054646.pptx",
-      "url": "https://docs.google.com/presentation/d/11JDn8Kxjq9AtJD6WyWq91Bdc9sqXMcZh/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
+      "title": "포스코그룹_구조적_근본원인___리스크제로_솔루션_매핑_20260728060551.pptx",
+      "url": "https://docs.google.com/presentation/d/1Zxcpla0KJkAZERrLa2jjNP1niFFQuWNB/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
       "fileType": "PPTX",
       "purpose": "스마트 안전관리 제안/영업",
-      "sizeLabel": "274.9 KB",
-      "modifiedAt": "2026-07-28T00:47:01.489Z"
+      "sizeLabel": "122.2 KB",
+      "modifiedAt": "2026-07-29T00:45:43.225Z"
     },
     {
-      "title": "포스코그룹_AI_스마트안전관리솔루션_리스크제로_3_0__도입_제안서_20260727060734.pptx",
-      "url": "https://docs.google.com/presentation/d/1FoKBbVN52guq9gD5kJbzhbJY6KvX4D7J/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
+      "title": "포스코그룹_구조적_근본원인___리스크제로_솔루션_매핑_20260728055917.pptx",
+      "url": "https://docs.google.com/presentation/d/1m_GdOPFiBpwzgMlZCibeDTOgJkxAesbQ/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
       "fileType": "PPTX",
       "purpose": "스마트 안전관리 제안/영업",
-      "sizeLabel": "276.0 KB",
-      "modifiedAt": "2026-07-28T00:46:57.423Z"
+      "sizeLabel": "117.7 KB",
+      "modifiedAt": "2026-07-29T00:45:43.223Z"
     },
     {
-      "title": "포스코그룹_AI_스마트안전관리솔루션_리스크제로_3_0__도입_제안서_20260727061533.pptx",
-      "url": "https://docs.google.com/presentation/d/1JvaO5hMakPpaE0mc2NPJc-Ej8MlD2gz-/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
+      "title": "포스코그룹_구조적_근본원인___리스크제로_솔루션_매핑_20260728055153.pptx",
+      "url": "https://docs.google.com/presentation/d/1fgdbG52L5LSXq-McCJHf51qWG2RAy_7h/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
       "fileType": "PPTX",
       "purpose": "스마트 안전관리 제안/영업",
-      "sizeLabel": "280.6 KB",
-      "modifiedAt": "2026-07-28T00:46:55.819Z"
+      "sizeLabel": "117.7 KB",
+      "modifiedAt": "2026-07-29T00:45:43.222Z"
     },
     {
-      "title": "포스코그룹_AI_스마트안전관리솔루션_리스크제로_3_0__도입_제안서_20260727065516.pptx",
-      "url": "https://docs.google.com/presentation/d/1dfxt1kzVUz0BTEnVxfxTGL3g866NYMqD/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
+      "title": "포스코그룹_AI_스마트안전관리솔루션_리스크제로_3_0__도입_제안서_20260728111651.pptx",
+      "url": "https://docs.google.com/presentation/d/1IYr6Ddqb88ORCTApsFmVgD7Ck130J1Ly/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
       "fileType": "PPTX",
       "purpose": "스마트 안전관리 제안/영업",
-      "sizeLabel": "307.7 KB",
-      "modifiedAt": "2026-07-28T00:46:53.709Z"
+      "sizeLabel": "947.7 KB",
+      "modifiedAt": "2026-07-29T00:45:43.219Z"
     },
     {
-      "title": "포스코그룹_AI_스마트안전관리솔루션_리스크제로_3_0__도입_제안서_20260727075758.pptx",
-      "url": "https://docs.google.com/presentation/d/1K5AdRumTnAKv8JQC4OE2vDAfzpqh6iO6/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
+      "title": "포스코그룹_AI_스마트안전관리솔루션_리스크제로_3_0__도입_제안서_20260728084315.pptx",
+      "url": "https://docs.google.com/presentation/d/1jEF0cGM5GsMvYXsiIVVkzprMJQdi5e1_/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
       "fileType": "PPTX",
       "purpose": "스마트 안전관리 제안/영업",
-      "sizeLabel": "307.7 KB",
-      "modifiedAt": "2026-07-28T00:46:51.613Z"
+      "sizeLabel": "1.4 MB",
+      "modifiedAt": "2026-07-29T00:45:43.217Z"
     },
     {
-      "title": "7대_산업군_매핑_개요__P_13_20260727080345.pptx",
-      "url": "https://docs.google.com/presentation/d/1-4Sx55RSohj_-KwTjteLMnvTszguI1yn/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
+      "title": "포스코그룹_AI_스마트안전관리솔루션_리스크제로_3_0__도입_제안서_20260728083928.pptx",
+      "url": "https://docs.google.com/presentation/d/1q3NuEnUh9umvxILOGnM8tpDjOgjFPxSS/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
       "fileType": "PPTX",
-      "purpose": "기타 산출물",
-      "sizeLabel": "146.7 KB",
-      "modifiedAt": "2026-07-28T00:46:49.543Z"
+      "purpose": "스마트 안전관리 제안/영업",
+      "sizeLabel": "219.3 KB",
+      "modifiedAt": "2026-07-29T00:45:43.214Z"
+    },
+    {
+      "title": "포스코그룹_AI_스마트안전관리솔루션_리스크제로_3_0__도입_제안서_20260728075400.pptx",
+      "url": "https://docs.google.com/presentation/d/1EsWXO_xGwuZS840fTLOMEIiPKSILSyFE/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
+      "fileType": "PPTX",
+      "purpose": "스마트 안전관리 제안/영업",
+      "sizeLabel": "347.8 KB",
+      "modifiedAt": "2026-07-29T00:45:43.212Z"
     }
   ],
   "insights": [
-    "최신 Genspark Drive 요약 기준 전체 파일은 147개이며 개별 산출물 139개와 아카이브 8개로 구분됩니다.",
-    "PPTX가 99개(67.3%)로 가장 많아 제안·발표자료 생산이 중심입니다.",
-    "Genspark / AI Slides가 100개로 가장 큰 산출 영역입니다.",
-    "자동 수집은 루트 포함 1개 폴더와 Drive 항목 166개를 확인했으며, 이번 신규 산출물은 9개입니다."
+    "최신 Genspark Drive 요약 기준 전체 파일은 173개이며 개별 산출물 165개와 아카이브 8개로 구분됩니다.",
+    "PPTX가 125개(72.3%)로 가장 많아 제안·발표자료 생산이 중심입니다.",
+    "Genspark 프로젝트가 150개로 가장 큰 산출 영역입니다.",
+    "자동 수집은 루트 포함 1개 폴더와 Drive 항목 193개를 확인했으며, 이번 신규 산출물은 26개입니다."
   ],
   "inventory": {
-    "scannedFiles": 166,
+    "scannedFiles": 193,
     "scannedFolders": 1,
     "nestedFolders": 0,
     "maxDepth": 0,
-    "summaryFileId": "1A0oIRoKmEfeB68F3vEc5pa2klJAviLGM",
-    "summaryFileName": "genspark_sessions_요약_20260728.md",
-    "individualArtifacts": 139,
+    "summaryFileId": "17zUBhaBR-9Zhn5PmxmPrgQspn22zQJC0",
+    "summaryFileName": "genspark_sessions_요약_20260729.md",
+    "individualArtifacts": 165,
     "archiveFiles": 8,
-    "newArtifacts": 9,
-    "totalSizeBytes": 2219520819
+    "newArtifacts": 26,
+    "totalSizeBytes": 2129940200
   }
 }
