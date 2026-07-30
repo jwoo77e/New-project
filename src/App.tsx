@@ -956,7 +956,7 @@ function App() {
       eyebrow: "Adoption & Utilization",
       title: "활용성",
       description: "서비스 설치 여부보다 실제 활성 계정, 사용 강도, 산출 연결 범위를 기준으로 활용 수준을 비교합니다.",
-      freshness: `${claudeTeamUsageData.source.period} · 5개 서비스 원천`,
+      freshness: `${claudeTeamUsageData.source.period} · 6개 서비스 원천`,
       metrics: [
         {
           icon: <UserCheck size={19} />,
@@ -4031,7 +4031,7 @@ function AdoptionView({
   gensparkUsageData: GensparkUsageData;
   workspaceUsageData: GeminiWorkspaceUsageData;
 }) {
-  const chatGptExport = gensparkUsageData.chatGptExport;
+  const claudeExport = gensparkUsageData.chatGptExport;
   const mostUsedGeminiApp = workspaceUsageData.appUsage[0];
   const peakGeminiDay = [...workspaceUsageData.dailyUsage].sort((a, b) => b.events - a.events)[0];
   const claudeTopProduct = claudeTeamUsageData.productUsage[0];
@@ -4067,6 +4067,17 @@ function AdoptionView({
     icon: ReactNode;
   }> = [
     {
+      name: "ChatGPT",
+      source: "ChatGPT Export",
+      status: "수집",
+      statusTone: "ok",
+      value: `${numberFormat.format(chatGptUsageData.totalConversations)}개`,
+      metric: "대화 기록",
+      detail: `${numberFormat.format(chatGptUsageData.totalMessages)} messages · 자산 ${numberFormat.format(chatGptUsageData.conversationAssetFiles)}개 · 업무성 ${formatRate(chatGptUsageData.businessConversationShare)}`,
+      color: "#10a37f",
+      icon: <Bot size={18} />,
+    },
+    {
       name: "Gemini",
       source: "Workspace Audit",
       status: workspaceUsageData.source.status,
@@ -4082,12 +4093,12 @@ function AdoptionView({
     {
       name: "Claude Export",
       source: "JSON Export",
-      status: chatGptExport ? "수집" : "대기",
-      statusTone: chatGptExport ? "ok" : "warning",
-      value: `${numberFormat.format(chatGptExport?.totalConversations ?? 0)}개`,
+      status: claudeExport ? "수집" : "대기",
+      statusTone: claudeExport ? "ok" : "warning",
+      value: `${numberFormat.format(claudeExport?.totalConversations ?? 0)}개`,
       metric: "대화 기록",
-      detail: chatGptExport
-        ? `${numberFormat.format(chatGptExport.totalMessages)} messages · ${numberFormat.format(chatGptExport.totalAttachments)} attachments`
+      detail: claudeExport
+        ? `${numberFormat.format(claudeExport.totalMessages)} messages · ${numberFormat.format(claudeExport.totalAttachments)} attachments`
         : "Claude export 업로드 필요",
       color: "#e85d4f",
       icon: <Bot size={18} />,
@@ -4136,7 +4147,7 @@ function AdoptionView({
             <span className="eyebrow">Service Portfolio</span>
             <h2>서비스 채택 및 연결 현황</h2>
           </div>
-          <span className="state-pill neutral">5종 관리</span>
+          <span className="state-pill neutral">{numberFormat.format(serviceCards.length)}종 관리</span>
         </div>
         <div className="service-usage-grid">
           {serviceCards.map((service) => (
