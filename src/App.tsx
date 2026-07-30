@@ -4032,6 +4032,9 @@ function AdoptionView({
   const maxClaudeSpend = Math.max(...claudeTeamUsageData.users.map((user) => user.netSpendUsd), 1);
   const maxClaudeLines = Math.max(...claudeTeamUsageData.users.map((user) => user.codeLines), 1);
   const hasClaudeCodeLines = claudeTeamUsageData.totalCodeLines > 0;
+  const claudeUsersByTokens = [...claudeTeamUsageData.users].sort(
+    (a, b) => b.totalTokens - a.totalTokens || b.requests - a.requests || a.email.localeCompare(b.email),
+  );
   const claudeTopUser = [...claudeTeamUsageData.users].sort((a, b) =>
     hasClaudeCodeLines ? b.codeLines - a.codeLines : b.netSpendUsd - a.netSpendUsd,
   )[0];
@@ -4319,14 +4322,14 @@ function AdoptionView({
                 <th>활용 단계</th>
                 <th>Spend</th>
                 <th>요청</th>
-                <th>토큰</th>
+                <th aria-sort="descending">토큰</th>
                 <th>{hasClaudeCodeLines ? "Code Lines" : "Code Lines 원천"}</th>
                 <th>제품/모델</th>
                 <th>비고</th>
               </tr>
             </thead>
             <tbody>
-              {claudeTeamUsageData.users.map((user) => (
+              {claudeUsersByTokens.map((user) => (
                 <tr key={user.email}>
                   <td>
                     <strong>{user.email}</strong>
