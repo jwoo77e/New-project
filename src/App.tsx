@@ -3105,8 +3105,8 @@ function GensparkUsageView({
   const driveTrendNestedFiles =
     driveTrendSnapshot?.totals.nestedFiles ?? driveRepositoryData.totals.nestedFiles;
   const gensparkDrive = usageData.driveAnalysis;
-  const gammaDeckCount = gammaDriveUsageData.deckCount;
-  const gammaTotalSlides = gammaDriveUsageData.totalSlides;
+  const gammaArtifactCount = gammaDriveUsageData.artifactCount;
+  const gammaTotalPages = gammaDriveUsageData.totalPages;
   const gammaTopArtifact = gammaDriveUsageData.artifacts[0];
   const [analysisSection, setAnalysisSection] = useState<
     "patterns" | "conversations" | "outputs" | "evidence"
@@ -3524,14 +3524,21 @@ function GensparkUsageView({
         <div className="gamma-drive-summary">
           <div className="gamma-drive-lede">
             <span>분석 대상</span>
-            <strong>{numberFormat.format(gammaDeckCount)}개 발표자료</strong>
+            <strong>{numberFormat.format(gammaArtifactCount)}개 산출물</strong>
             <p>{gammaDriveUsageData.businessUse}</p>
             <small>{gammaDriveUsageData.source.note}</small>
           </div>
           <div className="gamma-drive-metrics">
             <div>
               <span>총 분량</span>
-              <strong>{numberFormat.format(gammaTotalSlides)}장</strong>
+              <strong>{numberFormat.format(gammaTotalPages)}장</strong>
+            </div>
+            <div>
+              <span>파일 구성</span>
+              <strong>
+                Slides {numberFormat.format(gammaDriveUsageData.googleSlidesCount)} · PDF{" "}
+                {numberFormat.format(gammaDriveUsageData.pdfCount)}
+              </strong>
             </div>
             <div>
               <span>핵심 주제</span>
@@ -3548,7 +3555,7 @@ function GensparkUsageView({
             <article className="gamma-topic-card" key={topic.topic}>
               <div>
                 <strong>{topic.topic}</strong>
-                <span>{numberFormat.format(topic.count)}개 deck</span>
+                <span>{numberFormat.format(topic.count)}개 산출물</span>
               </div>
               <p>{topic.note}</p>
             </article>
@@ -3562,7 +3569,7 @@ function GensparkUsageView({
                 <span>{artifact.focus}</span>
               </div>
               <small>
-                {artifact.category} · {artifact.slideCount}장
+                {artifact.format} · {artifact.category} · {artifact.slideCount}장
               </small>
             </a>
           ))}
