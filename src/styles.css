@@ -1889,7 +1889,6 @@ h2 {
 }
 
 .service-usage-head span:not(.state-pill),
-.service-usage-card p,
 .service-usage-card small,
 .service-usage-value span {
   color: var(--muted);
@@ -1910,7 +1909,6 @@ h2 {
   overflow-wrap: anywhere;
 }
 
-.service-usage-card p,
 .service-usage-card small {
   margin: 0;
 }
@@ -3945,7 +3943,7 @@ td strong {
 
 .service-usage-card {
   display: grid;
-  grid-template-columns: minmax(190px, 0.75fr) minmax(150px, 0.55fr) minmax(260px, 1.45fr);
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, 0.55fr);
   align-items: center;
   gap: 18px;
   min-height: 92px;
@@ -3963,10 +3961,6 @@ td strong {
 }
 
 .service-usage-value {
-  margin-top: 0;
-}
-
-.service-usage-card p {
   margin-top: 0;
 }
 
@@ -4052,7 +4046,7 @@ td strong {
   }
 
   .service-usage-card {
-    grid-template-columns: minmax(180px, 0.75fr) minmax(150px, 0.55fr) minmax(0, 1.3fr);
+    grid-template-columns: minmax(180px, 1fr) minmax(140px, 0.55fr);
   }
 }
 

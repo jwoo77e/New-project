@@ -51,7 +51,6 @@ import {
   type ApiKeyStatusValue,
   type ApiProviderStatus,
   type ApiUsageData,
-  type GammaUsageData,
   type GeminiWorkspaceUserUsageLevel,
   type GeminiWorkspaceUsageData,
 } from "./data/apiUsageData";
@@ -165,7 +164,6 @@ const API_FORECAST_USD_TO_KRW = 1400;
 const OPERATING_PLAN_START_MONTH = "2026-05";
 const OPERATING_PLAN_USD_TO_KRW = 1485;
 const OPERATING_PLAN_API_BUDGET_KRW = 280000;
-const GAMMA_MONTHLY_PLAN_USD = 25;
 const DRIVE_TREND_POLL_INTERVAL_MS = 15 * 60 * 1000;
 const GENSPARK_DRIVE_POLL_INTERVAL_MS = 15 * 60 * 1000;
 
@@ -625,7 +623,6 @@ function App() {
     };
   }, [apiUsageData]);
   const workspaceUsageData = apiUsageData.workspaceUsage ?? initialApiUsageData.workspaceUsage!;
-  const gammaUsageData = apiUsageData.gammaUsage ?? initialApiUsageData.gammaUsage!;
   const claudeTeamUsageData = initialClaudeTeamUsageData;
   const aiToolApprovalData = initialAiToolApprovalData;
   const gensparkUsageData = useMemo<GensparkUsageData>(
@@ -1436,7 +1433,6 @@ function App() {
       {activeView === "adoption" && (
         <AdoptionView
           claudeTeamUsageData={claudeTeamUsageData}
-          gammaUsageData={gammaUsageData}
           gensparkUsageData={gensparkUsageData}
           workspaceUsageData={workspaceUsageData}
         />
@@ -4022,17 +4018,14 @@ function approvalPalette(index: number) {
 
 function AdoptionView({
   claudeTeamUsageData,
-  gammaUsageData,
   gensparkUsageData,
   workspaceUsageData,
 }: {
   claudeTeamUsageData: ClaudeTeamUsageData;
-  gammaUsageData: GammaUsageData;
   gensparkUsageData: GensparkUsageData;
   workspaceUsageData: GeminiWorkspaceUsageData;
 }) {
   const claudeExport = gensparkUsageData.chatGptExport;
-  const mostUsedGeminiApp = workspaceUsageData.appUsage[0];
   const peakGeminiDay = [...workspaceUsageData.dailyUsage].sort((a, b) => b.events - a.events)[0];
   const claudeTopProduct = claudeTeamUsageData.productUsage[0];
   const claudeTopModel = claudeTeamUsageData.modelUsage[0];
@@ -4042,19 +4035,6 @@ function AdoptionView({
   const claudeTopUser = [...claudeTeamUsageData.users].sort((a, b) =>
     hasClaudeCodeLines ? b.codeLines - a.codeLines : b.netSpendUsd - a.netSpendUsd,
   )[0];
-  const gammaMonthlyUsd = GAMMA_MONTHLY_PLAN_USD;
-  const gammaTrackedLabel =
-    typeof gammaUsageData.latestCreditsRemaining === "number"
-      ? `${numberFormat.format(gammaUsageData.latestCreditsRemaining)} credits`
-      : gammaUsageData.trackedGenerations > 0
-      ? `${numberFormat.format(gammaUsageData.totalCreditsDeducted)} credits`
-      : `${numberFormat.format(gammaUsageData.themeCount)} themes`;
-  const gammaDetail =
-    typeof gammaUsageData.latestCreditsRemaining === "number"
-      ? `현재 잔여 ${numberFormat.format(gammaUsageData.latestCreditsRemaining)} credits · ${gammaUsageData.creditSource === "web-crawl" ? "웹 크롤링" : "Generation 응답"} 기준`
-      : gammaUsageData.trackedGenerations > 0
-      ? `Generation ${numberFormat.format(gammaUsageData.trackedGenerations)}건 · 완료 ${numberFormat.format(gammaUsageData.completedGenerations)}건 · 잔여 ${gammaUsageData.latestCreditsRemaining ?? "-"} credits`
-      : `테마 ${numberFormat.format(gammaUsageData.themeCount)}개 · 폴더 ${numberFormat.format(gammaUsageData.folderCount)}개 · ${gammaMonthlyUsd ? `${formatUsd(gammaMonthlyUsd)}/월 구독` : "구독 계획 확인"}`;
   const serviceCards: Array<{
     name: string;
     source: string;
@@ -4062,7 +4042,6 @@ function AdoptionView({
     statusTone: string;
     value: string;
     metric: string;
-    detail: string;
     color: string;
     icon: ReactNode;
   }> = [
@@ -4073,7 +4052,6 @@ function AdoptionView({
       statusTone: "ok",
       value: `${numberFormat.format(chatGptUsageData.totalConversations)}개`,
       metric: "대화 기록",
-      detail: `${numberFormat.format(chatGptUsageData.totalMessages)} messages · 자산 ${numberFormat.format(chatGptUsageData.conversationAssetFiles)}개 · 업무성 ${formatRate(chatGptUsageData.businessConversationShare)}`,
       color: "#10a37f",
       icon: <Bot size={18} />,
     },
@@ -4084,9 +4062,6 @@ function AdoptionView({
       statusTone: apiStatusTone(workspaceUsageData.source.status),
       value: `${numberFormat.format(workspaceUsageData.totalEvents)}건`,
       metric: "Workspace 이벤트",
-      detail: mostUsedGeminiApp
-        ? `최다 앱 ${mostUsedGeminiApp.app} · ${numberFormat.format(mostUsedGeminiApp.events)}건`
-        : "앱별 이벤트 수집 대기",
       color: "#0f8b8d",
       icon: <Sparkles size={18} />,
     },
@@ -4097,9 +4072,6 @@ function AdoptionView({
       statusTone: claudeExport ? "ok" : "warning",
       value: `${numberFormat.format(claudeExport?.totalConversations ?? 0)}개`,
       metric: "대화 기록",
-      detail: claudeExport
-        ? `${numberFormat.format(claudeExport.totalMessages)} messages · ${numberFormat.format(claudeExport.totalAttachments)} attachments`
-        : "Claude export 업로드 필요",
       color: "#e85d4f",
       icon: <Bot size={18} />,
     },
@@ -4110,7 +4082,6 @@ function AdoptionView({
       statusTone: "ok",
       value: `${numberFormat.format(gensparkUsageData.totalTasks)}건`,
       metric: "작업 기록",
-      detail: `${numberFormat.format(gensparkUsageData.detailedTasks)}건 정밀 분석 · ${numberFormat.format(gensparkUsageData.generatedFileMappedTasks)}건 파일 매핑`,
       color: "#c58612",
       icon: <FileSpreadsheet size={18} />,
     },
@@ -4121,20 +4092,16 @@ function AdoptionView({
       statusTone: "ok",
       value: formatTokens(claudeTeamUsageData.totalTokens),
       metric: "Team tokens",
-      detail: hasClaudeCodeLines
-        ? `${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄 · ${formatPreciseUsd(claudeTeamUsageData.totalNetSpendUsd)}`
-        : `${numberFormat.format(claudeTeamUsageData.totalRequests)} requests · ${formatPreciseUsd(claudeTeamUsageData.totalNetSpendUsd)}`,
       color: "#5f6f8c",
       icon: <LineChart size={18} />,
     },
     {
       name: "Gamma",
-      source: "Gamma API",
-      status: gammaUsageData.source.status,
-      statusTone: apiStatusTone(gammaUsageData.source.status),
-      value: gammaUsageData.apiKeyConfigured ? gammaTrackedLabel : "대기",
-      metric: gammaUsageData.trackedGenerations > 0 ? "차감 크레딧" : "조회 가능 항목",
-      detail: gammaDetail,
+      source: "Drive 산출물",
+      status: gammaDriveUsageData.source.status,
+      statusTone: "ok",
+      value: `${numberFormat.format(gammaDriveUsageData.artifactCount)}개`,
+      metric: "Gamma 산출물",
       color: "#2f8f46",
       icon: <Activity size={18} />,
     },
@@ -4166,7 +4133,6 @@ function AdoptionView({
                 <strong>{service.value}</strong>
                 <span>{service.metric}</span>
               </div>
-              <p>{service.detail}</p>
             </article>
           ))}
         </div>
