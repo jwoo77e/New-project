@@ -42,6 +42,21 @@ describe("initialAiToolApprovalData", () => {
     });
   });
 
+  it("assigns Lee Donghun to Claude Team Standard", () => {
+    expect(
+      initialAiToolApprovalData.records.find(
+        (record) => record.account === "dhlee@riskzero.kr",
+      ),
+    ).toMatchObject({
+      owner: "이동훈 부장 / 플랫폼개발",
+      department: "플랫폼개발",
+      tool: "Claude Team Plan Standard",
+      monthlyUsd: 25,
+      monthlyKrw: 37_125,
+      paymentMethod: "AI 전용 카드",
+    });
+  });
+
   it("reconciles the updated plan mix and monthly totals", () => {
     expect(
       initialAiToolApprovalData.toolSummary.find(
@@ -57,9 +72,9 @@ describe("initialAiToolApprovalData", () => {
         (item) => item.key === "Claude Team Plan Standard",
       ),
     ).toMatchObject({
-      count: 13,
-      monthlyUsd: 325,
-      monthlyKrw: 482_625,
+      count: 14,
+      monthlyUsd: 350,
+      monthlyKrw: 519_750,
     });
     expect(
       initialAiToolApprovalData.toolSummary.find(
@@ -79,19 +94,19 @@ describe("initialAiToolApprovalData", () => {
       monthlyUsd: 660,
       monthlyKrw: 980_100,
     });
-    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(2_895.71);
-    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(4_300_129.35);
+    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(2_920.71);
+    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(4_337_254.35);
   });
 
   it("keeps category and payment totals aligned with the updated total", () => {
     expect(
       initialAiToolApprovalData.categorySummary.find((item) => item.key === "Claude"),
     ).toMatchObject({
-      count: 25,
-      monthlyUsd: 2_065,
-      monthlyKrw: 3_066_525,
+      count: 26,
+      monthlyUsd: 2_090,
+      monthlyKrw: 3_103_650,
     });
-    expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(36);
+    expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(37);
     expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(
       initialAiToolApprovalData.totalMonthlyKrw,
     );

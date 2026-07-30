@@ -414,6 +414,19 @@ const records: AiToolApprovalRecord[] = [
   },
   {
     no: 30,
+    category: "Claude",
+    tool: "Claude Team Plan Standard",
+    account: "dhlee@riskzero.kr",
+    linkedAccount: "없음",
+    owner: "이동훈 부장 / 플랫폼개발",
+    department: "플랫폼개발",
+    monthlyUsd: 25,
+    monthlyKrw: 37125,
+    paymentMethod: "AI 전용 카드",
+    note: "",
+  },
+  {
+    no: 31,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "ai.marketing@riskzero.kr",
@@ -426,7 +439,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 31,
+    no: 32,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "james@riskzero.kr",
@@ -439,7 +452,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 32,
+    no: 33,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "bigone@riskzero.kr",
@@ -452,7 +465,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 33,
+    no: 34,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "riskzero@riskzero.kr",
@@ -465,7 +478,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 34,
+    no: 35,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "전략실장님 전용",
@@ -478,7 +491,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 35,
+    no: 36,
     category: "Gemini",
     tool: "Gemini(Google Workspace)",
     account: "ai.smartservice@riskzero.kr",
@@ -491,7 +504,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 36,
+    no: 37,
     category: "Genspark",
     tool: "Genspark Pro",
     account: "riskzero.marketing@gmail.com",
@@ -504,7 +517,7 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 37,
+    no: 38,
     category: "Gamma",
     tool: "Gamma AI Pro",
     account: "riskzero.marketing@gmail.com",
@@ -534,9 +547,9 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     name: "사내 AI도구 결재 현황",
     fileName: "사내 AI도구 현황조사표_V3.0.xlsx",
     sheetName: "전사 AI도구 현황조사표",
-    collectedAt: "2026-07-28",
+    collectedAt: "2026-07-30",
     period: "월 구독 기준 · USD 1 = 1,485원",
-    note: "계정 ID, 주사용자/부서, 구독료, 결재수단을 반영했으며 2026-07-28 구문영 사원 Claude Team Premium 변경 기준을 적용",
+    note: "계정 ID, 주사용자/부서, 구독료, 결재수단을 반영했으며 2026-07-30 이동훈 부장 Claude Team Standard 추가 기준을 적용",
   },
   exchangeRate,
   totalAccounts: records.length,
@@ -559,6 +572,7 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     "변경 반영: 김하나 과장과 전우성 부장의 Claude Team Plan을 Standard에서 Premium으로 변경했습니다.",
     "변경 반영: 임성범 부장의 Claude Pro Max 5를 Claude Pro Max 20으로 변경하고 월 고정비 예산을 조정했습니다.",
     "변경 반영: 구문영 사원의 Claude Team Plan을 Standard에서 Premium으로 변경하고 월 고정비 예산을 조정했습니다.",
+    "변경 반영: 이동훈 부장에게 Claude Team Plan Standard를 할당하고 월 고정비 예산을 조정했습니다.",
   ],
 };
 

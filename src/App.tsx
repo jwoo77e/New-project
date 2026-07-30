@@ -963,7 +963,7 @@ function App() {
           icon: <UserCheck size={19} />,
           label: "Claude 활성",
           value: `${claudeTeamUsageData.activeUsers}/${claudeTeamUsageData.licensedUsers}명`,
-          detail: "멤버 기준 100% 활성",
+          detail: `활성률 ${formatRate((claudeTeamUsageData.activeUsers / claudeTeamUsageData.licensedUsers) * 100)}`,
           tone: "teal",
         },
         {

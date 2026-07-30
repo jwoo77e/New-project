@@ -27,7 +27,7 @@ describe("buildProductivityExecutiveModel", () => {
   it("uses current subscriptions only as the open-month minimum cost", () => {
     expect(model.cohorts[0].costKrw).toBe(3_486_961);
     expect(model.cohorts[1].costKrw).toBe(initialAiToolApprovalData.totalMonthlyKrw);
-    expect(model.currentFixedCostKrw).toBe(4_300_129.35);
+    expect(model.currentFixedCostKrw).toBe(initialAiToolApprovalData.totalMonthlyKrw);
   });
 
   it("aligns observable monthly usage with the same cost month", () => {
@@ -43,8 +43,8 @@ describe("buildProductivityExecutiveModel", () => {
       driveOutputSignals: 771,
     });
     expect(model.activeUsers).toBe(19);
-    expect(model.licensedUsers).toBe(19);
-    expect(model.activationRate).toBe(100);
+    expect(model.licensedUsers).toBe(20);
+    expect(model.activationRate).toBe(95);
     expect(model.observableRepositoryOutputs).toBe(
       driveArtifactRepositoryData.activityAnalysis.totalOutputSignals +
         (initialGensparkUsageData.driveAnalysis?.totalFiles ?? 0),
@@ -98,9 +98,19 @@ describe("buildProductivityExecutiveModel", () => {
   it("reconciles active Claude seats with the latest spend activity", () => {
     expect(initialClaudeTeamUsageData.source.verification.memberAccounts).toBe(19);
     expect(initialClaudeTeamUsageData.source.verification.activeMemberAccounts).toBe(19);
-    expect(initialClaudeTeamUsageData.users).toHaveLength(19);
+    expect(initialClaudeTeamUsageData.source.verification.approvedAccounts).toBe(20);
+    expect(initialClaudeTeamUsageData.source.verification.approvedButNoUsage).toBe(1);
+    expect(initialClaudeTeamUsageData.users).toHaveLength(20);
     expect(initialClaudeTeamUsageData.activeUsers).toBe(19);
     expect(initialClaudeTeamUsageData.spendUsers).toBe(19);
+    expect(
+      initialClaudeTeamUsageData.users.find((user) => user.email === "dhlee@riskzero.kr"),
+    ).toMatchObject({
+      displayName: "이동훈 부장",
+      requests: 0,
+      codeLines: 0,
+      level: "Low",
+    });
   });
 
   it("reconciles monthly, department, and category totals to the source total", () => {
