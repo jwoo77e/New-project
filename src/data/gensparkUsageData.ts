@@ -1,3 +1,5 @@
+import { claudeExportUsageData } from "./claudeExportUsageData";
+
 export type GensparkCategoryUsage = {
   name: string;
   tasks: number;
@@ -640,71 +642,71 @@ export const initialGensparkUsageData: GensparkUsageData = {
   },
   insightAnalysis: {
     sourceLabel: "Genspark 작업 히스토리와 Claude export 통합 분석",
-    period: "2025-12-18 ~ 2026-06-26",
-    totalRecords: 224,
-    totalMessages: 1613,
-    attachmentBasedRecords: 32,
-    outputOrientedRecords: 91,
+    period: "2025-12-18 ~ 2026-07-30",
+    totalRecords: 311,
+    totalMessages: 2752,
+    attachmentBasedRecords: 56,
+    outputOrientedRecords: 159,
     guideNeededCount: 6,
     executiveSummary: [
-      "이번 Claude export batch는 65개 대화, 1,613개 메시지이며 Genspark 159개 작업과 합쳐 총 224건의 활용 기록으로 재정리했습니다.",
-      "Claude 메시지 기준으로는 개인/게임·생활 질의가 63.3%를 차지해 업무형 활용성과 분리해서 해석해야 합니다.",
-      "업무형 Claude 활용은 38개 대화로 개발/아키텍처·DB, RiskZero 제품·산업안전/AI 인프라, 문서·보고, AI 비용·계정 운영에서 확인됩니다.",
-      "프로젝트·사용자·메모리 JSON까지 함께 반영해 원천 파일별 근거와 계정 매핑을 확인했고, 6월 신규 대화는 설계변경·LangGraph·Observia 회의록·서버 인프라 주제가 추가됐습니다.",
+      "최신 Claude export는 152개 대화, 2,752개 메시지이며 Genspark 159개 작업과 합쳐 총 311건의 활용 기록으로 재정리했습니다.",
+      "Claude 메시지 기준 개인/게임·생활 질의는 41.6%이며, 업무형 대화 106건과 분리해서 활용 성과를 해석해야 합니다.",
+      "업무형 Claude 활용은 산업안전·AI 인프라 34건, 개발/아키텍처 24건, 문서·생산성 24건, AI 운영 24건으로 확인됩니다.",
+      "7월 Claude 대화는 81건으로 5월 36건, 6월 35건보다 늘었고, 대화 활성 계정은 13개로 확대됐습니다.",
     ],
     topicInsights: [
       {
         topic: "산업안전·공공 제안/제품 전략",
-        tasks: 102,
-        share: 45.5,
+        tasks: 129,
+        share: 41.5,
         signal: "Genspark 중심 실무 산출",
         businessUse: "순천시, LH, SH, 도로공사, 중부발전 제안서와 RiskZero/ZeroGuard 자료 생산",
-        evidence: "Genspark 공공기관 제안서 60건, 회사 자체 자료 35건, Claude 설계변경·Observia·사고예측·LoRa·NCP 대화 7건",
+        evidence: "Genspark 제안·제품 자료와 Claude 산업안전·AI 인프라 대화 34건 결합",
         color: "#2f8f46",
       },
       {
         topic: "개발/아키텍처·DB",
-        tasks: 19,
-        share: 8.5,
+        tasks: 24,
+        share: 7.7,
         signal: "Claude 업무형 대화의 핵심",
-        businessUse: "GitLab 코드 리뷰, LangGraph, MSA 통신 방식, DB 규칙, TimescaleDB, 서버/로드밸런서 검토",
-        evidence: "Claude conversations.json에서 기술 설계·디버깅 대화 19건, 384메시지, 첨부 37건 확인",
+        businessUse: "GitLab, PostgreSQL, LangGraph, MSA, HAProxy, 프로토콜 파싱과 개발환경 문제 해결",
+        evidence: "Claude conversations.json에서 기술 설계·디버깅 대화 24건, 229메시지 확인",
         color: "#0f8b8d",
       },
       {
         topic: "문서·보고·업무 생산성",
-        tasks: 45,
-        share: 20.1,
+        tasks: 62,
+        share: 19.9,
         signal: "반복 산출물 자동화 후보",
-        businessUse: "회의록, 운영 매뉴얼, WBS 간트차트, 보고 프롬프트, 문서 검토와 연락처 마스킹 기준 정리",
-        evidence: "Genspark 문서·회의록·디자인 작업과 Claude 문서/업무 생산성 대화 7건 결합",
+        businessUse: "테스트계획, 운영 매뉴얼, WBS, 번역, 보고서, 조직도와 엑셀 문서 작성·변환",
+        evidence: "Genspark 문서·회의록·디자인 작업과 Claude 문서/업무 생산성 대화 24건 결합",
         color: "#c58612",
       },
       {
         topic: "개인/게임·생활 질의",
-        tasks: 11,
-        share: 4.9,
+        tasks: 16,
+        share: 5.1,
         signal: "비업무성 사용량 분리 필요",
         businessUse: "게임 빌드, 하드웨어 성능, 건강·생활·뉴스성 질의가 장문 대화로 확장",
-        evidence: "Claude export에서 11개 대화가 1,021메시지로 메시지 기준 63.3%를 차지",
+        evidence: "Claude export에서 16개 대화가 1,145메시지로 메시지 기준 41.6%를 차지",
         color: "#7d6ca7",
       },
       {
         topic: "AI 비용·계정/도구 운영",
-        tasks: 32,
-        share: 14.3,
+        tasks: 50,
+        share: 16.1,
         signal: "운영 체계화 필요",
-        businessUse: "Claude API 토큰, 팀플랜 가격, ChatGPT 요금제, 기본 모델, AI 비용·활용 대시보드 운영",
-        evidence: "Claude AI 운영 대화 5건과 기존 AI 비용/활용 대시보드·계정 관리 기록 통합",
+        businessUse: "Claude 토큰·요금제·Code 설정, Vertex AI, 사용량 모니터링과 AI 운영",
+        evidence: "Claude AI 운영 대화 24건과 기존 AI 비용·계정 관리 기록 통합",
         color: "#9a6b36",
       },
       {
         topic: "미분류/짧은 대화",
-        tasks: 15,
-        share: 6.7,
+        tasks: 30,
+        share: 9.6,
         signal: "태그 보완 필요",
         businessUse: "제목 없음, 인사, 빈 대화, 첨부만 있는 대화처럼 업무 목적 판단이 어려운 짧은 기록",
-        evidence: "Claude export의 짧은 대화 16건 중 15건을 통합 미분류로 반영했고 계정 매핑만 가능해 업무 성격은 별도 확인 필요",
+        evidence: "Claude export에서 제목·요약이 없거나 목적 확인이 어려운 대화 30건을 별도 분리",
         color: "#5f6f8c",
       },
     ],
@@ -828,7 +830,7 @@ export const initialGensparkUsageData: GensparkUsageData = {
     improvementActions: [
       {
         title: "업무 유형 태그 표준화",
-        currentSignal: "208건 중 도구별 원천은 있으나 업무 목적 태그가 수동 추정에 의존",
+        currentSignal: "311건 중 도구별 원천은 있으나 업무 목적 태그가 수동 추정에 의존",
         action: "요청 후 1분 안에 제안/개발/문서/정책/디자인/데이터 태그와 최종 사용 여부를 기록",
         expectedImpact: "활용률을 비용이 아니라 업무 성과 기준으로 재분류 가능",
         priority: "상",
@@ -904,701 +906,5 @@ export const initialGensparkUsageData: GensparkUsageData = {
       "생성 산출물은 Claude 2건, Codex 5건으로 총 7개이며, Notion 파일 첨부 속성은 이번 화면 지표에서 제외했습니다.",
     ],
   },
-  chatGptExport: {
-      "source": {
-          "name": "Claude 사용 이력 Export 분석",
-          "collectedAt": "2026-06-26",
-          "period": "2026-05-11 ~ 2026-06-26",
-          "accountLabel": "Claude export batch 2026-06-26",
-          "note": "conversations, memories, users, projects JSON 전체를 집계했으며 전화번호와 이메일 원문은 화면에서 제외"
-      },
-      "totalConversations": 65,
-      "totalMessages": 1613,
-      "totalUserMessages": 804,
-      "totalAssistantMessages": 809,
-      "totalAttachments": 168,
-      "conversationsWithFiles": 19,
-      "attachmentsFromFiles": 168,
-      "categoryUsage": [
-          {
-              "name": "개발/아키텍처·DB",
-              "tasks": 19,
-              "share": 29.2,
-              "note": "LangGraph, GitLab CI/CD, MSA, DB 표준, 서버/로드밸런서 등 기술 실행 질의가 가장 많음",
-              "color": "#0f8b8d"
-          },
-          {
-              "name": "미분류/짧은 대화",
-              "tasks": 16,
-              "share": 24.6,
-              "note": "제목 없음, 짧은 입력, 첨부만 있는 대화는 업무 활용으로 단정하지 않고 분리",
-              "color": "#5f6f8c"
-          },
-          {
-              "name": "개인/게임·생활 질의",
-              "tasks": 11,
-              "share": 16.9,
-              "note": "대화 수는 16.9%지만 메시지 기준 63.3%로 장문 개인성 사용량이 여전히 큼",
-              "color": "#7d6ca7"
-          },
-          {
-              "name": "RiskZero 제품·산업안전/AI 인프라",
-              "tasks": 7,
-              "share": 10.8,
-              "note": "사고예측, 설계변경, Observia 회의록, NCP 알림톡, 현장 AI 인프라 검토",
-              "color": "#2f8f46"
-          },
-          {
-              "name": "문서·보고·업무 생산성",
-              "tasks": 7,
-              "share": 10.8,
-              "note": "운영 매뉴얼, WBS 간트차트, 마스킹, 문서 검토, 엑셀 단축키 활용",
-              "color": "#c58612"
-          },
-          {
-              "name": "AI 비용·계정/도구 운영",
-              "tasks": 5,
-              "share": 7.7,
-              "note": "Claude API 토큰, Team Plan 가격, ChatGPT 요금제, RPD와 기본 모델 설정 확인",
-              "color": "#9a6b36"
-          }
-      ],
-      "toolUsage": [
-          {
-              "tool": "기술 설계/디버깅",
-              "tasks": 19,
-              "share": 29.2,
-              "primaryUse": "LangGraph, GitLab CI/CD, MSA, DB, 서버/로드밸런서 구성 검토",
-              "color": "#0f8b8d"
-          },
-          {
-              "tool": "제품/안전 AI 탐색",
-              "tasks": 7,
-              "share": 10.8,
-              "primaryUse": "RiskZero 사고예측, 설계변경, Observia 협업, 현장 AI 인프라",
-              "color": "#2f8f46"
-          },
-          {
-              "tool": "문서/업무 생산성",
-              "tasks": 7,
-              "share": 10.8,
-              "primaryUse": "운영 매뉴얼, 보고 프롬프트, WBS, 문서 검토와 마스킹",
-              "color": "#c58612"
-          },
-          {
-              "tool": "AI 운영/계정 확인",
-              "tasks": 5,
-              "share": 7.7,
-              "primaryUse": "Claude API 토큰, Team Plan, ChatGPT 요금제, RPD 용어 확인",
-              "color": "#9a6b36"
-          },
-          {
-              "tool": "개인/일반 상담",
-              "tasks": 11,
-              "share": 16.9,
-              "primaryUse": "게임, 하드웨어 성능, 건강·생활·뉴스성 질의",
-              "color": "#7d6ca7"
-          },
-          {
-              "tool": "미분류/짧은 대화",
-              "tasks": 16,
-              "share": 24.6,
-              "primaryUse": "제목 없음 또는 첨부만 있는 대화라 추가 태그 필요",
-              "color": "#5f6f8c"
-          }
-      ],
-      "topProjects": [
-          {
-              "rank": 1,
-              "target": "개발/아키텍처·DB",
-              "scale": "19대화",
-              "tasks": 19,
-              "theme": "LangGraph, GitLab, MSA, DB 표준, 서버/로드밸런서"
-          },
-          {
-              "rank": 2,
-              "target": "미분류/짧은 대화",
-              "scale": "16대화",
-              "tasks": 16,
-              "theme": "제목 없음, 짧은 입력, 첨부 기반 대화"
-          },
-          {
-              "rank": 3,
-              "target": "개인/게임·생활 질의",
-              "scale": "11대화",
-              "tasks": 11,
-              "theme": "Diablo 2, 하드웨어 성능, 생활·건강 질의"
-          },
-          {
-              "rank": 4,
-              "target": "RiskZero 제품·AI 인프라",
-              "scale": "7대화",
-              "tasks": 7,
-              "theme": "설계변경, 사고예측, Observia, NCP, LoRa"
-          },
-          {
-              "rank": 5,
-              "target": "문서·보고·업무 생산성",
-              "scale": "7대화",
-              "tasks": 7,
-              "theme": "운영 매뉴얼, WBS, 마스킹, 문서 검토"
-          },
-          {
-              "rank": 6,
-              "target": "AI 비용·계정 운영",
-              "scale": "5대화",
-              "tasks": 5,
-              "theme": "Claude/ChatGPT 요금, RPD, API token"
-          }
-      ],
-      "focusDays": [
-          {
-              "date": "2026-05-11",
-              "label": "05/11",
-              "tasks": 8,
-              "focus": "초기 Claude 계정·프로젝트·CLI·가격 확인"
-          },
-          {
-              "date": "2026-06-24",
-              "label": "06/24",
-              "tasks": 4,
-              "focus": "LangGraph, RPD, ChatGPT 요금, AI 모델 정보"
-          },
-          {
-              "date": "2026-05-22",
-              "label": "05/22",
-              "tasks": 4,
-              "focus": "사고예측, DB 규칙, 개인 질의"
-          },
-          {
-              "date": "2026-06-04",
-              "label": "06/04",
-              "tasks": 4,
-              "focus": "메모 저장, WBS, 실시간 질문, 일반 질의"
-          },
-          {
-              "date": "2026-05-15",
-              "label": "05/15",
-              "tasks": 3,
-              "focus": "게임 장문 대화와 DB/서버 오류"
-          },
-          {
-              "date": "2026-05-28",
-              "label": "05/28",
-              "tasks": 3,
-              "focus": "하드웨어 성능과 업무 보고"
-          },
-          {
-              "date": "2026-06-26",
-              "label": "06/26",
-              "tasks": 3,
-              "focus": "서버 인프라, HTTPS 인증서, Claude CLI"
-          },
-          {
-              "date": "2026-05-17",
-              "label": "05/17",
-              "tasks": 3,
-              "focus": "생활 질의와 첨부 기반 짧은 대화"
-          }
-      ],
-      "representativeTasks": [
-          {
-              "id": 1,
-              "date": "2026-06-22",
-              "title": "설계변경 업무 누락 방지 개선안",
-              "request": "8개 사용자 메시지와 52개 첨부 기반 설계변경 프로세스 개선 질의",
-              "result": "ECO/설계변경 업무 누락 방지를 위한 체크·개선 포인트 정리",
-              "tool": "제품/안전 AI 탐색",
-              "category": "RiskZero 제품·산업안전/AI 인프라",
-              "outputs": [
-                  "CHAT",
-                  "FILES"
-              ],
-              "status": "완료"
-          },
-          {
-              "id": 2,
-              "date": "2026-05-14",
-              "title": "GitLab CI/CD에서 Claude 코드 리뷰 설정",
-              "request": "18개 사용자 메시지, 12개 첨부 기반 코드 리뷰 자동화 검토",
-              "result": "GitLab merge request 자동 리뷰와 pr-agent 설정 방향 정리",
-              "tool": "기술 설계/디버깅",
-              "category": "개발/아키텍처·DB",
-              "outputs": [
-                  "CHAT",
-                  "FILES"
-              ],
-              "status": "완료"
-          },
-          {
-              "id": 3,
-              "date": "2026-06-24",
-              "title": "LangGraph 개념 이해하기",
-              "request": "14개 사용자 메시지와 4개 첨부 기반 LangGraph 개념 학습",
-              "result": "그래프 기반 LLM 워크플로와 에이전트 설계 개념 정리",
-              "tool": "기술 설계/디버깅",
-              "category": "개발/아키텍처·DB",
-              "outputs": [
-                  "CHAT",
-                  "FILES"
-              ],
-              "status": "완료"
-          },
-          {
-              "id": 4,
-              "date": "2026-06-25",
-              "title": "Obervia AI와 리스크제로 협업 회의록",
-              "request": "m4a 첨부 기반 회의록 생성 요청",
-              "result": "Claude export에는 오디오 첨부 처리 한계가 남아 전사/요약 도구 연계 필요",
-              "tool": "제품/안전 AI 탐색",
-              "category": "RiskZero 제품·산업안전/AI 인프라",
-              "outputs": [
-                  "CHAT",
-                  "FILES"
-              ],
-              "status": "진행"
-          },
-          {
-              "id": 5,
-              "date": "2026-05-22",
-              "title": "사고예측 축약",
-              "request": "20개 사용자 메시지 기반 사고예측 내용 축약",
-              "result": "RiskZero 제품/산업안전 메시지 정리",
-              "tool": "제품/안전 AI 탐색",
-              "category": "RiskZero 제품·산업안전/AI 인프라",
-              "outputs": [
-                  "CHAT"
-              ],
-              "status": "완료"
-          },
-          {
-              "id": 6,
-              "date": "2026-06-26",
-              "title": "서버 접속 정보 및 인프라 구성 정리",
-              "request": "서버 접속과 인프라 구성 정리 요청",
-              "result": "운영 인프라 문서화와 로드밸런서/HTTPS 설정 확인 흐름으로 연결",
-              "tool": "기술 설계/디버깅",
-              "category": "개발/아키텍처·DB",
-              "outputs": [
-                  "CHAT"
-              ],
-              "status": "완료"
-          }
-      ],
-      "monthlyUsage": [
-          {
-              "month": "2026-05",
-              "conversations": 36
-          },
-          {
-              "month": "2026-06",
-              "conversations": 29
-          }
-      ],
-      "fileTypeUsage": [
-          {
-              "ext": "unknown",
-              "count": 84
-          },
-          {
-              "ext": "jpg",
-              "count": 39
-          },
-          {
-              "ext": "txt",
-              "count": 13
-          },
-          {
-              "ext": "jpeg",
-              "count": 11
-          },
-          {
-              "ext": "png",
-              "count": 11
-          },
-          {
-              "ext": "sql",
-              "count": 6
-          },
-          {
-              "ext": "xlsx",
-              "count": 1
-          },
-          {
-              "ext": "pptx",
-              "count": 1
-          },
-          {
-              "ext": "m4a",
-              "count": 1
-          },
-          {
-              "ext": "hwp",
-              "count": 1
-          }
-      ],
-      "topTerms": [
-          {
-              "term": "Claude",
-              "count": 13
-          },
-          {
-              "term": "DB/데이터베이스",
-              "count": 7
-          },
-          {
-              "term": "서버/인프라",
-              "count": 6
-          },
-          {
-              "term": "AI",
-              "count": 6
-          },
-          {
-              "term": "설계변경",
-              "count": 5
-          },
-          {
-              "term": "GitLab/MSA",
-              "count": 5
-          },
-          {
-              "term": "문서",
-              "count": 5
-          },
-          {
-              "term": "RiskZero",
-              "count": 4
-          },
-          {
-              "term": "요금/토큰",
-              "count": 4
-          },
-          {
-              "term": "게임/생활",
-              "count": 4
-          }
-      ],
-      "modelUsage": [
-          {
-              "model": "human messages",
-              "count": 804
-          },
-          {
-              "model": "assistant messages",
-              "count": 809
-          }
-      ],
-      "sourceFiles": [
-          {
-              "fileName": "conversations.json",
-              "sourceType": "conversations",
-              "records": 65,
-              "role": "대화·메시지·첨부 원천",
-              "detail": "1,613메시지, 사용자 804/assistant 809, 첨부 168개, 첨부 대화 19건",
-              "verification": "uuid, name, summary, account.uuid, chat_messages 구조 확인"
-          },
-          {
-              "fileName": "memories.json",
-              "sourceType": "memories",
-              "records": 4,
-              "role": "계정별 기억/맥락 요약",
-              "detail": "4개 account_uuid의 memory text 10,122자에서 업무/개인 맥락 신호 확인",
-              "verification": "conversations_memory, account_uuid 구조 확인"
-          },
-          {
-              "fileName": "users.json",
-              "sourceType": "users",
-              "records": 14,
-              "role": "계정 디렉터리 매핑",
-              "detail": "riskzero.kr 계정 14개 중 대화 export 활성 계정 8개 매핑",
-              "verification": "uuid, full_name, email domain 확인, 전화번호/이메일 원문 미표시"
-          },
-          {
-              "fileName": "019e1ef4-bf3e-73ea-ab4d-20d8f279b86e.json",
-              "sourceType": "project",
-              "records": 1,
-              "role": "Claude 프로젝트",
-              "detail": "scsms 프로젝트, private, 문서 0건",
-              "verification": "project uuid/name/is_private/docs 확인"
-          },
-          {
-              "fileName": "019e19f4-3aeb-7315-95b4-7952dcd1ba06.json",
-              "sourceType": "project",
-              "records": 1,
-              "role": "Claude 프로젝트",
-              "detail": "이름 미지정 private 프로젝트, 문서 0건",
-              "verification": "project uuid/name/is_private/docs 확인"
-          },
-          {
-              "fileName": "019e19f3-0767-74a3-96be-b1370877e3a1.json",
-              "sourceType": "project",
-              "records": 1,
-              "role": "Claude 프로젝트",
-              "detail": "이름 미지정 private 프로젝트, 문서 0건",
-              "verification": "project uuid/name/is_private/docs 확인"
-          },
-          {
-              "fileName": "019e1593-6895-705d-bc09-fca23444cc7b.json",
-              "sourceType": "project",
-              "records": 1,
-              "role": "Claude 프로젝트",
-              "detail": "Riskzero 프로젝트, org tool search 목적 설명, 문서 0건",
-              "verification": "project uuid/name/description/docs 확인"
-          },
-          {
-              "fileName": "019e158d-ca08-703a-b4b2-a41e7ad59245.json",
-              "sourceType": "project",
-              "records": 1,
-              "role": "Claude 프로젝트",
-              "detail": "gh 프로젝트, private, 문서 0건",
-              "verification": "project uuid/name/is_private/docs 확인"
-          },
-          {
-              "fileName": "019e14da-9543-728e-8057-adb4fb806d74.json",
-              "sourceType": "project",
-              "records": 1,
-              "role": "Claude starter 프로젝트",
-              "detail": "How to use Claude 프로젝트, starter, 문서 1건 18,195자",
-              "verification": "project docs[0].content 길이와 created_at 확인"
-          }
-      ],
-      "usageTopics": [
-          {
-              "topic": "개발/아키텍처·DB",
-              "conversations": 19,
-              "messages": 384,
-              "messageShare": 23.8,
-              "attachments": 37,
-              "businessUse": "개발 표준, 배포 방식, 코드 리뷰 자동화, DB/인프라 설계 판단 보조",
-              "evidence": "GitLab CI/CD, LangGraph, MSA, Docker-compose vs k3s, TimescaleDB, 서버/로드밸런서",
-              "color": "#0f8b8d"
-          },
-          {
-              "topic": "개인/게임·생활 질의",
-              "conversations": 11,
-              "messages": 1021,
-              "messageShare": 63.3,
-              "attachments": 45,
-              "businessUse": "업무성과와 분리해서 비용/활용률 판단에 반영할 개인성 사용량",
-              "evidence": "Diablo 2 장문 대화, 하드웨어 게임 성능, 생활·건강·뉴스성 질의",
-              "color": "#7d6ca7"
-          },
-          {
-              "topic": "RiskZero 제품·산업안전/AI 인프라",
-              "conversations": 7,
-              "messages": 90,
-              "messageShare": 5.6,
-              "attachments": 56,
-              "businessUse": "RiskZero 제품 메시지, 현장 안전 AI, 협업 회의록, 설계변경 업무 개선 보조",
-              "evidence": "설계변경 개선안, Observia 협업 회의록, 사고예측, LoRa, NCP 알림톡",
-              "color": "#2f8f46"
-          },
-          {
-              "topic": "문서·보고·업무 생산성",
-              "conversations": 7,
-              "messages": 34,
-              "messageShare": 2.1,
-              "attachments": 3,
-              "businessUse": "운영 매뉴얼, 보고 프롬프트, 문서 검토, 일정표 전환과 마스킹 기준 정리",
-              "evidence": "프로젝트 코드 기반 운영 매뉴얼, WBS 간트차트, HWP 검토, 연락처 마스킹",
-              "color": "#c58612"
-          },
-          {
-              "topic": "AI 비용·계정/도구 운영",
-              "conversations": 5,
-              "messages": 24,
-              "messageShare": 1.5,
-              "attachments": 0,
-              "businessUse": "구독/토큰/모델 설정을 비용 관리와 운영 체크리스트로 연결",
-              "evidence": "Claude API token usage, 팀플랜 가격, ChatGPT 요금제, RPD, opus 기본 모델",
-              "color": "#9a6b36"
-          },
-          {
-              "topic": "미분류/짧은 대화",
-              "conversations": 16,
-              "messages": 60,
-              "messageShare": 3.7,
-              "attachments": 27,
-              "businessUse": "추가 제목/목적 태그 없이는 업무 활용으로 단정하기 어려운 기록",
-              "evidence": "제목 없음, 인사, 빈 대화, 첨부만 있는 짧은 대화",
-              "color": "#5f6f8c"
-          }
-      ],
-      "accountUsage": [
-          {
-              "accountLabel": "wody",
-              "conversations": 19,
-              "messages": 1131,
-              "attachments": 59,
-              "primaryUse": "개인/게임·생활 질의",
-              "verification": "users.json uuid 매핑, conversations.account.uuid 19건"
-          },
-          {
-              "accountLabel": "배현철",
-              "conversations": 16,
-              "messages": 260,
-              "attachments": 73,
-              "primaryUse": "개발/아키텍처·DB",
-              "verification": "users.json uuid 매핑, MSA/GitLab/LangGraph/설계변경 대화 확인"
-          },
-          {
-              "accountLabel": "norisk",
-              "conversations": 4,
-              "messages": 62,
-              "attachments": 1,
-              "primaryUse": "RiskZero 제품·산업안전/AI 인프라",
-              "verification": "users.json uuid 매핑, 사고예측/NCP/DB 인덱스 대화 확인"
-          },
-          {
-              "accountLabel": "myGu",
-              "conversations": 6,
-              "messages": 50,
-              "attachments": 7,
-              "primaryUse": "DB 규칙·메모·짧은 대화",
-              "verification": "users.json uuid 매핑, memories.json에도 계정 memory 존재"
-          },
-          {
-              "accountLabel": "김성진",
-              "conversations": 3,
-              "messages": 36,
-              "attachments": 0,
-              "primaryUse": "아키텍처·Claude 사용법",
-              "verification": "users.json uuid 매핑, 소프트웨어 아키텍처/실시간 질문 대화 확인"
-          },
-          {
-              "accountLabel": "성진",
-              "conversations": 6,
-              "messages": 32,
-              "attachments": 27,
-              "primaryUse": "첨부 기반 짧은 대화",
-              "verification": "users.json uuid 매핑, 제목 없음/첨부 중심 대화 확인"
-          },
-          {
-              "accountLabel": "전우성",
-              "conversations": 8,
-              "messages": 32,
-              "attachments": 0,
-              "primaryUse": "문서·업무 생산성",
-              "verification": "users.json uuid 매핑, 운영 매뉴얼/일일 업무 보고/CLI 설치 대화 확인"
-          },
-          {
-              "accountLabel": "김재우",
-              "conversations": 3,
-              "messages": 10,
-              "attachments": 1,
-              "primaryUse": "AI 용어·협업 회의록",
-              "verification": "users.json uuid 매핑, RPD/Observia 회의록 대화 확인"
-          }
-      ],
-      "projectExports": [
-          {
-              "id": "019e14da-9543-728e-8057-adb4fb806d74",
-              "name": "How to use Claude",
-              "visibility": "starter/public",
-              "docs": 1,
-              "fileName": "019e14da-9543-728e-8057-adb4fb806d74.json",
-              "createdAt": "2026-05-11",
-              "updatedAt": "2026-05-11",
-              "useCase": "Claude 사용법 starter 문서 보관",
-              "verification": "docs 1건, content 18,195자"
-          },
-          {
-              "id": "019e158d-ca08-703a-b4b2-a41e7ad59245",
-              "name": "gh",
-              "visibility": "private",
-              "docs": 0,
-              "fileName": "019e158d-ca08-703a-b4b2-a41e7ad59245.json",
-              "createdAt": "2026-05-11",
-              "updatedAt": "2026-05-11",
-              "useCase": "GitHub/개발 작업용 프로젝트 공간",
-              "verification": "docs 0건"
-          },
-          {
-              "id": "019e1593-6895-705d-bc09-fca23444cc7b",
-              "name": "Riskzero",
-              "visibility": "org",
-              "docs": 0,
-              "fileName": "019e1593-6895-705d-bc09-fca23444cc7b.json",
-              "createdAt": "2026-05-11",
-              "updatedAt": "2026-05-11",
-              "useCase": "RiskZero 관련 조직 도구 검색/질의 공간",
-              "verification": "description에 connected tools 검색 목적 명시, docs 0건"
-          },
-          {
-              "id": "019e19f3-0767-74a3-96be-b1370877e3a1",
-              "name": "미지정 프로젝트 A",
-              "visibility": "private",
-              "docs": 0,
-              "fileName": "019e19f3-0767-74a3-96be-b1370877e3a1.json",
-              "createdAt": "2026-05-12",
-              "updatedAt": "2026-05-16",
-              "useCase": "이름 없는 개인 프로젝트 공간",
-              "verification": "name 빈 값, docs 0건"
-          },
-          {
-              "id": "019e19f4-3aeb-7315-95b4-7952dcd1ba06",
-              "name": "미지정 프로젝트 B",
-              "visibility": "private",
-              "docs": 0,
-              "fileName": "019e19f4-3aeb-7315-95b4-7952dcd1ba06.json",
-              "createdAt": "2026-05-12",
-              "updatedAt": "2026-05-17",
-              "useCase": "이름 없는 개인 프로젝트 공간",
-              "verification": "name 빈 값, docs 0건"
-          },
-          {
-              "id": "019e1ef4-bf3e-73ea-ab4d-20d8f279b86e",
-              "name": "scsms",
-              "visibility": "private",
-              "docs": 0,
-              "fileName": "019e1ef4-bf3e-73ea-ab4d-20d8f279b86e.json",
-              "createdAt": "2026-05-13",
-              "updatedAt": "2026-05-13",
-              "useCase": "SCSMS 관련 프로젝트 공간",
-              "verification": "docs 0건"
-          }
-      ],
-      "memoryUsage": [
-          {
-              "accountLabel": "김재우",
-              "characters": 1066,
-              "signal": "RiskZero/Observia 협업 회의록, AI API·PRD 용어 학습 맥락",
-              "verification": "memories.json account_uuid 2a804744... 매핑"
-          },
-          {
-              "accountLabel": "myGu",
-              "characters": 1204,
-              "signal": "업무 맥락은 거의 없고 기억력/집중 관련 개인 질의 신호",
-              "verification": "memories.json account_uuid d6438e01... 매핑"
-          },
-          {
-              "accountLabel": "배현철",
-              "characters": 4412,
-              "signal": "설계변경/ECO, MSA 백엔드, gRPC/REST, CQRS 등 업무 기술 맥락",
-              "verification": "memories.json account_uuid d130fb4c... 매핑"
-          },
-          {
-              "accountLabel": "wody",
-              "characters": 3440,
-              "signal": "Diablo 2와 생활 질의가 top of mind로 요약",
-              "verification": "memories.json account_uuid 67695cb8... 매핑"
-          }
-      ],
-      "userDirectory": {
-          "totalUsers": 14,
-          "activeAccounts": 8,
-          "mappedAccounts": 8,
-          "domain": "riskzero.kr",
-          "privacyNote": "users.json은 계정명 매핑에만 사용하고 이메일 주소와 전화번호 원문은 대시보드에 노출하지 않습니다."
-      },
-      "patterns": [
-          "Claude export는 65개 대화 중 38개가 업무형 활용이고, 개인/게임·생활 질의 11개는 메시지 기준 63.3%를 차지합니다.",
-          "첨부 기반 대화는 19건이며 txt, 이미지, sql, xlsx, pptx, m4a, hwp 파일을 함께 다룬 기록이 확인됩니다.",
-          "개발/아키텍처·DB 활용은 19대화, 384메시지, 첨부 37개로 업무형 Claude 사용 중 가장 구체적인 실행 신호입니다.",
-          "6월 신규 사용 이력에는 설계변경 업무 개선, LangGraph 학습, Observia 협업 회의록, 서버/로드밸런서 설정이 추가됐습니다.",
-          "프로젝트 export 6건 중 운영 프로젝트는 대부분 문서가 비어 있어 프로젝트 공간 존재는 확인되지만 산출물 근거는 conversations 중심으로 봐야 합니다.",
-          "users.json과 memories.json을 결합하면 활성 계정 8개와 업무/개인 맥락 4개 계정의 memory 신호를 함께 검증할 수 있습니다."
-      ]
-  },
+  chatGptExport: claudeExportUsageData,
 };

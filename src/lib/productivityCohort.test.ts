@@ -95,12 +95,12 @@ describe("buildProductivityExecutiveModel", () => {
     expect(model.axKpis.output.peakShare).toBeCloseTo((240 / 771) * 100, 5);
   });
 
-  it("separates active Claude seats from accounts with spend activity", () => {
+  it("reconciles active Claude seats with the latest spend activity", () => {
     expect(initialClaudeTeamUsageData.source.verification.memberAccounts).toBe(19);
     expect(initialClaudeTeamUsageData.source.verification.activeMemberAccounts).toBe(19);
     expect(initialClaudeTeamUsageData.users).toHaveLength(19);
     expect(initialClaudeTeamUsageData.activeUsers).toBe(19);
-    expect(initialClaudeTeamUsageData.spendUsers).toBe(18);
+    expect(initialClaudeTeamUsageData.spendUsers).toBe(19);
   });
 
   it("reconciles monthly, department, and category totals to the source total", () => {
