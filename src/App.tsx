@@ -967,25 +967,25 @@ function App() {
         },
         {
           icon: <Bot size={19} />,
+          label: "사용 이력 계정",
+          value: `${claudeTeamUsageData.spendUsers}/${claudeTeamUsageData.licensedUsers}명`,
+          detail: `요청 ${numberFormat.format(claudeTeamUsageData.totalRequests)}건`,
+          tone: "steel",
+        },
+        {
+          icon: <Sparkles size={19} />,
           label: "Claude Code",
           value: claudeTeamUsageData.totalCodeLines > 0
             ? `${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄`
             : formatTokens(claudeTeamUsageData.totalTokens),
           detail: `${claudeTeamUsageData.codeUsers}명 사용`,
-          tone: "steel",
-        },
-        {
-          icon: <Sparkles size={19} />,
-          label: "분석된 활용 기록",
-          value: `${numberFormat.format(aiUsageInsight.totalRecords)}건`,
-          detail: "Claude Export + Genspark",
           tone: "green",
         },
         {
-          icon: <FileSpreadsheet size={19} />,
-          label: "Gamma Drive 산출",
-          value: `${numberFormat.format(gammaDriveUsageData.deckCount)}개`,
-          detail: `약 ${numberFormat.format(gammaDriveUsageData.totalSlides)}장`,
+          icon: <Activity size={19} />,
+          label: "Workspace 활동",
+          value: `${numberFormat.format(workspaceUsageData.totalEvents)}건`,
+          detail: `${workspaceUsageData.appUsage.length}개 앱`,
           tone: "amber",
         },
       ],
@@ -1373,89 +1373,7 @@ function App() {
             footer={formatWon(aiToolApprovalData.namedCorporateCardKrw)}
           />
         </section>
-      ) : activeView === "adoption" ? (
-        <section className="metric-grid" aria-label="AI 정액제 활용 핵심 지표">
-          <MetricCard
-            icon={<UserCheck size={21} />}
-            label="관리 생성형 AI 서비스"
-            tone="teal"
-            value="5종"
-            footer={`Gemini · Claude Export · Genspark · Claude Team · Gamma ${gammaUsageData.source.status}`}
-          />
-          <MetricCard
-            icon={<Sparkles size={21} />}
-            label="수집된 활용 기록"
-            tone="green"
-            value={`${numberFormat.format(aiUsageInsight.totalRecords)}건`}
-            footer="Claude export와 Genspark 작업 로그 통합"
-          />
-          <MetricCard
-            icon={<Bot size={21} />}
-            label="Claude Team 사용"
-            tone="amber"
-            value={
-              claudeTeamUsageData.totalCodeLines > 0
-                ? `${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄`
-                : formatTokens(claudeTeamUsageData.totalTokens)
-            }
-            footer={
-              claudeTeamUsageData.totalCodeLines > 0
-                ? `${formatPreciseUsd(claudeTeamUsageData.totalNetSpendUsd)} · ${formatTokens(claudeTeamUsageData.totalTokens)} tokens`
-                : `${formatPreciseUsd(claudeTeamUsageData.totalNetSpendUsd)} · 요청 ${numberFormat.format(claudeTeamUsageData.totalRequests)}건`
-            }
-          />
-          <MetricCard
-            icon={<Gauge size={21} />}
-            label="Gamma API 확인"
-            tone="steel"
-            value={
-              typeof gammaUsageData.latestCreditsRemaining === "number"
-                ? `${numberFormat.format(gammaUsageData.latestCreditsRemaining)} cr`
-                : gammaUsageData.trackedGenerations > 0
-                ? `${numberFormat.format(gammaUsageData.totalCreditsDeducted)} cr`
-                : `${numberFormat.format(gammaUsageData.themeCount + gammaUsageData.folderCount)}개`
-            }
-            footer={
-              typeof gammaUsageData.latestCreditsRemaining === "number"
-                ? `${gammaUsageData.creditSource === "web-crawl" ? "웹 크롤링" : "Generation"} · 테마 ${numberFormat.format(gammaUsageData.themeCount)}`
-                : gammaUsageData.trackedGenerations > 0
-                ? `Generation ${numberFormat.format(gammaUsageData.trackedGenerations)}건 · 잔여 ${gammaUsageData.latestCreditsRemaining ?? "-"}`
-                : `테마 ${numberFormat.format(gammaUsageData.themeCount)} · 폴더 ${numberFormat.format(gammaUsageData.folderCount)}`
-            }
-          />
-        </section>
-      ) : activeView === "genspark" ? (
-        <section className="metric-grid" aria-label="AI 활용 상세 분석 핵심 지표">
-          <MetricCard
-            icon={<Sparkles size={21} />}
-            label="통합 분석 대상"
-            tone="teal"
-            value={`${numberFormat.format(detailedUsageRecords)}건`}
-            footer={`ChatGPT ${numberFormat.format(chatGptUsageData.totalConversations)}대화 + 기존 ${numberFormat.format(aiUsageInsight.totalRecords)}건`}
-          />
-          <MetricCard
-            icon={<Search size={21} />}
-            label="실무 산출형 활용"
-            tone="green"
-            value={`${numberFormat.format(aiUsageInsight.outputOrientedRecords)}건`}
-            footer="제안·개발·문서·데이터 산출물 중심"
-          />
-          <MetricCard
-            icon={<FileSpreadsheet size={21} />}
-            label="Drive 저장 산출물"
-            tone="amber"
-            value={`${numberFormat.format(latestDriveFileTotal)}개`}
-            footer={`${driveArtifactsByOwner} · 하위 폴더 ${numberFormat.format(driveArtifactRepositoryData.totals.nestedFiles)}개`}
-          />
-          <MetricCard
-            icon={<Bot size={21} />}
-            label="ChatGPT Export"
-            tone="steel"
-            value={`${numberFormat.format(chatGptUsageData.totalConversations)}대화`}
-            footer={`${numberFormat.format(chatGptUsageData.totalMessages)} messages · 자산 ${numberFormat.format(chatGptUsageData.conversationAssetFiles)}개`}
-          />
-        </section>
-      ) : (
+      ) : activeView === "adoption" || activeView === "genspark" ? null : (
         <section className="metric-grid" aria-label="핵심 비용 지표">
           <MetricCard
             icon={<CircleDollarSign size={21} />}
@@ -3190,8 +3108,70 @@ function GensparkUsageView({
   const gammaDeckCount = gammaDriveUsageData.deckCount;
   const gammaTotalSlides = gammaDriveUsageData.totalSlides;
   const gammaTopArtifact = gammaDriveUsageData.artifacts[0];
+  const [analysisSection, setAnalysisSection] = useState<
+    "patterns" | "conversations" | "outputs" | "evidence"
+  >("patterns");
+  const analysisSections: Array<{
+    key: "patterns" | "conversations" | "outputs" | "evidence";
+    label: string;
+    detail: string;
+    icon: ReactNode;
+  }> = [
+    {
+      key: "patterns",
+      label: "업무 패턴",
+      detail: `${insight.topicInsights.length}개 업무군`,
+      icon: <ListOrdered size={18} />,
+    },
+    {
+      key: "conversations",
+      label: "대화 분석",
+      detail: `ChatGPT ${numberFormat.format(chatGptUsageData.totalConversations)}건`,
+      icon: <Bot size={18} />,
+    },
+    {
+      key: "outputs",
+      label: "산출물",
+      detail: `Drive ${numberFormat.format(driveTrendTotalFiles)}개`,
+      icon: <FileText size={18} />,
+    },
+    {
+      key: "evidence",
+      label: "원천 검증",
+      detail: claudeExport ? `${numberFormat.format(claudeExport.totalMessages)}메시지` : "수집 대기",
+      icon: <ShieldCheck size={18} />,
+    },
+  ];
   return (
     <div className="content-grid ai-insight-view">
+      <section className="analysis-section-switcher panel-wide" aria-label="AI 활용 상세 분석 범위">
+        <div className="analysis-switcher-copy">
+          <span className="eyebrow">Analysis Scope</span>
+          <strong>확인할 분석 범위</strong>
+          <span>업무 흐름, 대화, 산출물, 원천 데이터를 분리했습니다.</span>
+        </div>
+        <div className="analysis-section-tabs" role="tablist" aria-label="상세 분석 보기">
+          {analysisSections.map((section) => (
+            <button
+              aria-selected={analysisSection === section.key}
+              className={`analysis-section-tab ${analysisSection === section.key ? "is-active" : ""}`}
+              key={section.key}
+              onClick={() => setAnalysisSection(section.key)}
+              role="tab"
+              type="button"
+            >
+              {section.icon}
+              <span>
+                <strong>{section.label}</strong>
+                <small>{section.detail}</small>
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {analysisSection === "patterns" && (
+        <>
       <section className="panel panel-large">
         <div className="panel-header">
           <div>
@@ -3268,7 +3248,10 @@ function GensparkUsageView({
           ))}
         </div>
       </section>
+        </>
+      )}
 
+      {analysisSection === "conversations" && (
       <section className="panel panel-wide">
         <div className="panel-header">
           <div>
@@ -3407,8 +3390,9 @@ function GensparkUsageView({
           </div>
         </div>
       </section>
+      )}
 
-      {gensparkDrive && (
+      {analysisSection === "outputs" && gensparkDrive && (
         <section className="panel panel-wide">
           <div className="panel-header">
             <div>
@@ -3528,6 +3512,7 @@ function GensparkUsageView({
         </section>
       )}
 
+      {analysisSection === "outputs" && (
       <section className="panel panel-wide gamma-drive-panel">
         <div className="panel-header">
           <div>
@@ -3592,8 +3577,9 @@ function GensparkUsageView({
           </div>
         </div>
       </section>
+      )}
 
-      {claudeExport && (
+      {analysisSection === "evidence" && claudeExport && (
         <section className="panel panel-wide">
           <div className="panel-header">
             <div>
@@ -3678,6 +3664,7 @@ function GensparkUsageView({
         </section>
       )}
 
+      {analysisSection === "outputs" && (
       <section className="panel panel-wide">
         <div className="panel-header">
           <div>
@@ -3861,6 +3848,7 @@ function GensparkUsageView({
           </div>
         </div>
       </section>
+      )}
 
     </div>
   );
@@ -4048,8 +4036,6 @@ function AdoptionView({
     hasClaudeCodeLines ? b.codeLines - a.codeLines : b.netSpendUsd - a.netSpendUsd,
   )[0];
   const gammaMonthlyUsd = GAMMA_MONTHLY_PLAN_USD;
-  const gammaDeckCount = gammaDriveUsageData.deckCount;
-  const gammaTotalSlides = gammaDriveUsageData.totalSlides;
   const gammaTrackedLabel =
     typeof gammaUsageData.latestCreditsRemaining === "number"
       ? `${numberFormat.format(gammaUsageData.latestCreditsRemaining)} credits`
@@ -4070,7 +4056,6 @@ function AdoptionView({
     value: string;
     metric: string;
     detail: string;
-    note: string;
     color: string;
     icon: ReactNode;
   }> = [
@@ -4084,7 +4069,6 @@ function AdoptionView({
       detail: mostUsedGeminiApp
         ? `최다 앱 ${mostUsedGeminiApp.app} · ${numberFormat.format(mostUsedGeminiApp.events)}건`
         : "앱별 이벤트 수집 대기",
-      note: "단일 관리 계정 기준으로 사용자 수 대신 이벤트와 앱 사용 흐름을 봅니다.",
       color: "#0f8b8d",
       icon: <Sparkles size={18} />,
     },
@@ -4098,7 +4082,6 @@ function AdoptionView({
       detail: chatGptExport
         ? `${numberFormat.format(chatGptExport.totalMessages)} messages · ${numberFormat.format(chatGptExport.totalAttachments)} attachments`
         : "Claude export 업로드 필요",
-      note: chatGptExport?.patterns[0] ?? "Claude export를 주기적으로 가져오면 업무 주제별 활용 추이가 갱신됩니다.",
       color: "#e85d4f",
       icon: <Bot size={18} />,
     },
@@ -4110,7 +4093,6 @@ function AdoptionView({
       value: `${numberFormat.format(gensparkUsageData.totalTasks)}건`,
       metric: "작업 기록",
       detail: `${numberFormat.format(gensparkUsageData.detailedTasks)}건 정밀 분석 · ${numberFormat.format(gensparkUsageData.generatedFileMappedTasks)}건 파일 매핑`,
-      note: gensparkUsageData.patterns[0],
       color: "#c58612",
       icon: <FileSpreadsheet size={18} />,
     },
@@ -4124,7 +4106,6 @@ function AdoptionView({
       detail: hasClaudeCodeLines
         ? `${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄 · ${formatPreciseUsd(claudeTeamUsageData.totalNetSpendUsd)}`
         : `${numberFormat.format(claudeTeamUsageData.totalRequests)} requests · ${formatPreciseUsd(claudeTeamUsageData.totalNetSpendUsd)}`,
-      note: claudeTeamUsageData.insights[2],
       color: "#5f6f8c",
       icon: <LineChart size={18} />,
     },
@@ -4136,159 +4117,17 @@ function AdoptionView({
       value: gammaUsageData.apiKeyConfigured ? gammaTrackedLabel : "대기",
       metric: gammaUsageData.trackedGenerations > 0 ? "차감 크레딧" : "조회 가능 항목",
       detail: gammaDetail,
-      note: gammaUsageData.source.note,
       color: "#2f8f46",
       icon: <Activity size={18} />,
     },
   ];
-  const readyServiceCount = serviceCards.filter((service) => service.statusTone === "ok").length;
-  const outputRecords = gensparkUsageData.insightAnalysis.outputOrientedRecords;
-  const guideNeededCount = gensparkUsageData.insightAnalysis.guideNeededCount;
-  const gammaCreditsCollected = typeof gammaUsageData.latestCreditsRemaining === "number";
-  const axDimensions = [
-    {
-      name: "활용 확산",
-      score: Math.min(20, 8 + readyServiceCount * 2),
-      signal: `${readyServiceCount}/5 서비스 데이터`,
-      note: "주요 생성형 AI 서비스를 한 화면에서 추적하는 기반은 갖춰졌습니다.",
-      color: "#0f8b8d",
-    },
-    {
-      name: "산출 생산성",
-      score: Math.min(20, 10 + Math.round(outputRecords / 120) + Math.min(3, Math.floor(gammaDeckCount / 4))),
-      signal: `${numberFormat.format(outputRecords)}건 + Gamma ${numberFormat.format(gammaDeckCount)}개`,
-      note: "제안서, 개발, 문서, 대시보드처럼 실무 산출물 중심 사용이 강합니다.",
-      color: "#2f8f46",
-    },
-    {
-      name: "프로세스 내재화",
-      score: Math.min(
-        20,
-        8 +
-          (workspaceUsageData.totalEvents >= 50 ? 2 : 0) +
-          ((hasClaudeCodeLines ? claudeTeamUsageData.totalCodeLines >= 20000 : claudeTeamUsageData.totalTokens >= 1000000000) ? 3 : 0) +
-          (gensparkUsageData.generatedFileMappedTasks > 0 ? 2 : 0),
-      ),
-      signal: "개발·제안 업무 중심",
-      note: "일부 핵심 업무에는 들어왔지만, 전 부서 반복 프로세스까지 닫히지는 않았습니다.",
-      color: "#c58612",
-    },
-    {
-      name: "거버넌스·개선",
-      score: Math.min(
-        20,
-        9 +
-          (guideNeededCount > 0 ? 2 : 0) +
-          (claudeTeamUsageData.totalNetSpendUsd > 0 ? 2 : 0) +
-          (gammaCreditsCollected ? 2 : 0) +
-          (gammaDeckCount > 0 ? 1 : 0),
-      ),
-      signal: `${numberFormat.format(guideNeededCount)}개 가이드 후보`,
-      note: "비용·사용 현황은 보이기 시작했지만 성과 기준과 프롬프트 표준화가 필요합니다.",
-      color: "#7d6ca7",
-    },
-  ];
-  const axLevelScore = Math.round((axDimensions.reduce((sum, item) => sum + item.score, 0) / axDimensions.length / 4) * 10) / 10;
-  const axLevelLabel =
-    axLevelScore < 2.5
-      ? "AX 탐색기"
-      : axLevelScore < 3.5
-        ? "업무 생산성 도입기"
-        : axLevelScore < 4.3
-          ? "AX 확산·내재화 전환기"
-          : "AX 운영 고도화 단계";
-  const axStrengths = [
-    `5종 서비스 중 ${readyServiceCount}종에서 실제 수집 신호가 확인됩니다.`,
-    `Claude export·Genspark 통합 분석 ${numberFormat.format(gensparkUsageData.insightAnalysis.totalRecords)}건 중 산출형 활용이 ${numberFormat.format(outputRecords)}건입니다.`,
-    hasClaudeCodeLines
-      ? `Claude Team은 ${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄의 Claude Code 활용과 ${formatTokens(claudeTeamUsageData.totalTokens)} 토큰 사용이 확인됩니다.`
-      : `Claude Team은 6월 상반기 spend report에서 ${formatTokens(claudeTeamUsageData.totalTokens)} 토큰과 ${numberFormat.format(claudeTeamUsageData.totalRequests)}건 요청이 확인됩니다.`,
-    `Gamma Drive 폴더에서 ${numberFormat.format(gammaDeckCount)}개 발표자료와 약 ${numberFormat.format(gammaTotalSlides)}장 분량의 스마트 안전관리 제안 산출물이 확인됩니다.`,
-    "개발, 제안, 문서 작성, 회의록 정리처럼 실제 업무 산출물로 이어지는 활용 패턴이 확인됩니다.",
-  ];
-  const axGaps = [
-    gammaDeckCount > 0
-      ? "Gamma 산출물은 확보됐지만 유사 deck이 많아 최종본 선별과 근거 검증 태그가 필요합니다."
-      : gammaCreditsCollected
-      ? "Gamma 활용 흔적은 확인되지만 실제 제안 성과와 연결되는 최종 산출물 판별이 필요합니다."
-      : "Gamma 활용은 아직 최종 산출물 중심으로 충분히 검증되지 않았습니다.",
-    "Claude 사용 이력에는 개인/게임·생활 질의가 섞여 있어 업무 활용도와 개인 활용도를 분리해서 관리해야 합니다.",
-    "산출물 생산은 활발하지만 제출, 재사용, 고객 반응, 업무시간 절감 같은 성과 기준은 아직 약합니다.",
-    "반복 업무별 프롬프트 템플릿과 검증 기준이 표준화되지 않아 재작업 가능성이 남아 있습니다.",
-  ];
-  const axActions = [
-    "제안서, 개발 오류 해결, 회의록, 법령 검토 등 핵심 업무별 표준 프롬프트 템플릿을 만든다.",
-    "부서별 대표 업무 2-3개를 정해 AI 적용 전후의 산출 품질, 처리 시간, 재사용률을 비교한다.",
-    "Gamma Drive 폴더의 신규 deck을 제목, 주제, 슬라이드 수, 최종본 여부로 분류해 영업 산출물 저장소로 관리한다.",
-    "월 1회 AX 리뷰에서 비용, 활용량, 산출물, 보완 과제를 같은 기준으로 보고한다.",
-  ];
-
   return (
     <div className="content-grid adoption-view">
-      <section className="panel panel-wide ax-insight-panel">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">AX Diagnosis</span>
-            <h2>사내 AX 수준과 실행 인사이트</h2>
-          </div>
-          <span className="state-pill ok">Level {axLevelScore.toFixed(1)} / 5</span>
-        </div>
-        <div className="ax-insight-layout">
-          <div className="ax-score-card">
-            <span>현재 수준</span>
-            <strong>{axLevelScore.toFixed(1)} / 5</strong>
-            <b>{axLevelLabel}</b>
-            <p>
-              현재는 산출 생산성과 일부 핵심 업무 내재화가 먼저 올라온 상태입니다.
-              전사 표준 프로세스와 성과 관리까지 닫히면 다음 단계로 넘어갈 수 있습니다.
-            </p>
-            <div className="ax-score-track" aria-label={`AX 수준 ${axLevelScore.toFixed(1)}점`}>
-              <span style={{ width: `${Math.min((axLevelScore / 5) * 100, 100)}%` }} />
-            </div>
-          </div>
-          <div className="ax-dimension-grid">
-            {axDimensions.map((dimension) => (
-              <article className="ax-dimension-card" key={dimension.name}>
-                <div>
-                  <strong>{dimension.name}</strong>
-                  <span>{dimension.signal}</span>
-                </div>
-                <b>{dimension.score}/20</b>
-                <div className="ax-dimension-meter">
-                  <span style={{ width: `${dimension.score * 5}%`, background: dimension.color }} />
-                </div>
-                <small>{dimension.note}</small>
-              </article>
-            ))}
-          </div>
-        </div>
-        <div className="ax-insight-columns">
-          <div className="ax-insight-column">
-            <h3>잘된 점</h3>
-            {axStrengths.slice(0, 3).map((item) => (
-              <p key={item}>{item}</p>
-            ))}
-          </div>
-          <div className="ax-insight-column">
-            <h3>미비점</h3>
-            {axGaps.slice(0, 3).map((item) => (
-              <p key={item}>{item}</p>
-            ))}
-          </div>
-          <div className="ax-insight-column">
-            <h3>보완 대책</h3>
-            {axActions.slice(0, 3).map((item) => (
-              <p key={item}>{item}</p>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section className="panel panel-wide">
         <div className="panel-header">
           <div>
             <span className="eyebrow">Service Portfolio</span>
-            <h2>생성형 AI 서비스별 활용 현황</h2>
+            <h2>서비스 채택 및 연결 현황</h2>
           </div>
           <span className="state-pill neutral">5종 관리</span>
         </div>
@@ -4310,17 +4149,8 @@ function AdoptionView({
                 <span>{service.metric}</span>
               </div>
               <p>{service.detail}</p>
-              <small>{service.note}</small>
             </article>
           ))}
-        </div>
-        <div className="insight-box">
-          <ShieldCheck size={18} />
-          <div>
-            <strong>활용성 탭은 서비스별 원천 데이터 상태를 함께 보여줍니다.</strong>
-            <span>Gemini는 단일 계정 기준이라 활성 사용자 지표를 제거하고 이벤트·앱 사용량 중심으로 바꿨습니다.</span>
-            <span>Gamma는 API 테마·폴더와 Generation ID, 웹 크레딧 스냅샷을 기준으로 연결 상태를 추적합니다.</span>
-          </div>
         </div>
       </section>
 
@@ -4328,7 +4158,7 @@ function AdoptionView({
         <div className="panel-header">
           <div>
             <span className="eyebrow">Gemini Workspace</span>
-            <h2>{workspaceUsageData.source.period} 이벤트 추이</h2>
+            <h2>Gemini Workspace 활동 추이</h2>
           </div>
           <span className={`state-pill ${apiStatusTone(workspaceUsageData.source.status)}`}>
             {workspaceUsageData.source.status}
@@ -4363,7 +4193,7 @@ function AdoptionView({
         <div className="panel-header">
           <div>
             <span className="eyebrow">Apps</span>
-            <h2>Gemini 앱별 이벤트</h2>
+            <h2>Gemini 앱별 사용</h2>
           </div>
         </div>
         <div className="api-provider-list">
@@ -4396,91 +4226,11 @@ function AdoptionView({
         </div>
       </section>
 
-      <section className="panel">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">Exports</span>
-            <h2>Claude Export·Genspark 활용 로그</h2>
-          </div>
-        </div>
-        <div className="api-provider-list">
-          <article className="api-provider-card">
-            <div className="api-provider-head">
-              <span className="category-dot" style={{ background: "#e85d4f" }} />
-              <strong>Claude Export</strong>
-              <span className="state-pill ok">Export</span>
-            </div>
-            <div className="api-provider-stats">
-              <span>{numberFormat.format(chatGptExport?.totalConversations ?? 0)} 대화</span>
-              <span>{numberFormat.format(chatGptExport?.totalMessages ?? 0)} 메시지</span>
-              <span>{numberFormat.format(chatGptExport?.conversationsWithFiles ?? 0)} 첨부 대화</span>
-            </div>
-            <small>{chatGptExport?.patterns[1] ?? "Claude export를 업로드하면 대화·첨부 기반 활용성이 채워집니다."}</small>
-          </article>
-          <article className="api-provider-card">
-            <div className="api-provider-head">
-              <span className="category-dot" style={{ background: "#c58612" }} />
-              <strong>Genspark</strong>
-              <span className="state-pill ok">작업 로그</span>
-            </div>
-            <div className="api-provider-stats">
-              <span>{numberFormat.format(gensparkUsageData.totalTasks)} 작업</span>
-              <span>{numberFormat.format(gensparkUsageData.proposalAutomationTasks)} 제안 자동화</span>
-              <span>{numberFormat.format(gensparkUsageData.generatedFileMappedTasks)} 파일 매핑</span>
-            </div>
-            <small>{gensparkUsageData.patterns[1]}</small>
-          </article>
-          <article className="api-provider-card">
-            <div className="api-provider-head">
-              <span className="category-dot" style={{ background: "#2f8f46" }} />
-              <strong>Gamma</strong>
-              <span className={`state-pill ${apiStatusTone(gammaUsageData.source.status)}`}>
-                {gammaUsageData.source.status}
-              </span>
-            </div>
-            <div className="api-provider-stats">
-              <span>테마 {numberFormat.format(gammaUsageData.themeCount)}개</span>
-              <span>폴더 {numberFormat.format(gammaUsageData.folderCount)}개</span>
-              <span>
-                {typeof gammaUsageData.latestCreditsRemaining === "number"
-                  ? `잔여 ${numberFormat.format(gammaUsageData.latestCreditsRemaining)} credits`
-                  : gammaUsageData.trackedGenerations > 0
-                  ? `${numberFormat.format(gammaUsageData.totalCreditsDeducted)} credits`
-                  : "Generation ID 대기"}
-              </span>
-            </div>
-            <div className="gamma-api-detail-list">
-              {gammaUsageData.webCreditSnapshot && (
-                <span>
-                  웹 크롤링: {gammaUsageData.webCreditSnapshot.source.collectedAt.slice(0, 16).replace("T", " ")} ·{" "}
-                  {gammaUsageData.webCreditSnapshot.matchedText || "크레딧 텍스트 확인"}
-                </span>
-              )}
-              {gammaUsageData.sampleThemes.length > 0 && (
-                <span>테마: {gammaUsageData.sampleThemes.map((theme) => theme.name).join(", ")}</span>
-              )}
-              {gammaUsageData.sampleFolders.length > 0 && (
-                <span>폴더: {gammaUsageData.sampleFolders.map((folder) => folder.name).join(", ")}</span>
-              )}
-              {gammaUsageData.generations.slice(0, 3).map((generation) => (
-                <span key={generation.generationId}>
-                  {generation.generationId}: {generation.status} · {numberFormat.format(generation.creditsDeducted)} credits
-                  {typeof generation.creditsRemaining === "number"
-                    ? ` · 잔여 ${numberFormat.format(generation.creditsRemaining)}`
-                    : ""}
-                </span>
-              ))}
-            </div>
-            <small>{gammaUsageData.source.note}</small>
-          </article>
-        </div>
-      </section>
-
       <section className="panel panel-wide">
         <div className="panel-header">
           <div>
             <span className="eyebrow">Claude Team Plan</span>
-            <h2>Claude Team 정액제 사용 현황</h2>
+            <h2>Claude Team 좌석 및 사용 강도</h2>
           </div>
           <span className="state-pill neutral">{claudeTeamUsageData.source.period}</span>
         </div>
@@ -4569,7 +4319,7 @@ function AdoptionView({
         <div className="panel-header">
           <div>
             <span className="eyebrow">Claude Accounts</span>
-            <h2>Claude Team 계정별 사용 현황</h2>
+            <h2>Claude Team 계정별 운영 현황</h2>
           </div>
           <span className="state-pill neutral">
             Spend {numberFormat.format(claudeTeamUsageData.spendUsers)}명 ·{" "}
