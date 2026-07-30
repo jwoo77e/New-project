@@ -17,6 +17,12 @@ describe("Claude usage snapshots", () => {
     expect(sumBy(data.users, (user) => user.promptTokens)).toBe(data.totalPromptTokens);
     expect(sumBy(data.users, (user) => user.completionTokens)).toBe(data.totalCompletionTokens);
     expect(sumBy(data.users, (user) => user.totalTokens)).toBe(data.totalTokens);
+    expect(sumBy(data.users, (user) => user.claudeCodeRequests)).toBe(
+      data.productUsage.find((product) => product.product === "Claude Code")?.requests,
+    );
+    expect(sumBy(data.users, (user) => user.claudeCodeTokens)).toBe(
+      data.productUsage.find((product) => product.product === "Claude Code")?.tokens,
+    );
     expect(sumBy(data.users, (user) => user.codeLines)).toBe(data.totalCodeLines);
     expect(sumBy(data.users, (user) => user.netSpendUsd)).toBeCloseTo(data.totalNetSpendUsd, 2);
   });

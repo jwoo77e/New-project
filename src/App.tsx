@@ -97,6 +97,10 @@ import {
   type ProductivityExecutiveModel,
   type ProductivitySourceFreshness,
 } from "./lib/productivityCohort";
+import {
+  buildClaudeProductivitySignals,
+  type ClaudeProductivityLevel,
+} from "./lib/claudeProductivity";
 import { buildDriveArtifactDailyTrend } from "./lib/driveArtifactTrend";
 import {
   isDriveArtifactTrendSnapshot,
@@ -4035,6 +4039,7 @@ function AdoptionView({
   const claudeUsersByTokens = [...claudeTeamUsageData.users].sort(
     (a, b) => b.totalTokens - a.totalTokens || b.requests - a.requests || a.email.localeCompare(b.email),
   );
+  const claudeProductivitySignals = buildClaudeProductivitySignals(claudeTeamUsageData.users);
   const claudeTopUser = [...claudeTeamUsageData.users].sort((a, b) =>
     hasClaudeCodeLines ? b.codeLines - a.codeLines : b.netSpendUsd - a.netSpendUsd,
   )[0];
@@ -4320,6 +4325,7 @@ function AdoptionView({
                 <th>계정</th>
                 <th>이름</th>
                 <th>활용 단계</th>
+                <th>생산성 신호</th>
                 <th>Spend</th>
                 <th>요청</th>
                 <th aria-sort="descending">토큰</th>
@@ -4329,48 +4335,59 @@ function AdoptionView({
               </tr>
             </thead>
             <tbody>
-              {claudeUsersByTokens.map((user) => (
-                <tr key={user.email}>
-                  <td>
-                    <strong>{user.email}</strong>
-                  </td>
-                  <td>
-                    <strong>{user.displayName}</strong>
-                  </td>
-                  <td>
-                    <span className={`state-pill ${claudeTeamLevelTone(user.level)}`}>
-                      {claudeTeamLevelLabel(user.level)}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="claude-usage-cell">
-                      <strong>{formatPreciseUsd(user.netSpendUsd)}</strong>
-                      <div className="department-meter" aria-label={`${user.email} Claude spend 비중`}>
-                        <span style={{ width: `${Math.min((user.netSpendUsd / maxClaudeSpend) * 100, 100)}%` }} />
-                      </div>
-                    </div>
-                  </td>
-                  <td>{user.requests ? numberFormat.format(user.requests) : "-"}</td>
-                  <td>{user.totalTokens ? formatTokens(user.totalTokens) : "-"}</td>
-                  <td>
-                    {hasClaudeCodeLines ? (
+              {claudeUsersByTokens.map((user) => {
+                const productivitySignal = claudeProductivitySignals.get(user.email);
+                return (
+                  <tr key={user.email}>
+                    <td>
+                      <strong>{user.email}</strong>
+                    </td>
+                    <td>
+                      <strong>{user.displayName}</strong>
+                    </td>
+                    <td>
+                      <span className={`state-pill ${claudeTeamLevelTone(user.level)}`}>
+                        {claudeTeamLevelLabel(user.level)}
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        className={`state-pill ${claudeProductivityTone(productivitySignal?.level)}`}
+                        title={productivitySignal?.detail}
+                      >
+                        {productivitySignal?.label ?? "산정 대기"}
+                      </span>
+                    </td>
+                    <td>
                       <div className="claude-usage-cell">
-                        <strong>{numberFormat.format(user.codeLines)}줄</strong>
-                        <div className="department-meter" aria-label={`${user.email} Claude Code lines 비중`}>
-                          <span style={{ width: `${Math.min((user.codeLines / maxClaudeLines) * 100, 100)}%` }} />
+                        <strong>{formatPreciseUsd(user.netSpendUsd)}</strong>
+                        <div className="department-meter" aria-label={`${user.email} Claude spend 비중`}>
+                          <span style={{ width: `${Math.min((user.netSpendUsd / maxClaudeSpend) * 100, 100)}%` }} />
                         </div>
                       </div>
-                    ) : (
-                      <span className="state-pill neutral">미제공</span>
-                    )}
-                  </td>
-                  <td>
-                    <strong>{user.products.length > 0 ? user.products.join(", ") : "사용 이력 없음"}</strong>
-                    <small>{user.models.length > 0 ? user.models.join(", ") : "집계 기간 기준"}</small>
-                  </td>
-                  <td>{user.note}</td>
-                </tr>
-              ))}
+                    </td>
+                    <td>{user.requests ? numberFormat.format(user.requests) : "-"}</td>
+                    <td>{user.totalTokens ? formatTokens(user.totalTokens) : "-"}</td>
+                    <td>
+                      {hasClaudeCodeLines ? (
+                        <div className="claude-usage-cell">
+                          <strong>{numberFormat.format(user.codeLines)}줄</strong>
+                          <div className="department-meter" aria-label={`${user.email} Claude Code lines 비중`}>
+                            <span style={{ width: `${Math.min((user.codeLines / maxClaudeLines) * 100, 100)}%` }} />
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="state-pill neutral">미제공</span>
+                      )}
+                    </td>
+                    <td>
+                      <strong>{user.products.length > 0 ? user.products.join(", ") : "사용 이력 없음"}</strong>
+                      <small>{user.models.length > 0 ? user.models.join(", ") : "집계 기간 기준"}</small>
+                    </td>
+                    <td>{user.note}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -4595,6 +4612,12 @@ function claudeTeamLevelLabel(level: ClaudeTeamUsageLevel) {
 function claudeTeamLevelTone(level: ClaudeTeamUsageLevel) {
   if (level === "High") return "ok";
   if (level === "Medium") return "warning";
+  return "neutral";
+}
+
+function claudeProductivityTone(level?: ClaudeProductivityLevel) {
+  if (level === "top" || level === "efficient" || level === "high-output") return "ok";
+  if (level === "insufficient") return "warning";
   return "neutral";
 }
 
