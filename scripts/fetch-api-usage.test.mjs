@@ -176,7 +176,8 @@ describe("Gemini Workspace usage aggregation", () => {
     expect(usage.licensedUsers).toBe(4);
     expect(usage.zeroUsers).toBe(1);
     expect(usage.totalEvents).toBe(3);
-    expect(usage.activationRate).toBe(66.7);
+    expect(usage.activationRate).toBe(50);
+    expect(usage.source.note).toContain("계정 목록 3/4명으로 불완전하여 도메인 전체 활동 반영");
     expect(usage.dailyUsage.find((day) => day.date === "2026-05-02")).toMatchObject({
       events: 2,
       activeUsers: 2,
@@ -233,6 +234,27 @@ describe("Gemini Workspace usage aggregation", () => {
     expect(usage.totalEvents).toBe(1);
     expect(usage.users.map((user) => user.email)).toEqual(["alpha@example.com", "zero@example.com"]);
     expect(usage.outOfScopeUsers).toEqual([]);
+  });
+
+  it("uses domain-wide activity when the configured roster is incomplete", () => {
+    const usage = buildGeminiWorkspaceUsageFromActivities(
+      [
+        workspaceActivity("2026-05-01T01:00:00.000Z", "alpha@example.com", "summarize"),
+        workspaceActivity("2026-05-02T02:00:00.000Z", "beta@example.com", "conversation"),
+      ],
+      {
+        buckets,
+        accountEmails: ["alpha@example.com"],
+        licensedUsers: 7,
+      },
+    );
+
+    expect(usage.listedUsers).toBe(2);
+    expect(usage.activeUsers).toBe(2);
+    expect(usage.totalEvents).toBe(2);
+    expect(usage.activationRate).toBe(28.6);
+    expect(usage.users.map((user) => user.email)).toEqual(["alpha@example.com", "beta@example.com"]);
+    expect(usage.source.note).toContain("계정 목록 1/7명으로 불완전하여 도메인 전체 활동 반영");
   });
 });
 

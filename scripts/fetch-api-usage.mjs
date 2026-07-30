@@ -785,14 +785,15 @@ export function buildGeminiWorkspaceUsageFromActivities(
   const appUsage = new Map();
   const rosterAccounts = new Set(accountEmails.map((email) => email.toLowerCase()));
   const hasRoster = rosterAccounts.size > 0;
+  const restrictToRoster = hasRoster && (licensedUsers <= 0 || rosterAccounts.size >= licensedUsers);
   const knownAccounts = new Set(rosterAccounts);
 
   for (const activity of activities ?? []) {
     const email = stringValue(activity?.actor?.email, "").toLowerCase();
     if (!email) continue;
 
-    const isManagedUser = !hasRoster || rosterAccounts.has(email);
-    if (!hasRoster) knownAccounts.add(email);
+    const isManagedUser = !restrictToRoster || rosterAccounts.has(email);
+    if (!restrictToRoster) knownAccounts.add(email);
     const time = stringValue(activity?.id?.time, "");
     const date = time ? time.slice(0, 10) : "";
     const reportEvents = Array.isArray(activity?.events) ? activity.events : [];
@@ -843,10 +844,14 @@ export function buildGeminiWorkspaceUsageFromActivities(
   const resolvedLicensedUsers = hasRoster
     ? Math.max(licensedUsers, listedUsers)
     : Math.max(licensedUsers, listedUsers, activeUsers);
-  const activationBase = hasRoster ? listedUsers : resolvedLicensedUsers;
+  const activationBase = restrictToRoster ? listedUsers : resolvedLicensedUsers;
   const totalEvents = userRows.reduce((sum, user) => sum + user.events, 0);
   const totalActiveDays = userRows.reduce((sum, user) => sum + user.activeDays, 0);
   const zeroUsers = userRows.filter((user) => user.level === "Zero").length;
+  const rosterCoverageNote =
+    hasRoster && !restrictToRoster
+      ? ` · 계정 목록 ${rosterAccounts.size}/${resolvedLicensedUsers}명으로 불완전하여 도메인 전체 활동 반영`
+      : "";
 
   return {
     source: {
@@ -855,7 +860,7 @@ export function buildGeminiWorkspaceUsageFromActivities(
       generatedAt: formatKoreanTimestamp(now),
       mode,
       status,
-      note,
+      note: `${note}${rosterCoverageNote}`,
     },
     licensedUsers: resolvedLicensedUsers,
     listedUsers,
