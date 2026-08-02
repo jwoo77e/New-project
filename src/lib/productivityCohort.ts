@@ -34,6 +34,7 @@ export type DriveDailyActivityPoint = {
   driveOutputSignals: number;
   jaewooConversations: number;
   hyungbaeConversations: number;
+  strategyTeamConversations: number;
 };
 
 export type ProductivitySourceFreshness = {
@@ -332,6 +333,7 @@ export function buildProductivityExecutiveModel({
       driveOutputSignals: item.outputSignals,
       jaewooConversations: item.jaewooConversations,
       hyungbaeConversations: item.hyungbaeConversations,
+      strategyTeamConversations: item.strategyTeamConversations ?? 0,
     })),
     axKpis: {
       adoption: {

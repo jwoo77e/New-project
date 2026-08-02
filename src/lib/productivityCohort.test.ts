@@ -39,7 +39,7 @@ describe("buildProductivityExecutiveModel", () => {
     expect(model.costUsageSeries.find((item) => item.month === "2026-07")).toMatchObject({
       costKrw: null,
       chatGptConversations: 0,
-      claudeConversations: 223,
+      claudeConversations: 225,
       driveOutputSignals: 771,
     });
     expect(model.activeUsers).toBe(19);
@@ -55,11 +55,11 @@ describe("buildProductivityExecutiveModel", () => {
   });
 
   it("uses deduplicated Drive prompts as daily Claude conversation activity", () => {
-    expect(model.claudeConversations).toBe(256);
-    expect(model.currentMonthClaudeConversations).toBe(223);
+    expect(model.claudeConversations).toBe(258);
+    expect(model.currentMonthClaudeConversations).toBe(225);
     expect(model.currentMonthDriveOutputs).toBe(771);
-    expect(model.conversationActiveDays).toBe(28);
-    expect(model.dailyDriveActivity.reduce((sum, item) => sum + item.claudeConversations, 0)).toBe(256);
+    expect(model.conversationActiveDays).toBe(29);
+    expect(model.dailyDriveActivity.reduce((sum, item) => sum + item.claudeConversations, 0)).toBe(258);
     expect(
       model.dailyDriveActivity.reduce((sum, item) => sum + item.driveOutputSignals, 0) +
         driveArtifactRepositoryData.activityAnalysis.undatedOutputSignals,
@@ -68,30 +68,30 @@ describe("buildProductivityExecutiveModel", () => {
 
   it("builds separate adoption, activity, and output KPI stages", () => {
     expect(model.axKpis.adoption).toMatchObject({
-      evidenceContributors: 2,
+      evidenceContributors: 3,
     });
-    expect(model.axKpis.adoption.evidenceCoverageRate).toBeCloseTo((2 / 19) * 100, 5);
+    expect(model.axKpis.adoption.evidenceCoverageRate).toBeCloseTo((3 / 19) * 100, 5);
 
     expect(model.axKpis.activity).toMatchObject({
-      observedDays: 23,
-      activeDays: 22,
+      observedDays: 24,
+      activeDays: 23,
       topContributor: "김재우",
     });
-    expect(model.axKpis.activity.activeDayRate).toBeCloseTo((22 / 23) * 100, 5);
-    expect(model.axKpis.activity.conversationsPerActiveDay).toBeCloseTo(223 / 22, 5);
+    expect(model.axKpis.activity.activeDayRate).toBeCloseTo((23 / 24) * 100, 5);
+    expect(model.axKpis.activity.conversationsPerActiveDay).toBeCloseTo(225 / 23, 5);
     expect(model.axKpis.activity.previousConversationsPerActiveDay).toBeCloseTo(33 / 6, 5);
-    expect(model.axKpis.activity.dailyGrowthRate).toBeCloseTo(84.2975, 3);
+    expect(model.axKpis.activity.dailyGrowthRate).toBeCloseTo(77.8656, 3);
 
     expect(model.axKpis.output).toMatchObject({
-      observedDays: 23,
+      observedDays: 24,
       outputDays: 23,
       peakDate: "2026-07-08",
       peakOutputs: 240,
     });
-    expect(model.axKpis.output.outputsPerObservedDay).toBeCloseTo(771 / 23, 5);
+    expect(model.axKpis.output.outputsPerObservedDay).toBeCloseTo(771 / 24, 5);
     expect(model.axKpis.output.previousOutputsPerObservedDay).toBeCloseTo(58 / 7, 5);
-    expect(model.axKpis.output.outputsPerConversation).toBeCloseTo(771 / 223, 5);
-    expect(model.axKpis.output.yieldGrowthRate).toBeCloseTo(96.714, 3);
+    expect(model.axKpis.output.outputsPerConversation).toBeCloseTo(771 / 225, 5);
+    expect(model.axKpis.output.yieldGrowthRate).toBeCloseTo(94.9655, 3);
     expect(model.axKpis.output.peakShare).toBeCloseTo((240 / 771) * 100, 5);
   });
 

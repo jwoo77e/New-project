@@ -3688,7 +3688,7 @@ function GensparkUsageView({
         <div className="drive-summary-grid">
           <article>
             <span>저장소</span>
-            <strong>{numberFormat.format(driveRepositoryData.totals.repositories)}명</strong>
+            <strong>{numberFormat.format(driveRepositoryData.totals.repositories)}개</strong>
             <small>{driveRepositoryData.repositories.map((repository) => repository.owner).join(" · ")}</small>
           </article>
           <article>

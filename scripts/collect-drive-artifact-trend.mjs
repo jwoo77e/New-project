@@ -26,6 +26,12 @@ export const defaultDriveTrendRepositories = [
     folderUrl:
       "https://drive.google.com/drive/folders/1OFfN4APAViKNtgURnmn9W51jSvcxy6fg?usp=sharing",
   },
+  {
+    owner: "전략사업팀",
+    folderId: "1NK9PNOb_fbByPSSz0AqydMYj5lUK2Q25",
+    folderUrl:
+      "https://drive.google.com/drive/folders/1NK9PNOb_fbByPSSz0AqydMYj5lUK2Q25?usp=drive_link",
+  },
 ];
 
 export async function collectDriveArtifactTrend({
@@ -56,7 +62,8 @@ export async function scanDriveRepository({
   folderUrl,
   accessToken,
 }) {
-  const queue = [{ id: folderId, depth: 0, path: owner }];
+  const normalizedOwner = normalizeDriveName(owner);
+  const queue = [{ id: folderId, depth: 0, path: normalizedOwner }];
   const seenFolderIds = new Set();
   const files = [];
   let folderCount = 0;
@@ -74,20 +81,21 @@ export async function scanDriveRepository({
     });
 
     for (const child of children) {
+      const childName = normalizeDriveName(child.name);
       if (child.mimeType === folderMimeType) {
         folderCount += 1;
         maxDepth = Math.max(maxDepth, folder.depth + 1);
         queue.push({
           id: child.id,
           depth: folder.depth + 1,
-          path: `${folder.path}/${child.name}`,
+          path: `${folder.path}/${childName}`,
         });
         continue;
       }
 
       files.push({
         id: child.id,
-        name: child.name,
+        name: childName,
         createdTime: child.createdTime ?? "",
         depth: folder.depth,
       });
@@ -95,7 +103,7 @@ export async function scanDriveRepository({
   }
 
   return {
-    owner,
+    owner: normalizedOwner,
     folderId,
     folderUrl,
     files,
@@ -109,6 +117,9 @@ export function buildDriveArtifactTrendSnapshot({
   collectedAt = new Date(),
 }) {
   const collectedDate = toKstDateKey(collectedAt.toISOString());
+  const repositoryOwnerLabel = repositoryScans
+    .map((scan) => normalizeDriveName(scan.owner))
+    .join("·");
   const repositories = repositoryScans.map((scan) => {
     const dailyCounts = new Map();
     let metadataDateAnomalyCount = 0;
@@ -175,7 +186,7 @@ export function buildDriveArtifactTrendSnapshot({
       period: `${startDate} ~ ${collectedDate}`,
       schedule: "매일 21:00 KST",
       note:
-        "김재우·이형배 Drive 루트의 모든 하위 폴더를 읽기 전용으로 재귀 조회하고 파일 생성일을 한국시간 기준으로 집계합니다.",
+        `${repositoryOwnerLabel} Drive 루트의 모든 하위 폴더를 읽기 전용으로 재귀 조회하고 파일 생성일을 한국시간 기준으로 집계합니다.`,
     },
     repositories,
     totals,
@@ -271,6 +282,10 @@ function isMetadataDateAnomaly(value, collectedAt) {
   if (!Number.isFinite(timestamp)) return true;
   const year = new Date(timestamp).getUTCFullYear();
   return year < 2000 || timestamp > collectedAt.getTime() + 24 * 60 * 60 * 1000;
+}
+
+function normalizeDriveName(value) {
+  return String(value ?? "").normalize("NFC");
 }
 
 function toKstDateKey(value) {

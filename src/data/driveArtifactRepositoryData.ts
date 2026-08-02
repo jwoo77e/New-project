@@ -29,6 +29,7 @@ export type DriveArtifactActivityDailyCount = {
   outputSignals: number;
   jaewooConversations: number;
   hyungbaeConversations: number;
+  strategyTeamConversations?: number;
 };
 
 export type DriveArtifactActivityAnalysis = {
@@ -187,6 +188,7 @@ const useCaseColors: Record<string, string> = {
   "V1 초안 정리": "#5f6f8c",
   "자료실·현장 데이터 수집": "#0f8b8d",
   "안전관리 계획·비용": "#c58612",
+  "AI 도구·지식환경 구축": "#2f8f46",
 };
 
 const jaewooArtifacts: DriveArtifact[] = [
@@ -1333,6 +1335,31 @@ const hyungbaeArtifacts: DriveArtifact[] = [
   hyungbaeDoc("2026-07-09 / Collect risk assessment data from all sites (bad3d43a)", "1alP8IlwWCEMZi61zKgfnmIww9CZGw44jlNRfxbxqJH0", "현장 안전관리 자료", "전체 현장 위험성평가 자료를 수집·검증한 별도 세션"),
 ];
 
+const strategyTeamArtifacts: DriveArtifact[] = [
+  {
+    title: "Obsidian MCP 연결 문제_a639ce73.md",
+    url: "https://drive.google.com/file/d/1muliV7nN8FWLgGLofKjnhLRfdfE8V9Mf/view?usp=drivesdk",
+    mimeType: "text/markdown",
+    createdAt: "2026-07-30T06:33:49.309Z",
+    modifiedAt: "2026-07-30T06:33:49.309Z",
+    kind: "프롬프트+응답",
+    useCase: "AI 도구·지식환경 구축",
+    usageSignal:
+      "Obsidian MCP 연결 원인을 Node.js와 Homebrew 미설치까지 단계적으로 진단한 7개 메시지 세션이며 별도 생성 결과물은 없습니다.",
+  },
+  {
+    title: "Claude CLI 설치 방법_fa933bce.md",
+    url: "https://drive.google.com/file/d/1FJK7gMMzmaUyqAO8wWcyX3p_1AVu7cq7/view?usp=drivesdk",
+    mimeType: "text/markdown",
+    createdAt: "2026-07-30T06:33:23.030Z",
+    modifiedAt: "2026-07-30T06:33:23.030Z",
+    kind: "프롬프트+응답",
+    useCase: "AI 도구·지식환경 구축",
+    usageSignal:
+      "Claude CLI 설치와 PATH 문제를 안내한 5개 메시지 세션이며 별도 생성 결과물은 없습니다.",
+  },
+];
+
 function buildCountBreakdown(
   counts: Record<string, number>,
   total: number,
@@ -1655,14 +1682,52 @@ const repositories: DriveArtifactRepository[] = [
       "날짜별 백업은 같은 자료가 여러 회차에 포함될 수 있으므로 전체 보관 파일 수와 중복 추정 제외 수를 함께 봐야 합니다.",
     ],
   }),
+  buildRepository({
+    owner: "전략사업팀",
+    folderName: "전략사업팀",
+    folderId: "1NK9PNOb_fbByPSSz0AqydMYj5lUK2Q25",
+    folderUrl: "https://drive.google.com/drive/folders/1NK9PNOb_fbByPSSz0AqydMYj5lUK2Q25?usp=drive_link",
+    role: "Claude 세션 백업·업무환경 지원 저장소",
+    folderModifiedAt: "2026-07-30T06:34:38.096Z",
+    utilizationScore: 54,
+    utilizationLevel: "초기 활용",
+    inventory: {
+      fileCount: 3,
+      directFileCount: 1,
+      nestedFileCount: 2,
+      folderCount: 1,
+      maxDepth: 1,
+      uniqueFileCount: 3,
+      duplicateCopyCount: 0,
+      metadataDateAnomalyCount: 0,
+      documentCount: 2,
+      dataFileCount: 0,
+      typeCounts: {
+        "세션 텍스트": 2,
+        "코드·구성": 1,
+      },
+      useCaseCounts: {
+        "AI 도구·지식환경 구축": 2,
+        "업무보고·지식관리": 1,
+      },
+      dailyCounts: [{ date: "2026-07-30", count: 3 }],
+    },
+    artifacts: strategyTeamArtifacts,
+    insights: [
+      "루트 인덱스 1개와 2026-07-30 하위 폴더의 세션 기록 2개를 확인했습니다. 추가 하위 폴더 없이 최대 1단계까지 조회했으며 오류는 없었습니다.",
+      "Claude CLI 설치와 Obsidian MCP 연결 진단 등 AI 업무환경 구축 대화 2건, 총 12개 메시지가 저장되어 있습니다.",
+      "두 세션 모두 문서에 생성 결과물 없음으로 기록되어 있어 대화 활동에는 포함하되 산출 KPI에는 0건으로 반영했습니다.",
+      "현재 데이터가 1일치이므로 활용도는 초기 단계로 표시하며, 매일 21시 재귀 수집에서 후속 파일과 날짜 추이를 자동 반영합니다.",
+    ],
+  }),
 ];
 
 const activityAnalysis: DriveArtifactActivityAnalysis = {
-  collectedAt: "2026-07-23 12:04 KST",
-  scannedFiles: 1726,
-  scannedFolders: 357,
+  collectedAt: "2026-08-03 08:39 KST",
+  scannedFiles: 1729,
+  scannedFolders: 358,
   scanErrors: 0,
-  totalConversations: 256,
+  totalConversations: 258,
   totalOutputSignals: 830,
   undatedOutputSignals: 1,
   method:
@@ -1672,6 +1737,7 @@ const activityAnalysis: DriveArtifactActivityAnalysis = {
   byOwner: [
     { owner: "김재우", conversations: 205, outputSignals: 709 },
     { owner: "이형배", conversations: 51, outputSignals: 121 },
+    { owner: "전략사업팀", conversations: 2, outputSignals: 0 },
   ],
   dailyCounts: [
     { date: "2026-06-24", conversations: 0, outputSignals: 5, jaewooConversations: 0, hyungbaeConversations: 0 },
@@ -1704,15 +1770,16 @@ const activityAnalysis: DriveArtifactActivityAnalysis = {
     { date: "2026-07-21", conversations: 12, outputSignals: 38, jaewooConversations: 12, hyungbaeConversations: 0 },
     { date: "2026-07-22", conversations: 9, outputSignals: 26, jaewooConversations: 9, hyungbaeConversations: 0 },
     { date: "2026-07-23", conversations: 0, outputSignals: 2, jaewooConversations: 0, hyungbaeConversations: 0 },
+    { date: "2026-07-30", conversations: 2, outputSignals: 0, jaewooConversations: 0, hyungbaeConversations: 0, strategyTeamConversations: 2 },
   ],
 };
 
 export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   source: {
     name: "Google Drive Claude 산출물 저장소",
-    collectedAt: "2026-07-23 11:18 KST",
-    period: "2026-06-21 ~ 2026-07-23",
-    note: "두 Drive 루트에서 폴더가 더 이상 발견되지 않을 때까지 재귀 조회했습니다. 김재우는 파일 1,004개·폴더 253개, 이형배는 파일 690개·폴더 91개이며 조회 오류는 0건입니다. 총 1,694개 중 루트 직접 파일은 160개, 하위 폴더 파일은 1,534개입니다. 중복 추정은 파일명·크기·MIME 조합 기준이며 콘텐츠 해시와 동일하지 않습니다. 업무 유형은 전체 파일 경로·파일명 기준으로 분류하고, 상세 의미는 기존 대표 검증 자료를 유지합니다.",
+    collectedAt: "2026-08-03 08:39 KST",
+    period: "2026-06-21 ~ 2026-07-30",
+    note: "세 Drive 루트에서 폴더가 더 이상 발견되지 않을 때까지 재귀 조회했습니다. 기존 상세 분석 기준으로 김재우는 파일 1,004개·폴더 253개, 이형배는 파일 690개·폴더 91개이며, 전략사업팀은 최신 원천 기준 파일 3개·폴더 1개입니다. 조회 오류는 0건이며 총 1,697개 중 루트 직접 파일은 161개, 하위 폴더 파일은 1,536개입니다. 중복 추정은 파일명·크기·MIME 조합 기준이며 콘텐츠 해시와 동일하지 않습니다. 날짜 그래프의 전체 파일 수는 매일 21시 최신 재귀 스냅샷을 우선 사용합니다.",
   },
   totals: {
     repositories: repositories.length,
@@ -1735,9 +1802,10 @@ export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
   activityAnalysis,
   zipAnalysisPipeline,
   insights: [
-    "기존 84개 직접·선별 집계에서 전체 하위 폴더 재귀 집계 1,694개로 범위를 교체했습니다.",
-    "하위 폴더 파일이 전체의 90.6%이므로 루트 직접 목록만 조회하면 실제 저장 현황을 크게 누락합니다.",
-    "반복 백업 사본을 생산성 산출물로 과대 해석하지 않도록 전체 1,694개와 중복 추정 제외 1,471개를 분리합니다.",
+    "김재우·이형배·전략사업팀 세 저장소의 모든 하위 폴더를 재귀 집계하는 범위로 확장했습니다.",
+    "하위 폴더 파일이 전체의 90.5%이므로 루트 직접 목록만 조회하면 실제 저장 현황을 크게 누락합니다.",
+    "반복 백업 사본을 생산성 산출물로 과대 해석하지 않도록 전체 1,697개와 중복 추정 제외 1,474개를 분리합니다.",
     `이형배 폴더는 ${hyungbaeDateFolderUrl} 하위 날짜별 프로젝트와 claude-backup 폴더를 모두 포함해 집계했습니다.`,
+    "전략사업팀은 대화 2건을 활용 활동으로 포함했지만, 문서에 생성 결과물 없음이 명시되어 산출 KPI에는 0건으로 반영했습니다.",
   ],
 };

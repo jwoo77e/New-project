@@ -6,25 +6,25 @@ describe("buildDriveArtifactDailyTrend", () => {
   it("reconciles the daily trend with the repository total", () => {
     const trend = buildDriveArtifactDailyTrend(driveArtifactRepositoryData);
 
-    expect(trend.owners).toEqual(["김재우", "이형배"]);
+    expect(trend.owners).toEqual(["김재우", "이형배", "전략사업팀"]);
     expect(trend.points[0]?.date).toBe("2026-06-21");
-    expect(trend.points[trend.points.length - 1]?.date).toBe("2026-07-23");
+    expect(trend.points[trend.points.length - 1]?.date).toBe("2026-07-30");
     expect(trend.points.reduce((sum, point) => sum + point.total, 0)).toBe(
       driveArtifactRepositoryData.totals.files - trend.openingFiles,
     );
     expect(trend.points[trend.points.length - 1]?.cumulative).toBe(driveArtifactRepositoryData.totals.files);
     expect(trend.openingFiles).toBe(85);
     expect(trend.peakDay).toMatchObject({ date: "2026-07-08", total: 224 });
-    expect(trend.latestDay).toMatchObject({ date: "2026-07-23", total: 1 });
+    expect(trend.latestDay).toMatchObject({ date: "2026-07-30", total: 3 });
   });
 
   it("keeps recursive inventory totals internally consistent", () => {
     expect(driveArtifactRepositoryData.totals).toMatchObject({
-      files: 1694,
-      folders: 344,
-      directFiles: 160,
-      nestedFiles: 1534,
-      uniqueFiles: 1471,
+      files: 1697,
+      folders: 345,
+      directFiles: 161,
+      nestedFiles: 1536,
+      uniqueFiles: 1474,
       duplicateCopies: 223,
       metadataDateAnomalies: 85,
     });

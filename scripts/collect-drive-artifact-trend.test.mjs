@@ -4,11 +4,20 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   buildDriveArtifactTrendSnapshot,
+  defaultDriveTrendRepositories,
   isDriveArtifactTrendSnapshot,
   writeDriveArtifactTrendSnapshot,
 } from "./collect-drive-artifact-trend.mjs";
 
 describe("collect-drive-artifact-trend", () => {
+  it("includes every configured Claude Drive repository", () => {
+    expect(defaultDriveTrendRepositories.map((repository) => repository.owner)).toEqual([
+      "김재우",
+      "이형배",
+      "전략사업팀",
+    ]);
+  });
+
   it("groups recursively discovered files by KST creation date", () => {
     const snapshot = buildDriveArtifactTrendSnapshot({
       collectedAt: new Date("2026-07-27T12:00:00.000Z"),
