@@ -3,9 +3,9 @@
   "source": {
     "name": "Claude Drive 날짜별 저장 파일 증감",
     "status": "정상",
-    "collectedAt": "2026-07-29 21:04 KST",
-    "generatedAt": "2026-07-29T12:04:07.571Z",
-    "period": "2026-06-23 ~ 2026-07-29",
+    "collectedAt": "2026-08-03 08:26 KST",
+    "generatedAt": "2026-08-02T23:26:24.000Z",
+    "period": "2026-06-23 ~ 2026-08-03",
     "schedule": "매일 21:00 KST",
     "note": "김재우·이형배 Drive 루트의 모든 하위 폴더를 읽기 전용으로 재귀 조회하고 파일 생성일을 한국시간 기준으로 집계합니다."
   },
@@ -16,10 +16,10 @@
       "folderUrl": "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link",
       "artifacts": [],
       "inventory": {
-        "fileCount": 1271,
-        "directFileCount": 179,
-        "nestedFileCount": 1092,
-        "folderCount": 338,
+        "fileCount": 1438,
+        "directFileCount": 191,
+        "nestedFileCount": 1247,
+        "folderCount": 392,
         "maxDepth": 6,
         "metadataDateAnomalyCount": 85,
         "dailyCounts": [
@@ -170,6 +170,22 @@
           {
             "date": "2026-07-29",
             "count": 28
+          },
+          {
+            "date": "2026-07-30",
+            "count": 60
+          },
+          {
+            "date": "2026-07-31",
+            "count": 40
+          },
+          {
+            "date": "2026-08-01",
+            "count": 43
+          },
+          {
+            "date": "2026-08-02",
+            "count": 24
           }
         ]
       }
@@ -180,10 +196,10 @@
       "folderUrl": "https://drive.google.com/drive/folders/1OFfN4APAViKNtgURnmn9W51jSvcxy6fg?usp=sharing",
       "artifacts": [],
       "inventory": {
-        "fileCount": 745,
+        "fileCount": 919,
         "directFileCount": 1,
-        "nestedFileCount": 744,
-        "folderCount": 119,
+        "nestedFileCount": 918,
+        "folderCount": 155,
         "maxDepth": 4,
         "metadataDateAnomalyCount": 0,
         "dailyCounts": [
@@ -286,16 +302,36 @@
           {
             "date": "2026-07-28",
             "count": 20
+          },
+          {
+            "date": "2026-07-29",
+            "count": 39
+          },
+          {
+            "date": "2026-07-30",
+            "count": 29
+          },
+          {
+            "date": "2026-07-31",
+            "count": 30
+          },
+          {
+            "date": "2026-08-01",
+            "count": 39
+          },
+          {
+            "date": "2026-08-02",
+            "count": 37
           }
         ]
       }
     }
   ],
   "totals": {
-    "files": 2016,
-    "directFiles": 180,
-    "nestedFiles": 1836,
-    "folders": 457,
+    "files": 2357,
+    "directFiles": 192,
+    "nestedFiles": 2165,
+    "folders": 547,
     "metadataDateAnomalies": 85
   }
 }
