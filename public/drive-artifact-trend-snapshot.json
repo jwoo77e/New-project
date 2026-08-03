@@ -3,8 +3,8 @@
   "source": {
     "name": "Claude Drive 날짜별 저장 파일 증감",
     "status": "정상",
-    "collectedAt": "2026-08-03 08:39 KST",
-    "generatedAt": "2026-08-02T23:39:00.000Z",
+    "collectedAt": "2026-08-03 21:04 KST",
+    "generatedAt": "2026-08-03T12:04:16.000Z",
     "period": "2026-06-23 ~ 2026-08-03",
     "schedule": "매일 21:00 KST",
     "note": "김재우·이형배 최신 검증 스냅샷과 전략사업팀 Drive 루트의 연결 조회 결과를 합산했습니다. 세 루트 모두 하위 폴더를 포함하며 파일 생성일을 한국시간 기준으로 집계합니다."
@@ -16,10 +16,10 @@
       "folderUrl": "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link",
       "artifacts": [],
       "inventory": {
-        "fileCount": 1438,
-        "directFileCount": 191,
-        "nestedFileCount": 1247,
-        "folderCount": 392,
+        "fileCount": 1468,
+        "directFileCount": 195,
+        "nestedFileCount": 1273,
+        "folderCount": 403,
         "maxDepth": 6,
         "metadataDateAnomalyCount": 85,
         "dailyCounts": [
@@ -186,6 +186,10 @@
           {
             "date": "2026-08-02",
             "count": 24
+          },
+          {
+            "date": "2026-08-03",
+            "count": 30
           }
         ]
       }
@@ -348,10 +352,10 @@
     }
   ],
   "totals": {
-    "files": 2360,
-    "directFiles": 193,
-    "nestedFiles": 2167,
-    "folders": 548,
+    "files": 2390,
+    "directFiles": 197,
+    "nestedFiles": 2193,
+    "folders": 559,
     "metadataDateAnomalies": 85
   }
 }
