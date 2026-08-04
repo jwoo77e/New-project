@@ -97,8 +97,8 @@ describe("initialAiToolApprovalData", () => {
       monthlyUsd: 660,
       monthlyKrw: 980_100,
     });
-    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(2_920.71);
-    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(5_837_254.35);
+    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(2_905.59);
+    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(5_814_801.15);
   });
 
   it("keeps category and payment totals aligned with the updated total", () => {
@@ -109,8 +109,8 @@ describe("initialAiToolApprovalData", () => {
       monthlyUsd: 2_090,
       monthlyKrw: 3_103_650,
     });
-    expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(37);
-    expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(4_337_254.35);
+    expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(36);
+    expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(4_314_801.15);
     expect(
       initialAiToolApprovalData.paymentSummary.find((item) => item.key === "계약 고정비"),
     ).toMatchObject({
@@ -135,14 +135,33 @@ describe("initialAiToolApprovalData", () => {
     });
 
     expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-07")).toMatchObject({
-      count: 37,
-      monthlyUsd: 2_920.71,
-      monthlyKrw: 4_337_254.35,
+      count: 36,
+      monthlyUsd: 2_905.59,
+      monthlyKrw: 4_314_801.15,
     });
     expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-08")).toMatchObject({
-      count: 38,
-      monthlyUsd: 2_920.71,
-      monthlyKrw: 5_837_254.35,
+      count: 37,
+      monthlyUsd: 2_905.59,
+      monthlyKrw: 5_814_801.15,
+    });
+  });
+
+  it("removes the unused ai.marketing Gemini account from approvals", () => {
+    expect(
+      initialAiToolApprovalData.records.some(
+        (record) =>
+          record.account === "ai.marketing@riskzero.kr" ||
+          record.linkedAccount === "ai.marketing@riskzero.kr",
+      ),
+    ).toBe(false);
+    expect(
+      initialAiToolApprovalData.toolSummary.find(
+        (item) => item.key === "Gemini(Google Workspace)",
+      ),
+    ).toMatchObject({
+      count: 5,
+      monthlyUsd: 75.6,
+      monthlyKrw: 112_266,
     });
   });
 });
