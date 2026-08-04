@@ -257,8 +257,11 @@ export function buildProductivityExecutiveModel({
   ).length;
   const monthlyActualByMonth = new Map(monthlyActuals.map((item) => [item.month, item]));
   const costUsageMonths = monthlyActuals.map((item) => item.month);
-  if (!costUsageMonths.includes(currentMonth)) {
-    costUsageMonths.push(currentMonth);
+  for (let offset = 1; offset <= lagMonths; offset += 1) {
+    const pendingMonth = addMonths(lastClosedActual.month, offset);
+    if (!costUsageMonths.includes(pendingMonth)) {
+      costUsageMonths.push(pendingMonth);
+    }
   }
   const previousUsageMonth = addMonths(currentMonth, -1);
   const currentDailyActivity = driveData.activityAnalysis.dailyCounts.filter((item) =>

@@ -59,6 +59,39 @@ describe("buildProductivityExecutiveModel", () => {
     });
   });
 
+  it("keeps intervening usage months when the latest source advances beyond the cost lag", () => {
+    const augustModel = buildProductivityExecutiveModel({
+      monthlyActuals: initialDashboardData.monthlyActuals,
+      approvalData: initialAiToolApprovalData,
+      chatGptData: chatGptUsageData,
+      claudeTeamData: initialClaudeTeamUsageData,
+      driveData: driveArtifactRepositoryData,
+      gensparkData: {
+        ...initialGensparkUsageData,
+        driveAnalysis: {
+          ...initialGensparkUsageData.driveAnalysis!,
+          latestOutputDate: "2026-08-03",
+          source: {
+            ...initialGensparkUsageData.driveAnalysis!.source,
+            period: "2025-12-17 ~ 2026-08-03",
+          },
+        },
+      },
+    });
+
+    expect(augustModel.currentMonth).toBe("2026-08");
+    expect(augustModel.costUsageSeries.slice(-3).map((item) => item.month)).toEqual([
+      "2026-06",
+      "2026-07",
+      "2026-08",
+    ]);
+    expect(augustModel.costUsageSeries.find((item) => item.month === "2026-07")).toMatchObject({
+      chatGptConversations: 0,
+      claudeConversations: 225,
+      driveOutputSignals: 771,
+    });
+  });
+
   it("uses deduplicated Drive prompts as daily Claude conversation activity", () => {
     expect(model.claudeConversations).toBe(258);
     expect(model.currentMonthClaudeConversations).toBe(225);

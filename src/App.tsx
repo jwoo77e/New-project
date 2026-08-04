@@ -1679,7 +1679,7 @@ function ExecutiveDesignOverview({
               <li>
                 <span className="decision-rank coral">1</span>
                 <div>
-                  <b>7월 최소 비용 {formatRate(fixedCostChange, true)}</b>
+                  <b>{model.currentMonthLabel} 최소 비용 {formatRate(fixedCostChange, true)}</b>
                   <p>고정 구독비 기준이며 API·변동비 확정 전입니다.</p>
                 </div>
                 <ChevronRight size={17} />
