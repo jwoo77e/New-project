@@ -7,6 +7,7 @@ import type { ChatGptUsageData } from "../data/chatGptUsageData";
 import type { ClaudeTeamUsageData } from "../data/claudeTeamUsageData";
 import type { DriveArtifactRepositoryData } from "../data/driveArtifactRepositoryData";
 import type { GensparkUsageData } from "../data/gensparkUsageData";
+import type { DriveArtifactTrendSnapshot } from "./driveArtifactTrendSnapshot";
 
 export type ProductivityCohortStatus = "확정" | "비용 대기" | "잠정";
 
@@ -25,9 +26,12 @@ export type CostUsagePoint = {
   month: string;
   label: string;
   costKrw: number | null;
+  costStatus: "확정" | "최소" | "대기";
   chatGptConversations: number;
   claudeConversations: number;
+  conversationSignals: number | null;
   driveOutputSignals: number;
+  driveStoredFiles: number | null;
 };
 
 export type DriveDailyActivityPoint = {
@@ -81,6 +85,8 @@ export type AxKpiOverview = {
 export type ProductivityExecutiveModel = {
   currentMonth: string;
   currentMonthLabel: string;
+  classifiedActivityMonth: string;
+  classifiedActivityMonthLabel: string;
   lastClosedMonth: string;
   lastClosedMonthLabel: string;
   lagMonths: number;
@@ -96,6 +102,7 @@ export type ProductivityExecutiveModel = {
   claudeConversations: number;
   currentMonthClaudeConversations: number;
   currentMonthDriveOutputs: number;
+  currentMonthDriveStoredFiles: number;
   conversationActiveDays: number;
   conversationDailyAverage: number;
   observableRepositoryOutputs: number;
@@ -114,6 +121,7 @@ type ProductivityExecutiveInput = {
   chatGptData: ChatGptUsageData;
   claudeTeamData: ClaudeTeamUsageData;
   driveData: DriveArtifactRepositoryData;
+  driveTrendData?: DriveArtifactTrendSnapshot | null;
   gensparkData: GensparkUsageData;
 };
 
@@ -163,6 +171,19 @@ function representativeGensparkOutputsByMonth(gensparkData: GensparkUsageData) {
   return counts;
 }
 
+function driveStoredFilesByMonth(driveTrendData?: DriveArtifactTrendSnapshot | null) {
+  if (!driveTrendData) return new Map<string, number>();
+
+  const counts = new Map<string, number>();
+  for (const repository of driveTrendData.repositories) {
+    for (const item of repository.inventory.dailyCounts) {
+      const month = item.date.slice(0, 7);
+      counts.set(month, (counts.get(month) ?? 0) + item.count);
+    }
+  }
+  return counts;
+}
+
 function rateChange(current: number, previous: number) {
   return previous > 0 ? ((current - previous) / previous) * 100 : 0;
 }
@@ -173,6 +194,7 @@ export function buildProductivityExecutiveModel({
   chatGptData,
   claudeTeamData,
   driveData,
+  driveTrendData,
   gensparkData,
 }: ProductivityExecutiveInput): ProductivityExecutiveModel {
   const lastClosedActual = monthlyActuals[monthlyActuals.length - 1];
@@ -184,6 +206,7 @@ export function buildProductivityExecutiveModel({
   const usageDates = [
     latestDate(claudeTeamData.source.generatedAt),
     latestDate(driveData.source.period),
+    latestDate(driveTrendData?.source.period ?? ""),
     latestDate(gensparkDrive?.latestOutputDate ?? ""),
     latestDate(chatGptData.source.period),
   ]
@@ -196,7 +219,16 @@ export function buildProductivityExecutiveModel({
   const chatGptByMonth = new Map(chatGptData.monthlyUsage.map((item) => [item.month, item]));
   const claudeConversationsByMonth = driveActivityCountByMonth(driveData, "conversations");
   const driveOutputsByMonth = driveActivityCountByMonth(driveData, "outputSignals");
+  const driveStoredFilesByMonthMap = driveStoredFilesByMonth(driveTrendData);
+  const driveTrendPeriodDates = driveTrendData?.source.period.match(/\d{4}-\d{2}-\d{2}/g) ?? [];
+  const driveTrendStartMonth = driveTrendPeriodDates[0]?.slice(0, 7) ?? "";
+  const driveTrendEndMonth = driveTrendPeriodDates[driveTrendPeriodDates.length - 1]?.slice(0, 7) ?? "";
   const gensparkRepresentativeOutputs = representativeGensparkOutputsByMonth(gensparkData);
+  const classifiedActivityDates = [...driveData.activityAnalysis.dailyCounts]
+    .map((item) => item.date)
+    .sort();
+  const latestClassifiedActivityDate = classifiedActivityDates[classifiedActivityDates.length - 1];
+  const classifiedActivityMonth = latestClassifiedActivityDate?.slice(0, 7) || currentMonth;
   const cohorts: ProductivityCohort[] = [];
 
   for (let offset = 0; offset <= lagMonths; offset += 1) {
@@ -263,9 +295,9 @@ export function buildProductivityExecutiveModel({
       costUsageMonths.push(pendingMonth);
     }
   }
-  const previousUsageMonth = addMonths(currentMonth, -1);
+  const previousUsageMonth = addMonths(classifiedActivityMonth, -1);
   const currentDailyActivity = driveData.activityAnalysis.dailyCounts.filter((item) =>
-    item.date.startsWith(currentMonth),
+    item.date.startsWith(classifiedActivityMonth),
   );
   const previousDailyActivity = driveData.activityAnalysis.dailyCounts.filter((item) =>
     item.date.startsWith(previousUsageMonth),
@@ -273,9 +305,9 @@ export function buildProductivityExecutiveModel({
   const currentConversationActiveDays = currentDailyActivity.filter((item) => item.conversations > 0).length;
   const previousConversationActiveDays = previousDailyActivity.filter((item) => item.conversations > 0).length;
   const currentOutputDays = currentDailyActivity.filter((item) => item.outputSignals > 0).length;
-  const currentConversations = claudeConversationsByMonth.get(currentMonth) ?? 0;
+  const currentConversations = claudeConversationsByMonth.get(classifiedActivityMonth) ?? 0;
   const previousConversations = claudeConversationsByMonth.get(previousUsageMonth) ?? 0;
-  const currentOutputs = driveOutputsByMonth.get(currentMonth) ?? 0;
+  const currentOutputs = driveOutputsByMonth.get(classifiedActivityMonth) ?? 0;
   const previousOutputs = driveOutputsByMonth.get(previousUsageMonth) ?? 0;
   const currentConversationsPerActiveDay =
     currentConversationActiveDays > 0 ? currentConversations / currentConversationActiveDays : 0;
@@ -301,6 +333,8 @@ export function buildProductivityExecutiveModel({
   return {
     currentMonth,
     currentMonthLabel: monthLabel(currentMonth),
+    classifiedActivityMonth,
+    classifiedActivityMonthLabel: monthLabel(classifiedActivityMonth),
     lastClosedMonth: lastClosedActual.month,
     lastClosedMonthLabel: monthLabel(lastClosedActual.month),
     lagMonths,
@@ -314,8 +348,9 @@ export function buildProductivityExecutiveModel({
     codeLines: claudeTeamData.totalCodeLines,
     requests: claudeTeamData.totalRequests,
     claudeConversations: driveData.activityAnalysis.totalConversations,
-    currentMonthClaudeConversations: claudeConversationsByMonth.get(currentMonth) ?? 0,
-    currentMonthDriveOutputs: driveOutputsByMonth.get(currentMonth) ?? 0,
+    currentMonthClaudeConversations: currentConversations,
+    currentMonthDriveOutputs: currentOutputs,
+    currentMonthDriveStoredFiles: driveStoredFilesByMonthMap.get(currentMonth) ?? 0,
     conversationActiveDays,
     conversationDailyAverage:
       conversationActiveDays > 0
@@ -325,14 +360,27 @@ export function buildProductivityExecutiveModel({
     driveOutputs,
     gensparkOutputs,
     cohorts,
-    costUsageSeries: costUsageMonths.map((month) => ({
-      month,
-      label: monthlyActualByMonth.get(month)?.label ?? `${Number(month.slice(5, 7))}월`,
-      costKrw: monthlyActualByMonth.get(month)?.amount ?? null,
-      chatGptConversations: chatGptByMonth.get(month)?.conversations ?? 0,
-      claudeConversations: claudeConversationsByMonth.get(month) ?? 0,
-      driveOutputSignals: driveOutputsByMonth.get(month) ?? 0,
-    })),
+    costUsageSeries: costUsageMonths.map((month) => {
+      const actual = monthlyActualByMonth.get(month);
+      const chatGptMonth = chatGptByMonth.get(month)?.conversations;
+      const claudeMonth = claudeConversationsByMonth.get(month);
+      const hasConversationSource = chatGptMonth !== undefined || claudeMonth !== undefined;
+      const pendingCost = approvalMonthlyTotalsForMonth(approvalData, month).monthlyKrw;
+      const hasDriveTrendCoverage =
+        Boolean(driveTrendData) && month >= driveTrendStartMonth && month <= driveTrendEndMonth;
+
+      return {
+        month,
+        label: actual?.label ?? `${Number(month.slice(5, 7))}월`,
+        costKrw: actual?.amount ?? pendingCost,
+        costStatus: actual ? "확정" : pendingCost > 0 ? "최소" : "대기",
+        chatGptConversations: chatGptMonth ?? 0,
+        claudeConversations: claudeMonth ?? 0,
+        conversationSignals: hasConversationSource ? (chatGptMonth ?? 0) + (claudeMonth ?? 0) : null,
+        driveOutputSignals: driveOutputsByMonth.get(month) ?? 0,
+        driveStoredFiles: hasDriveTrendCoverage ? (driveStoredFilesByMonthMap.get(month) ?? 0) : null,
+      };
+    }),
     dailyDriveActivity: driveData.activityAnalysis.dailyCounts.map((item) => ({
       date: item.date,
       label: `${Number(item.date.slice(5, 7))}/${Number(item.date.slice(8, 10))}`,
@@ -397,10 +445,12 @@ export function buildProductivityExecutiveModel({
       },
       {
         source: "Claude Drive",
-        coverage: driveData.source.period,
-        asOf: driveData.activityAnalysis.collectedAt,
+        coverage: driveTrendData?.source.period ?? driveData.source.period,
+        asOf: driveTrendData?.source.collectedAt ?? driveData.activityAnalysis.collectedAt,
         status: "전체 폴더 집계",
-        note: `${driveData.activityAnalysis.scannedFolders.toLocaleString("ko-KR")}개 폴더·파일 ${driveData.activityAnalysis.scannedFiles.toLocaleString("ko-KR")}개 재귀 조회 · Claude 추정 대화 ${driveData.activityAnalysis.totalConversations.toLocaleString("ko-KR")}건 · 결과 신호 ${driveData.activityAnalysis.totalOutputSignals.toLocaleString("ko-KR")}개 · 오류 ${driveData.activityAnalysis.scanErrors}건`,
+        note: driveTrendData
+          ? `매일 21시 전체 하위 폴더 저장 파일 ${driveTrendData.totals.files.toLocaleString("ko-KR")}개 집계 · 대화·산출 내용 분류 ${monthLabel(classifiedActivityMonth)}까지`
+          : `${driveData.activityAnalysis.scannedFolders.toLocaleString("ko-KR")}개 폴더·파일 ${driveData.activityAnalysis.scannedFiles.toLocaleString("ko-KR")}개 재귀 조회 · Claude 추정 대화 ${driveData.activityAnalysis.totalConversations.toLocaleString("ko-KR")}건 · 결과 신호 ${driveData.activityAnalysis.totalOutputSignals.toLocaleString("ko-KR")}개 · 오류 ${driveData.activityAnalysis.scanErrors}건`,
       },
       {
         source: "Genspark Drive",

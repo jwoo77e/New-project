@@ -8,6 +8,7 @@ import { chatGptUsageData } from "../data/chatGptUsageData";
 import { initialClaudeTeamUsageData } from "../data/claudeTeamUsageData";
 import { driveArtifactRepositoryData } from "../data/driveArtifactRepositoryData";
 import { initialGensparkUsageData } from "../data/gensparkUsageData";
+import type { DriveArtifactTrendSnapshot } from "./driveArtifactTrendSnapshot";
 import { buildProductivityExecutiveModel } from "./productivityCohort";
 
 describe("buildProductivityExecutiveModel", () => {
@@ -42,10 +43,13 @@ describe("buildProductivityExecutiveModel", () => {
       driveOutputSignals: 58,
     });
     expect(model.costUsageSeries.find((item) => item.month === "2026-07")).toMatchObject({
-      costKrw: null,
+      costKrw: 4_314_801.15,
+      costStatus: "최소",
       chatGptConversations: 0,
       claudeConversations: 225,
+      conversationSignals: 225,
       driveOutputSignals: 771,
+      driveStoredFiles: null,
     });
     expect(model.activeUsers).toBe(19);
     expect(model.licensedUsers).toBe(20);
@@ -89,6 +93,90 @@ describe("buildProductivityExecutiveModel", () => {
       chatGptConversations: 0,
       claudeConversations: 225,
       driveOutputSignals: 771,
+    });
+    expect(augustModel.classifiedActivityMonth).toBe("2026-07");
+    expect(augustModel.currentMonthClaudeConversations).toBe(225);
+  });
+
+  it("uses the daily Drive trend for current-month stored files without inventing conversations", () => {
+    const augustDriveTrend: DriveArtifactTrendSnapshot = {
+      version: 1,
+      source: {
+        name: "Claude Drive 날짜별 저장 파일 증감",
+        status: "정상",
+        collectedAt: "2026-08-04 21:07 KST",
+        generatedAt: "2026-08-04T12:07:28.999Z",
+        period: "2026-06-23 ~ 2026-08-04",
+        schedule: "매일 21:00 KST",
+        note: "테스트 스냅샷",
+      },
+      repositories: [
+        {
+          owner: "김재우",
+          folderId: "kim",
+          folderUrl: "https://drive.google.com/kim",
+          artifacts: [],
+          inventory: {
+            fileCount: 134,
+            directFileCount: 0,
+            nestedFileCount: 134,
+            folderCount: 1,
+            maxDepth: 1,
+            metadataDateAnomalyCount: 0,
+            dailyCounts: [
+              { date: "2026-08-01", count: 43 },
+              { date: "2026-08-02", count: 24 },
+              { date: "2026-08-03", count: 30 },
+              { date: "2026-08-04", count: 37 },
+            ],
+          },
+        },
+        {
+          owner: "이형배",
+          folderId: "lee",
+          folderUrl: "https://drive.google.com/lee",
+          artifacts: [],
+          inventory: {
+            fileCount: 158,
+            directFileCount: 0,
+            nestedFileCount: 158,
+            folderCount: 1,
+            maxDepth: 1,
+            metadataDateAnomalyCount: 0,
+            dailyCounts: [
+              { date: "2026-08-01", count: 39 },
+              { date: "2026-08-02", count: 37 },
+              { date: "2026-08-04", count: 82 },
+            ],
+          },
+        },
+      ],
+      totals: {
+        files: 292,
+        directFiles: 0,
+        nestedFiles: 292,
+        folders: 2,
+        metadataDateAnomalies: 0,
+      },
+    };
+    const augustModel = buildProductivityExecutiveModel({
+      monthlyActuals: initialDashboardData.monthlyActuals,
+      approvalData: initialAiToolApprovalData,
+      chatGptData: chatGptUsageData,
+      claudeTeamData: initialClaudeTeamUsageData,
+      driveData: driveArtifactRepositoryData,
+      driveTrendData: augustDriveTrend,
+      gensparkData: initialGensparkUsageData,
+    });
+
+    expect(augustModel.currentMonth).toBe("2026-08");
+    expect(augustModel.classifiedActivityMonth).toBe("2026-07");
+    expect(augustModel.currentMonthDriveStoredFiles).toBe(292);
+    expect(augustModel.costUsageSeries.find((item) => item.month === "2026-08")).toMatchObject({
+      costKrw: 5_814_801.15,
+      costStatus: "최소",
+      conversationSignals: null,
+      driveStoredFiles: 292,
     });
   });
 

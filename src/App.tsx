@@ -658,9 +658,10 @@ function App() {
         chatGptData: chatGptUsageData,
         claudeTeamData: claudeTeamUsageData,
         driveData: driveArtifactRepositoryData,
+        driveTrendData: driveArtifactTrendSnapshot,
         gensparkData: gensparkUsageData,
       }),
-    [gensparkUsageData, monthlyActuals],
+    [driveArtifactTrendSnapshot, gensparkUsageData, monthlyActuals],
   );
   const aiUsageInsight = gensparkUsageData.insightAnalysis;
   const detailedUsageRecords = aiUsageInsight.totalRecords + chatGptUsageData.totalConversations;
@@ -946,7 +947,7 @@ function App() {
       eyebrow: "Executive Overview",
       title: "경영 인사이트",
       description: "확정 비용과 최신 활동·산출 신호를 같은 월 기준으로 연결해 경영 판단에 필요한 변화만 보여줍니다.",
-      freshness: `${productivityModel.currentMonthLabel} 활동 · ${productivityModel.lastClosedMonthLabel} 비용 확정`,
+      freshness: `${productivityModel.currentMonthLabel} Drive 저장 · ${productivityModel.classifiedActivityMonthLabel} 대화 분류 · ${productivityModel.lastClosedMonthLabel} 비용 확정`,
       metrics: [
         {
           icon: <ShieldCheck size={19} />,
@@ -971,9 +972,9 @@ function App() {
         },
         {
           icon: <FileText size={19} />,
-          label: "관측 산출 신호",
-          value: `${numberFormat.format(productivityModel.observableRepositoryOutputs)}개`,
-          detail: `Drive ${numberFormat.format(productivityModel.driveOutputs)} · Genspark ${numberFormat.format(productivityModel.gensparkOutputs)}`,
+          label: `${productivityModel.currentMonthLabel} Drive 신규 저장`,
+          value: `${numberFormat.format(productivityModel.currentMonthDriveStoredFiles)}개`,
+          detail: `매일 21시 · 누적 저장 ${numberFormat.format(latestDriveFileTotal)}개`,
           tone: "green",
         },
       ],
@@ -1317,10 +1318,10 @@ function App() {
           />
           <MetricCard
             icon={<FileText size={21} />}
-            label="관측 산출 신호"
+            label={`${productivityModel.currentMonthLabel} Drive 신규 저장`}
             tone="green"
-            value={`${numberFormat.format(productivityModel.observableRepositoryOutputs)}개`}
-            footer={`Claude Drive 결과 ${numberFormat.format(productivityModel.driveOutputs)} · Genspark ${numberFormat.format(productivityModel.gensparkOutputs)}`}
+            value={`${numberFormat.format(productivityModel.currentMonthDriveStoredFiles)}개`}
+            footer={`매일 21시 자동 집계 · 누적 저장 ${numberFormat.format(latestDriveFileTotal)}개`}
           />
           <MetricCard
             icon={<CircleDollarSign size={21} />}
@@ -1531,8 +1532,8 @@ function ExecutiveDesignOverview({
     () =>
       model.costUsageSeries.map((item) => ({
         ...item,
-        conversations: item.chatGptConversations + item.claudeConversations,
-        outputSignals: item.driveOutputSignals,
+        conversations: item.conversationSignals,
+        outputSignals: item.driveStoredFiles ?? item.driveOutputSignals,
       })),
     [model.costUsageSeries],
   );
@@ -1567,17 +1568,18 @@ function ExecutiveDesignOverview({
             allowDecimals={false}
           />
           <Tooltip
-            formatter={(value, name) => [
-              name === "AI 비용"
+            formatter={(value, name) => {
+              const label = String(name);
+              const formattedValue = label.startsWith("AI 비용")
                 ? formatWon(Number(value))
-                : `${numberFormat.format(Number(value))}${name === "활성 계정" ? "명" : "건"}`,
-              name,
-            ]}
+                : `${numberFormat.format(Number(value))}${label.startsWith("Drive") ? "개" : "건"}`;
+              return [formattedValue, name];
+            }}
           />
           <Legend />
           <Bar
             dataKey="costKrw"
-            name="AI 비용"
+            name="AI 비용(확정/최소)"
             yAxisId="cost"
             fill="#2563eb"
             maxBarSize={40}
@@ -1585,7 +1587,7 @@ function ExecutiveDesignOverview({
           />
           <Line
             dataKey="conversations"
-            name="대화·프롬프트"
+            name="대화·프롬프트(내용 분류)"
             yAxisId="signal"
             type="monotone"
             stroke="#ef5a47"
@@ -1594,7 +1596,7 @@ function ExecutiveDesignOverview({
           />
           <Line
             dataKey="outputSignals"
-            name="Drive 산출 신호"
+            name="Drive 신규 저장 파일"
             yAxisId="signal"
             type="monotone"
             stroke="#169c74"
@@ -1633,7 +1635,7 @@ function ExecutiveDesignOverview({
       step: "2",
       label: "활동",
       value: `${model.axKpis.activity.conversationsPerActiveDay.toFixed(1)}건`,
-      detail: "활성일 평균 대화",
+      detail: `${model.classifiedActivityMonthLabel} 활성일 평균 대화`,
       direction: activityDirection,
       tone: "blue",
     },
@@ -1641,7 +1643,7 @@ function ExecutiveDesignOverview({
       step: "3",
       label: "산출",
       value: `${model.axKpis.output.outputsPerConversation.toFixed(2)}개`,
-      detail: "대화당 Drive 산출",
+      detail: `${model.classifiedActivityMonthLabel} 대화당 Drive 산출`,
       direction: outputDirection,
       tone: "green",
     },
@@ -1662,7 +1664,7 @@ function ExecutiveDesignOverview({
             <div className="section-heading">
               <div>
                 <strong>비용 대비 AX 신호 추이</strong>
-                <span>확정 비용과 관측 가능한 활동·산출 선행지표</span>
+                <span>확정·최소 비용, 내용 분류 대화, 매일 수집되는 Drive 저장 파일</span>
               </div>
               <span className="state-pill neutral">비용 후행 보정</span>
             </div>
@@ -1687,16 +1689,24 @@ function ExecutiveDesignOverview({
               <li>
                 <span className="decision-rank amber">2</span>
                 <div>
-                  <b>활동 강도 {activityDirection}</b>
-                  <p>활성일 평균 대화가 전월 대비 {formatRate(model.axKpis.activity.dailyGrowthRate, true)}입니다.</p>
+                  <b>
+                    {model.currentMonthLabel} Drive 신규 저장{" "}
+                    {numberFormat.format(model.currentMonthDriveStoredFiles)}개
+                  </b>
+                  <p>AI 활용 상세 분석과 동일한 매일 21시 전체 하위 폴더 집계입니다.</p>
                 </div>
                 <ChevronRight size={17} />
               </li>
               <li>
                 <span className="decision-rank green">3</span>
                 <div>
-                  <b>산출 신호 {outputDirection}</b>
-                  <p>일평균 산출 신호가 전월 대비 {formatRate(model.axKpis.output.dailyGrowthRate, true)}입니다.</p>
+                  <b>
+                    {model.classifiedActivityMonthLabel} 대화 {numberFormat.format(model.currentMonthClaudeConversations)}건
+                  </b>
+                  <p>
+                    내용 분류 산출 {numberFormat.format(model.currentMonthDriveOutputs)}개 · 활동 {activityDirection} · 산출{" "}
+                    {outputDirection}
+                  </p>
                 </div>
                 <ChevronRight size={17} />
               </li>
@@ -1723,7 +1733,11 @@ function ExecutiveDesignOverview({
             ["비용", formatManWon(model.currentFixedCostKrw), "현재 월 최소"],
             ["활성", formatRate(model.activationRate), `${model.activeUsers}/${model.licensedUsers}명`],
             ["활동", `${model.axKpis.activity.conversationsPerActiveDay.toFixed(1)}건`, "활성일 평균"],
-            ["산출", `${model.observableRepositoryOutputs.toLocaleString("ko-KR")}건`, "관측 신호"],
+            [
+              "산출",
+              `${model.currentMonthDriveStoredFiles.toLocaleString("ko-KR")}개`,
+              `${model.currentMonthLabel} Drive 신규`,
+            ],
           ].map(([label, value, detail], index) => (
             <div className={`flow-step flow-step-${index + 1}`} key={label}>
               <span>{label}</span>
@@ -1737,7 +1751,7 @@ function ExecutiveDesignOverview({
           <div className="section-heading">
             <div>
               <strong>월별 비용·활동·산출 추이</strong>
-              <span>비용은 확정월, 활동과 산출은 최신 수집 시점 기준</span>
+              <span>비용은 확정·고정비 최소값, Drive 저장은 매일 21시 수집 기준</span>
             </div>
           </div>
           {chart}
@@ -1784,8 +1798,8 @@ function ExecutiveDesignOverview({
         <section className="signal-chart-area">
           <div className="section-heading">
             <div>
-              <strong>비용·대화·Drive 산출 신호</strong>
-              <span>동일한 월 축에서 실행 선행지표를 비교합니다.</span>
+              <strong>비용·대화·Drive 저장 신호</strong>
+              <span>상세 분석의 일일 Drive 저장 데이터를 동일한 월 축에 반영합니다.</span>
             </div>
           </div>
           {chart}
@@ -1817,7 +1831,9 @@ function ExecutiveDesignOverview({
               <AlertTriangle size={16} /> 주의 필요
             </strong>
             <p>당월 비용은 고정 구독비 최소값이며 API·변동비는 확정 대기입니다.</p>
-            <p>활동·산출 건수는 생산성·품질 확정치가 아닌 관측 신호입니다.</p>
+            <p>
+              Drive 신규 저장은 매일 반영하며 대화·산출 내용 분류는 {model.classifiedActivityMonthLabel}까지입니다.
+            </p>
           </div>
         </section>
       </div>
