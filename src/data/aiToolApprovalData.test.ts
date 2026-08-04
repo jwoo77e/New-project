@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { initialAiToolApprovalData } from "./aiToolApprovalData";
+import {
+  approvalMonthlyTotalsForMonth,
+  initialAiToolApprovalData,
+} from "./aiToolApprovalData";
 
 describe("initialAiToolApprovalData", () => {
   it("assigns Kim Hana and Jeon Woosung to Claude Team Premium", () => {
@@ -95,7 +98,7 @@ describe("initialAiToolApprovalData", () => {
       monthlyKrw: 980_100,
     });
     expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(2_920.71);
-    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(4_337_254.35);
+    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(5_837_254.35);
   });
 
   it("keeps category and payment totals aligned with the updated total", () => {
@@ -107,8 +110,39 @@ describe("initialAiToolApprovalData", () => {
       monthlyKrw: 3_103_650,
     });
     expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(37);
-    expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(
-      initialAiToolApprovalData.totalMonthlyKrw,
-    );
+    expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(4_337_254.35);
+    expect(
+      initialAiToolApprovalData.paymentSummary.find((item) => item.key === "계약 고정비"),
+    ).toMatchObject({
+      count: 1,
+      monthlyUsd: 0,
+      monthlyKrw: 1_500_000,
+    });
+  });
+
+  it("adds the GH AI Agent API fixed service cost from August 2026", () => {
+    expect(
+      initialAiToolApprovalData.records.find((record) => record.category === "AI API"),
+    ).toMatchObject({
+      tool: "GH AI Agent AI API 서비스",
+      owner: "GH AI Agent 개발 / 플랫폼개발팀",
+      department: "플랫폼개발",
+      monthlyUsd: 0,
+      monthlyKrw: 1_500_000,
+      billingCurrency: "KRW",
+      startMonth: "2026-08",
+      paymentMethod: "계약 고정비",
+    });
+
+    expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-07")).toMatchObject({
+      count: 37,
+      monthlyUsd: 2_920.71,
+      monthlyKrw: 4_337_254.35,
+    });
+    expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-08")).toMatchObject({
+      count: 38,
+      monthlyUsd: 2_920.71,
+      monthlyKrw: 5_837_254.35,
+    });
   });
 });

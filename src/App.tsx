@@ -77,8 +77,10 @@ import {
   type ClaudeTeamUsageLevel,
 } from "./data/claudeTeamUsageData";
 import {
+  approvalMonthlyTotalsForMonth,
   initialAiToolApprovalData,
   type AiToolApprovalData,
+  type AiToolApprovalRecord,
 } from "./data/aiToolApprovalData";
 import {
   clearStoredDashboardData,
@@ -327,6 +329,17 @@ function addMonths(month: string, offset: number) {
 
 function monthLabel(month: string) {
   return `${Number(month.slice(5, 7))}월`;
+}
+
+function currentKstMonthKey() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(new Date());
+  const year = parts.find((part) => part.type === "year")?.value ?? "";
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+  return `${year}-${month}`;
 }
 
 function monthRangeLabel(items: Array<{ month: string }>) {
@@ -704,8 +717,14 @@ function App() {
       ),
     [apiForecast.isReady, forecast, latestMeasuredApiForecast, latestMeasuredApiMonth, monthlyApiForecasts],
   );
-  const operatingPlanSubscriptionUsd = aiToolApprovalData.totalMonthlyUsd;
-  const operatingPlanSubscriptionKrw = Math.round(aiToolApprovalData.totalMonthlyKrw);
+  const currentBillingMonth = currentKstMonthKey();
+  const currentApprovalTotals = approvalMonthlyTotalsForMonth(aiToolApprovalData, currentBillingMonth);
+  const operatingPlanSubscriptionUsd = currentApprovalTotals.monthlyUsd;
+  const operatingPlanSubscriptionKrw = Math.round(currentApprovalTotals.monthlyKrw);
+  const fixedApiServiceRecords = currentApprovalTotals.records.filter((record) => record.category === "AI API");
+  const fixedApiServiceMonthlyKrw = Math.round(
+    fixedApiServiceRecords.reduce((sum, record) => sum + record.monthlyKrw, 0),
+  );
   const operatingPlanSubscriptionSummary = aiToolApprovalData.toolSummary
     .map((item) => `${item.key} ${item.count}`)
     .join(" · ");
@@ -718,6 +737,7 @@ function App() {
   const apiAdjustedForecast = useMemo(
     () =>
       forecast.map((item) => {
+        const monthApprovalTotals = approvalMonthlyTotalsForMonth(aiToolApprovalData, item.month);
         const apiSelection =
           apiForecastByMonth.get(item.month) ??
           selectApiForecastForMonth({
@@ -730,8 +750,8 @@ function App() {
         const operatingPlan = buildOperatingPlanForecast(
           item.month,
           apiSelection,
-          operatingPlanSubscriptionUsd,
-          operatingPlanSubscriptionKrw,
+          monthApprovalTotals.monthlyUsd,
+          monthApprovalTotals.monthlyKrw,
         );
         const apiUsageKrw = operatingPlan.applies
           ? operatingPlan.apiKrw
@@ -759,8 +779,6 @@ function App() {
       latestMeasuredApiForecast,
       latestMeasuredApiMonth,
       monthlyApiForecasts,
-      operatingPlanSubscriptionKrw,
-      operatingPlanSubscriptionUsd,
     ],
   );
   const apiAdjustedForecastTotal = apiAdjustedForecast.reduce((sum, item) => sum + item.totalWithApi, 0);
@@ -785,12 +803,13 @@ function App() {
       forecastWithApi: null,
       forecastBasis: forecastBasisActuals.find((basis) => basis.month === item.month)?.amount ?? item.amount,
       adjustment: adjustmentByMonth.get(item.month)?.amount ?? 0,
-      fixedPlan: operatingPlanSubscriptionKrw,
+      fixedPlan: approvalMonthlyTotalsForMonth(aiToolApprovalData, item.month).monthlyKrw,
       transactions: item.transactions,
       apiSourceLabel: null,
       status: "실적",
     })),
     ...forecast.map((item) => {
+      const monthApprovalTotals = approvalMonthlyTotalsForMonth(aiToolApprovalData, item.month);
       const apiSelection =
         apiForecastByMonth.get(item.month) ??
         selectApiForecastForMonth({
@@ -803,8 +822,8 @@ function App() {
       const operatingPlan = buildOperatingPlanForecast(
         item.month,
         apiSelection,
-        operatingPlanSubscriptionUsd,
-        operatingPlanSubscriptionKrw,
+        monthApprovalTotals.monthlyUsd,
+        monthApprovalTotals.monthlyKrw,
       );
       const apiUsageKrw = operatingPlan.applies
         ? operatingPlan.apiKrw
@@ -822,7 +841,7 @@ function App() {
         forecastWithApi: operatingPlan.applies ? operatingPlan.totalKrw : item.amount + apiUsageKrw,
         forecastBasis: null,
         adjustment: null,
-        fixedPlan: operatingPlan.applies ? operatingPlan.forecastBaseKrw : operatingPlanSubscriptionKrw,
+        fixedPlan: operatingPlan.applies ? operatingPlan.forecastBaseKrw : monthApprovalTotals.monthlyKrw,
         transactions: null,
         status: "예측",
       };
@@ -889,9 +908,16 @@ function App() {
       apiAdjustedForecast,
       operatingPlan: {
         startMonth: OPERATING_PLAN_START_MONTH,
+        currentBillingMonth,
         subscriptions: aiToolApprovalData.toolSummary,
         subscriptionUsd: operatingPlanSubscriptionUsd,
         subscriptionKrw: operatingPlanSubscriptionKrw,
+        monthlyFixedCosts: Object.fromEntries(
+          forecast.map((item) => [
+            item.month,
+            approvalMonthlyTotalsForMonth(aiToolApprovalData, item.month).monthlyKrw,
+          ]),
+        ),
         apiBudgetKrw: OPERATING_PLAN_API_BUDGET_KRW,
         apiForecastKrw: operatingPlanApiKrw,
         apiForecastSource: operatingPlanApiSourceLabel,
@@ -899,7 +925,7 @@ function App() {
         forecastTotalKrw: operatingPlanForecastTotal,
       },
       generatedAt: new Date().toISOString(),
-      forecastMethod: `${fixedCostForecastMethodLabel(operatingPlanSubscriptionKrw)} - 5월 이후는 AI 도구 결재 현황의 현재 월 고정 비용을 예측 기준으로 두고 실측 API 월환산 비용을 추가`,
+      forecastMethod: `${fixedCostForecastMethodLabel(operatingPlanSubscriptionKrw)} - AI 도구 결재 현황의 적용 시작월별 고정 비용을 예측 기준으로 두고 실측 API 월환산 비용을 추가. GH AI Agent 개발용 AI API 고정비 150만원은 2026-08부터 반영`,
     };
     const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
       type: "application/json",
@@ -1042,12 +1068,12 @@ function App() {
           icon: <CircleDollarSign size={19} />,
           label: "월 구독료",
           value: formatManWon(aiToolApprovalData.totalMonthlyKrw),
-          detail: formatPreciseUsd(aiToolApprovalData.totalMonthlyUsd),
+          detail: `${formatPreciseUsd(aiToolApprovalData.totalMonthlyUsd)} USD 항목 + 원화 고정비`,
           tone: "green",
         },
         {
           icon: <WalletCards size={19} />,
-          label: "결재 계정",
+          label: "결재 항목",
           value: `${numberFormat.format(aiToolApprovalData.totalAccounts)}개`,
           detail: "월 구독 기준",
           tone: "teal",
@@ -1072,7 +1098,7 @@ function App() {
     viewHeader = {
       eyebrow: "Cost & Forecast",
       title: "월별 비용과 예측",
-      description: "확정 실적, 현재 월 고정비, 실측 API를 분리해 월별 비용 흐름과 다음 분기 최소 지출을 보여줍니다.",
+      description: "확정 실적, 월별 적용 고정비, 실측 API를 분리해 월별 비용 흐름과 다음 분기 최소 지출을 보여줍니다.",
       freshness: `${actualRange} 확정 · ${forecastRange} 예측`,
       metrics: [
         {
@@ -1100,13 +1126,12 @@ function App() {
           icon: <WalletCards size={19} />,
           label: "현재 월 고정비",
           value: formatManWon(operatingPlanSubscriptionKrw),
-          detail: "예측 최소 기준",
+          detail: `${monthLabel(currentBillingMonth)} · GH AI Agent API 포함`,
           tone: "steel",
         },
       ],
     };
   } else {
-    const healthyProviders = apiUsageData.providers.filter((provider) => provider.status === "정상").length;
     viewHeader = {
       eyebrow: "API Operations",
       title: "API 사용",
@@ -1114,8 +1139,15 @@ function App() {
       freshness: `${apiUsageData.source.period} · ${formatKstDateTime(apiUsageData.source.generatedAt)}`,
       metrics: [
         {
+          icon: <WalletCards size={19} />,
+          label: "API 계약 고정비",
+          value: formatManWon(fixedApiServiceMonthlyKrw),
+          detail: "GH AI Agent · 8월부터",
+          tone: "green",
+        },
+        {
           icon: <CircleDollarSign size={19} />,
-          label: "추정 API 비용",
+          label: "실측 API 변동비",
           value: formatUsd(apiTotals.totalCostUsd),
           detail: apiUsageData.source.mode,
           tone: "amber",
@@ -1133,13 +1165,6 @@ function App() {
           value: `${numberFormat.format(apiTotals.totalRequests)}건`,
           detail: "Claude 요청 수 미제공",
           tone: "green",
-        },
-        {
-          icon: <KeyRound size={19} />,
-          label: "정상 공급자",
-          value: `${healthyProviders}/${apiUsageData.providers.length}`,
-          detail: `활성 키 ${apiTotals.activeKeys}개`,
-          tone: "steel",
         },
       ],
     };
@@ -1315,6 +1340,13 @@ function App() {
       ) : activeView === "api" ? (
         <section className="metric-grid" aria-label="API 사용 핵심 지표">
           <MetricCard
+            icon={<WalletCards size={21} />}
+            label="API 계약 고정비"
+            tone="green"
+            value={formatManWon(fixedApiServiceMonthlyKrw)}
+            footer="GH AI Agent 개발 · 2026년 8월부터"
+          />
+          <MetricCard
             icon={<Bot size={21} />}
             label={`${apiUsageData.source.period} API 토큰`}
             tone="teal"
@@ -1324,30 +1356,23 @@ function App() {
           <MetricCard
             icon={<Cpu size={21} />}
             label="수집된 요청"
-            tone="green"
+            tone="steel"
             value={`${numberFormat.format(apiTotals.totalRequests)}건`}
             footer="Claude는 요청 수 미제공"
           />
           <MetricCard
             icon={<CircleDollarSign size={21} />}
-            label="추정 API 비용"
+            label="실측 API 변동비"
             tone="amber"
             value={formatUsd(apiTotals.totalCostUsd)}
             footer={apiUsageData.source.mode}
-          />
-          <MetricCard
-            icon={<KeyRound size={21} />}
-            label="활성 키/오류율"
-            tone="steel"
-            value={`${apiTotals.activeKeys}개`}
-            footer={`가중 오류율 ${formatRate(apiTotals.avgErrorRate)}`}
           />
         </section>
       ) : activeView === "approval" ? (
         <section className="metric-grid" aria-label="AI 도구 결재 핵심 지표">
           <MetricCard
             icon={<WalletCards size={21} />}
-            label="결재 계정"
+            label="결재 항목"
             tone="teal"
             value={`${numberFormat.format(aiToolApprovalData.totalAccounts)}개`}
             footer={aiToolApprovalData.source.period}
@@ -1357,7 +1382,7 @@ function App() {
             label="월 구독료"
             tone="green"
             value={formatManWon(aiToolApprovalData.totalMonthlyKrw)}
-            footer={`${formatPreciseUsd(aiToolApprovalData.totalMonthlyUsd)} · ${formatWon(aiToolApprovalData.totalMonthlyKrw)}`}
+            footer={`${formatPreciseUsd(aiToolApprovalData.totalMonthlyUsd)} USD 항목 · 원화 고정비 ${formatWon(fixedApiServiceMonthlyKrw)}`}
           />
           <MetricCard
             icon={<ShieldCheck size={21} />}
@@ -1367,11 +1392,11 @@ function App() {
             footer={formatWon(aiToolApprovalData.aiDedicatedCardKrw)}
           />
           <MetricCard
-            icon={<KeyRound size={21} />}
-            label="공용 법인 카드"
+            icon={<Bot size={21} />}
+            label="API 계약 고정비"
             tone="steel"
-            value={`${numberFormat.format(aiToolApprovalData.namedCorporateCardAccounts)}개`}
-            footer={formatWon(aiToolApprovalData.namedCorporateCardKrw)}
+            value={formatManWon(fixedApiServiceMonthlyKrw)}
+            footer="플랫폼개발팀 · 2026년 8월부터"
           />
         </section>
       ) : activeView === "adoption" || activeView === "genspark" ? null : (
@@ -1395,7 +1420,7 @@ function App() {
             label={`${forecastRange} API/고정비 반영 예측`}
             tone="amber"
             value={formatManWon(apiAdjustedForecastTotal)}
-            footer={`5월 이후 현재 월 고정비 ${formatManWon(operatingPlanSubscriptionKrw)}/월 · ${operatingPlanApiSourceLabel} ${formatManWon(operatingPlanApiKrw)}/월`}
+            footer={`${monthLabel(currentBillingMonth)} 고정비 ${formatManWon(operatingPlanSubscriptionKrw)}/월 · GH AI Agent API 150만원 포함`}
           />
           <MetricCard
             icon={<WalletCards size={21} />}
@@ -1423,6 +1448,8 @@ function App() {
           operatingPlanSubscriptionKrw={operatingPlanSubscriptionKrw}
           operatingPlanSubscriptionSummary={operatingPlanSubscriptionSummary}
           operatingPlanSubscriptionUsd={operatingPlanSubscriptionUsd}
+          currentBillingMonth={currentBillingMonth}
+          fixedApiServiceMonthlyKrw={fixedApiServiceMonthlyKrw}
           forecastAdjustments={forecastAdjustments}
           forecastBasisActuals={forecastBasisActuals}
           sourceMeta={sourceMeta}
@@ -1453,7 +1480,9 @@ function App() {
 
       {activeView === "approval" && <AiToolApprovalView approvalData={aiToolApprovalData} />}
 
-      {activeView === "api" && <ApiUsageView apiUsageData={apiUsageData} />}
+      {activeView === "api" && (
+        <ApiUsageView apiUsageData={apiUsageData} fixedApiServiceRecords={fixedApiServiceRecords} />
+      )}
 
       {toast && <div className="toast">{toast}</div>}
     </main>
@@ -2504,6 +2533,8 @@ function MonthlyView({
   operatingPlanSubscriptionKrw,
   operatingPlanSubscriptionSummary,
   operatingPlanSubscriptionUsd,
+  currentBillingMonth,
+  fixedApiServiceMonthlyKrw,
   forecast,
   forecastAdjustments,
   forecastBasisActuals,
@@ -2534,6 +2565,8 @@ function MonthlyView({
   operatingPlanSubscriptionKrw: number;
   operatingPlanSubscriptionSummary: string;
   operatingPlanSubscriptionUsd: number;
+  currentBillingMonth: string;
+  fixedApiServiceMonthlyKrw: number;
   forecast: ForecastPoint[];
   forecastAdjustments: DashboardData["forecastAdjustments"];
   forecastBasisActuals: MonthlyActual[];
@@ -2558,7 +2591,9 @@ function MonthlyView({
   const forecastRange = monthRangeLabel(forecast);
   const adjustmentTotal = forecastAdjustments.reduce((sum, item) => sum + item.amount, 0);
   const apiForecastProviderSummary = formatApiForecastProviderSummary(apiForecast);
-  const actualFixedPlanTotal = operatingPlanSubscriptionKrw * monthlyActuals.length;
+  const actualFixedPlanTotal = monthlySeries
+    .filter((row) => row.status === "실적")
+    .reduce((sum, row) => sum + row.fixedPlan, 0);
   const overFixedPlan = sourceMeta.totalActual - actualFixedPlanTotal;
   const actualFixedPlanRatio = actualFixedPlanTotal > 0 ? sourceMeta.totalActual / actualFixedPlanTotal : 0;
 
@@ -2570,7 +2605,7 @@ function MonthlyView({
             <span className="eyebrow">Monthly Spend</span>
             <h2>월별 비용과 {forecastRange} 예측</h2>
           </div>
-          <span className="state-pill warning">현재 월 고정비 기준</span>
+          <span className="state-pill warning">월별 적용 고정비 기준</span>
         </div>
         <div className="chart-frame">
           <ResponsiveContainer width="100%" height="100%">
@@ -2589,7 +2624,7 @@ function MonthlyView({
               />
               <Line
                 dataKey="fixedPlan"
-                name="현재 월 고정비 기준"
+                name="월별 적용 고정비"
                 stroke="#c58612"
                 strokeDasharray="6 4"
                 strokeWidth={2}
@@ -2646,7 +2681,7 @@ function MonthlyView({
                 <strong>{item.label}</strong>
                 {item.isOperatingPlan ? (
                   <span>
-                    현재 월 고정비 {formatManWon(item.baseForecastKrw)} · {item.apiSourceLabel}{" "}
+                    적용 고정비 {formatManWon(item.baseForecastKrw)} · {item.apiSourceLabel}{" "}
                     {formatManWon(item.apiUsageKrw)}
                   </span>
                 ) : (
@@ -2666,8 +2701,8 @@ function MonthlyView({
               {forecastRange} API/고정비 반영 합계 {formatManWon(apiAdjustedForecastTotal)}
             </strong>
             <span>
-              {OPERATING_PLAN_START_MONTH}부터는 AI 도구 결재 현황 탭의 현재 월 고정 비용{" "}
-              {formatManWon(operatingPlanSubscriptionKrw)}을 예측 기준으로 적용합니다.
+              예측월별로 AI 도구 결재 현황의 적용 시작월을 반영합니다. GH AI Agent 개발용 AI API 고정비{" "}
+              {formatManWon(fixedApiServiceMonthlyKrw)}은 2026년 8월부터 포함됩니다.
             </span>
             <span>
               API 반영분 {formatManWon(apiForecastAddedTotal)} · 고정비 적용 기준{" "}
@@ -2675,7 +2710,8 @@ function MonthlyView({
               {formatRate(apiAdjustedForecastGrowth, true)}
             </span>
             <span>
-              현재 월 고정 비용 {formatPreciseUsd(operatingPlanSubscriptionUsd)}/월 · 환율{" "}
+              {monthLabel(currentBillingMonth)} 고정 비용 {formatManWon(operatingPlanSubscriptionKrw)}/월 · USD 결재 항목{" "}
+              {formatPreciseUsd(operatingPlanSubscriptionUsd)}/월 · 환율{" "}
               {numberFormat.format(OPERATING_PLAN_USD_TO_KRW)}원 · 현재월 기준 {operatingPlanApiSourceLabel}{" "}
               {formatManWon(operatingPlanApiKrw)}/월
             </span>
@@ -2712,12 +2748,12 @@ function MonthlyView({
         <div className="panel-header">
           <div>
             <span className="eyebrow">Plan Gap</span>
-            <h2>현재 월 고정비 기준 대비</h2>
+            <h2>월별 적용 고정비 기준 대비</h2>
           </div>
         </div>
         <div className="plan-stack">
           <GaugeRow
-            label={`${actualRange} 현재 월 고정비 기준`}
+            label={`${actualRange} 월별 적용 고정비 기준`}
             max={sourceMeta.totalActual}
             tone="steel"
             value={actualFixedPlanTotal}
@@ -2753,9 +2789,9 @@ function MonthlyView({
                 <th>월</th>
                 <th>구분</th>
                 <th>실제 비용</th>
-                <th>현재 월 고정비</th>
+                <th>예측 고정비</th>
                 <th>건수</th>
-                <th>고정비 기준</th>
+                <th>월별 적용 고정비</th>
               </tr>
             </thead>
             <tbody>
@@ -3936,7 +3972,7 @@ function AiToolApprovalView({ approvalData }: { approvalData: AiToolApprovalData
                 key={tool.key}
                 label={`${tool.key} · ${numberFormat.format(tool.count)}개`}
                 value={(tool.monthlyKrw / maxToolMonthlyKrw) * 100}
-                valueLabel={`${formatWon(tool.monthlyKrw)} · ${formatPreciseUsd(tool.monthlyUsd)}`}
+                valueLabel={`${formatWon(tool.monthlyKrw)} · ${tool.monthlyUsd > 0 ? formatPreciseUsd(tool.monthlyUsd) : "원화 고정비"}`}
               />
             ))}
           </div>
@@ -3976,7 +4012,7 @@ function AiToolApprovalView({ approvalData }: { approvalData: AiToolApprovalData
                 <th>주사용자/부서</th>
                 <th>월 구독료</th>
                 <th>결재수단</th>
-                <th>비고</th>
+                <th>적용 시작</th>
               </tr>
             </thead>
             <tbody>
@@ -3996,7 +4032,7 @@ function AiToolApprovalView({ approvalData }: { approvalData: AiToolApprovalData
                     <small>{record.department}</small>
                   </td>
                   <td>
-                    <strong>{formatPreciseUsd(record.monthlyUsd)}</strong>
+                    <strong>{record.billingCurrency === "KRW" ? "원화 고정비" : formatPreciseUsd(record.monthlyUsd)}</strong>
                     <small>{formatWon(record.monthlyKrw)}</small>
                   </td>
                   <td>
@@ -4004,7 +4040,7 @@ function AiToolApprovalView({ approvalData }: { approvalData: AiToolApprovalData
                       {record.paymentMethod}
                     </span>
                   </td>
-                  <td>{record.note}</td>
+                  <td>{record.startMonth ? monthLabel(record.startMonth) : "기존"}</td>
                 </tr>
               ))}
             </tbody>
@@ -4396,9 +4432,16 @@ function AdoptionView({
   );
 }
 
-function ApiUsageView({ apiUsageData }: { apiUsageData: ApiUsageData }) {
+function ApiUsageView({
+  apiUsageData,
+  fixedApiServiceRecords,
+}: {
+  apiUsageData: ApiUsageData;
+  fixedApiServiceRecords: AiToolApprovalRecord[];
+}) {
   const totalCost = apiUsageData.providers.reduce((sum, item) => sum + item.costUsd, 0);
   const totalTokens = apiUsageData.providers.reduce((sum, item) => sum + item.inputTokens + item.outputTokens, 0);
+  const fixedApiMonthlyKrw = fixedApiServiceRecords.reduce((sum, item) => sum + item.monthlyKrw, 0);
   const highestCostProvider = [...apiUsageData.providers].sort((a, b) => b.costUsd - a.costUsd)[0];
   const highestTokenDay = [...apiUsageData.dailyUsage].sort((a, b) => b.totalTokens - a.totalTokens)[0];
   const providerTokens = new Map(
@@ -4489,6 +4532,15 @@ function ApiUsageView({ apiUsageData }: { apiUsageData: ApiUsageData }) {
             </article>
           ))}
         </div>
+        {fixedApiServiceRecords.length > 0 && (
+          <div className="insight-box">
+            <WalletCards size={18} />
+            <div>
+              <strong>GH AI Agent 개발 API 계약 고정비 {formatManWon(fixedApiMonthlyKrw)}/월</strong>
+              <span>플랫폼개발팀 · 2026년 8월부터 · 위 공급자별 실측 API 변동비와 별도 집계</span>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="panel panel-wide api-summary-panel">
@@ -4497,8 +4549,12 @@ function ApiUsageView({ apiUsageData }: { apiUsageData: ApiUsageData }) {
           <strong>{formatTokens(totalTokens)}</strong>
         </div>
         <div className="api-summary-item">
-          <span>총 비용</span>
+          <span>실측 변동비</span>
           <strong>{formatUsd(totalCost)}</strong>
+        </div>
+        <div className="api-summary-item">
+          <span>계약 고정비</span>
+          <strong>{formatWon(fixedApiMonthlyKrw)}</strong>
         </div>
         <div className="api-summary-item">
           <span>최대 비용 공급자</span>

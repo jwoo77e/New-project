@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { initialDashboardData } from "../data/aiCostData";
-import { initialAiToolApprovalData } from "../data/aiToolApprovalData";
+import {
+  approvalMonthlyTotalsForMonth,
+  initialAiToolApprovalData,
+} from "../data/aiToolApprovalData";
 import { chatGptUsageData } from "../data/chatGptUsageData";
 import { initialClaudeTeamUsageData } from "../data/claudeTeamUsageData";
 import { driveArtifactRepositoryData } from "../data/driveArtifactRepositoryData";
@@ -25,9 +28,11 @@ describe("buildProductivityExecutiveModel", () => {
   });
 
   it("uses current subscriptions only as the open-month minimum cost", () => {
+    const julyApprovalTotals = approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-07");
+
     expect(model.cohorts[0].costKrw).toBe(3_486_961);
-    expect(model.cohorts[1].costKrw).toBe(initialAiToolApprovalData.totalMonthlyKrw);
-    expect(model.currentFixedCostKrw).toBe(initialAiToolApprovalData.totalMonthlyKrw);
+    expect(model.cohorts[1].costKrw).toBe(julyApprovalTotals.monthlyKrw);
+    expect(model.currentFixedCostKrw).toBe(julyApprovalTotals.monthlyKrw);
   });
 
   it("aligns observable monthly usage with the same cost month", () => {

@@ -1,6 +1,6 @@
 export type AiToolApprovalRecord = {
   no: number;
-  category: "ChatGPT" | "Claude" | "Gemini" | "Genspark" | "Gamma";
+  category: "ChatGPT" | "Claude" | "Gemini" | "Genspark" | "Gamma" | "AI API";
   tool: string;
   account: string;
   linkedAccount: string;
@@ -8,6 +8,8 @@ export type AiToolApprovalRecord = {
   department: string;
   monthlyUsd: number;
   monthlyKrw: number;
+  billingCurrency?: "USD" | "KRW";
+  startMonth?: string;
   paymentMethod: string;
   note: string;
 };
@@ -529,6 +531,21 @@ const records: AiToolApprovalRecord[] = [
     paymentMethod: "AI 전용 카드",
     note: "",
   },
+  {
+    no: 39,
+    category: "AI API",
+    tool: "GH AI Agent AI API 서비스",
+    account: "GH AI Agent 개발",
+    linkedAccount: "없음",
+    owner: "GH AI Agent 개발 / 플랫폼개발팀",
+    department: "플랫폼개발",
+    monthlyUsd: 0,
+    monthlyKrw: 1_500_000,
+    billingCurrency: "KRW",
+    startMonth: "2026-08",
+    paymentMethod: "계약 고정비",
+    note: "",
+  },
 ];
 
 const normalizedRecords = records.map((record, index) => ({ ...record, no: index + 1 }));
@@ -541,15 +558,16 @@ const departmentSummary = summarize(records, "department", totalMonthlyKrw);
 const aiDedicatedCard = paymentSummary.find((item) => item.key === "AI 전용 카드");
 const namedCorporateCard = paymentSummary.find((item) => item.key === "공용 법인 카드");
 const claudeCategory = categorySummary.find((item) => item.key === "Claude");
+const apiFixedCategory = categorySummary.find((item) => item.key === "AI API");
 
 export const initialAiToolApprovalData: AiToolApprovalData = {
   source: {
     name: "사내 AI도구 결재 현황",
     fileName: "사내 AI도구 현황조사표_V3.0.xlsx",
     sheetName: "전사 AI도구 현황조사표",
-    collectedAt: "2026-07-30",
-    period: "월 구독 기준 · USD 1 = 1,485원",
-    note: "계정 ID, 주사용자/부서, 구독료, 결재수단을 반영했으며 2026-07-30 이동훈 부장 Claude Team Standard 추가 기준을 적용",
+    collectedAt: "2026-08-04",
+    period: "2026년 8월 월 고정비 기준 · USD 1 = 1,485원",
+    note: "계정 ID, 주사용자/부서, 구독료, 결재수단과 적용 시작월을 반영했으며 2026년 8월부터 플랫폼개발팀 GH AI Agent 개발용 AI API 서비스 고정비 150만원을 포함",
   },
   exchangeRate,
   totalAccounts: records.length,
@@ -565,8 +583,9 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
   departmentSummary,
   records: normalizedRecords,
   insights: [
-    `등록된 AI 도구 결재 계정은 ${records.length}개이며 월 구독료 합계는 ${formatUsd(totalMonthlyUsd)} / ${formatKrw(totalMonthlyKrw)}입니다.`,
-    `AI 전용 카드 결재가 ${aiDedicatedCard?.count ?? 0}개 계정, ${formatKrw(aiDedicatedCard?.monthlyKrw ?? 0)}으로 전체 월액의 ${(aiDedicatedCard?.share ?? 0).toFixed(1)}%를 차지합니다.`,
+    `등록된 AI 도구 결재 항목은 ${records.length}개이며 8월 월 고정비 합계는 ${formatKrw(totalMonthlyKrw)}입니다. USD 결재 항목 합계는 ${formatUsd(totalMonthlyUsd)}입니다.`,
+    `AI 전용 카드 결재가 ${aiDedicatedCard?.count ?? 0}개 항목, ${formatKrw(aiDedicatedCard?.monthlyKrw ?? 0)}으로 전체 월액의 ${(aiDedicatedCard?.share ?? 0).toFixed(1)}%를 차지합니다.`,
+    `2026년 8월부터 플랫폼개발팀 GH AI Agent 개발용 AI API 서비스 고정비 ${formatKrw(apiFixedCategory?.monthlyKrw ?? 0)}을 매월 반영합니다.`,
     "기존 공용 법인 카드 2개 항목은 모두 AI 전용 카드로 전환했습니다.",
     `Claude 계열은 ${claudeCategory?.count ?? 0}개 계정, ${formatKrw(claudeCategory?.monthlyKrw ?? 0)}으로 수량과 비용 모두 가장 큰 결재 묶음입니다.`,
     "변경 반영: 김하나 과장과 전우성 부장의 Claude Team Plan을 Standard에서 Premium으로 변경했습니다.",
@@ -575,6 +594,22 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     "변경 반영: 이동훈 부장에게 Claude Team Plan Standard를 할당하고 월 고정비 예산을 조정했습니다.",
   ],
 };
+
+export function approvalMonthlyTotalsForMonth(
+  approvalData: AiToolApprovalData,
+  month: string,
+) {
+  const activeRecords = approvalData.records.filter(
+    (record) => !record.startMonth || record.startMonth <= month,
+  );
+
+  return {
+    records: activeRecords,
+    count: activeRecords.length,
+    monthlyUsd: sum(activeRecords, "monthlyUsd"),
+    monthlyKrw: sum(activeRecords, "monthlyKrw"),
+  };
+}
 
 function summarize(recordsToSummarize: AiToolApprovalRecord[], key: keyof AiToolApprovalRecord, denominatorKrw: number) {
   const summary = new Map<string, AiToolApprovalSummary>();

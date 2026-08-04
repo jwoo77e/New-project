@@ -1,5 +1,8 @@
 import type { MonthlyActual } from "../data/aiCostData";
-import type { AiToolApprovalData } from "../data/aiToolApprovalData";
+import {
+  approvalMonthlyTotalsForMonth,
+  type AiToolApprovalData,
+} from "../data/aiToolApprovalData";
 import type { ChatGptUsageData } from "../data/chatGptUsageData";
 import type { ClaudeTeamUsageData } from "../data/claudeTeamUsageData";
 import type { DriveArtifactRepositoryData } from "../data/driveArtifactRepositoryData";
@@ -188,6 +191,7 @@ export function buildProductivityExecutiveModel({
     .sort();
   const latestUsageDate = usageDates[usageDates.length - 1];
   const currentMonth = latestUsageDate?.slice(0, 7) || lastClosedActual.month;
+  const currentMonthApprovalTotals = approvalMonthlyTotalsForMonth(approvalData, currentMonth);
   const lagMonths = monthDistance(lastClosedActual.month, currentMonth);
   const chatGptByMonth = new Map(chatGptData.monthlyUsage.map((item) => [item.month, item]));
   const claudeConversationsByMonth = driveActivityCountByMonth(driveData, "conversations");
@@ -231,7 +235,7 @@ export function buildProductivityExecutiveModel({
       month,
       label: monthLabel(month),
       status: isClosed ? "확정" : isCurrent ? "잠정" : "비용 대기",
-      costKrw: isClosed ? lastClosedActual.amount : isCurrent ? approvalData.totalMonthlyKrw : null,
+      costKrw: isClosed ? lastClosedActual.amount : isCurrent ? currentMonthApprovalTotals.monthlyKrw : null,
       costBasis: isClosed ? "실제 카드·비용 원천" : isCurrent ? "현재 월 고정 구독비 최소값" : "후행 비용 자료 대기",
       usageSignals,
       outputSignals,
@@ -297,7 +301,7 @@ export function buildProductivityExecutiveModel({
     lastClosedMonth: lastClosedActual.month,
     lastClosedMonthLabel: monthLabel(lastClosedActual.month),
     lagMonths,
-    currentFixedCostKrw: approvalData.totalMonthlyKrw,
+    currentFixedCostKrw: currentMonthApprovalTotals.monthlyKrw,
     lastClosedCostKrw: lastClosedActual.amount,
     activeUsers,
     licensedUsers,
