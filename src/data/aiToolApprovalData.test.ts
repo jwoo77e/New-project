@@ -5,6 +5,29 @@ import {
 } from "./aiToolApprovalData";
 
 describe("initialAiToolApprovalData", () => {
+  it("assigns the company-wide ChatGPT account to the 20x plan", () => {
+    expect(
+      initialAiToolApprovalData.records.find(
+        (record) => record.account === "riskzeroriskzero@gmail.com",
+      ),
+    ).toMatchObject({
+      owner: "전사",
+      tool: "chatGPT Pro(20배)",
+      monthlyUsd: 220,
+      monthlyKrw: 326_700,
+      paymentMethod: "AI 전용 카드",
+    });
+    expect(
+      initialAiToolApprovalData.toolSummary.find(
+        (item) => item.key === "chatGPT Pro(20배)",
+      ),
+    ).toMatchObject({
+      count: 2,
+      monthlyUsd: 440,
+      monthlyKrw: 653_400,
+    });
+  });
+
   it("assigns Kim Hana and Jeon Woosung to Claude Team Premium", () => {
     for (const account of ["staycurious@riskzero.kr", "woosung.jeon@riskzero.kr"]) {
       expect(
@@ -97,8 +120,8 @@ describe("initialAiToolApprovalData", () => {
       monthlyUsd: 660,
       monthlyKrw: 980_100,
     });
-    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(2_905.59);
-    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(5_814_801.15);
+    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(3_015.59);
+    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(5_978_151.15);
   });
 
   it("keeps category and payment totals aligned with the updated total", () => {
@@ -110,7 +133,7 @@ describe("initialAiToolApprovalData", () => {
       monthlyKrw: 3_103_650,
     });
     expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(36);
-    expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(4_314_801.15);
+    expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(4_478_151.15);
     expect(
       initialAiToolApprovalData.paymentSummary.find((item) => item.key === "계약 고정비"),
     ).toMatchObject({
@@ -136,13 +159,13 @@ describe("initialAiToolApprovalData", () => {
 
     expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-07")).toMatchObject({
       count: 36,
-      monthlyUsd: 2_905.59,
-      monthlyKrw: 4_314_801.15,
+      monthlyUsd: 3_015.59,
+      monthlyKrw: 4_478_151.15,
     });
     expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-08")).toMatchObject({
       count: 37,
-      monthlyUsd: 2_905.59,
-      monthlyKrw: 5_814_801.15,
+      monthlyUsd: 3_015.59,
+      monthlyKrw: 5_978_151.15,
     });
   });
 

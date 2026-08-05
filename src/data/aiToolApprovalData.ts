@@ -53,13 +53,13 @@ const records: AiToolApprovalRecord[] = [
   {
     no: 1,
     category: "ChatGPT",
-    tool: "chatGPT Pro(5배)",
+    tool: "chatGPT Pro(20배)",
     account: "riskzeroriskzero@gmail.com",
     linkedAccount: "없음",
     owner: "전사",
     department: "전사",
-    monthlyUsd: 110,
-    monthlyKrw: 163350,
+    monthlyUsd: 220,
+    monthlyKrw: 326700,
     paymentMethod: "AI 전용 카드",
     note: "",
   },
@@ -552,7 +552,7 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     name: "사내 AI도구 결재 현황",
     fileName: "사내 AI도구 현황조사표_V3.0.xlsx",
     sheetName: "전사 AI도구 현황조사표",
-    collectedAt: "2026-08-04",
+    collectedAt: "2026-08-05",
     period: "2026년 8월 월 고정비 기준 · USD 1 = 1,485원",
     note: "계정 ID, 주사용자/부서, 구독료, 결재수단과 적용 시작월을 반영했으며 2026년 8월부터 플랫폼개발팀 GH AI Agent 개발용 AI API 서비스 고정비 150만원을 포함",
   },
@@ -579,6 +579,7 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     "변경 반영: 임성범 부장의 Claude Pro Max 5를 Claude Pro Max 20으로 변경하고 월 고정비 예산을 조정했습니다.",
     "변경 반영: 구문영 사원의 Claude Team Plan을 Standard에서 Premium으로 변경하고 월 고정비 예산을 조정했습니다.",
     "변경 반영: 이동훈 부장에게 Claude Team Plan Standard를 할당하고 월 고정비 예산을 조정했습니다.",
+    "변경 반영: riskzeroriskzero@gmail.com의 chatGPT Pro를 5배에서 20배로 변경하고 월 고정비 예산을 조정했습니다.",
   ],
 };
 
