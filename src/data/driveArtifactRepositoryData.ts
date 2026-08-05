@@ -34,6 +34,7 @@ export type DriveArtifactActivityDailyCount = {
 
 export type DriveArtifactActivityAnalysis = {
   collectedAt: string;
+  period: string;
   scannedFiles: number;
   scannedFolders: number;
   scanErrors: number;
@@ -1773,11 +1774,12 @@ function buildOwnerActivity(owner: string, conversations: number, outputSignals:
 }
 
 const activityAnalysis: DriveArtifactActivityAnalysis = {
-  collectedAt: "2026-08-03 08:39 KST",
+  collectedAt: "2026-08-05 09:37 KST",
+  period: "2026-06-21 ~ 2026-08-04",
   scannedFiles: 1729,
   scannedFolders: 358,
   scanErrors: 0,
-  totalConversations: 258,
+  totalConversations: 327,
   totalOutputSignals: 830,
   undatedOutputSignals: 1,
   promptEvidence: {
@@ -1786,12 +1788,12 @@ const activityAnalysis: DriveArtifactActivityAnalysis = {
       "대표 파일의 본문과 파일 유형을 확인해 프롬프트 단독, 프롬프트+응답, 응답 단독으로 분류한 기록입니다. 전체 재귀 스캔에서 중복 제거한 대화 세션 수와는 별도이며 두 수치를 합산하지 않습니다.",
   },
   method:
-    "모든 하위 폴더에서 프롬프트 파일과 프롬프트·응답 Google Docs를 찾고 세션 식별자 기준으로 중복 제거했습니다. 날짜는 파일명, 상위 날짜 폴더, KST 생성일 순으로 판정했습니다.",
+    "7월 30일까지는 모든 하위 폴더에서 프롬프트 파일과 프롬프트·응답 Google Docs를 찾아 세션 식별자 기준으로 중복 제거했습니다. 8월 1~4일은 연결된 Drive의 날짜별 세션백업·대화기록 폴더와 요약 파일을 대조해 대화 건수를 보강했습니다. 날짜는 파일명, 상위 날짜 폴더, KST 생성일 순으로 판정했습니다.",
   outputDefinition:
     "프롬프트, 압축·분할 파일, 처리 로그, 세션 요약, README·설정 파일을 제외하고 파일명·크기·MIME 및 세션 식별자로 중복 제거한 Drive 결과 파일 신호입니다. 최종 채택이나 품질을 의미하지 않습니다.",
   byOwner: [
-    buildOwnerActivity("김재우", 205, 709),
-    buildOwnerActivity("이형배", 51, 121),
+    buildOwnerActivity("김재우", 234, 709),
+    buildOwnerActivity("이형배", 91, 121),
     buildOwnerActivity("전략사업팀", 2, 0),
   ],
   dailyCounts: [
@@ -1826,6 +1828,10 @@ const activityAnalysis: DriveArtifactActivityAnalysis = {
     { date: "2026-07-22", conversations: 9, outputSignals: 26, jaewooConversations: 9, hyungbaeConversations: 0 },
     { date: "2026-07-23", conversations: 0, outputSignals: 2, jaewooConversations: 0, hyungbaeConversations: 0 },
     { date: "2026-07-30", conversations: 2, outputSignals: 0, jaewooConversations: 0, hyungbaeConversations: 0, strategyTeamConversations: 2 },
+    { date: "2026-08-01", conversations: 19, outputSignals: 0, jaewooConversations: 10, hyungbaeConversations: 9 },
+    { date: "2026-08-02", conversations: 18, outputSignals: 0, jaewooConversations: 9, hyungbaeConversations: 9 },
+    { date: "2026-08-03", conversations: 20, outputSignals: 0, jaewooConversations: 10, hyungbaeConversations: 10 },
+    { date: "2026-08-04", conversations: 12, outputSignals: 0, jaewooConversations: 0, hyungbaeConversations: 12 },
   ],
 };
 

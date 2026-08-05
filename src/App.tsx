@@ -1532,7 +1532,7 @@ function ExecutiveDesignOverview({
     () =>
       model.costUsageSeries.map((item) => ({
         ...item,
-        conversations: item.conversationSignals,
+        conversations: item.claudeConversations,
         outputSignals: item.driveStoredFiles ?? item.driveOutputSignals,
       })),
     [model.costUsageSeries],
@@ -1587,7 +1587,7 @@ function ExecutiveDesignOverview({
           />
           <Line
             dataKey="conversations"
-            name="대화 세션(내용 분류)"
+            name="Claude 통합 대화(Export+Drive)"
             yAxisId="signal"
             type="monotone"
             stroke="#ef5a47"
@@ -1635,7 +1635,7 @@ function ExecutiveDesignOverview({
       step: "2",
       label: "활동",
       value: `${model.axKpis.activity.conversationsPerActiveDay.toFixed(1)}건`,
-      detail: `${model.classifiedActivityMonthLabel} 활성일 평균 대화 세션`,
+      detail: `${model.classifiedActivityMonthLabel} Drive 활성일 평균 대화`,
       direction: activityDirection,
       tone: "blue",
     },
@@ -1643,7 +1643,7 @@ function ExecutiveDesignOverview({
       step: "3",
       label: "산출",
       value: `${model.axKpis.output.outputsPerConversation.toFixed(2)}개`,
-      detail: `${model.classifiedActivityMonthLabel} 대화 세션당 Drive 산출`,
+      detail: `${model.classifiedOutputMonthLabel} Drive 대화당 산출`,
       direction: outputDirection,
       tone: "green",
     },
@@ -1664,7 +1664,7 @@ function ExecutiveDesignOverview({
             <div className="section-heading">
               <div>
                 <strong>비용 대비 AX 신호 추이</strong>
-                <span>확정·최소 비용, 내용 분류 대화, 매일 수집되는 Drive 저장 파일</span>
+                <span>확정·최소 비용, Claude Export·Drive 통합 대화, 매일 수집되는 Drive 저장 파일</span>
               </div>
               <span className="state-pill neutral">비용 후행 보정</span>
             </div>
@@ -1701,11 +1701,12 @@ function ExecutiveDesignOverview({
                 <span className="decision-rank green">3</span>
                 <div>
                   <b>
-                    {model.classifiedActivityMonthLabel} 대화 세션 {numberFormat.format(model.currentMonthClaudeConversations)}건
+                    {model.classifiedActivityMonthLabel} Claude 통합 대화{" "}
+                    {numberFormat.format(model.currentMonthClaudeCombinedConversations)}건
                   </b>
                   <p>
-                    내용 분류 산출 {numberFormat.format(model.currentMonthDriveOutputs)}개 · 활동 {activityDirection} · 산출{" "}
-                    {outputDirection}
+                    Export {numberFormat.format(model.currentMonthClaudeExportConversations)}건 + Drive{" "}
+                    {numberFormat.format(model.currentMonthClaudeConversations)}건 · 활동 {activityDirection}
                   </p>
                 </div>
                 <ChevronRight size={17} />
@@ -1832,7 +1833,8 @@ function ExecutiveDesignOverview({
             </strong>
             <p>당월 비용은 고정 구독비 최소값이며 API·변동비는 확정 대기입니다.</p>
             <p>
-              Drive 신규 저장은 매일 반영하며 대화·산출 내용 분류는 {model.classifiedActivityMonthLabel}까지입니다.
+              Drive 신규 저장은 매일 반영하며 대화 분류는 {model.classifiedActivityMonthLabel}, 산출 분류는{" "}
+              {model.classifiedOutputMonthLabel}까지입니다.
             </p>
           </div>
         </section>
@@ -1962,8 +1964,8 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
           </div>
         </div>
         <p className="insight-lead">
-          청구 확인월이 아니라 실제 사용월에 비용을 연결합니다. 활동은 ChatGPT Export 대화와 Drive의
-          프롬프트·응답 기록에서 중복 제거한 Claude 대화 세션이며, 결과는 압축·로그·프롬프트를 제외한 Drive 산출 파일 신호입니다.
+          청구 확인월이 아니라 실제 사용월에 비용을 연결합니다. Claude 활동은 Claude Export와 Drive 대화 기록을 한
+          계열로 원천 합산하며, 결과는 압축·로그·프롬프트를 제외한 Drive 산출 파일 신호입니다.
         </p>
         <div className="executive-chart-frame">
           <ResponsiveContainer width="100%" height="100%">
@@ -2004,7 +2006,7 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
               />
               <Bar
                 dataKey="claudeConversations"
-                name="Claude 대화 세션"
+                name="Claude 통합 대화"
                 yAxisId="usage"
                 fill="#0f8b8d"
                 stackId="conversations"
@@ -2035,13 +2037,13 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
           <div className="daily-activity-head">
             <div>
               <span className="eyebrow">Drive Prompt Activity</span>
-              <h3>Claude 일별 대화 세션과 산출 신호</h3>
+              <h3>Claude Drive 일별 대화 기록과 산출 신호</h3>
             </div>
             <span className="state-pill neutral">세션 식별자 중복 제거</span>
           </div>
           <div className="daily-activity-summary">
             <div>
-              <span>대화 세션 추정</span>
+              <span>Drive 대화 기록</span>
               <strong>{numberFormat.format(model.claudeConversations)}건</strong>
             </div>
             <div>
@@ -2083,14 +2085,14 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
                 />
                 <Tooltip
                   formatter={(value, name) => [
-                    `${numberFormat.format(Number(value))}${name === "Claude 대화 세션" ? "건" : "개"}`,
+                    `${numberFormat.format(Number(value))}${name === "Claude Drive 대화" ? "건" : "개"}`,
                     name,
                   ]}
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ""}
                 />
                 <Bar
                   dataKey="claudeConversations"
-                  name="Claude 대화 세션"
+                  name="Claude Drive 대화"
                   yAxisId="conversations"
                   fill="#0f8b8d"
                   radius={[3, 3, 0, 0]}
@@ -2109,9 +2111,10 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
             </ResponsiveContainer>
           </div>
           <small className="daily-activity-note">
-            대화 세션 {numberFormat.format(model.claudeConversations)}건은 전체 프롬프트·응답 파일을 중복 제거한 추정치이고,
+            Drive 대화 {numberFormat.format(model.claudeConversations)}건은 세션백업·대화기록을 중복 제거한 추정치이고,
             본문 확인 프롬프트 {numberFormat.format(model.drivePromptRecords)}건은 대표 기록 분류값이므로 서로 더하지 않습니다.
-            결과 신호는 저장 파일 기준이며 실제 채택, 재사용, 품질 확정 건수는 아닙니다.
+            월별 그래프의 Claude 통합 대화는 이 값에 Claude Export를 더한 원천 합산 신호이며, 결과 신호는 실제 채택·품질
+            확정 건수가 아닙니다.
           </small>
         </div>
         <div className="insight-box">
@@ -2162,11 +2165,15 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
         </div>
         <div className="current-output-grid">
           <div>
-            <span>{model.classifiedActivityMonthLabel} Claude 대화 세션</span>
-            <strong>{numberFormat.format(model.currentMonthClaudeConversations)}건</strong>
+            <span>{model.classifiedActivityMonthLabel} Claude 통합 대화</span>
+            <strong>{numberFormat.format(model.currentMonthClaudeCombinedConversations)}건</strong>
+            <small>
+              Export {numberFormat.format(model.currentMonthClaudeExportConversations)} + Drive{" "}
+              {numberFormat.format(model.currentMonthClaudeConversations)}
+            </small>
           </div>
           <div>
-            <span>{model.classifiedActivityMonthLabel} Drive 산출 신호</span>
+            <span>{model.classifiedOutputMonthLabel} Drive 산출 신호</span>
             <strong>{numberFormat.format(model.currentMonthDriveOutputs)}개</strong>
           </div>
           <div>
@@ -2233,7 +2240,7 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
           </div>
         </div>
         <p className="insight-lead">
-          단일 종합점수로 섞지 않고 AX 실행 과정을 세 단계로 분리합니다. 도입은 계정 활성, 활동은 프롬프트 기반 대화 세션,
+          단일 종합점수로 섞지 않고 AX 실행 과정을 세 단계로 분리합니다. 도입은 계정 활성, 활동은 Drive 대화 기록,
           산출은 중복 제거된 Drive 결과 파일 신호를 사용합니다.
         </p>
         <div className="ax-kpi-stage-grid">
@@ -2291,7 +2298,7 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
             </div>
             <div className="ax-kpi-headline">
               <strong>{model.axKpis.activity.conversationsPerActiveDay.toFixed(1)}건</strong>
-              <span>현재 분류월 활성일 평균 대화 세션</span>
+              <span>{model.classifiedActivityMonthLabel} Drive 활성일 평균 대화</span>
             </div>
             <div className="ax-kpi-comparison" aria-label="월별 일평균 대화 세션 비교">
               <div>
@@ -2334,7 +2341,7 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
               />
             </div>
             <p className="ax-kpi-interpretation">
-              활성일 평균 대화 세션은 이전 월보다 {formatRate(model.axKpis.activity.dailyGrowthRate, true)} 증가했습니다. 활동은
+              Drive 활성일 평균 대화는 이전 월보다 {formatRate(model.axKpis.activity.dailyGrowthRate, true)} 증가했습니다. 활동은
               지속적이지만 Drive 증빙이 특정 사용자에게 집중돼 있습니다.
             </p>
           </section>
@@ -2354,7 +2361,7 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
             </div>
             <div className="ax-kpi-headline">
               <strong>{model.axKpis.output.outputsPerConversation.toFixed(2)}개</strong>
-              <span>Claude 대화 세션당 Drive 산출 신호</span>
+              <span>{model.classifiedOutputMonthLabel} Drive 대화당 산출 신호</span>
             </div>
             <div className="ax-kpi-dual-comparison">
               <div>
@@ -3320,7 +3327,7 @@ function GensparkUsageView({
           </div>
           <div className="panel-header-side">
             <span className="state-pill ok">전체 하위 폴더 집계</span>
-            <span className="state-pill neutral">{driveRepositoryData.source.period}</span>
+            <span className="state-pill neutral">{driveActivity.period}</span>
           </div>
         </div>
         <p className="insight-lead">
@@ -3331,7 +3338,7 @@ function GensparkUsageView({
           <article>
             <span>대화 세션 추정</span>
             <strong>{numberFormat.format(driveActivity.totalConversations)}건</strong>
-            <small>전체 재귀 스캔 · 세션 식별자 중복 제거</small>
+            <small>전체 재귀 스캔 + 8월 Drive 기록 검증</small>
           </article>
           <article>
             <span>본문 확인 프롬프트</span>

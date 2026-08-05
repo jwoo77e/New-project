@@ -28,6 +28,8 @@ export type CostUsagePoint = {
   costKrw: number | null;
   costStatus: "확정" | "최소" | "대기";
   chatGptConversations: number;
+  claudeDriveConversations: number;
+  claudeExportConversations: number;
   claudeConversations: number;
   conversationSignals: number | null;
   driveOutputSignals: number;
@@ -87,6 +89,8 @@ export type ProductivityExecutiveModel = {
   currentMonthLabel: string;
   classifiedActivityMonth: string;
   classifiedActivityMonthLabel: string;
+  classifiedOutputMonth: string;
+  classifiedOutputMonthLabel: string;
   lastClosedMonth: string;
   lastClosedMonthLabel: string;
   lagMonths: number;
@@ -105,6 +109,8 @@ export type ProductivityExecutiveModel = {
   drivePromptResponseRecords: number;
   driveResponseOnlyRecords: number;
   currentMonthClaudeConversations: number;
+  currentMonthClaudeExportConversations: number;
+  currentMonthClaudeCombinedConversations: number;
   currentMonthDriveOutputs: number;
   currentMonthDriveStoredFiles: number;
   conversationActiveDays: number;
@@ -213,6 +219,7 @@ export function buildProductivityExecutiveModel({
     latestDate(driveTrendData?.source.period ?? ""),
     latestDate(gensparkDrive?.latestOutputDate ?? ""),
     latestDate(chatGptData.source.period),
+    latestDate(gensparkData.chatGptExport?.source.period ?? ""),
   ]
     .filter(Boolean)
     .sort();
@@ -222,6 +229,9 @@ export function buildProductivityExecutiveModel({
   const lagMonths = monthDistance(lastClosedActual.month, currentMonth);
   const chatGptByMonth = new Map(chatGptData.monthlyUsage.map((item) => [item.month, item]));
   const claudeConversationsByMonth = driveActivityCountByMonth(driveData, "conversations");
+  const claudeExportByMonth = new Map(
+    (gensparkData.chatGptExport?.monthlyUsage ?? []).map((item) => [item.month, item.conversations]),
+  );
   const driveOutputsByMonth = driveActivityCountByMonth(driveData, "outputSignals");
   const driveStoredFilesByMonthMap = driveStoredFilesByMonth(driveTrendData);
   const driveTrendPeriodDates = driveTrendData?.source.period.match(/\d{4}-\d{2}-\d{2}/g) ?? [];
@@ -233,6 +243,12 @@ export function buildProductivityExecutiveModel({
     .sort();
   const latestClassifiedActivityDate = classifiedActivityDates[classifiedActivityDates.length - 1];
   const classifiedActivityMonth = latestClassifiedActivityDate?.slice(0, 7) || currentMonth;
+  const classifiedOutputDates = driveData.activityAnalysis.dailyCounts
+    .filter((item) => item.outputSignals > 0)
+    .map((item) => item.date)
+    .sort();
+  const latestClassifiedOutputDate = classifiedOutputDates[classifiedOutputDates.length - 1];
+  const classifiedOutputMonth = latestClassifiedOutputDate?.slice(0, 7) || classifiedActivityMonth;
   const cohorts: ProductivityCohort[] = [];
 
   for (let offset = 0; offset <= lagMonths; offset += 1) {
@@ -248,9 +264,13 @@ export function buildProductivityExecutiveModel({
     if (chatGptMonth) {
       usageSignals.push(`ChatGPT ${chatGptMonth.conversations.toLocaleString("ko-KR")}대화`);
     }
-    const claudeConversationCount = claudeConversationsByMonth.get(month) ?? 0;
+    const claudeDriveConversationCount = claudeConversationsByMonth.get(month) ?? 0;
+    const claudeExportConversationCount = claudeExportByMonth.get(month) ?? 0;
+    const claudeConversationCount = claudeDriveConversationCount + claudeExportConversationCount;
     if (claudeConversationCount > 0) {
-      usageSignals.push(`Claude Drive 대화 세션 추정 ${claudeConversationCount.toLocaleString("ko-KR")}건`);
+      usageSignals.push(
+        `Claude 통합 대화 ${claudeConversationCount.toLocaleString("ko-KR")}건 (Export ${claudeExportConversationCount.toLocaleString("ko-KR")} + Drive ${claudeDriveConversationCount.toLocaleString("ko-KR")})`,
+      );
     }
     if (isCurrent) {
       usageSignals.push(`Claude Team 활성 ${claudeTeamData.activeUsers}/${claudeTeamData.licensedUsers}명`);
@@ -308,29 +328,41 @@ export function buildProductivityExecutiveModel({
   );
   const currentConversationActiveDays = currentDailyActivity.filter((item) => item.conversations > 0).length;
   const previousConversationActiveDays = previousDailyActivity.filter((item) => item.conversations > 0).length;
-  const currentOutputDays = currentDailyActivity.filter((item) => item.outputSignals > 0).length;
   const currentConversations = claudeConversationsByMonth.get(classifiedActivityMonth) ?? 0;
   const previousConversations = claudeConversationsByMonth.get(previousUsageMonth) ?? 0;
-  const currentOutputs = driveOutputsByMonth.get(classifiedActivityMonth) ?? 0;
-  const previousOutputs = driveOutputsByMonth.get(previousUsageMonth) ?? 0;
+  const currentClaudeExportConversations = claudeExportByMonth.get(classifiedActivityMonth) ?? 0;
+  const currentClaudeCombinedConversations = currentConversations + currentClaudeExportConversations;
   const currentConversationsPerActiveDay =
     currentConversationActiveDays > 0 ? currentConversations / currentConversationActiveDays : 0;
   const previousConversationsPerActiveDay =
     previousConversationActiveDays > 0 ? previousConversations / previousConversationActiveDays : 0;
+  const previousOutputMonth = addMonths(classifiedOutputMonth, -1);
+  const currentOutputDailyActivity = driveData.activityAnalysis.dailyCounts.filter((item) =>
+    item.date.startsWith(classifiedOutputMonth),
+  );
+  const previousOutputDailyActivity = driveData.activityAnalysis.dailyCounts.filter((item) =>
+    item.date.startsWith(previousOutputMonth),
+  );
+  const currentOutputDays = currentOutputDailyActivity.filter((item) => item.outputSignals > 0).length;
+  const currentOutputConversations = claudeConversationsByMonth.get(classifiedOutputMonth) ?? 0;
+  const previousOutputConversations = claudeConversationsByMonth.get(previousOutputMonth) ?? 0;
+  const currentOutputs = driveOutputsByMonth.get(classifiedOutputMonth) ?? 0;
+  const previousOutputs = driveOutputsByMonth.get(previousOutputMonth) ?? 0;
   const currentOutputsPerObservedDay =
-    currentDailyActivity.length > 0 ? currentOutputs / currentDailyActivity.length : 0;
+    currentOutputDailyActivity.length > 0 ? currentOutputs / currentOutputDailyActivity.length : 0;
   const previousOutputsPerObservedDay =
-    previousDailyActivity.length > 0 ? previousOutputs / previousDailyActivity.length : 0;
-  const currentOutputsPerConversation = currentConversations > 0 ? currentOutputs / currentConversations : 0;
+    previousOutputDailyActivity.length > 0 ? previousOutputs / previousOutputDailyActivity.length : 0;
+  const currentOutputsPerConversation =
+    currentOutputConversations > 0 ? currentOutputs / currentOutputConversations : 0;
   const previousOutputsPerConversation =
-    previousConversations > 0 ? previousOutputs / previousConversations : 0;
+    previousOutputConversations > 0 ? previousOutputs / previousOutputConversations : 0;
   const topContributor = [...driveData.activityAnalysis.byOwner].sort(
     (a, b) => b.conversations - a.conversations,
   )[0];
   const evidenceContributors = driveData.activityAnalysis.byOwner.filter(
     (item) => item.conversations > 0,
   ).length;
-  const peakOutputDay = [...currentDailyActivity].sort(
+  const peakOutputDay = [...currentOutputDailyActivity].sort(
     (a, b) => b.outputSignals - a.outputSignals,
   )[0];
 
@@ -339,6 +371,8 @@ export function buildProductivityExecutiveModel({
     currentMonthLabel: monthLabel(currentMonth),
     classifiedActivityMonth,
     classifiedActivityMonthLabel: monthLabel(classifiedActivityMonth),
+    classifiedOutputMonth,
+    classifiedOutputMonthLabel: monthLabel(classifiedOutputMonth),
     lastClosedMonth: lastClosedActual.month,
     lastClosedMonthLabel: monthLabel(lastClosedActual.month),
     lagMonths,
@@ -357,6 +391,8 @@ export function buildProductivityExecutiveModel({
     drivePromptResponseRecords: driveData.activityAnalysis.promptEvidence.promptResponseRecords,
     driveResponseOnlyRecords: driveData.activityAnalysis.promptEvidence.responseOnlyRecords,
     currentMonthClaudeConversations: currentConversations,
+    currentMonthClaudeExportConversations: currentClaudeExportConversations,
+    currentMonthClaudeCombinedConversations: currentClaudeCombinedConversations,
     currentMonthDriveOutputs: currentOutputs,
     currentMonthDriveStoredFiles: driveStoredFilesByMonthMap.get(currentMonth) ?? 0,
     conversationActiveDays,
@@ -371,8 +407,11 @@ export function buildProductivityExecutiveModel({
     costUsageSeries: costUsageMonths.map((month) => {
       const actual = monthlyActualByMonth.get(month);
       const chatGptMonth = chatGptByMonth.get(month)?.conversations;
-      const claudeMonth = claudeConversationsByMonth.get(month);
-      const hasConversationSource = chatGptMonth !== undefined || claudeMonth !== undefined;
+      const claudeDriveMonth = claudeConversationsByMonth.get(month);
+      const claudeExportMonth = claudeExportByMonth.get(month);
+      const claudeMonth = (claudeDriveMonth ?? 0) + (claudeExportMonth ?? 0);
+      const hasConversationSource =
+        chatGptMonth !== undefined || claudeDriveMonth !== undefined || claudeExportMonth !== undefined;
       const pendingCost = approvalMonthlyTotalsForMonth(approvalData, month).monthlyKrw;
       const hasDriveTrendCoverage =
         Boolean(driveTrendData) && month >= driveTrendStartMonth && month <= driveTrendEndMonth;
@@ -383,8 +422,10 @@ export function buildProductivityExecutiveModel({
         costKrw: actual?.amount ?? pendingCost,
         costStatus: actual ? "확정" : pendingCost > 0 ? "최소" : "대기",
         chatGptConversations: chatGptMonth ?? 0,
-        claudeConversations: claudeMonth ?? 0,
-        conversationSignals: hasConversationSource ? (chatGptMonth ?? 0) + (claudeMonth ?? 0) : null,
+        claudeDriveConversations: claudeDriveMonth ?? 0,
+        claudeExportConversations: claudeExportMonth ?? 0,
+        claudeConversations: claudeMonth,
+        conversationSignals: hasConversationSource ? (chatGptMonth ?? 0) + claudeMonth : null,
         driveOutputSignals: driveOutputsByMonth.get(month) ?? 0,
         driveStoredFiles: hasDriveTrendCoverage ? (driveStoredFilesByMonthMap.get(month) ?? 0) : null,
       };
@@ -423,7 +464,7 @@ export function buildProductivityExecutiveModel({
             : 0,
       },
       output: {
-        observedDays: currentDailyActivity.length,
+        observedDays: currentOutputDailyActivity.length,
         outputDays: currentOutputDays,
         outputsPerObservedDay: currentOutputsPerObservedDay,
         previousOutputsPerObservedDay,
@@ -452,13 +493,22 @@ export function buildProductivityExecutiveModel({
         note: `${claudeTeamData.activeUsers}/${claudeTeamData.licensedUsers}명 활성 · Code ${claudeTeamData.codeUsers}명`,
       },
       {
+        source: "Claude Export",
+        coverage: gensparkData.chatGptExport?.source.period ?? "-",
+        asOf: gensparkData.chatGptExport?.source.collectedAt ?? "-",
+        status: "부분 집계",
+        note: gensparkData.chatGptExport
+          ? `Export 대화 ${gensparkData.chatGptExport.totalConversations.toLocaleString("ko-KR")}건 · ${monthLabel(classifiedActivityMonth)} ${currentClaudeExportConversations.toLocaleString("ko-KR")}건 · 월별 그래프에서 Drive 대화와 원천 합산`
+          : "Claude Export 원천 없음",
+      },
+      {
         source: "Claude Drive",
-        coverage: driveTrendData?.source.period ?? driveData.source.period,
+        coverage: driveTrendData?.source.period ?? driveData.activityAnalysis.period,
         asOf: driveTrendData?.source.collectedAt ?? driveData.activityAnalysis.collectedAt,
         status: "전체 폴더 집계",
         note: driveTrendData
-          ? `매일 21시 전체 하위 폴더 저장 파일 ${driveTrendData.totals.files.toLocaleString("ko-KR")}개 집계 · 대화 세션 ${driveData.activityAnalysis.totalConversations.toLocaleString("ko-KR")}건 · 본문 확인 프롬프트 ${driveData.activityAnalysis.promptEvidence.totalRecords.toLocaleString("ko-KR")}건 · 내용 분류 ${monthLabel(classifiedActivityMonth)}까지`
-          : `${driveData.activityAnalysis.scannedFolders.toLocaleString("ko-KR")}개 폴더·파일 ${driveData.activityAnalysis.scannedFiles.toLocaleString("ko-KR")}개 재귀 조회 · 대화 세션 ${driveData.activityAnalysis.totalConversations.toLocaleString("ko-KR")}건 · 본문 확인 프롬프트 ${driveData.activityAnalysis.promptEvidence.totalRecords.toLocaleString("ko-KR")}건 · 결과 신호 ${driveData.activityAnalysis.totalOutputSignals.toLocaleString("ko-KR")}개 · 오류 ${driveData.activityAnalysis.scanErrors}건`,
+          ? `매일 21시 전체 하위 폴더 저장 파일 ${driveTrendData.totals.files.toLocaleString("ko-KR")}개 집계 · 대화 기록 ${driveData.activityAnalysis.totalConversations.toLocaleString("ko-KR")}건 · 본문 확인 프롬프트 ${driveData.activityAnalysis.promptEvidence.totalRecords.toLocaleString("ko-KR")}건 · 대화 분류 ${monthLabel(classifiedActivityMonth)}까지 · 산출 분류 ${monthLabel(classifiedOutputMonth)}까지`
+          : `${driveData.activityAnalysis.scannedFolders.toLocaleString("ko-KR")}개 폴더·파일 ${driveData.activityAnalysis.scannedFiles.toLocaleString("ko-KR")}개 재귀 조회 · 대화 기록 ${driveData.activityAnalysis.totalConversations.toLocaleString("ko-KR")}건 · 본문 확인 프롬프트 ${driveData.activityAnalysis.promptEvidence.totalRecords.toLocaleString("ko-KR")}건 · 결과 신호 ${driveData.activityAnalysis.totalOutputSignals.toLocaleString("ko-KR")}개 · 오류 ${driveData.activityAnalysis.scanErrors}건`,
       },
       {
         source: "Genspark Drive",

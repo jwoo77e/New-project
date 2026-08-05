@@ -40,22 +40,30 @@ describe("buildProductivityExecutiveModel", () => {
   it("aligns observable monthly usage with the same cost month", () => {
     expect(model.costUsageSeries.find((item) => item.month === "2026-06")).toMatchObject({
       chatGptConversations: 37,
-      claudeConversations: 33,
+      claudeDriveConversations: 33,
+      claudeExportConversations: 35,
+      claudeConversations: 68,
+      conversationSignals: 105,
       driveOutputSignals: 58,
     });
     expect(model.costUsageSeries.find((item) => item.month === "2026-07")).toMatchObject({
       costKrw: 4_314_801.15,
       costStatus: "최소",
       chatGptConversations: 0,
-      claudeConversations: 225,
-      conversationSignals: 225,
+      claudeDriveConversations: 225,
+      claudeExportConversations: 91,
+      claudeConversations: 316,
+      conversationSignals: 316,
       driveOutputSignals: 771,
       driveStoredFiles: null,
     });
     expect(model.costUsageSeries.find((item) => item.month === "2026-08")).toMatchObject({
       costKrw: 5_814_801.15,
       costStatus: "최소",
-      conversationSignals: null,
+      claudeDriveConversations: 69,
+      claudeExportConversations: 6,
+      claudeConversations: 75,
+      conversationSignals: 75,
     });
     expect(model.activeUsers).toBe(19);
     expect(model.licensedUsers).toBe(20);
@@ -66,6 +74,9 @@ describe("buildProductivityExecutiveModel", () => {
     );
     expect(model.sourceFreshness.find((source) => source.source === "Claude Drive")).toMatchObject({
       status: "전체 폴더 집계",
+    });
+    expect(model.sourceFreshness.find((source) => source.source === "Claude Export")).toMatchObject({
+      status: "부분 집계",
     });
   });
 
@@ -97,14 +108,19 @@ describe("buildProductivityExecutiveModel", () => {
     ]);
     expect(augustModel.costUsageSeries.find((item) => item.month === "2026-07")).toMatchObject({
       chatGptConversations: 0,
-      claudeConversations: 225,
+      claudeDriveConversations: 225,
+      claudeExportConversations: 91,
+      claudeConversations: 316,
       driveOutputSignals: 771,
     });
-    expect(augustModel.classifiedActivityMonth).toBe("2026-07");
-    expect(augustModel.currentMonthClaudeConversations).toBe(225);
+    expect(augustModel.classifiedActivityMonth).toBe("2026-08");
+    expect(augustModel.classifiedOutputMonth).toBe("2026-07");
+    expect(augustModel.currentMonthClaudeConversations).toBe(69);
+    expect(augustModel.currentMonthClaudeExportConversations).toBe(6);
+    expect(augustModel.currentMonthClaudeCombinedConversations).toBe(75);
   });
 
-  it("uses the daily Drive trend for current-month stored files without inventing conversations", () => {
+  it("uses the daily Drive trend for current-month stored files and keeps conversation sources distinct", () => {
     const augustDriveTrend: DriveArtifactTrendSnapshot = {
       version: 1,
       source: {
@@ -176,22 +192,27 @@ describe("buildProductivityExecutiveModel", () => {
     });
 
     expect(augustModel.currentMonth).toBe("2026-08");
-    expect(augustModel.classifiedActivityMonth).toBe("2026-07");
+    expect(augustModel.classifiedActivityMonth).toBe("2026-08");
     expect(augustModel.currentMonthDriveStoredFiles).toBe(292);
     expect(augustModel.costUsageSeries.find((item) => item.month === "2026-08")).toMatchObject({
       costKrw: 5_814_801.15,
       costStatus: "최소",
-      conversationSignals: null,
+      claudeDriveConversations: 69,
+      claudeExportConversations: 6,
+      claudeConversations: 75,
+      conversationSignals: 75,
       driveStoredFiles: 292,
     });
   });
 
   it("uses deduplicated Drive prompts as daily Claude conversation activity", () => {
-    expect(model.claudeConversations).toBe(258);
-    expect(model.currentMonthClaudeConversations).toBe(225);
+    expect(model.claudeConversations).toBe(327);
+    expect(model.currentMonthClaudeConversations).toBe(69);
+    expect(model.currentMonthClaudeExportConversations).toBe(6);
+    expect(model.currentMonthClaudeCombinedConversations).toBe(75);
     expect(model.currentMonthDriveOutputs).toBe(771);
-    expect(model.conversationActiveDays).toBe(29);
-    expect(model.dailyDriveActivity.reduce((sum, item) => sum + item.claudeConversations, 0)).toBe(258);
+    expect(model.conversationActiveDays).toBe(33);
+    expect(model.dailyDriveActivity.reduce((sum, item) => sum + item.claudeConversations, 0)).toBe(327);
     expect(
       model.dailyDriveActivity.reduce((sum, item) => sum + item.driveOutputSignals, 0) +
         driveArtifactRepositoryData.activityAnalysis.undatedOutputSignals,
@@ -225,14 +246,14 @@ describe("buildProductivityExecutiveModel", () => {
     expect(model.axKpis.adoption.evidenceCoverageRate).toBeCloseTo((3 / 19) * 100, 5);
 
     expect(model.axKpis.activity).toMatchObject({
-      observedDays: 24,
-      activeDays: 23,
+      observedDays: 4,
+      activeDays: 4,
       topContributor: "김재우",
     });
-    expect(model.axKpis.activity.activeDayRate).toBeCloseTo((23 / 24) * 100, 5);
-    expect(model.axKpis.activity.conversationsPerActiveDay).toBeCloseTo(225 / 23, 5);
-    expect(model.axKpis.activity.previousConversationsPerActiveDay).toBeCloseTo(33 / 6, 5);
-    expect(model.axKpis.activity.dailyGrowthRate).toBeCloseTo(77.8656, 3);
+    expect(model.axKpis.activity.activeDayRate).toBe(100);
+    expect(model.axKpis.activity.conversationsPerActiveDay).toBeCloseTo(69 / 4, 5);
+    expect(model.axKpis.activity.previousConversationsPerActiveDay).toBeCloseTo(225 / 23, 5);
+    expect(model.axKpis.activity.dailyGrowthRate).toBeCloseTo(76.3333, 3);
 
     expect(model.axKpis.output).toMatchObject({
       observedDays: 24,
