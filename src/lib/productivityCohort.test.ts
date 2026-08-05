@@ -65,9 +65,9 @@ describe("buildProductivityExecutiveModel", () => {
       claudeConversations: 75,
       conversationSignals: 75,
     });
-    expect(model.activeUsers).toBe(19);
+    expect(model.activeUsers).toBe(20);
     expect(model.licensedUsers).toBe(20);
-    expect(model.activationRate).toBe(95);
+    expect(model.activationRate).toBe(100);
     expect(model.observableRepositoryOutputs).toBe(
       driveArtifactRepositoryData.activityAnalysis.totalOutputSignals +
         (initialGensparkUsageData.driveAnalysis?.totalFiles ?? 0),
@@ -243,7 +243,7 @@ describe("buildProductivityExecutiveModel", () => {
     expect(model.axKpis.adoption).toMatchObject({
       evidenceContributors: 3,
     });
-    expect(model.axKpis.adoption.evidenceCoverageRate).toBeCloseTo((3 / 19) * 100, 5);
+    expect(model.axKpis.adoption.evidenceCoverageRate).toBeCloseTo((3 / 20) * 100, 5);
 
     expect(model.axKpis.activity).toMatchObject({
       observedDays: 4,
@@ -269,12 +269,12 @@ describe("buildProductivityExecutiveModel", () => {
   });
 
   it("reconciles active Claude seats with the latest spend activity", () => {
-    expect(initialClaudeTeamUsageData.source.verification.memberAccounts).toBe(19);
-    expect(initialClaudeTeamUsageData.source.verification.activeMemberAccounts).toBe(19);
+    expect(initialClaudeTeamUsageData.source.verification.memberAccounts).toBe(20);
+    expect(initialClaudeTeamUsageData.source.verification.activeMemberAccounts).toBe(20);
     expect(initialClaudeTeamUsageData.source.verification.approvedAccounts).toBe(20);
     expect(initialClaudeTeamUsageData.source.verification.approvedButNoUsage).toBe(4);
     expect(initialClaudeTeamUsageData.users).toHaveLength(20);
-    expect(initialClaudeTeamUsageData.activeUsers).toBe(19);
+    expect(initialClaudeTeamUsageData.activeUsers).toBe(20);
     expect(initialClaudeTeamUsageData.spendUsers).toBe(14);
     expect(initialClaudeTeamUsageData.codeUsers).toBe(12);
     expect(

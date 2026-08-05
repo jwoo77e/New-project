@@ -4373,7 +4373,7 @@ function AdoptionView({
           <article className="api-summary-item">
             <span>활성 사용자</span>
             <strong>{numberFormat.format(claudeTeamUsageData.activeUsers)}명</strong>
-            <span>결재 등록 {numberFormat.format(claudeTeamUsageData.licensedUsers)}명 · 멤버 CSV Active {numberFormat.format(claudeTeamUsageData.activeUsers)}명</span>
+            <span>결재 등록 {numberFormat.format(claudeTeamUsageData.licensedUsers)}명 · 현재 Active {numberFormat.format(claudeTeamUsageData.activeUsers)}명</span>
           </article>
           <article className="api-summary-item">
             <span>Spend report</span>
