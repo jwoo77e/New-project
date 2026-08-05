@@ -100,6 +100,10 @@ export type ProductivityExecutiveModel = {
   codeLines: number;
   requests: number;
   claudeConversations: number;
+  drivePromptRecords: number;
+  drivePromptOnlyRecords: number;
+  drivePromptResponseRecords: number;
+  driveResponseOnlyRecords: number;
   currentMonthClaudeConversations: number;
   currentMonthDriveOutputs: number;
   currentMonthDriveStoredFiles: number;
@@ -246,7 +250,7 @@ export function buildProductivityExecutiveModel({
     }
     const claudeConversationCount = claudeConversationsByMonth.get(month) ?? 0;
     if (claudeConversationCount > 0) {
-      usageSignals.push(`Claude Drive 프롬프트 추정 ${claudeConversationCount.toLocaleString("ko-KR")}대화`);
+      usageSignals.push(`Claude Drive 대화 세션 추정 ${claudeConversationCount.toLocaleString("ko-KR")}건`);
     }
     if (isCurrent) {
       usageSignals.push(`Claude Team 활성 ${claudeTeamData.activeUsers}/${claudeTeamData.licensedUsers}명`);
@@ -348,6 +352,10 @@ export function buildProductivityExecutiveModel({
     codeLines: claudeTeamData.totalCodeLines,
     requests: claudeTeamData.totalRequests,
     claudeConversations: driveData.activityAnalysis.totalConversations,
+    drivePromptRecords: driveData.activityAnalysis.promptEvidence.totalRecords,
+    drivePromptOnlyRecords: driveData.activityAnalysis.promptEvidence.promptOnlyRecords,
+    drivePromptResponseRecords: driveData.activityAnalysis.promptEvidence.promptResponseRecords,
+    driveResponseOnlyRecords: driveData.activityAnalysis.promptEvidence.responseOnlyRecords,
     currentMonthClaudeConversations: currentConversations,
     currentMonthDriveOutputs: currentOutputs,
     currentMonthDriveStoredFiles: driveStoredFilesByMonthMap.get(currentMonth) ?? 0,
@@ -449,8 +457,8 @@ export function buildProductivityExecutiveModel({
         asOf: driveTrendData?.source.collectedAt ?? driveData.activityAnalysis.collectedAt,
         status: "전체 폴더 집계",
         note: driveTrendData
-          ? `매일 21시 전체 하위 폴더 저장 파일 ${driveTrendData.totals.files.toLocaleString("ko-KR")}개 집계 · 대화·산출 내용 분류 ${monthLabel(classifiedActivityMonth)}까지`
-          : `${driveData.activityAnalysis.scannedFolders.toLocaleString("ko-KR")}개 폴더·파일 ${driveData.activityAnalysis.scannedFiles.toLocaleString("ko-KR")}개 재귀 조회 · Claude 추정 대화 ${driveData.activityAnalysis.totalConversations.toLocaleString("ko-KR")}건 · 결과 신호 ${driveData.activityAnalysis.totalOutputSignals.toLocaleString("ko-KR")}개 · 오류 ${driveData.activityAnalysis.scanErrors}건`,
+          ? `매일 21시 전체 하위 폴더 저장 파일 ${driveTrendData.totals.files.toLocaleString("ko-KR")}개 집계 · 대화 세션 ${driveData.activityAnalysis.totalConversations.toLocaleString("ko-KR")}건 · 본문 확인 프롬프트 ${driveData.activityAnalysis.promptEvidence.totalRecords.toLocaleString("ko-KR")}건 · 내용 분류 ${monthLabel(classifiedActivityMonth)}까지`
+          : `${driveData.activityAnalysis.scannedFolders.toLocaleString("ko-KR")}개 폴더·파일 ${driveData.activityAnalysis.scannedFiles.toLocaleString("ko-KR")}개 재귀 조회 · 대화 세션 ${driveData.activityAnalysis.totalConversations.toLocaleString("ko-KR")}건 · 본문 확인 프롬프트 ${driveData.activityAnalysis.promptEvidence.totalRecords.toLocaleString("ko-KR")}건 · 결과 신호 ${driveData.activityAnalysis.totalOutputSignals.toLocaleString("ko-KR")}개 · 오류 ${driveData.activityAnalysis.scanErrors}건`,
       },
       {
         source: "Genspark Drive",

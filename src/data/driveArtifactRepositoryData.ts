@@ -40,12 +40,23 @@ export type DriveArtifactActivityAnalysis = {
   totalConversations: number;
   totalOutputSignals: number;
   undatedOutputSignals: number;
+  promptEvidence: {
+    totalRecords: number;
+    promptOnlyRecords: number;
+    promptResponseRecords: number;
+    responseOnlyRecords: number;
+    definition: string;
+  };
   method: string;
   outputDefinition: string;
   byOwner: Array<{
     owner: string;
     conversations: number;
     outputSignals: number;
+    promptRecords: number;
+    promptOnlyRecords: number;
+    promptResponseRecords: number;
+    responseOnlyRecords: number;
   }>;
   dailyCounts: DriveArtifactActivityDailyCount[];
 };
@@ -1722,6 +1733,45 @@ const repositories: DriveArtifactRepository[] = [
   }),
 ];
 
+function summarizePromptEvidence(artifacts: DriveArtifact[]) {
+  const promptOnlyRecords = artifacts.filter((artifact) => artifact.kind === "프롬프트").length;
+  const promptResponseRecords = artifacts.filter((artifact) => artifact.kind === "프롬프트+응답").length;
+  const responseOnlyRecords = artifacts.filter((artifact) => artifact.kind === "응답").length;
+
+  return {
+    totalRecords: promptOnlyRecords + promptResponseRecords,
+    promptOnlyRecords,
+    promptResponseRecords,
+    responseOnlyRecords,
+  };
+}
+
+const promptEvidenceByOwner = new Map(
+  repositories.map((repository) => [repository.owner, summarizePromptEvidence(repository.artifacts)]),
+);
+const promptEvidenceTotals = summarizePromptEvidence(
+  repositories.flatMap((repository) => repository.artifacts),
+);
+
+function buildOwnerActivity(owner: string, conversations: number, outputSignals: number) {
+  const promptEvidence = promptEvidenceByOwner.get(owner) ?? {
+    totalRecords: 0,
+    promptOnlyRecords: 0,
+    promptResponseRecords: 0,
+    responseOnlyRecords: 0,
+  };
+
+  return {
+    owner,
+    conversations,
+    outputSignals,
+    promptRecords: promptEvidence.totalRecords,
+    promptOnlyRecords: promptEvidence.promptOnlyRecords,
+    promptResponseRecords: promptEvidence.promptResponseRecords,
+    responseOnlyRecords: promptEvidence.responseOnlyRecords,
+  };
+}
+
 const activityAnalysis: DriveArtifactActivityAnalysis = {
   collectedAt: "2026-08-03 08:39 KST",
   scannedFiles: 1729,
@@ -1730,14 +1780,19 @@ const activityAnalysis: DriveArtifactActivityAnalysis = {
   totalConversations: 258,
   totalOutputSignals: 830,
   undatedOutputSignals: 1,
+  promptEvidence: {
+    ...promptEvidenceTotals,
+    definition:
+      "대표 파일의 본문과 파일 유형을 확인해 프롬프트 단독, 프롬프트+응답, 응답 단독으로 분류한 기록입니다. 전체 재귀 스캔에서 중복 제거한 대화 세션 수와는 별도이며 두 수치를 합산하지 않습니다.",
+  },
   method:
     "모든 하위 폴더에서 프롬프트 파일과 프롬프트·응답 Google Docs를 찾고 세션 식별자 기준으로 중복 제거했습니다. 날짜는 파일명, 상위 날짜 폴더, KST 생성일 순으로 판정했습니다.",
   outputDefinition:
     "프롬프트, 압축·분할 파일, 처리 로그, 세션 요약, README·설정 파일을 제외하고 파일명·크기·MIME 및 세션 식별자로 중복 제거한 Drive 결과 파일 신호입니다. 최종 채택이나 품질을 의미하지 않습니다.",
   byOwner: [
-    { owner: "김재우", conversations: 205, outputSignals: 709 },
-    { owner: "이형배", conversations: 51, outputSignals: 121 },
-    { owner: "전략사업팀", conversations: 2, outputSignals: 0 },
+    buildOwnerActivity("김재우", 205, 709),
+    buildOwnerActivity("이형배", 51, 121),
+    buildOwnerActivity("전략사업팀", 2, 0),
   ],
   dailyCounts: [
     { date: "2026-06-24", conversations: 0, outputSignals: 5, jaewooConversations: 0, hyungbaeConversations: 0 },
@@ -1805,6 +1860,7 @@ export const driveArtifactRepositoryData: DriveArtifactRepositoryData = {
     "김재우·이형배·전략사업팀 세 저장소의 모든 하위 폴더를 재귀 집계하는 범위로 확장했습니다.",
     "하위 폴더 파일이 전체의 90.5%이므로 루트 직접 목록만 조회하면 실제 저장 현황을 크게 누락합니다.",
     "반복 백업 사본을 생산성 산출물로 과대 해석하지 않도록 전체 1,697개와 중복 추정 제외 1,474개를 분리합니다.",
+    `대화 세션 추정 ${activityAnalysis.totalConversations}건과 본문 확인 프롬프트 기록 ${activityAnalysis.promptEvidence.totalRecords}건은 수집·분류 기준이 달라 서로 합산하지 않습니다.`,
     `이형배 폴더는 ${hyungbaeDateFolderUrl} 하위 날짜별 프로젝트와 claude-backup 폴더를 모두 포함해 집계했습니다.`,
     "전략사업팀은 대화 2건을 활용 활동으로 포함했지만, 문서에 생성 결과물 없음이 명시되어 산출 KPI에는 0건으로 반영했습니다.",
   ],

@@ -1035,11 +1035,11 @@ function App() {
           tone: "teal",
         },
         {
-          icon: <Search size={19} />,
-          label: "실무 산출형 활용",
-          value: `${numberFormat.format(aiUsageInsight.outputOrientedRecords)}건`,
-          detail: "제안·개발·문서·데이터",
-          tone: "green",
+          icon: <Bot size={19} />,
+          label: "Drive 대화·프롬프트",
+          value: `${numberFormat.format(driveArtifactRepositoryData.activityAnalysis.totalConversations)}건`,
+          detail: `본문 확인 프롬프트 ${numberFormat.format(driveArtifactRepositoryData.activityAnalysis.promptEvidence.totalRecords)}건`,
+          tone: "teal",
         },
         {
           icon: <FileSpreadsheet size={19} />,
@@ -1587,7 +1587,7 @@ function ExecutiveDesignOverview({
           />
           <Line
             dataKey="conversations"
-            name="대화·프롬프트(내용 분류)"
+            name="대화 세션(내용 분류)"
             yAxisId="signal"
             type="monotone"
             stroke="#ef5a47"
@@ -1635,7 +1635,7 @@ function ExecutiveDesignOverview({
       step: "2",
       label: "활동",
       value: `${model.axKpis.activity.conversationsPerActiveDay.toFixed(1)}건`,
-      detail: `${model.classifiedActivityMonthLabel} 활성일 평균 대화`,
+      detail: `${model.classifiedActivityMonthLabel} 활성일 평균 대화 세션`,
       direction: activityDirection,
       tone: "blue",
     },
@@ -1643,7 +1643,7 @@ function ExecutiveDesignOverview({
       step: "3",
       label: "산출",
       value: `${model.axKpis.output.outputsPerConversation.toFixed(2)}개`,
-      detail: `${model.classifiedActivityMonthLabel} 대화당 Drive 산출`,
+      detail: `${model.classifiedActivityMonthLabel} 대화 세션당 Drive 산출`,
       direction: outputDirection,
       tone: "green",
     },
@@ -1701,7 +1701,7 @@ function ExecutiveDesignOverview({
                 <span className="decision-rank green">3</span>
                 <div>
                   <b>
-                    {model.classifiedActivityMonthLabel} 대화 {numberFormat.format(model.currentMonthClaudeConversations)}건
+                    {model.classifiedActivityMonthLabel} 대화 세션 {numberFormat.format(model.currentMonthClaudeConversations)}건
                   </b>
                   <p>
                     내용 분류 산출 {numberFormat.format(model.currentMonthDriveOutputs)}개 · 활동 {activityDirection} · 산출{" "}
@@ -1958,12 +1958,12 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
           </div>
           <div className="panel-header-side">
             <span className="state-pill ok">비용 확정월 정렬</span>
-            <span className="state-pill neutral">대화 활동 + Drive 결과 신호</span>
+            <span className="state-pill neutral">대화 세션 + Drive 결과 신호</span>
           </div>
         </div>
         <p className="insight-lead">
-          청구 확인월이 아니라 실제 사용월에 비용을 연결합니다. 활동은 ChatGPT Export 대화와 Drive 프롬프트에서
-          중복 제거한 Claude 추정 대화이며, 결과는 압축·로그·프롬프트를 제외한 Drive 산출 파일 신호입니다.
+          청구 확인월이 아니라 실제 사용월에 비용을 연결합니다. 활동은 ChatGPT Export 대화와 Drive의
+          프롬프트·응답 기록에서 중복 제거한 Claude 대화 세션이며, 결과는 압축·로그·프롬프트를 제외한 Drive 산출 파일 신호입니다.
         </p>
         <div className="executive-chart-frame">
           <ResponsiveContainer width="100%" height="100%">
@@ -2004,7 +2004,7 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
               />
               <Bar
                 dataKey="claudeConversations"
-                name="Claude 추정 대화"
+                name="Claude 대화 세션"
                 yAxisId="usage"
                 fill="#0f8b8d"
                 stackId="conversations"
@@ -2035,14 +2035,18 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
           <div className="daily-activity-head">
             <div>
               <span className="eyebrow">Drive Prompt Activity</span>
-              <h3>Claude 일별 추정 대화와 산출 신호</h3>
+              <h3>Claude 일별 대화 세션과 산출 신호</h3>
             </div>
             <span className="state-pill neutral">세션 식별자 중복 제거</span>
           </div>
           <div className="daily-activity-summary">
             <div>
-              <span>추정 대화</span>
+              <span>대화 세션 추정</span>
               <strong>{numberFormat.format(model.claudeConversations)}건</strong>
+            </div>
+            <div>
+              <span>본문 확인 프롬프트</span>
+              <strong>{numberFormat.format(model.drivePromptRecords)}건</strong>
             </div>
             <div>
               <span>대화 발생일</span>
@@ -2079,14 +2083,14 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
                 />
                 <Tooltip
                   formatter={(value, name) => [
-                    `${numberFormat.format(Number(value))}${name === "Claude 추정 대화" ? "대화" : "개"}`,
+                    `${numberFormat.format(Number(value))}${name === "Claude 대화 세션" ? "건" : "개"}`,
                     name,
                   ]}
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ""}
                 />
                 <Bar
                   dataKey="claudeConversations"
-                  name="Claude 추정 대화"
+                  name="Claude 대화 세션"
                   yAxisId="conversations"
                   fill="#0f8b8d"
                   radius={[3, 3, 0, 0]}
@@ -2105,8 +2109,9 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
             </ResponsiveContainer>
           </div>
           <small className="daily-activity-note">
-            프롬프트 파일과 프롬프트·응답 Google Docs를 대화로 추정했습니다. 결과 신호는 저장 파일 기준이며 실제 채택,
-            재사용, 품질 확정 건수는 아닙니다.
+            대화 세션 {numberFormat.format(model.claudeConversations)}건은 전체 프롬프트·응답 파일을 중복 제거한 추정치이고,
+            본문 확인 프롬프트 {numberFormat.format(model.drivePromptRecords)}건은 대표 기록 분류값이므로 서로 더하지 않습니다.
+            결과 신호는 저장 파일 기준이며 실제 채택, 재사용, 품질 확정 건수는 아닙니다.
           </small>
         </div>
         <div className="insight-box">
@@ -2157,11 +2162,11 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
         </div>
         <div className="current-output-grid">
           <div>
-            <span>{model.currentMonthLabel} Claude 추정 대화</span>
+            <span>{model.classifiedActivityMonthLabel} Claude 대화 세션</span>
             <strong>{numberFormat.format(model.currentMonthClaudeConversations)}건</strong>
           </div>
           <div>
-            <span>{model.currentMonthLabel} Drive 산출 신호</span>
+            <span>{model.classifiedActivityMonthLabel} Drive 산출 신호</span>
             <strong>{numberFormat.format(model.currentMonthDriveOutputs)}개</strong>
           </div>
           <div>
@@ -2228,7 +2233,7 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
           </div>
         </div>
         <p className="insight-lead">
-          단일 종합점수로 섞지 않고 AX 실행 과정을 세 단계로 분리합니다. 도입은 계정 활성, 활동은 프롬프트 기반 대화,
+          단일 종합점수로 섞지 않고 AX 실행 과정을 세 단계로 분리합니다. 도입은 계정 활성, 활동은 프롬프트 기반 대화 세션,
           산출은 중복 제거된 Drive 결과 파일 신호를 사용합니다.
         </p>
         <div className="ax-kpi-stage-grid">
@@ -2286,9 +2291,9 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
             </div>
             <div className="ax-kpi-headline">
               <strong>{model.axKpis.activity.conversationsPerActiveDay.toFixed(1)}건</strong>
-              <span>현재 월 활성일 평균 대화</span>
+              <span>현재 분류월 활성일 평균 대화 세션</span>
             </div>
-            <div className="ax-kpi-comparison" aria-label="월별 일평균 대화 비교">
+            <div className="ax-kpi-comparison" aria-label="월별 일평균 대화 세션 비교">
               <div>
                 <span>이전 월</span>
                 <div className="ax-kpi-comparison-track">
@@ -2317,7 +2322,7 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
             <div className="ax-kpi-meter-list compact">
               <MeterRow
                 color="#0f8b8d"
-                label="대화 지속률"
+                label="대화 세션 지속률"
                 value={model.axKpis.activity.activeDayRate}
                 valueLabel={`${model.axKpis.activity.activeDays}/${model.axKpis.activity.observedDays}일`}
               />
@@ -2329,7 +2334,7 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
               />
             </div>
             <p className="ax-kpi-interpretation">
-              활성일 평균 대화는 이전 월보다 {formatRate(model.axKpis.activity.dailyGrowthRate, true)} 증가했습니다. 활동은
+              활성일 평균 대화 세션은 이전 월보다 {formatRate(model.axKpis.activity.dailyGrowthRate, true)} 증가했습니다. 활동은
               지속적이지만 Drive 증빙이 특정 사용자에게 집중돼 있습니다.
             </p>
           </section>
@@ -2349,7 +2354,7 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
             </div>
             <div className="ax-kpi-headline">
               <strong>{model.axKpis.output.outputsPerConversation.toFixed(2)}개</strong>
-              <span>Claude 대화당 Drive 산출 신호</span>
+              <span>Claude 대화 세션당 Drive 산출 신호</span>
             </div>
             <div className="ax-kpi-dual-comparison">
               <div>
@@ -2382,7 +2387,7 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
                 </div>
               </div>
               <div>
-                <span>대화당 산출</span>
+                <span>대화 세션당 산출</span>
                 <div className="ax-kpi-comparison">
                   <div>
                     <span>이전</span>
@@ -2418,7 +2423,7 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
               valueLabel={`${model.axKpis.output.peakDate.slice(5)} · ${model.axKpis.output.peakOutputs}개`}
             />
             <p className="ax-kpi-interpretation">
-              일평균 산출은 {formatRate(model.axKpis.output.dailyGrowthRate, true)}, 대화당 산출은{" "}
+              일평균 산출은 {formatRate(model.axKpis.output.dailyGrowthRate, true)}, 대화 세션당 산출은{" "}
               {formatRate(model.axKpis.output.yieldGrowthRate, true)} 증가했습니다. 배치 작업과 최종 채택 여부는 별도
               확인이 필요합니다.
             </p>
@@ -3156,6 +3161,8 @@ function GensparkUsageView({
     driveTrendSnapshot?.totals.directFiles ?? driveRepositoryData.totals.directFiles;
   const driveTrendNestedFiles =
     driveTrendSnapshot?.totals.nestedFiles ?? driveRepositoryData.totals.nestedFiles;
+  const driveActivity = driveRepositoryData.activityAnalysis;
+  const drivePromptEvidence = driveActivity.promptEvidence;
   const gensparkDrive = usageData.driveAnalysis;
   const gammaArtifactCount = gammaDriveUsageData.artifactCount;
   const gammaTotalPages = gammaDriveUsageData.totalPages;
@@ -3178,7 +3185,7 @@ function GensparkUsageView({
     {
       key: "conversations",
       label: "대화 분석",
-      detail: `ChatGPT ${numberFormat.format(chatGptUsageData.totalConversations)}건`,
+      detail: `ChatGPT ${numberFormat.format(chatGptUsageData.totalConversations)} · Drive ${numberFormat.format(driveActivity.totalConversations)}건`,
       icon: <Bot size={18} />,
     },
     {
@@ -3304,6 +3311,82 @@ function GensparkUsageView({
       )}
 
       {analysisSection === "conversations" && (
+      <>
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Claude Drive Prompt Audit</span>
+            <h2>Claude Drive 대화·프롬프트 분류</h2>
+          </div>
+          <div className="panel-header-side">
+            <span className="state-pill ok">전체 하위 폴더 집계</span>
+            <span className="state-pill neutral">{driveRepositoryData.source.period}</span>
+          </div>
+        </div>
+        <p className="insight-lead">
+          Drive에서 찾은 프롬프트 파일과 프롬프트·응답 문서를 세션 식별자로 중복 제거해 대화 활동을 추정하고,
+          본문을 확인한 대표 기록은 파일 역할에 따라 별도로 분류했습니다.
+        </p>
+        <div className="drive-summary-grid">
+          <article>
+            <span>대화 세션 추정</span>
+            <strong>{numberFormat.format(driveActivity.totalConversations)}건</strong>
+            <small>전체 재귀 스캔 · 세션 식별자 중복 제거</small>
+          </article>
+          <article>
+            <span>본문 확인 프롬프트</span>
+            <strong>{numberFormat.format(drivePromptEvidence.totalRecords)}건</strong>
+            <small>대표 기록의 본문·파일 유형 확인</small>
+          </article>
+          <article>
+            <span>프롬프트 단독</span>
+            <strong>{numberFormat.format(drivePromptEvidence.promptOnlyRecords)}건</strong>
+            <small>요청 내용만 저장된 파일</small>
+          </article>
+          <article>
+            <span>프롬프트+응답</span>
+            <strong>{numberFormat.format(drivePromptEvidence.promptResponseRecords)}건</strong>
+            <small>응답 단독 {numberFormat.format(drivePromptEvidence.responseOnlyRecords)}건 별도</small>
+          </article>
+        </div>
+        <div className="table-wrap claude-export-table">
+          <table>
+            <thead>
+              <tr>
+                <th>저장소</th>
+                <th>대화 세션 추정</th>
+                <th>본문 확인 프롬프트</th>
+                <th>프롬프트 단독</th>
+                <th>프롬프트+응답</th>
+                <th>응답 단독</th>
+                <th>결과 신호</th>
+              </tr>
+            </thead>
+            <tbody>
+              {driveActivity.byOwner.map((owner) => (
+                <tr key={owner.owner}>
+                  <td><strong>{owner.owner}</strong></td>
+                  <td>{numberFormat.format(owner.conversations)}</td>
+                  <td>{numberFormat.format(owner.promptRecords)}</td>
+                  <td>{numberFormat.format(owner.promptOnlyRecords)}</td>
+                  <td>{numberFormat.format(owner.promptResponseRecords)}</td>
+                  <td>{numberFormat.format(owner.responseOnlyRecords)}</td>
+                  <td>{numberFormat.format(owner.outputSignals)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="insight-box">
+          <ShieldCheck size={18} />
+          <div>
+            <strong>중복 합산 방지</strong>
+            <span>{drivePromptEvidence.definition}</span>
+            <span>{driveActivity.outputDefinition}</span>
+          </div>
+        </div>
+      </section>
+
       <section className="panel panel-wide">
         <div className="panel-header">
           <div>
@@ -3442,6 +3525,7 @@ function GensparkUsageView({
           </div>
         </div>
       </section>
+      </>
       )}
 
       {analysisSection === "outputs" && gensparkDrive && (

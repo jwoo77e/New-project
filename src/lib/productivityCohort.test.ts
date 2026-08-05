@@ -198,6 +198,26 @@ describe("buildProductivityExecutiveModel", () => {
     ).toBe(830);
   });
 
+  it("keeps inferred conversations separate from content-verified prompt records", () => {
+    expect(driveArtifactRepositoryData.activityAnalysis.promptEvidence).toMatchObject({
+      totalRecords: 58,
+      promptOnlyRecords: 5,
+      promptResponseRecords: 53,
+      responseOnlyRecords: 5,
+    });
+    expect(
+      driveArtifactRepositoryData.activityAnalysis.byOwner.reduce(
+        (sum, owner) => sum + owner.promptRecords,
+        0,
+      ),
+    ).toBe(58);
+    expect(model.drivePromptRecords).toBe(58);
+    expect(model.drivePromptOnlyRecords).toBe(5);
+    expect(model.drivePromptResponseRecords).toBe(53);
+    expect(model.driveResponseOnlyRecords).toBe(5);
+    expect(model.claudeConversations).not.toBe(model.drivePromptRecords);
+  });
+
   it("builds separate adoption, activity, and output KPI stages", () => {
     expect(model.axKpis.adoption).toMatchObject({
       evidenceContributors: 3,
