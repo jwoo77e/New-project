@@ -3,9 +3,9 @@
   "source": {
     "name": "Claude Drive 날짜별 저장 파일 증감",
     "status": "정상",
-    "collectedAt": "2026-08-04 21:07 KST",
-    "generatedAt": "2026-08-04T12:07:28.999Z",
-    "period": "2026-06-23 ~ 2026-08-04",
+    "collectedAt": "2026-08-05 21:05 KST",
+    "generatedAt": "2026-08-05T12:05:34.000Z",
+    "period": "2026-06-23 ~ 2026-08-05",
     "schedule": "매일 21:00 KST",
     "note": "김재우·이형배 최신 검증 스냅샷과 전략사업팀 Drive 루트의 연결 조회 결과를 합산했습니다. 세 루트 모두 하위 폴더를 포함하며 파일 생성일을 한국시간 기준으로 집계합니다."
   },
@@ -16,10 +16,10 @@
       "folderUrl": "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link",
       "artifacts": [],
       "inventory": {
-        "fileCount": 1505,
+        "fileCount": 1551,
         "directFileCount": 198,
-        "nestedFileCount": 1307,
-        "folderCount": 416,
+        "nestedFileCount": 1353,
+        "folderCount": 430,
         "maxDepth": 6,
         "metadataDateAnomalyCount": 85,
         "dailyCounts": [
@@ -194,6 +194,10 @@
           {
             "date": "2026-08-04",
             "count": 37
+          },
+          {
+            "date": "2026-08-05",
+            "count": 46
           }
         ]
       }
@@ -204,10 +208,10 @@
       "folderUrl": "https://drive.google.com/drive/folders/1OFfN4APAViKNtgURnmn9W51jSvcxy6fg?usp=sharing",
       "artifacts": [],
       "inventory": {
-        "fileCount": 1001,
+        "fileCount": 1040,
         "directFileCount": 1,
-        "nestedFileCount": 1000,
-        "folderCount": 173,
+        "nestedFileCount": 1039,
+        "folderCount": 182,
         "maxDepth": 4,
         "metadataDateAnomalyCount": 0,
         "dailyCounts": [
@@ -334,6 +338,10 @@
           {
             "date": "2026-08-04",
             "count": 82
+          },
+          {
+            "date": "2026-08-05",
+            "count": 39
           }
         ]
       }
@@ -360,10 +368,10 @@
     }
   ],
   "totals": {
-    "files": 2509,
+    "files": 2594,
     "directFiles": 200,
-    "nestedFiles": 2309,
-    "folders": 590,
+    "nestedFiles": 2394,
+    "folders": 613,
     "metadataDateAnomalies": 85
   }
 }
