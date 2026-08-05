@@ -3,7 +3,6 @@ import type { ClaudeTeamUserUsage } from "../data/claudeTeamUsageData";
 export type ClaudeProductivityLevel =
   | "top"
   | "efficient"
-  | "high-output"
   | "balanced"
   | "insufficient"
   | "no-code";
@@ -21,7 +20,6 @@ export type ClaudeProductivitySignal = {
 const labels: Record<ClaudeProductivityLevel, string> = {
   top: "생산성 신호 상위",
   efficient: "고효율 활용",
-  "high-output": "높은 산출량",
   balanced: "균형 활용",
   insufficient: "표본 부족",
   "no-code": "코드 산출 없음",
@@ -105,8 +103,6 @@ function buildSignal({
     level = "top";
   } else if (tokenEfficiencyPercentile >= 75 && user.codeLines >= medianCodeLines) {
     level = "efficient";
-  } else if (volumePercentile >= 75) {
-    level = "high-output";
   }
 
   return {

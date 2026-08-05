@@ -8,7 +8,7 @@ describe("Claude productivity signals", () => {
 
     expect(signals.get("wody@riskzero.kr")?.level).toBe("top");
     expect(signals.get("woosung.jeon@riskzero.kr")?.level).toBe("top");
-    expect(signals.get("kys0392@riskzero.kr")?.level).toBe("high-output");
+    expect(signals.get("kys0392@riskzero.kr")?.level).toBe("balanced");
     expect(signals.get("huizhen0227@riskzero.kr")?.level).toBe("balanced");
     expect(signals.get("jaewoo.kim@riskzero.kr")?.level).toBe("insufficient");
   });

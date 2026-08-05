@@ -4779,7 +4779,7 @@ function claudeTeamLevelTone(level: ClaudeTeamUsageLevel) {
 }
 
 function claudeProductivityTone(level?: ClaudeProductivityLevel) {
-  if (level === "top" || level === "efficient" || level === "high-output") return "ok";
+  if (level === "top" || level === "efficient") return "ok";
   if (level === "insufficient") return "warning";
   return "neutral";
 }
