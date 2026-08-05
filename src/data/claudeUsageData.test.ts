@@ -7,6 +7,32 @@ const sumBy = <T>(items: T[], select: (item: T) => number) =>
   items.reduce((sum, item) => sum + select(item), 0);
 
 describe("Claude usage snapshots", () => {
+  it("captures the provided August source windows", () => {
+    expect(initialClaudeTeamUsageData.source).toMatchObject({
+      generatedAt: "2026-08-05",
+      spendFile: "spend-report-e59c75bc-469e-466f-bef9-c311748c1df8-2026-08-01-to-2026-08-03.csv",
+      codeLinesFile: "claude_code_team_2026_08_01_to_2026_08_31.csv",
+    });
+    expect(initialClaudeTeamUsageData.source.verification.spendRecords).toBe(43);
+    expect(initialClaudeTeamUsageData.totalRequests).toBe(6568);
+    expect(initialClaudeTeamUsageData.totalTokens).toBe(1907464286);
+    expect(initialClaudeTeamUsageData.totalGrossSpendUsd).toBeCloseTo(0.26, 2);
+    expect(initialClaudeTeamUsageData.totalCodeLines).toBe(44880);
+
+    expect(claudeExportUsageData.source).toMatchObject({
+      collectedAt: "2026-08-05",
+      period: "2026-05-11 ~ 2026-08-04",
+    });
+    expect(claudeExportUsageData.totalConversations).toBe(168);
+    expect(claudeExportUsageData.totalMessages).toBe(2862);
+    expect(
+      claudeExportUsageData.monthlyUsage[claudeExportUsageData.monthlyUsage.length - 1],
+    ).toEqual({
+      month: "2026-08",
+      conversations: 6,
+    });
+  });
+
   it("reconciles account totals with the Team CSV summaries", () => {
     const data = initialClaudeTeamUsageData;
 

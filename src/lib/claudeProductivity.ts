@@ -69,7 +69,7 @@ function buildSignal({
   tokenEfficiencyPercentile: number;
   requestEfficiencyPercentile: number;
 }): ClaudeProductivitySignal {
-  if (user.codeLines <= 0 || user.claudeCodeRequests <= 0 || user.claudeCodeTokens <= 0) {
+  if (user.codeLines <= 0) {
     return {
       email: user.email,
       level: "no-code",
@@ -78,6 +78,18 @@ function buildSignal({
       linesPerMillionTokens: 0,
       linesPerThousandRequests: 0,
       detail: "집계 기간 Claude Code 수락 코드 라인이 없습니다.",
+    };
+  }
+
+  if (user.claudeCodeRequests <= 0 || user.claudeCodeTokens <= 0) {
+    return {
+      email: user.email,
+      level: "insufficient",
+      label: labels.insufficient,
+      score: null,
+      linesPerMillionTokens: 0,
+      linesPerThousandRequests: 0,
+      detail: `Code Lines ${user.codeLines.toLocaleString("ko-KR")}줄은 확인됐지만 Spend 집계 기간에 대응하는 Claude Code 요청·토큰이 없어 효율을 산정하지 않습니다.`,
     };
   }
 

@@ -23,17 +23,18 @@ describe("buildProductivityExecutiveModel", () => {
 
   it("keeps the last confirmed cost month separate from the latest usage month", () => {
     expect(model.lastClosedMonth).toBe("2026-06");
-    expect(model.currentMonth).toBe("2026-07");
-    expect(model.lagMonths).toBe(1);
-    expect(model.cohorts.map((item) => item.status)).toEqual(["확정", "잠정"]);
+    expect(model.currentMonth).toBe("2026-08");
+    expect(model.lagMonths).toBe(2);
+    expect(model.cohorts.map((item) => item.status)).toEqual(["확정", "비용 대기", "잠정"]);
   });
 
   it("uses current subscriptions only as the open-month minimum cost", () => {
-    const julyApprovalTotals = approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-07");
+    const augustApprovalTotals = approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-08");
 
     expect(model.cohorts[0].costKrw).toBe(3_486_961);
-    expect(model.cohorts[1].costKrw).toBe(julyApprovalTotals.monthlyKrw);
-    expect(model.currentFixedCostKrw).toBe(julyApprovalTotals.monthlyKrw);
+    expect(model.cohorts[1].costKrw).toBeNull();
+    expect(model.cohorts[2].costKrw).toBe(augustApprovalTotals.monthlyKrw);
+    expect(model.currentFixedCostKrw).toBe(augustApprovalTotals.monthlyKrw);
   });
 
   it("aligns observable monthly usage with the same cost month", () => {
@@ -50,6 +51,11 @@ describe("buildProductivityExecutiveModel", () => {
       conversationSignals: 225,
       driveOutputSignals: 771,
       driveStoredFiles: null,
+    });
+    expect(model.costUsageSeries.find((item) => item.month === "2026-08")).toMatchObject({
+      costKrw: 5_814_801.15,
+      costStatus: "최소",
+      conversationSignals: null,
     });
     expect(model.activeUsers).toBe(19);
     expect(model.licensedUsers).toBe(20);
@@ -225,10 +231,11 @@ describe("buildProductivityExecutiveModel", () => {
     expect(initialClaudeTeamUsageData.source.verification.memberAccounts).toBe(19);
     expect(initialClaudeTeamUsageData.source.verification.activeMemberAccounts).toBe(19);
     expect(initialClaudeTeamUsageData.source.verification.approvedAccounts).toBe(20);
-    expect(initialClaudeTeamUsageData.source.verification.approvedButNoUsage).toBe(1);
+    expect(initialClaudeTeamUsageData.source.verification.approvedButNoUsage).toBe(4);
     expect(initialClaudeTeamUsageData.users).toHaveLength(20);
     expect(initialClaudeTeamUsageData.activeUsers).toBe(19);
-    expect(initialClaudeTeamUsageData.spendUsers).toBe(19);
+    expect(initialClaudeTeamUsageData.spendUsers).toBe(14);
+    expect(initialClaudeTeamUsageData.codeUsers).toBe(12);
     expect(
       initialClaudeTeamUsageData.users.find((user) => user.email === "dhlee@riskzero.kr"),
     ).toMatchObject({

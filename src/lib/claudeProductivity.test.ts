@@ -3,22 +3,22 @@ import { initialClaudeTeamUsageData } from "../data/claudeTeamUsageData";
 import { buildClaudeProductivitySignals } from "./claudeProductivity";
 
 describe("Claude productivity signals", () => {
-  it("classifies the stable top cohort from Claude Code output and efficiency", () => {
+  it("classifies the current partial-month cohort from output and efficiency", () => {
     const signals = buildClaudeProductivitySignals(initialClaudeTeamUsageData.users);
 
     expect(signals.get("wody@riskzero.kr")?.level).toBe("top");
-    expect(signals.get("jaewoo.kim@riskzero.kr")?.level).toBe("top");
-    expect(signals.get("kys0392@riskzero.kr")?.level).toBe("top");
-    expect(signals.get("hchbae1001@riskzero.kr")?.level).toBe("top");
-    expect(signals.get("jisub1221@riskzero.kr")?.level).toBe("efficient");
-    expect(signals.get("woosung.jeon@riskzero.kr")?.level).toBe("high-output");
+    expect(signals.get("woosung.jeon@riskzero.kr")?.level).toBe("top");
+    expect(signals.get("kys0392@riskzero.kr")?.level).toBe("high-output");
+    expect(signals.get("huizhen0227@riskzero.kr")?.level).toBe("balanced");
+    expect(signals.get("jaewoo.kim@riskzero.kr")?.level).toBe("insufficient");
   });
 
-  it("separates small samples and users without Claude Code output", () => {
+  it("separates missing efficiency denominators from users without code output", () => {
     const signals = buildClaudeProductivitySignals(initialClaudeTeamUsageData.users);
 
     expect(signals.get("sjlim@riskzero.kr")?.level).toBe("insufficient");
-    expect(signals.get("ykchj1011@riskzero.kr")?.level).toBe("insufficient");
-    expect(signals.get("mjlee0828@riskzero.kr")?.level).toBe("no-code");
+    expect(signals.get("rkgmf1230@riskzero.kr")?.level).toBe("insufficient");
+    expect(signals.get("ykchj1011@riskzero.kr")?.level).toBe("no-code");
+    expect(signals.get("mjlee0828@riskzero.kr")?.level).toBe("insufficient");
   });
 });
