@@ -1648,6 +1648,113 @@ h2 {
   font-size: 0.95rem;
 }
 
+.integrated-conversation-panel {
+  overflow: hidden;
+}
+
+.integrated-conversation-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr);
+  gap: 24px;
+  margin-top: 22px;
+}
+
+.integrated-conversation-grid.evidence-grid {
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+}
+
+.integrated-conversation-section {
+  min-width: 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.source-reconciliation-section {
+  margin-top: 24px;
+}
+
+.section-heading-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.section-heading-row h3 {
+  margin: 4px 0 0;
+  font-size: 1rem;
+}
+
+.section-heading-row > small,
+.team-plan-evidence > p {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.integrated-conversation-chart {
+  width: 100%;
+  height: 342px;
+}
+
+.integrated-topic-list {
+  max-height: 342px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.source-label-cell {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink) !important;
+}
+
+.source-label-cell i {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 2px;
+}
+
+.compact-table table {
+  min-width: 520px;
+}
+
+.integrated-evidence-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 18px;
+  margin: 0;
+}
+
+.integrated-evidence-list div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.integrated-evidence-list dt {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.integrated-evidence-list dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.team-plan-evidence > p {
+  margin: 14px 0 0;
+}
+
 .section-subtitle {
   margin-top: 18px !important;
 }
@@ -3252,6 +3359,7 @@ td strong {
   .api-summary-panel,
   .key-health-grid,
   .chatgpt-export-grid,
+  .integrated-conversation-grid,
   .claude-team-grid,
   .approval-payment-grid,
   .approval-split-grid,
@@ -3269,6 +3377,11 @@ td strong {
   }
 
   .ax-insight-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .integrated-conversation-grid,
+  .integrated-conversation-grid.evidence-grid {
     grid-template-columns: 1fr;
   }
 
@@ -3361,6 +3474,7 @@ td strong {
   .api-summary-panel,
   .key-health-grid,
   .chatgpt-export-grid,
+  .integrated-conversation-grid,
   .claude-team-grid,
   .approval-payment-grid,
   .approval-split-grid,
@@ -3405,6 +3519,23 @@ td strong {
 
   .executive-chart-frame {
     height: 280px;
+  }
+
+  .section-heading-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .integrated-conversation-chart {
+    height: 300px;
+  }
+
+  .integrated-topic-list {
+    max-height: none;
+  }
+
+  .integrated-evidence-list {
+    grid-template-columns: 1fr;
   }
 
   .drive-trend-head,

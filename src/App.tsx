@@ -104,6 +104,7 @@ import {
   type ClaudeProductivityLevel,
 } from "./lib/claudeProductivity";
 import { buildDriveArtifactDailyTrend } from "./lib/driveArtifactTrend";
+import { buildIntegratedConversationAnalysis } from "./lib/integratedConversationAnalysis";
 import {
   isDriveArtifactTrendSnapshot,
   selectPreferredDriveArtifactTrendSnapshot,
@@ -663,8 +664,15 @@ function App() {
       }),
     [driveArtifactTrendSnapshot, gensparkUsageData, monthlyActuals],
   );
-  const aiUsageInsight = gensparkUsageData.insightAnalysis;
-  const detailedUsageRecords = aiUsageInsight.totalRecords + chatGptUsageData.totalConversations;
+  const integratedConversationSummary = useMemo(
+    () =>
+      buildIntegratedConversationAnalysis({
+        chatGpt: chatGptUsageData,
+        claudeExport: gensparkUsageData.chatGptExport,
+        driveActivity: driveArtifactRepositoryData.activityAnalysis,
+      }),
+    [gensparkUsageData],
+  );
   const latestDriveFileTotal =
     driveArtifactTrendSnapshot?.totals.files ?? driveArtifactRepositoryData.totals.files;
   const driveArtifactsByOwner = driveArtifactTrendSnapshot
@@ -1022,24 +1030,24 @@ function App() {
     viewHeader = {
       eyebrow: "Work Pattern Analysis",
       title: "AI 활용 상세 분석",
-      description: "대화량보다 어떤 업무에 AI를 사용했고 어떤 파일과 결과가 남았는지 원천별로 추적합니다.",
+      description: "ChatGPT와 Claude 대화·Drive 기록을 통합해 어떤 업무와 결과로 이어졌는지 추적합니다.",
       freshness: `${
         driveArtifactTrendSnapshot?.source.period ?? driveArtifactRepositoryData.source.period
       } · 날짜 그래프 매일 21:00 갱신`,
       metrics: [
         {
           icon: <Sparkles size={19} />,
-          label: "통합 분석 대상",
-          value: `${numberFormat.format(detailedUsageRecords)}건`,
-          detail: "대화 + 작업 로그",
+          label: "통합 대화 신호",
+          value: `${numberFormat.format(integratedConversationSummary.conversationSignals)}건`,
+          detail: "ChatGPT · Claude Team · Drive",
           tone: "teal",
         },
         {
           icon: <Bot size={19} />,
-          label: "Drive 대화·프롬프트",
-          value: `${numberFormat.format(driveArtifactRepositoryData.activityAnalysis.totalConversations)}건`,
-          detail: `본문 확인 프롬프트 ${numberFormat.format(driveArtifactRepositoryData.activityAnalysis.promptEvidence.totalRecords)}건`,
-          tone: "teal",
+          label: "확인된 메시지",
+          value: `${numberFormat.format(integratedConversationSummary.knownMessages)}건`,
+          detail: "ChatGPT + Claude Team Export",
+          tone: "steel",
         },
         {
           icon: <FileSpreadsheet size={19} />,
@@ -1050,10 +1058,10 @@ function App() {
         },
         {
           icon: <Bot size={19} />,
-          label: "ChatGPT 대화",
-          value: `${numberFormat.format(chatGptUsageData.totalConversations)}건`,
-          detail: `자산 ${numberFormat.format(chatGptUsageData.conversationAssetFiles)}개`,
-          tone: "steel",
+          label: "Claude Team 활성",
+          value: `${claudeTeamUsageData.activeUsers}/${claudeTeamUsageData.licensedUsers}명`,
+          detail: `활성률 ${formatRate((claudeTeamUsageData.activeUsers / claudeTeamUsageData.licensedUsers) * 100)}`,
+          tone: "green",
         },
       ],
     };
@@ -3134,15 +3142,6 @@ function GensparkUsageView({
   const insight = usageData.insightAnalysis;
   const claudeExport = usageData.chatGptExport;
   const topTopic = insight.topicInsights[0];
-  const chatGptTopTopic = chatGptUsageData.topicInsights[0];
-  const maxChatGptMonthConversations = Math.max(
-    ...chatGptUsageData.monthlyUsage.map((month) => month.conversations),
-    1,
-  );
-  const maxChatGptModelMessages = Math.max(
-    ...chatGptUsageData.modelUsage.map((model) => model.messages),
-    1,
-  );
   const maxDriveRepositoryFiles = Math.max(...driveRepositoryData.repositories.map((repository) => repository.fileCount), 1);
   const maxDriveRepositoryDepth = Math.max(
     ...driveRepositoryData.repositories.map((repository) => repository.inventory.maxDepth),
@@ -3170,15 +3169,24 @@ function GensparkUsageView({
     driveTrendSnapshot?.totals.nestedFiles ?? driveRepositoryData.totals.nestedFiles;
   const driveActivity = driveRepositoryData.activityAnalysis;
   const drivePromptEvidence = driveActivity.promptEvidence;
+  const integratedConversationAnalysis = useMemo(
+    () =>
+      buildIntegratedConversationAnalysis({
+        chatGpt: chatGptUsageData,
+        claudeExport,
+        driveActivity,
+      }),
+    [claudeExport, driveActivity],
+  );
   const gensparkDrive = usageData.driveAnalysis;
   const gammaArtifactCount = gammaDriveUsageData.artifactCount;
   const gammaTotalPages = gammaDriveUsageData.totalPages;
   const gammaTopArtifact = gammaDriveUsageData.artifacts[0];
   const [analysisSection, setAnalysisSection] = useState<
-    "patterns" | "conversations" | "outputs" | "evidence"
+    "patterns" | "conversations" | "outputs"
   >("patterns");
   const analysisSections: Array<{
-    key: "patterns" | "conversations" | "outputs" | "evidence";
+    key: "patterns" | "conversations" | "outputs";
     label: string;
     detail: string;
     icon: ReactNode;
@@ -3191,8 +3199,8 @@ function GensparkUsageView({
     },
     {
       key: "conversations",
-      label: "대화 분석",
-      detail: `ChatGPT ${numberFormat.format(chatGptUsageData.totalConversations)} · Drive ${numberFormat.format(driveActivity.totalConversations)}건`,
+      label: "통합 대화 분석",
+      detail: `${numberFormat.format(integratedConversationAnalysis.conversationSignals)}건 · 3개 원천`,
       icon: <Bot size={18} />,
     },
     {
@@ -3201,12 +3209,6 @@ function GensparkUsageView({
       detail: `Drive ${numberFormat.format(driveTrendTotalFiles)}개`,
       icon: <FileText size={18} />,
     },
-    {
-      key: "evidence",
-      label: "Claude 대화 분석",
-      detail: claudeExport ? `${numberFormat.format(claudeExport.totalMessages)}메시지` : "수집 대기",
-      icon: <ShieldCheck size={18} />,
-    },
   ];
   return (
     <div className="content-grid ai-insight-view">
@@ -3214,7 +3216,7 @@ function GensparkUsageView({
         <div className="analysis-switcher-copy">
           <span className="eyebrow">Analysis Scope</span>
           <strong>확인할 분석 범위</strong>
-          <span>업무 흐름, 대화, 산출물, 원천 데이터를 분리했습니다.</span>
+          <span>업무 흐름, 통합 대화, 산출물 기준으로 정리했습니다.</span>
         </div>
         <div className="analysis-section-tabs" role="tablist" aria-label="상세 분석 보기">
           {analysisSections.map((section) => (
@@ -3318,221 +3320,240 @@ function GensparkUsageView({
       )}
 
       {analysisSection === "conversations" && (
-      <>
-      <section className="panel panel-wide">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">Claude Drive Prompt Audit</span>
-            <h2>Claude Drive 대화·프롬프트 분류</h2>
-          </div>
-          <div className="panel-header-side">
-            <span className="state-pill ok">전체 하위 폴더 집계</span>
-            <span className="state-pill neutral">{driveActivity.period}</span>
-          </div>
-        </div>
-        <p className="insight-lead">
-          Drive에서 찾은 프롬프트 파일과 프롬프트·응답 문서를 세션 식별자로 중복 제거해 대화 활동을 추정하고,
-          본문을 확인한 대표 기록은 파일 역할에 따라 별도로 분류했습니다.
-        </p>
-        <div className="drive-summary-grid">
-          <article>
-            <span>대화 세션 추정</span>
-            <strong>{numberFormat.format(driveActivity.totalConversations)}건</strong>
-            <small>전체 재귀 스캔 + 8월 Drive 기록 검증</small>
-          </article>
-          <article>
-            <span>본문 확인 프롬프트</span>
-            <strong>{numberFormat.format(drivePromptEvidence.totalRecords)}건</strong>
-            <small>대표 기록의 본문·파일 유형 확인</small>
-          </article>
-          <article>
-            <span>프롬프트 단독</span>
-            <strong>{numberFormat.format(drivePromptEvidence.promptOnlyRecords)}건</strong>
-            <small>요청 내용만 저장된 파일</small>
-          </article>
-          <article>
-            <span>프롬프트+응답</span>
-            <strong>{numberFormat.format(drivePromptEvidence.promptResponseRecords)}건</strong>
-            <small>응답 단독 {numberFormat.format(drivePromptEvidence.responseOnlyRecords)}건 별도</small>
-          </article>
-        </div>
-        <div className="table-wrap claude-export-table">
-          <table>
-            <thead>
-              <tr>
-                <th>저장소</th>
-                <th>대화 세션 추정</th>
-                <th>본문 확인 프롬프트</th>
-                <th>프롬프트 단독</th>
-                <th>프롬프트+응답</th>
-                <th>응답 단독</th>
-                <th>결과 신호</th>
-              </tr>
-            </thead>
-            <tbody>
-              {driveActivity.byOwner.map((owner) => (
-                <tr key={owner.owner}>
-                  <td><strong>{owner.owner}</strong></td>
-                  <td>{numberFormat.format(owner.conversations)}</td>
-                  <td>{numberFormat.format(owner.promptRecords)}</td>
-                  <td>{numberFormat.format(owner.promptOnlyRecords)}</td>
-                  <td>{numberFormat.format(owner.promptResponseRecords)}</td>
-                  <td>{numberFormat.format(owner.responseOnlyRecords)}</td>
-                  <td>{numberFormat.format(owner.outputSignals)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="insight-box">
-          <ShieldCheck size={18} />
-          <div>
-            <strong>중복 합산 방지</strong>
-            <span>{drivePromptEvidence.definition}</span>
-            <span>{driveActivity.outputDefinition}</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="panel panel-wide">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">ChatGPT Export Audit</span>
-            <h2>ChatGPT 사용 내용 분석</h2>
-          </div>
-          <div className="panel-header-side">
-            <span className="state-pill ok">{chatGptUsageData.source.status}</span>
-            <span className="state-pill neutral">{chatGptUsageData.source.period}</span>
-          </div>
-        </div>
-        <p className="insight-lead">
-          ChatGPT는 주로 <strong>{chatGptTopTopic?.topic ?? "업무 분석"}</strong>에 쓰였고, 대화 기준 업무성
-          사용 비중은 <strong>{formatRate(chatGptUsageData.businessConversationShare)}</strong>입니다.
-        </p>
-        <div className="claude-export-summary-grid">
-          <article>
-            <span>대화/메시지</span>
-            <strong>{numberFormat.format(chatGptUsageData.totalConversations)}개</strong>
-            <small>
-              {numberFormat.format(chatGptUsageData.totalMessages)}메시지 · 활성 {numberFormat.format(chatGptUsageData.activeDays)}일
-            </small>
-          </article>
-          <article>
-            <span>업무성 사용</span>
-            <strong>{formatRate(chatGptUsageData.businessConversationShare)}</strong>
-            <small>개인·생활 질의 {formatRate(chatGptUsageData.topicInsights.find((topic) => topic.topic === "개인·생활/비업무")?.share ?? 0)}</small>
-          </article>
-          <article>
-            <span>파일 신호</span>
-            <strong>{numberFormat.format(chatGptUsageData.conversationAssetFiles)}개</strong>
-            <small>라이브러리 {numberFormat.format(chatGptUsageData.libraryFiles)}개 · ready {numberFormat.format(chatGptUsageData.readyLibraryFiles)}개</small>
-          </article>
-          <article>
-            <span>업무 시간 사용</span>
-            <strong>{formatRate(chatGptUsageData.workHourMessageShare)}</strong>
-            <small>09~18시 메시지 기준</small>
-          </article>
-        </div>
-
-        <div className="chatgpt-export-grid compact">
-          <div className="chatgpt-export-column">
-            <h3>어디에 쓰이고 있나</h3>
-            <div className="claude-topic-list">
-              {chatGptUsageData.topicInsights.map((topic) => (
-                <article className="claude-topic-item" key={topic.topic}>
-                  <MeterRow
-                    color={topic.color}
-                    label={`${topic.topic} · ${numberFormat.format(topic.conversations)}대화`}
-                    value={topic.share}
-                    valueLabel={`${numberFormat.format(topic.messages)}메시지 · ${formatRate(topic.share)}`}
-                  />
-                  <small>{topic.businessUse}</small>
-                  <small>근거: {topic.evidence}</small>
-                </article>
-              ))}
+        <section className="panel panel-wide integrated-conversation-panel">
+          <div className="panel-header">
+            <div>
+              <span className="eyebrow">Unified Conversation Intelligence</span>
+              <h2>ChatGPT·Claude 통합 대화 분석</h2>
+            </div>
+            <div className="panel-header-side">
+              <span className="state-pill ok">3개 원천 통합</span>
+              <span className="state-pill neutral">{integratedConversationAnalysis.period}</span>
             </div>
           </div>
-          <div className="chatgpt-export-column">
-            <h3>월별 사용 흐름</h3>
-            <div className="claude-topic-list">
-              {chatGptUsageData.monthlyUsage.map((month) => (
-                <MeterRow
-                  color="#0f8b8d"
-                  key={month.month}
-                  label={`${month.month} · ${numberFormat.format(month.messages)}메시지`}
-                  value={(month.conversations / maxChatGptMonthConversations) * 100}
-                  valueLabel={`${numberFormat.format(month.conversations)}대화`}
-                />
-              ))}
-            </div>
-            <h3 className="section-subtitle">주요 모델</h3>
-            <div className="claude-topic-list">
-              {chatGptUsageData.modelUsage.slice(0, 6).map((model) => (
-                <MeterRow
-                  color="#5f6f8c"
-                  key={model.model}
-                  label={model.model}
-                  value={(model.messages / maxChatGptModelMessages) * 100}
-                  valueLabel={`${numberFormat.format(model.messages)}응답 · ${formatRate(model.share)}`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
+          <p className="insight-lead">
+            ChatGPT Export, Claude Team Export, Claude Drive 대화·프롬프트 기록을 하나의 활동 흐름으로
+            통합했습니다. 총계는 원천별 대화 신호의 합이며, Claude Export와 Drive 사이의 잠재적 중복은
+            고유 대화로 단정하지 않습니다.
+          </p>
 
-        <div className="drive-summary-grid">
-          {chatGptUsageData.fileSignals.map((signal) => (
-            <article key={signal.label}>
-              <span>{signal.label}</span>
-              <strong>{numberFormat.format(signal.value)}개</strong>
-              <small>{signal.note}</small>
+          <div className="claude-export-summary-grid">
+            <article>
+              <span>통합 대화 신호</span>
+              <strong>{numberFormat.format(integratedConversationAnalysis.conversationSignals)}건</strong>
+              <small>원천 3종 합산 · 고유 대화 수 아님</small>
             </article>
-          ))}
-        </div>
-
-        <div className="table-wrap claude-export-table">
-          <table>
-            <thead>
-              <tr>
-                <th>대표 대화</th>
-                <th>일자</th>
-                <th>분류</th>
-                <th>메시지</th>
-                <th>첨부 참조</th>
-              </tr>
-            </thead>
-            <tbody>
-              {chatGptUsageData.representativeThreads.map((thread) => (
-                <tr key={`${thread.date}-${thread.title}`}>
-                  <td>
-                    <strong>{thread.title}</strong>
-                    <small>{thread.signal}</small>
-                  </td>
-                  <td>{thread.date}</td>
-                  <td>{thread.category}</td>
-                  <td>{numberFormat.format(thread.messages)}</td>
-                  <td>{numberFormat.format(thread.attachmentRefs)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="insight-box">
-          <FileText size={18} />
-          <div>
-            <strong>{chatGptUsageData.source.name}</strong>
-            <span>{chatGptUsageData.source.note}</span>
-            {chatGptUsageData.insights.map((insightText) => (
-              <span key={insightText}>{insightText}</span>
-            ))}
-            {chatGptUsageData.caveats.map((caveat) => (
-              <span key={caveat}>주의: {caveat}</span>
-            ))}
+            <article>
+              <span>확인된 메시지</span>
+              <strong>{numberFormat.format(integratedConversationAnalysis.knownMessages)}건</strong>
+              <small>ChatGPT + Claude Team Export</small>
+            </article>
+            <article>
+              <span>첨부·산출 연결 신호</span>
+              <strong>{numberFormat.format(integratedConversationAnalysis.linkedFileSignals)}개</strong>
+              <small>대화 자산, 첨부, Drive 결과 신호 합산</small>
+            </article>
+            <article>
+              <span>Claude Team 활성</span>
+              <strong>{numberFormat.format(claudeTeamUsageData.activeUsers)}명</strong>
+              <small>라이선스 {numberFormat.format(claudeTeamUsageData.licensedUsers)}명 중 활성</small>
+            </article>
           </div>
-        </div>
-      </section>
-      </>
+
+          <div className="integrated-conversation-grid">
+            <div className="integrated-conversation-section">
+              <div className="section-heading-row">
+                <div>
+                  <span className="eyebrow">Monthly Flow</span>
+                  <h3>월별 통합 대화 흐름</h3>
+                </div>
+                <small>막대: 원천별 대화 신호 · 선: 합계</small>
+              </div>
+              <div className="integrated-conversation-chart">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart
+                    data={integratedConversationAnalysis.monthlyUsage}
+                    margin={{ top: 16, right: 14, left: 0, bottom: 8 }}
+                  >
+                    <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
+                    <XAxis
+                      dataKey="label"
+                      tickLine={false}
+                      axisLine={false}
+                      interval="preserveStartEnd"
+                      tick={{ fontSize: 11 }}
+                    />
+                    <YAxis tickLine={false} axisLine={false} allowDecimals={false} width={42} />
+                    <Tooltip
+                      formatter={(value, name) => [
+                        `${numberFormat.format(Number(value))}건`,
+                        name,
+                      ]}
+                      labelFormatter={(label) => `${label} 대화 활동`}
+                    />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                    <Bar dataKey="chatGpt" name="ChatGPT" stackId="conversation" fill="#2f8f46" />
+                    <Bar dataKey="claudeExport" name="Claude Team" stackId="conversation" fill="#0f8b8d" />
+                    <Bar
+                      dataKey="claudeDrive"
+                      name="Claude Drive"
+                      stackId="conversation"
+                      fill="#c58612"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Line
+                      dataKey="total"
+                      name="통합 합계"
+                      type="monotone"
+                      stroke="#28343b"
+                      strokeWidth={2}
+                      dot={{ r: 2 }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="integrated-conversation-section">
+              <div className="section-heading-row">
+                <div>
+                  <span className="eyebrow">Work Themes</span>
+                  <h3>통합 업무 주제</h3>
+                </div>
+                <small>ChatGPT + Claude Team 분류 · Drive는 미분류</small>
+              </div>
+              <div className="claude-topic-list integrated-topic-list">
+                {integratedConversationAnalysis.topicUsage.map((topic) => (
+                  <article className="claude-topic-item" key={topic.topic}>
+                    <MeterRow
+                      color={topic.color}
+                      label={topic.topic}
+                      value={topic.share}
+                      valueLabel={`${numberFormat.format(topic.conversations)}건 · ${formatRate(topic.share)}`}
+                    />
+                    <small>{topic.note}</small>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="integrated-conversation-section source-reconciliation-section">
+            <div className="section-heading-row">
+              <div>
+                <span className="eyebrow">Source Reconciliation</span>
+                <h3>통합 원천 범위</h3>
+              </div>
+              <small>원천별 최신 수치를 통합 화면에서 대조</small>
+            </div>
+            <div className="table-wrap claude-export-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>원천</th>
+                    <th>대화 신호</th>
+                    <th>메시지</th>
+                    <th>전체 비중</th>
+                    <th>수집 기간</th>
+                    <th>집계 기준</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {integratedConversationAnalysis.sources.map((source) => (
+                    <tr key={source.key}>
+                      <td>
+                        <span className="source-label-cell">
+                          <i style={{ background: source.color }} />
+                          <strong>{source.label}</strong>
+                        </span>
+                      </td>
+                      <td>{numberFormat.format(source.conversations)}건</td>
+                      <td>{source.messages === null ? "산출 불가" : `${numberFormat.format(source.messages)}건`}</td>
+                      <td>{formatRate((source.conversations / integratedConversationAnalysis.conversationSignals) * 100)}</td>
+                      <td>{source.period}</td>
+                      <td>{source.note}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="integrated-conversation-grid evidence-grid">
+            <div className="integrated-conversation-section">
+              <div className="section-heading-row">
+                <div>
+                  <span className="eyebrow">Drive Account Link</span>
+                  <h3>Claude Drive 사용자 연결</h3>
+                </div>
+                <small>대화·프롬프트와 결과 신호</small>
+              </div>
+              <div className="table-wrap claude-export-table compact-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>사용자/저장소</th>
+                      <th>대화</th>
+                      <th>본문 확인</th>
+                      <th>결과 신호</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {driveActivity.byOwner.map((owner) => (
+                      <tr key={owner.owner}>
+                        <td><strong>{owner.owner}</strong></td>
+                        <td>{numberFormat.format(owner.conversations)}</td>
+                        <td>{numberFormat.format(owner.promptRecords)}</td>
+                        <td>{numberFormat.format(owner.outputSignals)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="integrated-conversation-section team-plan-evidence">
+              <div className="section-heading-row">
+                <div>
+                  <span className="eyebrow">Team Plan Link</span>
+                  <h3>Claude Team 활동 연결</h3>
+                </div>
+                <small>{claudeTeamUsageData.source.period}</small>
+              </div>
+              <dl className="integrated-evidence-list">
+                <div>
+                  <dt>대화 활성 계정</dt>
+                  <dd>{numberFormat.format(claudeExport?.userDirectory.activeAccounts ?? 0)}명</dd>
+                </div>
+                <div>
+                  <dt>Team 요청</dt>
+                  <dd>{numberFormat.format(claudeTeamUsageData.totalRequests)}건</dd>
+                </div>
+                <div>
+                  <dt>Code Lines</dt>
+                  <dd>{numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄</dd>
+                </div>
+                <div>
+                  <dt>교차 확인 계정</dt>
+                  <dd>{numberFormat.format(claudeTeamUsageData.source.verification.matchedAccounts)}명</dd>
+                </div>
+              </dl>
+              <p>{claudeTeamUsageData.source.verification.note}</p>
+            </div>
+          </div>
+
+          <div className="insight-box">
+            <ShieldCheck size={18} />
+            <div>
+              <strong>통합 수치 해석 기준</strong>
+              <span>
+                Claude Team 요청 수는 API·도구 호출량이므로 대화 건수에 다시 더하지 않고 운영 강도 보조지표로만 연결했습니다.
+              </span>
+              <span>{drivePromptEvidence.definition}</span>
+              <span>Drive 결과 신호와 대화 첨부는 최종 승인 산출물 수가 아니라 결과 연결 가능성을 나타냅니다.</span>
+            </div>
+          </div>
+        </section>
       )}
 
       {analysisSection === "outputs" && gensparkDrive && (
@@ -3727,91 +3748,6 @@ function GensparkUsageView({
           </div>
         </div>
       </section>
-      )}
-
-      {analysisSection === "evidence" && claudeExport && (
-        <section className="panel panel-wide">
-          <div className="panel-header">
-            <div>
-              <span className="eyebrow">Claude Conversation Analysis</span>
-              <h2>Claude 대화 분석</h2>
-            </div>
-            <div className="panel-header-side">
-              <span className="state-pill ok">전체 이력 반영</span>
-              <span className="state-pill neutral">{claudeExport.source.period}</span>
-            </div>
-          </div>
-          <div className="claude-export-summary-grid">
-            <article>
-              <span>대화/메시지</span>
-              <strong>{numberFormat.format(claudeExport.totalConversations)}개</strong>
-              <small>{numberFormat.format(claudeExport.totalMessages)}메시지 · 첨부 {numberFormat.format(claudeExport.totalAttachments)}개</small>
-            </article>
-            <article>
-              <span>활성 계정</span>
-              <strong>{numberFormat.format(claudeExport.userDirectory.activeAccounts)}개</strong>
-              <small>{claudeExport.userDirectory.domain} 사용자 {numberFormat.format(claudeExport.userDirectory.totalUsers)}명 중 매핑</small>
-            </article>
-            <article>
-              <span>Team Spend 원천</span>
-              <strong>{numberFormat.format(claudeTeamUsageData.source.verification.spendRecords)}행</strong>
-              <small>
-                {numberFormat.format(claudeTeamUsageData.spendUsers)}계정 · 요청 {numberFormat.format(claudeTeamUsageData.totalRequests)}건 · {formatPreciseUsd(claudeTeamUsageData.totalNetSpendUsd)}
-              </small>
-            </article>
-            <article>
-              <span>Code Lines 원천</span>
-              <strong>{numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄</strong>
-              <small>
-                {numberFormat.format(claudeTeamUsageData.codeUsers)}계정 · Spend 교차 {numberFormat.format(claudeTeamUsageData.source.verification.matchedAccounts)}계정
-              </small>
-            </article>
-          </div>
-
-          <div className="chatgpt-export-grid compact">
-            <div className="chatgpt-export-column">
-              <h3>어디에 쓰이고 있나</h3>
-              <div className="claude-topic-list">
-                {claudeExport.usageTopics.map((topic) => (
-                  <article className="claude-topic-item" key={topic.topic}>
-                    <MeterRow
-                      color={topic.color}
-                      label={`${topic.topic} · ${numberFormat.format(topic.conversations)}대화`}
-                      value={topic.messageShare}
-                      valueLabel={`${numberFormat.format(topic.messages)}메시지 · ${formatRate(topic.messageShare)}`}
-                    />
-                    <small>{topic.businessUse}</small>
-                    <small>근거: {topic.evidence}</small>
-                  </article>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="insight-box">
-            <FileSpreadsheet size={18} />
-            <div>
-              <strong>users.json·memories.json 반영 기준</strong>
-              <span>{claudeExport.userDirectory.privacyNote}</span>
-              {claudeExport.memoryUsage.map((memory) => (
-                <span key={memory.accountLabel}>
-                  {memory.accountLabel}: {numberFormat.format(memory.characters)}자 memory · {memory.signal}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="insight-box">
-            <LineChart size={18} />
-            <div>
-              <strong>Claude Team CSV 원천 대조</strong>
-              <span>{claudeTeamUsageData.source.note}</span>
-              <span>
-                Spend {numberFormat.format(claudeTeamUsageData.source.verification.spendRecords)}행 · Code Lines {numberFormat.format(claudeTeamUsageData.source.verification.codeLineAccounts)}계정 · 교차 {numberFormat.format(claudeTeamUsageData.source.verification.matchedAccounts)}계정
-              </span>
-              <span>{claudeTeamUsageData.source.verification.note}</span>
-            </div>
-          </div>
-        </section>
       )}
 
       {analysisSection === "outputs" && (
