@@ -3203,7 +3203,7 @@ function GensparkUsageView({
     },
     {
       key: "evidence",
-      label: "원천 검증",
+      label: "Claude 대화 분석",
       detail: claudeExport ? `${numberFormat.format(claudeExport.totalMessages)}메시지` : "수집 대기",
       icon: <ShieldCheck size={18} />,
     },
@@ -3733,8 +3733,8 @@ function GensparkUsageView({
         <section className="panel panel-wide">
           <div className="panel-header">
             <div>
-              <span className="eyebrow">Claude Export Audit</span>
-              <h2>Claude 사용 이력 원천 검증</h2>
+              <span className="eyebrow">Claude Conversation Analysis</span>
+              <h2>Claude 대화 분석</h2>
             </div>
             <div className="panel-header-side">
               <span className="state-pill ok">전체 이력 반영</span>
