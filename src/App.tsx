@@ -4031,7 +4031,7 @@ function approvalPalette(index: number) {
   return colors[index % colors.length];
 }
 
-type IndividualSortKey = "activity" | "productivity" | "code" | "prompts" | "tokens";
+type IndividualSortKey = "productivity" | "code" | "prompts" | "tokens";
 
 function AdoptionView({
   selectedMonth,
@@ -4041,7 +4041,7 @@ function AdoptionView({
   onSelectedMonthChange: (month: string) => void;
 }) {
   const data = individualUtilizationData;
-  const [sortKey, setSortKey] = useState<IndividualSortKey>("activity");
+  const [sortKey, setSortKey] = useState<IndividualSortKey>("productivity");
   const [query, setQuery] = useState("");
   const periodLabel = fullMonthLabel(selectedMonth);
   const trendData = data.monthlyTrend;
@@ -4067,7 +4067,6 @@ function AdoptionView({
         const aEvaluation = a.evaluation;
         const bEvaluation = b.evaluation;
         const value = (row: typeof a) => {
-          if (sortKey === "activity") return row.evaluation?.activityScore ?? 0;
           if (sortKey === "productivity") return row.evaluation?.productivityScore ?? 0;
           if (sortKey === "code") return row.evaluation?.codeLines ?? 0;
           if (sortKey === "prompts") return row.evaluation?.humanPrompts ?? 0;
@@ -4155,7 +4154,6 @@ function AdoptionView({
               value={sortKey}
               onChange={(event) => setSortKey(event.target.value as IndividualSortKey)}
             >
-              <option value="activity">활용지수</option>
               <option value="productivity">생산성 신호</option>
               <option value="code">Code Lines</option>
               <option value="prompts">프롬프트</option>
@@ -4281,7 +4279,6 @@ function AdoptionView({
               <tr>
                 <th>순위</th>
                 <th>사용자</th>
-                <th>활용 평가</th>
                 <th>생산성 신호</th>
                 <th>대화 프롬프트</th>
                 <th>대화 활성일</th>
@@ -4300,12 +4297,6 @@ function AdoptionView({
                     <td>
                       <strong>{user.displayName}</strong>
                       <small>{user.email}</small>
-                    </td>
-                    <td>
-                      <IndividualScoreBadge
-                        level={evaluation?.activityLevel ?? "unobserved"}
-                        score={evaluation?.activityScore ?? 0}
-                      />
                     </td>
                     <td>
                       <IndividualScoreBadge

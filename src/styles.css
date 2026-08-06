@@ -3771,7 +3771,7 @@ td strong {
 }
 
 .individual-utilization-table table {
-  min-width: 1480px;
+  min-width: 1360px;
 }
 
 .individual-utilization-table th:nth-child(2),
@@ -3779,13 +3779,13 @@ td strong {
   min-width: 210px;
 }
 
-.individual-utilization-table th:nth-child(8),
-.individual-utilization-table td:nth-child(8) {
+.individual-utilization-table th:nth-child(7),
+.individual-utilization-table td:nth-child(7) {
   min-width: 170px;
 }
 
-.individual-utilization-table th:nth-child(9),
-.individual-utilization-table td:nth-child(9) {
+.individual-utilization-table th:nth-child(8),
+.individual-utilization-table td:nth-child(8) {
   min-width: 430px;
 }
 
