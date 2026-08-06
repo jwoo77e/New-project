@@ -3,30 +3,30 @@
   "source": {
     "name": "Genspark AI Drive 산출물 분석",
     "folderUrl": "https://drive.google.com/drive/folders/1MFJpVf9QfLNbzwLIE27N3b9yua9uYsa2",
-    "collectedAt": "2026-08-05 22:01 KST",
-    "generatedAt": "2026-08-05T13:01:39.000Z",
-    "period": "2025-12-17 ~ 2026-08-04",
+    "collectedAt": "2026-08-06 22:03 KST",
+    "generatedAt": "2026-08-06T13:03:08.000Z",
+    "period": "2025-12-17 ~ 2026-08-05",
     "accountLabel": "Genspark AI Drive · riskzero.marketing@gmail.com",
     "status": "정상",
     "schedule": "매일 22:00 KST",
     "mode": "Drive 전체 하위 폴더 재귀 조회 + 최신 요약 분석",
     "note": "Genspark Drive 루트와 모든 하위 폴더를 읽기 전용으로 재귀 조회하고 최신 요약 파일의 유형·프로젝트 집계와 실제 Drive 파일 메타데이터를 함께 검증합니다."
   },
-  "totalFiles": 181,
-  "individualArtifacts": 173,
+  "totalFiles": 182,
+  "individualArtifacts": 174,
   "archiveFiles": 8,
-  "newArtifacts": 6,
-  "projectCount": 7,
-  "folderCount": 8,
+  "newArtifacts": 1,
+  "projectCount": 5,
+  "folderCount": 4,
   "rootFileCount": 3,
   "totalSizeLabel": "약 2.0 GB",
-  "latestOutputDate": "2026-08-04",
-  "directFileSignal": "루트 포함 1개 폴더를 재귀 조회해 Drive 파일 204개를 확인하고 최신 요약 genspark_sessions_요약_20260805.md을 대조",
+  "latestOutputDate": "2026-08-05",
+  "directFileSignal": "루트 포함 1개 폴더를 재귀 조회해 Drive 파일 206개를 확인하고 최신 요약 genspark_sessions_요약_20260806.md을 대조",
   "typeBreakdown": [
     {
       "name": "PPTX",
       "tasks": 132,
-      "share": 72.9,
+      "share": 72.5,
       "note": "제안서, 발표자료, 비교 분석 보고서",
       "color": "#2f8f46"
     },
@@ -39,8 +39,8 @@
     },
     {
       "name": "DOCX",
-      "tasks": 13,
-      "share": 7.2,
+      "tasks": 14,
+      "share": 7.7,
       "note": "제안서, 보고서, 회의록, 운영 문서",
       "color": "#c58612"
     },
@@ -54,14 +54,14 @@
     {
       "name": "XLSX",
       "tasks": 5,
-      "share": 2.8,
+      "share": 2.7,
       "note": "사업금액·기능점수·데이터 산출",
       "color": "#5f6f8c"
     },
     {
       "name": "PDF",
       "tasks": 5,
-      "share": 2.8,
+      "share": 2.7,
       "note": "제안서와 검토 보고서",
       "color": "#e85d4f"
     },
@@ -76,8 +76,8 @@
   "projectBreakdown": [
     {
       "name": "Genspark",
-      "tasks": 158,
-      "share": 87.3,
+      "tasks": 159,
+      "share": 87.4,
       "note": "Genspark 루트 산출물",
       "color": "#2f8f46"
     },
@@ -89,42 +89,36 @@
       "color": "#0f8b8d"
     },
     {
-      "name": "archive_20260625_014554.zip",
-      "tasks": 1,
-      "share": 0.6,
-      "note": "초기 세션 아카이브",
+      "name": "루트 파일",
+      "tasks": 3,
+      "share": 1.6,
+      "note": "루트에 저장된 개별 산출물",
       "color": "#c58612"
-    },
-    {
-      "name": "RiskZero 영업대시보드 개선",
-      "tasks": 1,
-      "share": 0.6,
-      "note": "영업 대시보드 HTML 산출물",
-      "color": "#9a6b36"
-    },
-    {
-      "name": "RiskZero 영업대시보드 원본",
-      "tasks": 1,
-      "share": 0.6,
-      "note": "영업 대시보드 HTML 원본",
-      "color": "#e85d4f"
     },
     {
       "name": "제안서작성",
       "tasks": 1,
-      "share": 0.6,
+      "share": 0.5,
       "note": "대용량 제안서 산출",
       "color": "#7d6ca7"
     },
     {
       "name": "zerobee_project",
       "tasks": 1,
-      "share": 0.6,
+      "share": 0.5,
       "note": "ZeroBee 관련 산출",
       "color": "#5f6f8c"
     }
   ],
   "representativeFiles": [
+    {
+      "title": "반도건설_안전보건분석_보고서.docx",
+      "url": "https://docs.google.com/document/d/1dGrxKD9sxqLn-hK_SCf22-VcgM4asJIR/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
+      "fileType": "DOCX",
+      "purpose": "스마트 안전관리 제안/영업",
+      "sizeLabel": "68.1 KB",
+      "modifiedAt": "2026-08-06T00:47:23.721Z"
+    },
     {
       "title": "우미건설_AI_스마트안전관리플랫폼_도입_제안_20260804013503.pptx",
       "url": "https://docs.google.com/presentation/d/1aGJjTDoaJqV91Zz-JQMBzG8Dk_XJUNH1/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
@@ -180,32 +174,24 @@
       "purpose": "스마트 안전관리 제안/영업",
       "sizeLabel": "6.5 MB",
       "modifiedAt": "2026-08-04T00:46:55.589Z"
-    },
-    {
-      "title": "포스코그룹_AI_스마트안전관리솔루션_리스크제로_3_0__도입_제안서_20260729030634.pptx",
-      "url": "https://docs.google.com/presentation/d/1CKodF5DQqv1hxYD8FqlXJBth7YO8WQ06/edit?usp=drivesdk&ouid=112973521836270298332&rtpof=true&sd=true",
-      "fileType": "PPTX",
-      "purpose": "스마트 안전관리 제안/영업",
-      "sizeLabel": "1.6 MB",
-      "modifiedAt": "2026-07-30T01:30:20.792Z"
     }
   ],
   "insights": [
-    "최신 Genspark Drive 요약 기준 전체 파일은 181개이며 개별 산출물 173개와 아카이브 8개로 구분됩니다.",
-    "PPTX가 132개(72.9%)로 가장 많아 제안·발표자료 생산이 중심입니다.",
-    "Genspark 프로젝트가 158개로 가장 큰 산출 영역입니다.",
-    "자동 수집은 루트 포함 1개 폴더와 Drive 항목 204개를 확인했으며, 이번 신규 산출물은 6개입니다."
+    "최신 Genspark Drive 요약 기준 전체 파일은 182개이며 개별 산출물 174개와 아카이브 8개로 구분됩니다.",
+    "PPTX가 132개(72.5%)로 가장 많아 제안·발표자료 생산이 중심입니다.",
+    "Genspark 프로젝트가 159개로 가장 큰 산출 영역입니다.",
+    "자동 수집은 루트 포함 1개 폴더와 Drive 항목 206개를 확인했으며, 이번 신규 산출물은 1개입니다."
   ],
   "inventory": {
-    "scannedFiles": 204,
+    "scannedFiles": 206,
     "scannedFolders": 1,
     "nestedFolders": 0,
     "maxDepth": 0,
-    "summaryFileId": "1aC1qOhh09zq7KCmpJIGiIFqeUx8PSG-y",
-    "summaryFileName": "genspark_sessions_요약_20260805.md",
-    "individualArtifacts": 173,
+    "summaryFileId": "1Mi0AIavMxvcF9i-zpymcanS57h3U0Qpq",
+    "summaryFileName": "genspark_sessions_요약_20260806.md",
+    "individualArtifacts": 174,
     "archiveFiles": 8,
-    "newArtifacts": 6,
-    "totalSizeBytes": 2152261880
+    "newArtifacts": 1,
+    "totalSizeBytes": 2152331644
   }
 }
