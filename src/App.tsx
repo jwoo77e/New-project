@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import {
   Activity,
   AlertTriangle,
+  ArrowLeft,
   ArrowRight,
   Bot,
   CalendarRange,
@@ -13,6 +14,7 @@ import {
   Cpu,
   Database,
   Download,
+  ExternalLink,
   FileText,
   FileSpreadsheet,
   Gauge,
@@ -79,7 +81,12 @@ import {
 import {
   individualUtilizationData,
   type IndividualEvaluationLevel,
+  type IndividualUtilizationUser,
 } from "./data/individualUtilizationData";
+import {
+  individualProfileDataByEmail,
+  type IndividualProfileData,
+} from "./data/individualProfileData";
 import {
   approvalMonthlyTotalsForMonth,
   buildApprovalPersonCostSummary,
@@ -4095,6 +4102,7 @@ function AdoptionView({
   const data = individualUtilizationData;
   const [sortKey, setSortKey] = useState<IndividualSortKey>("productivity");
   const [query, setQuery] = useState("");
+  const [selectedProfileEmail, setSelectedProfileEmail] = useState<string | null>(null);
   const periodLabel = fullMonthLabel(selectedMonth);
   const trendData = data.monthlyTrend;
   const selectedMonthlySpend = data.monthlySpend[selectedMonth] ?? null;
@@ -4170,6 +4178,23 @@ function AdoptionView({
       (b.evaluation?.productivityScore ?? 0) -
       (a.evaluation?.productivityScore ?? 0),
   )[0];
+  const selectedProfile = selectedProfileEmail
+    ? individualProfileDataByEmail[selectedProfileEmail] ?? null
+    : null;
+
+  if (selectedProfile) {
+    const selectedUser = data.users.find((user) => user.email === selectedProfile.email);
+    if (selectedUser) {
+      return (
+        <IndividualProfileView
+          onBack={() => setSelectedProfileEmail(null)}
+          profile={selectedProfile}
+          selectedMonth={selectedMonth}
+          user={selectedUser}
+        />
+      );
+    }
+  }
 
   return (
     <div className="content-grid individual-utilization-view">
@@ -4347,8 +4372,25 @@ function AdoptionView({
                   <tr key={user.email}>
                     <td><span className="individual-rank">{index + 1}</span></td>
                     <td>
-                      <strong>{user.displayName}</strong>
-                      <small>{user.email}</small>
+                      {individualProfileDataByEmail[user.email] ? (
+                        <button
+                          aria-label={`${user.displayName} 개인 상세 보기`}
+                          className="individual-user-link"
+                          onClick={() => setSelectedProfileEmail(user.email)}
+                          type="button"
+                        >
+                          <span>
+                            <strong>{user.displayName}</strong>
+                            <small>{user.email}</small>
+                          </span>
+                          <ChevronRight size={17} />
+                        </button>
+                      ) : (
+                        <>
+                          <strong>{user.displayName}</strong>
+                          <small>{user.email}</small>
+                        </>
+                      )}
                     </td>
                     <td>
                       <IndividualScoreBadge
@@ -4424,6 +4466,244 @@ function AdoptionView({
             <dd>{data.methodology.caveat}</dd>
           </div>
         </dl>
+      </section>
+    </div>
+  );
+}
+
+function IndividualProfileView({
+  onBack,
+  profile,
+  selectedMonth,
+  user,
+}: {
+  onBack: () => void;
+  profile: IndividualProfileData;
+  selectedMonth: string;
+  user: IndividualUtilizationUser;
+}) {
+  const evaluation = user.monthEvaluations[selectedMonth];
+  const monthlySpend = individualUtilizationData.monthlySpend[selectedMonth]?.users[user.email] ?? null;
+  const approvalRecords = initialAiToolApprovalData.records.filter((record) =>
+    record.owner.startsWith(profile.approvalOwner),
+  );
+  const monthlyFixedKrw = approvalRecords.reduce((sum, record) => sum + record.monthlyKrw, 0);
+  const monthlyFixedUsd = approvalRecords.reduce((sum, record) => sum + record.monthlyUsd, 0);
+  const maxTopicCount = Math.max(...profile.promptTopics.map((topic) => topic.count), 1);
+  const maxFileCount = Math.max(...profile.fileBreakdown.map((item) => item.count), 1);
+  const recentPromptTrend = profile.dailyPromptCounts.map((item) => ({
+    ...item,
+    label: item.date.slice(5).replace("-", "/"),
+  }));
+
+  return (
+    <div className="content-grid individual-profile-view">
+      <section className="individual-profile-header">
+        <button className="individual-profile-back" onClick={onBack} type="button">
+          <ArrowLeft size={18} />
+          개인별 활용 목록
+        </button>
+        <div>
+          <span className="eyebrow">Individual Cost & Output</span>
+          <h2>{profile.displayName}</h2>
+          <p>{profile.department} · {profile.email}</p>
+        </div>
+        <a
+          className="individual-profile-drive-link"
+          href={profile.drive.folderUrl}
+          rel="noreferrer"
+          target="_blank"
+        >
+          Drive 원천
+          <ExternalLink size={16} />
+        </a>
+      </section>
+
+      <section className="individual-profile-kpis" aria-label={`${profile.displayName} 비용 및 결과 핵심 지표`}>
+        <article>
+          <span><CircleDollarSign size={17} />월 고정 투입비</span>
+          <strong>{formatWon(monthlyFixedKrw)}</strong>
+          <small>{approvalRecords.length}개 구독 · {formatPreciseUsd(monthlyFixedUsd)}</small>
+        </article>
+        <article>
+          <span><Bot size={17} />Drive 프롬프트</span>
+          <strong>{numberFormat.format(profile.drive.promptFiles)}건</strong>
+          <small>응답 연결 {numberFormat.format(profile.drive.pairedSessions)}건</small>
+        </article>
+        <article>
+          <span><FileText size={17} />결과·지원 파일</span>
+          <strong>{numberFormat.format(profile.drive.outputAndSupportFiles)}개</strong>
+          <small>전체 저장 {numberFormat.format(profile.drive.fileCount)}개 중</small>
+        </article>
+        <article>
+          <span><Gauge size={17} />{fullMonthLabel(selectedMonth)} 생산성</span>
+          <strong>{evaluation?.productivityScore ?? 0}점</strong>
+          <small>{individualLevelLabel(evaluation?.productivityLevel ?? "unobserved")} · Code {numberFormat.format(evaluation?.codeLines ?? 0)}줄</small>
+        </article>
+      </section>
+
+      <section className="panel panel-large individual-profile-cost-panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Investment</span>
+            <h2>월 투입 비용</h2>
+          </div>
+          <span className="state-pill ok">합계 {formatWon(monthlyFixedKrw)}</span>
+        </div>
+        <div className="table-wrap individual-profile-cost-table">
+          <table>
+            <thead>
+              <tr>
+                <th>도구</th>
+                <th>계정</th>
+                <th>월 비용</th>
+              </tr>
+            </thead>
+            <tbody>
+              {approvalRecords.map((record) => (
+                <tr key={`${record.category}-${record.account}`}>
+                  <td>
+                    <strong>{record.tool}</strong>
+                    <small>{record.category}</small>
+                  </td>
+                  <td>{record.account}</td>
+                  <td>
+                    <strong>{formatWon(record.monthlyKrw)}</strong>
+                    <small>{formatPreciseUsd(record.monthlyUsd)}</small>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <small className="approval-footnote">AI 도구 결재 현황의 현재 월 고정 구독료이며 API 변동비는 개인에게 배분하지 않았습니다.</small>
+      </section>
+
+      <section className="panel individual-profile-usage-panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Usage Signal</span>
+            <h2>{fullMonthLabel(selectedMonth)} 개인 활동</h2>
+          </div>
+        </div>
+        <dl className="individual-profile-usage-list">
+          <div><dt>월 누적 요청</dt><dd>{monthlySpend ? `${numberFormat.format(monthlySpend.requests)}건` : "미수집"}</dd></div>
+          <div><dt>월 누적 토큰</dt><dd>{monthlySpend ? formatTokens(monthlySpend.totalTokens) : "미수집"}</dd></div>
+          <div><dt>대화 프롬프트</dt><dd>{numberFormat.format(evaluation?.humanPrompts ?? 0)}건</dd></div>
+          <div><dt>Code Lines</dt><dd>{numberFormat.format(evaluation?.codeLines ?? 0)}줄</dd></div>
+        </dl>
+      </section>
+
+      <section className="panel panel-wide individual-profile-trend-panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Prompt Activity</span>
+            <h2>Drive 프롬프트 일별 추이</h2>
+          </div>
+          <div className="panel-header-side">
+            {profile.monthlyPromptCounts.map((item) => (
+              <span className="state-pill neutral" key={item.month}>{monthLabel(item.month)} {item.prompts}건</span>
+            ))}
+          </div>
+        </div>
+        <div className="chart-frame individual-profile-trend-chart">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={recentPromptTrend} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
+              <XAxis dataKey="label" interval={3} tickLine={false} axisLine={false} />
+              <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={36} />
+              <Tooltip formatter={(value) => [`${numberFormat.format(Number(value))}건`, "프롬프트"]} />
+              <Bar dataKey="prompts" name="프롬프트" fill="#0f8b8d" radius={[4, 4, 0, 0]} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      <section className="panel panel-wide individual-profile-topic-panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Prompt Mix</span>
+            <h2>프롬프트 업무 영역</h2>
+          </div>
+          <span className="state-pill neutral">본문 분석 {profile.drive.promptFiles}건</span>
+        </div>
+        <div className="individual-profile-topic-grid">
+          {profile.promptTopics.map((topic) => (
+            <article key={topic.label}>
+              <div className="individual-profile-topic-head">
+                <span className="category-dot" style={{ background: topic.color }} />
+                <strong>{topic.label}</strong>
+                <b>{numberFormat.format(topic.count)}건</b>
+              </div>
+              <div className="individual-profile-topic-meter"><span style={{ width: `${(topic.count / maxTopicCount) * 100}%`, background: topic.color }} /></div>
+              <p>{topic.description}</p>
+              <small>{topic.examples.join(" · ")}</small>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="panel panel-large individual-profile-file-panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Drive Inventory</span>
+            <h2>저장 파일 구성</h2>
+          </div>
+          <span className="state-pill ok">전체 {numberFormat.format(profile.drive.fileCount)}개</span>
+        </div>
+        <div className="approval-meter-list">
+          {profile.fileBreakdown.map((item) => (
+            <MeterRow
+              color={item.color}
+              key={item.label}
+              label={item.label}
+              value={(item.count / maxFileCount) * 100}
+              valueLabel={`${numberFormat.format(item.count)}개 · ${item.description}`}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="panel individual-profile-highlight-panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Output Highlights</span>
+            <h2>대표 결과물</h2>
+          </div>
+        </div>
+        <div className="individual-profile-highlight-list">
+          {profile.highlights.map((item, index) => (
+            <article key={item.title}>
+              <span>{index + 1}</span>
+              <div>
+                <small>{item.category}</small>
+                <strong>{item.title}</strong>
+                <p>{item.summary}</p>
+                <b>{item.result}</b>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="panel panel-wide individual-profile-source-panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Source Coverage</span>
+            <h2>수집 범위와 해석</h2>
+          </div>
+          <span className="state-pill ok">오류 {profile.drive.scanErrors}건</span>
+        </div>
+        <div className="individual-profile-source-grid">
+          <div>
+            <strong>{profile.drive.folderName}</strong>
+            <span>{profile.drive.period} · {profile.drive.collectedAt}</span>
+            <span>하위 폴더 {numberFormat.format(profile.drive.childFolderCount)}개 · 조회 폴더 {numberFormat.format(profile.drive.scannedFolderCount)}개</span>
+          </div>
+          <ul>
+            {profile.notes.map((note) => <li key={note}>{note}</li>)}
+          </ul>
+        </div>
       </section>
     </div>
   );
