@@ -77,6 +77,11 @@ import {
   type ClaudeTeamUsageLevel,
 } from "./data/claudeTeamUsageData";
 import {
+  individualUtilizationData,
+  type IndividualEvaluationLevel,
+  type IndividualPeriodMode,
+} from "./data/individualUtilizationData";
+import {
   approvalMonthlyTotalsForMonth,
   initialAiToolApprovalData,
   type AiToolApprovalData,
@@ -116,7 +121,7 @@ import {
   type GensparkDriveSnapshot,
 } from "./lib/gensparkDriveSnapshot";
 
-type ViewKey = "overview" | "monthly" | "adoption" | "genspark" | "approval" | "api";
+type ViewKey = "overview" | "monthly" | "adoption" | "approval" | "api";
 type LayoutMode = "command" | "editorial" | "signal";
 type ViewHeaderMetric = {
   label: string;
@@ -237,6 +242,10 @@ function formatPreciseUsd(value: number) {
 }
 
 function formatTokens(value: number) {
+  if (value >= 1000000000) {
+    return `${(value / 1000000000).toFixed(1)}B`;
+  }
+
   if (value >= 1000000) {
     return `${(value / 1000000).toFixed(1)}M`;
   }
@@ -640,7 +649,6 @@ function App() {
       activeKeys,
     };
   }, [apiUsageData]);
-  const workspaceUsageData = apiUsageData.workspaceUsage ?? initialApiUsageData.workspaceUsage!;
   const claudeTeamUsageData = initialClaudeTeamUsageData;
   const aiToolApprovalData = initialAiToolApprovalData;
   const gensparkUsageData = useMemo<GensparkUsageData>(
@@ -664,27 +672,8 @@ function App() {
       }),
     [driveArtifactTrendSnapshot, gensparkUsageData, monthlyActuals],
   );
-  const integratedConversationSummary = useMemo(
-    () =>
-      buildIntegratedConversationAnalysis({
-        chatGpt: chatGptUsageData,
-        claudeExport: gensparkUsageData.chatGptExport,
-        driveActivity: driveArtifactRepositoryData.activityAnalysis,
-      }),
-    [gensparkUsageData],
-  );
   const latestDriveFileTotal =
     driveArtifactTrendSnapshot?.totals.files ?? driveArtifactRepositoryData.totals.files;
-  const driveArtifactsByOwner = driveArtifactTrendSnapshot
-    ? driveArtifactTrendSnapshot.repositories
-        .map(
-          (repository) =>
-            `${repository.owner} ${numberFormat.format(repository.inventory.fileCount)}개`,
-        )
-        .join(" · ")
-    : driveArtifactRepositoryData.repositories
-        .map((repository) => `${repository.owner} ${numberFormat.format(repository.fileCount)}개`)
-        .join(" · ");
   const isApiUsageCollected = apiUsageData.source.generatedAt !== initialApiUsageData.source.generatedAt;
   const apiForecast = useMemo(() => {
     if (!isApiUsageCollected) {
@@ -989,79 +978,38 @@ function App() {
     };
   } else if (activeView === "adoption") {
     viewHeader = {
-      eyebrow: "Adoption & Utilization",
-      title: "활용성",
-      description: "서비스 설치 여부보다 실제 활성 계정, 사용 강도, 산출 연결 범위를 기준으로 활용 수준을 비교합니다.",
-      freshness: `${claudeTeamUsageData.source.period} · 6개 서비스 원천`,
+      eyebrow: "Individual Utilization",
+      title: "개인별 활용성",
+      description: "개인별 요청·토큰·대화·프롬프트·Code Lines를 월별과 주별로 비교해 활용 강도와 생산성 신호를 평가합니다.",
+      freshness: `${individualUtilizationData.source.spend.period} · ${formatKstDateTime(individualUtilizationData.source.generatedAt)}`,
       metrics: [
         {
           icon: <UserCheck size={19} />,
-          label: "Claude 활성",
-          value: `${claudeTeamUsageData.activeUsers}/${claudeTeamUsageData.licensedUsers}명`,
-          detail: `활성률 ${formatRate((claudeTeamUsageData.activeUsers / claudeTeamUsageData.licensedUsers) * 100)}`,
+          label: "관측 사용자",
+          value: `${individualUtilizationData.totals.users}명`,
+          detail: `Spend ${individualUtilizationData.source.spend.rowCount}행`,
           tone: "teal",
         },
         {
           icon: <Bot size={19} />,
-          label: "사용 이력 계정",
-          value: `${claudeTeamUsageData.spendUsers}/${claudeTeamUsageData.licensedUsers}명`,
-          detail: `요청 ${numberFormat.format(claudeTeamUsageData.totalRequests)}건`,
+          label: "누적 요청",
+          value: `${numberFormat.format(individualUtilizationData.totals.requests)}건`,
+          detail: formatTokens(individualUtilizationData.totals.totalTokens),
           tone: "steel",
         },
         {
           icon: <Sparkles size={19} />,
-          label: "Claude Code",
-          value: claudeTeamUsageData.totalCodeLines > 0
-            ? `${numberFormat.format(claudeTeamUsageData.totalCodeLines)}줄`
-            : formatTokens(claudeTeamUsageData.totalTokens),
-          detail: `${claudeTeamUsageData.codeUsers}명 사용`,
+          label: "Code Lines",
+          value: `${numberFormat.format(individualUtilizationData.totals.codeLines)}줄`,
+          detail: `${individualUtilizationData.months.length}개월 합계`,
           tone: "green",
         },
         {
           icon: <Activity size={19} />,
-          label: "Workspace 활동",
-          value: `${numberFormat.format(workspaceUsageData.totalEvents)}건`,
-          detail: `${workspaceUsageData.appUsage.length}개 앱`,
+          label: "개인 대화 신호",
+          value: `${numberFormat.format(individualUtilizationData.totals.conversations)}건`,
+          detail: `프롬프트 ${numberFormat.format(individualUtilizationData.totals.humanPrompts)}건`,
           tone: "amber",
-        },
-      ],
-    };
-  } else if (activeView === "genspark") {
-    viewHeader = {
-      eyebrow: "Work Pattern Analysis",
-      title: "AI 활용 상세 분석",
-      description: "ChatGPT와 Claude 대화·Drive 기록을 통합해 어떤 업무와 결과로 이어졌는지 추적합니다.",
-      freshness: `${
-        driveArtifactTrendSnapshot?.source.period ?? driveArtifactRepositoryData.source.period
-      } · 날짜 그래프 매일 21:00 갱신`,
-      metrics: [
-        {
-          icon: <Sparkles size={19} />,
-          label: "통합 대화 신호",
-          value: `${numberFormat.format(integratedConversationSummary.conversationSignals)}건`,
-          detail: "ChatGPT · Claude Team · Drive",
-          tone: "teal",
-        },
-        {
-          icon: <Bot size={19} />,
-          label: "확인된 메시지",
-          value: `${numberFormat.format(integratedConversationSummary.knownMessages)}건`,
-          detail: "ChatGPT + Claude Team Export",
-          tone: "steel",
-        },
-        {
-          icon: <FileSpreadsheet size={19} />,
-          label: "Drive 저장 산출물",
-          value: `${numberFormat.format(latestDriveFileTotal)}개`,
-          detail: driveArtifactsByOwner,
-          tone: "amber",
-        },
-        {
-          icon: <Bot size={19} />,
-          label: "Claude Team 활성",
-          value: `${claudeTeamUsageData.activeUsers}/${claudeTeamUsageData.licensedUsers}명`,
-          detail: `활성률 ${formatRate((claudeTeamUsageData.activeUsers / claudeTeamUsageData.licensedUsers) * 100)}`,
-          tone: "green",
         },
       ],
     };
@@ -1277,15 +1225,7 @@ function App() {
           onClick={() => setActiveView("adoption")}
         >
           <UserCheck size={17} />
-          활용성
-        </button>
-        <button
-          className={activeView === "genspark" ? "is-active" : ""}
-          type="button"
-          onClick={() => setActiveView("genspark")}
-        >
-          <Sparkles size={17} />
-          AI 활용 상세 분석
+          개인별 활용성
         </button>
         <button
           className={activeView === "approval" ? "is-active" : ""}
@@ -1408,7 +1348,7 @@ function App() {
             footer="플랫폼개발팀 · 2026년 8월부터"
           />
         </section>
-      ) : activeView === "adoption" || activeView === "genspark" ? null : (
+      ) : activeView === "adoption" ? null : (
         <section className="metric-grid" aria-label="핵심 비용 지표">
           <MetricCard
             icon={<CircleDollarSign size={21} />}
@@ -1471,20 +1411,7 @@ function App() {
       )}
 
       {activeView === "adoption" && (
-        <AdoptionView
-          claudeTeamUsageData={claudeTeamUsageData}
-          gensparkUsageData={gensparkUsageData}
-          workspaceUsageData={workspaceUsageData}
-        />
-      )}
-
-      {activeView === "genspark" && (
-        <GensparkUsageView
-          claudeTeamUsageData={claudeTeamUsageData}
-          driveRepositoryData={driveArtifactRepositoryData}
-          driveTrendSnapshot={driveArtifactTrendSnapshot}
-          usageData={gensparkUsageData}
-        />
+        <AdoptionView />
       )}
 
       {activeView === "approval" && <AiToolApprovalView approvalData={aiToolApprovalData} />}
@@ -4099,7 +4026,410 @@ function approvalPalette(index: number) {
   return colors[index % colors.length];
 }
 
-function AdoptionView({
+type IndividualSortKey = "activity" | "productivity" | "code" | "prompts" | "tokens";
+
+function AdoptionView() {
+  const data = individualUtilizationData;
+  const [periodMode, setPeriodMode] = useState<IndividualPeriodMode>("month");
+  const [selectedMonth, setSelectedMonth] = useState(data.months[data.months.length - 1] ?? "");
+  const [selectedWeek, setSelectedWeek] = useState(data.weeks[data.weeks.length - 1] ?? "");
+  const [sortKey, setSortKey] = useState<IndividualSortKey>("activity");
+  const [query, setQuery] = useState("");
+  const selectedKey = periodMode === "month" ? selectedMonth : selectedWeek;
+  const periodLabel = periodMode === "month" ? fullMonthLabel(selectedMonth) : fullWeekLabel(selectedWeek);
+  const trendData = periodMode === "month" ? data.monthlyTrend : data.weeklyTrend;
+  const latestMonth = data.months[data.months.length - 1];
+  const latestWeek = data.weeks[data.weeks.length - 1];
+  const spendThrough = data.source.spend.period.split(" ~ ")[1];
+  const conversationThrough = data.source.conversations?.period.split(" ~ ")[1];
+  const coverageNote = periodMode === "month" && selectedMonth === latestMonth
+    ? `${spendThrough}까지 누적`
+    : periodMode === "week" && selectedWeek === latestWeek
+      ? `${conversationThrough}까지 대화 수집`
+      : "";
+
+  const rows = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return data.users
+      .map((user) => {
+        const evaluation = periodMode === "month"
+          ? user.monthEvaluations[selectedMonth]
+          : user.weekEvaluations[selectedWeek];
+        const contextMonth = periodMode === "month" ? selectedMonth : selectedWeek.slice(0, 7);
+        const monthlyProductivity = user.monthEvaluations[contextMonth]?.productivityScore ?? null;
+        return { user, evaluation, monthlyProductivity };
+      })
+      .filter(({ user }) =>
+        normalizedQuery.length === 0 ||
+        user.email.toLowerCase().includes(normalizedQuery) ||
+        user.displayName.toLowerCase().includes(normalizedQuery),
+      )
+      .sort((a, b) => {
+        const aEvaluation = a.evaluation;
+        const bEvaluation = b.evaluation;
+        const value = (row: typeof a) => {
+          if (sortKey === "activity") return row.evaluation?.activityScore ?? 0;
+          if (sortKey === "productivity") {
+            return row.evaluation?.productivityScore ?? row.monthlyProductivity ?? 0;
+          }
+          if (sortKey === "code") return row.evaluation?.codeLines ?? 0;
+          if (sortKey === "prompts") return row.evaluation?.humanPrompts ?? 0;
+          return row.user.totalTokens;
+        };
+        return value(b) - value(a) ||
+          (bEvaluation?.humanPrompts ?? 0) - (aEvaluation?.humanPrompts ?? 0) ||
+          a.user.email.localeCompare(b.user.email);
+      });
+  }, [data.users, periodMode, query, selectedMonth, selectedWeek, sortKey]);
+
+  const periodSummary = useMemo(
+    () =>
+      rows.reduce(
+        (summary, row) => {
+          const evaluation = row.evaluation;
+          if (!evaluation) return summary;
+          if (evaluation.conversations > 0 || evaluation.humanPrompts > 0 || (evaluation.codeLines ?? 0) > 0) {
+            summary.activeUsers += 1;
+          }
+          summary.conversations += evaluation.conversations;
+          summary.humanPrompts += evaluation.humanPrompts;
+          summary.assistantResponses += evaluation.assistantResponses;
+          summary.codeLines += evaluation.codeLines ?? 0;
+          return summary;
+        },
+        { activeUsers: 0, conversations: 0, humanPrompts: 0, assistantResponses: 0, codeLines: 0 },
+      ),
+    [rows],
+  );
+
+  const selectedTrendPoint = trendData.find((item) => item.key === selectedKey);
+  const topActivityUser = rows.find((row) => (row.evaluation?.activityScore ?? 0) > 0);
+  const topProductivityUser = [...rows].sort(
+    (a, b) =>
+      (b.evaluation?.productivityScore ?? b.monthlyProductivity ?? 0) -
+      (a.evaluation?.productivityScore ?? a.monthlyProductivity ?? 0),
+  )[0];
+
+  return (
+    <div className="content-grid individual-utilization-view">
+      <section className="panel panel-wide individual-control-panel">
+        <div className="individual-period-copy">
+          <span className="eyebrow">Period Analysis</span>
+          <div className="individual-period-title">
+            <h2>{periodLabel} 개인별 활용 평가</h2>
+            {coverageNote && <span className="state-pill warning">부분 기간 · {coverageNote}</span>}
+          </div>
+          <p>
+            {periodMode === "month"
+              ? "대화·프롬프트·활성일과 월별 Code Lines를 같은 달 기준으로 비교합니다."
+              : "Claude 대화 타임스탬프를 기준으로 주별 대화·프롬프트·활성일을 비교합니다."}
+          </p>
+        </div>
+        <div className="individual-controls">
+          <div className="individual-period-switch" role="radiogroup" aria-label="개인별 활용 집계 단위">
+            <button
+              aria-checked={periodMode === "month"}
+              className={periodMode === "month" ? "is-selected" : ""}
+              role="radio"
+              type="button"
+              onClick={() => setPeriodMode("month")}
+            >
+              <CalendarRange size={16} />
+              월별
+            </button>
+            <button
+              aria-checked={periodMode === "week"}
+              className={periodMode === "week" ? "is-selected" : ""}
+              role="radio"
+              type="button"
+              onClick={() => setPeriodMode("week")}
+            >
+              <Activity size={16} />
+              주별
+            </button>
+          </div>
+          <label className="individual-select-control">
+            <span>기간</span>
+            <select
+              aria-label="분석 기간"
+              value={selectedKey}
+              onChange={(event) => {
+                if (periodMode === "month") setSelectedMonth(event.target.value);
+                else setSelectedWeek(event.target.value);
+              }}
+            >
+              {(periodMode === "month" ? data.months : data.weeks).map((key) => (
+                <option key={key} value={key}>
+                  {periodMode === "month" ? fullMonthLabel(key) : fullWeekLabel(key)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="individual-select-control">
+            <span>정렬</span>
+            <select
+              aria-label="개인별 활용 정렬"
+              value={sortKey}
+              onChange={(event) => setSortKey(event.target.value as IndividualSortKey)}
+            >
+              <option value="activity">활용지수</option>
+              <option value="productivity">생산성 신호</option>
+              <option value="code">Code Lines</option>
+              <option value="prompts">프롬프트</option>
+              <option value="tokens">누적 토큰</option>
+            </select>
+          </label>
+          <label className="individual-search-control">
+            <Search size={16} />
+            <input
+              aria-label="이름 또는 계정 검색"
+              placeholder="이름 또는 계정 검색"
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+        </div>
+      </section>
+
+      <section className="individual-period-summary" aria-label={`${periodLabel} 핵심 활용 지표`}>
+        <article>
+          <span><UserCheck size={17} />활동 사용자</span>
+          <strong>{periodSummary.activeUsers}명</strong>
+          <small>관측 {rows.length}명 중</small>
+        </article>
+        <article>
+          <span><Bot size={17} />대화·프롬프트</span>
+          <strong>{numberFormat.format(periodSummary.conversations)} / {numberFormat.format(periodSummary.humanPrompts)}</strong>
+          <small>대화 / 사람이 입력한 프롬프트</small>
+        </article>
+        <article>
+          <span><FileText size={17} />{periodMode === "month" ? "Code Lines" : "응답 신호"}</span>
+          <strong>
+            {periodMode === "month"
+              ? `${numberFormat.format(periodSummary.codeLines)}줄`
+              : `${numberFormat.format(periodSummary.assistantResponses)}건`}
+          </strong>
+          <small>{periodMode === "month" ? "사용자별 월 합계" : "Claude 응답 메시지"}</small>
+        </article>
+        <article>
+          <span><TrendingUp size={17} />선도 신호</span>
+          <strong>{topActivityUser?.user.displayName ?? "-"}</strong>
+          <small>
+            활용 {topActivityUser?.evaluation?.activityScore ?? 0}점
+            {topProductivityUser ? ` · 생산성 ${topProductivityUser.user.displayName}` : ""}
+          </small>
+        </article>
+      </section>
+
+      <section className="panel panel-large individual-trend-panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Utilization Trend</span>
+            <h2>{periodMode === "month" ? "월별 활동과 코드 산출 추이" : "주별 대화 활동 추이"}</h2>
+          </div>
+          <span className="state-pill neutral">
+            {periodMode === "month" ? `${data.months.length}개월` : `${data.weeks.length}주`}
+          </span>
+        </div>
+        <div className="chart-frame individual-trend-chart">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={trendData} margin={{ top: 12, right: 18, left: 0, bottom: 0 }}>
+              <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} />
+              <YAxis yAxisId="activity" tickLine={false} axisLine={false} width={52} allowDecimals={false} />
+              {periodMode === "month" && (
+                <YAxis
+                  yAxisId="code"
+                  orientation="right"
+                  tickFormatter={(value) => formatTokens(Number(value))}
+                  tickLine={false}
+                  axisLine={false}
+                  width={62}
+                />
+              )}
+              <Tooltip
+                formatter={(value, name) => [
+                  name === "Code Lines" ? `${numberFormat.format(Number(value))}줄` : `${numberFormat.format(Number(value))}건`,
+                  name,
+                ]}
+              />
+              <Legend />
+              <Bar yAxisId="activity" dataKey="humanPrompts" name="프롬프트" fill="#0f8b8d" radius={[4, 4, 0, 0]} />
+              <Line yAxisId="activity" dataKey="conversations" name="대화" stroke="#e85d4f" strokeWidth={2.5} dot={{ r: 3 }} />
+              <Line yAxisId="activity" dataKey="activeUsers" name="활동 사용자" stroke="#c58612" strokeWidth={2} dot={{ r: 3 }} />
+              {periodMode === "month" && (
+                <Bar yAxisId="code" dataKey="codeLines" name="Code Lines" fill="#5f6f8c" radius={[4, 4, 0, 0]} />
+              )}
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      <section className="panel individual-signal-panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Signal Readout</span>
+            <h2>{periodLabel} 판단 신호</h2>
+          </div>
+        </div>
+        <div className="individual-signal-list">
+          <article>
+            <span>활용 상위</span>
+            <strong>{topActivityUser?.user.displayName ?? "-"}</strong>
+            <small>{topActivityUser?.evaluation?.evidence ?? "관측 데이터 없음"}</small>
+          </article>
+          <article>
+            <span>생산성 신호 상위</span>
+            <strong>{topProductivityUser?.user.displayName ?? "-"}</strong>
+            <small>
+              {periodMode === "month"
+                ? topProductivityUser?.evaluation?.evidence
+                : `${fullMonthLabel(selectedWeek.slice(0, 7))} Code Lines 평가 참조`}
+            </small>
+          </article>
+          <article>
+            <span>원천 범위</span>
+            <strong>{periodMode === "month" ? "월별 대화 + Code" : "주별 대화"}</strong>
+            <small>
+              {periodMode === "month"
+                ? "Spend는 전체 기간 누적값으로 별도 표기"
+                : "Code Lines와 Spend는 주별 원천 미제공"}
+            </small>
+          </article>
+          <article>
+            <span>선택 기간 합계</span>
+            <strong>{numberFormat.format(selectedTrendPoint?.humanPrompts ?? 0)}개 프롬프트</strong>
+            <small>{numberFormat.format(selectedTrendPoint?.activeUsers ?? 0)}명 활동</small>
+          </article>
+        </div>
+      </section>
+
+      <section className="panel panel-wide individual-table-panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Individual Scorecard</span>
+            <h2>{periodLabel} 개인별 활용·생산성 평가</h2>
+          </div>
+          <span className="state-pill neutral">{rows.length}명</span>
+        </div>
+        <div className="table-wrap individual-utilization-table">
+          <table>
+            <thead>
+              <tr>
+                <th>순위</th>
+                <th>사용자</th>
+                <th>활용 평가</th>
+                <th>생산성 신호</th>
+                <th>대화</th>
+                <th>프롬프트</th>
+                <th>활성일</th>
+                <th>{periodMode === "month" ? "Code Lines" : "주간 Code"}</th>
+                <th>기간 누적 사용량</th>
+                <th>주요 사용 범위</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ user, evaluation, monthlyProductivity }, index) => {
+                const productivityScore = evaluation?.productivityScore ?? monthlyProductivity;
+                const productivityLevel = evaluation?.productivityScore == null
+                  ? user.monthEvaluations[selectedWeek.slice(0, 7)]?.productivityLevel ?? "unobserved"
+                  : evaluation.productivityLevel;
+                return (
+                  <tr key={user.email}>
+                    <td><span className="individual-rank">{index + 1}</span></td>
+                    <td>
+                      <strong>{user.displayName}</strong>
+                      <small>{user.email}</small>
+                    </td>
+                    <td>
+                      <IndividualScoreBadge
+                        level={evaluation?.activityLevel ?? "unobserved"}
+                        score={evaluation?.activityScore ?? 0}
+                      />
+                    </td>
+                    <td>
+                      <IndividualScoreBadge
+                        context={periodMode === "week" ? "월간" : undefined}
+                        level={productivityLevel}
+                        score={productivityScore ?? 0}
+                      />
+                    </td>
+                    <td>{numberFormat.format(evaluation?.conversations ?? 0)}건</td>
+                    <td>{numberFormat.format(evaluation?.humanPrompts ?? 0)}건</td>
+                    <td>{numberFormat.format(evaluation?.activeDays ?? 0)}일</td>
+                    <td>
+                      {evaluation?.codeLines == null
+                        ? <span className="state-pill neutral">월 단위</span>
+                        : `${numberFormat.format(evaluation.codeLines)}줄`}
+                    </td>
+                    <td>
+                      <strong>{formatTokens(user.totalTokens)}</strong>
+                      <small>{numberFormat.format(user.requests)}요청 · {formatPreciseUsd(user.netSpendUsd)}</small>
+                    </td>
+                    <td>
+                      <strong>{user.topProduct}</strong>
+                      <small>{user.products.length}개 제품 · {user.models.length}개 모델</small>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="individual-methodology-band" aria-label="개인별 활용 평가 기준">
+        <div>
+          <span className="eyebrow">Methodology</span>
+          <h2>평가 기준과 해석 범위</h2>
+        </div>
+        <dl>
+          <div>
+            <dt>활용지수</dt>
+            <dd>{data.methodology.activity}</dd>
+          </div>
+          <div>
+            <dt>생산성 신호</dt>
+            <dd>{data.methodology.productivity}</dd>
+          </div>
+          <div>
+            <dt>주별 해석</dt>
+            <dd>{data.methodology.weekly}</dd>
+          </div>
+          <div>
+            <dt>한계</dt>
+            <dd>{data.methodology.caveat}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+  );
+}
+
+function IndividualScoreBadge({
+  context,
+  level,
+  score,
+}: {
+  context?: string;
+  level: IndividualEvaluationLevel;
+  score: number;
+}) {
+  return (
+    <div className="individual-score-badge">
+      <span className={`state-pill ${individualLevelTone(level)}`}>
+        {context ? `${context} ` : ""}{individualLevelLabel(level)}
+      </span>
+      <div className="individual-score-meter" aria-label={`${individualLevelLabel(level)} ${score}점`}>
+        <span style={{ width: `${Math.min(Math.max(score, 0), 100)}%` }} />
+      </div>
+      <small>{score}점</small>
+    </div>
+  );
+}
+
+function LegacyAdoptionView({
   claudeTeamUsageData,
   gensparkUsageData,
   workspaceUsageData,
@@ -4694,6 +5024,43 @@ function workspaceLevelLabel(level: GeminiWorkspaceUserUsageLevel) {
   if (level === "Medium") return "중간 활용";
   if (level === "Low") return "낮은 활용";
   return "미활용";
+}
+
+function fullMonthLabel(month: string) {
+  const [year, monthNumber] = month.split("-").map(Number);
+  return Number.isFinite(year) && Number.isFinite(monthNumber) ? `${year}년 ${monthNumber}월` : month;
+}
+
+function fullWeekLabel(weekStart: string) {
+  const start = new Date(`${weekStart}T00:00:00+09:00`);
+  if (Number.isNaN(start.getTime())) return weekStart;
+  const end = new Date(start.getTime() + 6 * 24 * 60 * 60 * 1000);
+  const startParts = new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(start);
+  const endParts = new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(end);
+  const value = (parts: Intl.DateTimeFormatPart[], type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+  return `${value(startParts, "year")}년 ${value(startParts, "month")}월 ${value(startParts, "day")}일-${value(endParts, "month")}월 ${value(endParts, "day")}일`;
+}
+
+function individualLevelLabel(level: IndividualEvaluationLevel) {
+  if (level === "leading") return "선도";
+  if (level === "active") return "활발";
+  if (level === "growing") return "성장";
+  if (level === "early") return "초기";
+  return "관찰 없음";
+}
+
+function individualLevelTone(level: IndividualEvaluationLevel) {
+  return `individual-${level}`;
 }
 
 function workspaceLevelTone(level: GeminiWorkspaceUserUsageLevel) {
