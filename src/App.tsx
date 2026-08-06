@@ -993,7 +993,7 @@ function App() {
           icon: <Bot size={19} />,
           label: "누적 요청",
           value: `${numberFormat.format(individualUtilizationData.totals.requests)}건`,
-          detail: formatTokens(individualUtilizationData.totals.totalTokens),
+          detail: individualUtilizationData.source.spend.period,
           tone: "steel",
         },
         {
@@ -1005,9 +1005,9 @@ function App() {
         },
         {
           icon: <Activity size={19} />,
-          label: "개인 대화 신호",
-          value: `${numberFormat.format(individualUtilizationData.totals.conversations)}건`,
-          detail: `프롬프트 ${numberFormat.format(individualUtilizationData.totals.humanPrompts)}건`,
+          label: "누적 토큰",
+          value: formatTokens(individualUtilizationData.totals.totalTokens),
+          detail: `입력 ${formatTokens(individualUtilizationData.totals.promptTokens)} · 완료 ${formatTokens(individualUtilizationData.totals.completionTokens)}`,
           tone: "amber",
         },
       ],
@@ -4072,18 +4072,22 @@ function AdoptionView() {
     () =>
       rows.reduce(
         (summary, row) => {
+          summary.requests += row.user.requests;
+          summary.totalTokens += row.user.totalTokens;
           const evaluation = row.evaluation;
           if (!evaluation) return summary;
           if (evaluation.conversations > 0 || evaluation.humanPrompts > 0 || (evaluation.codeLines ?? 0) > 0) {
             summary.activeUsers += 1;
           }
-          summary.conversations += evaluation.conversations;
-          summary.humanPrompts += evaluation.humanPrompts;
-          summary.assistantResponses += evaluation.assistantResponses;
           summary.codeLines += evaluation.codeLines ?? 0;
           return summary;
         },
-        { activeUsers: 0, conversations: 0, humanPrompts: 0, assistantResponses: 0, codeLines: 0 },
+        {
+          activeUsers: 0,
+          codeLines: 0,
+          requests: 0,
+          totalTokens: 0,
+        },
       ),
     [rows],
   );
@@ -4158,9 +4162,9 @@ function AdoptionView() {
           <small>관측 {rows.length}명 중</small>
         </article>
         <article>
-          <span><Bot size={17} />대화·프롬프트</span>
-          <strong>{numberFormat.format(periodSummary.conversations)} / {numberFormat.format(periodSummary.humanPrompts)}</strong>
-          <small>대화 Export 기준 · Claude Code 미포함</small>
+          <span><Bot size={17} />누적 요청</span>
+          <strong>{numberFormat.format(periodSummary.requests)}건</strong>
+          <small>{data.source.spend.period} 전체 누적</small>
         </article>
         <article>
           <span><FileText size={17} />Code Lines</span>
@@ -4168,12 +4172,9 @@ function AdoptionView() {
           <small>사용자별 월 합계</small>
         </article>
         <article>
-          <span><TrendingUp size={17} />선도 신호</span>
-          <strong>{topActivityUser?.user.displayName ?? "-"}</strong>
-          <small>
-            활용 {topActivityUser?.evaluation?.activityScore ?? 0}점
-            {topProductivityUser ? ` · 생산성 ${topProductivityUser.user.displayName}` : ""}
-          </small>
+          <span><Activity size={17} />누적 토큰</span>
+          <strong>{formatTokens(periodSummary.totalTokens)}</strong>
+          <small>{data.source.spend.period} 전체 누적</small>
         </article>
       </section>
 
