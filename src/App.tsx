@@ -4321,7 +4321,6 @@ function AdoptionView() {
                 <th>사용자</th>
                 <th>활용 평가</th>
                 <th>생산성 신호</th>
-                <th>대화</th>
                 <th>프롬프트</th>
                 <th>활성일</th>
                 <th>{periodMode === "month" ? "Code Lines" : "주간 Code"}</th>
@@ -4355,7 +4354,6 @@ function AdoptionView() {
                         score={productivityScore ?? 0}
                       />
                     </td>
-                    <td>{numberFormat.format(evaluation?.conversations ?? 0)}건</td>
                     <td>{numberFormat.format(evaluation?.humanPrompts ?? 0)}건</td>
                     <td>{numberFormat.format(evaluation?.activeDays ?? 0)}일</td>
                     <td>
@@ -4368,8 +4366,16 @@ function AdoptionView() {
                       <small>{numberFormat.format(user.requests)}요청 · {formatPreciseUsd(user.netSpendUsd)}</small>
                     </td>
                     <td>
-                      <strong>{user.topProduct}</strong>
-                      <small>{user.products.length}개 제품 · {user.models.length}개 모델</small>
+                      <div className="individual-usage-scope">
+                        <div>
+                          <span>제품</span>
+                          <p>{user.products.join(" · ") || "-"}</p>
+                        </div>
+                        <div>
+                          <span>모델</span>
+                          <p>{user.models.join(" · ") || "-"}</p>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 );

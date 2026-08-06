@@ -3803,7 +3803,7 @@ td strong {
 }
 
 .individual-utilization-table table {
-  min-width: 1240px;
+  min-width: 1480px;
 }
 
 .individual-utilization-table th:nth-child(2),
@@ -3811,11 +3811,42 @@ td strong {
   min-width: 210px;
 }
 
-.individual-utilization-table th:nth-child(9),
-.individual-utilization-table td:nth-child(9),
-.individual-utilization-table th:nth-child(10),
-.individual-utilization-table td:nth-child(10) {
+.individual-utilization-table th:nth-child(8),
+.individual-utilization-table td:nth-child(8) {
   min-width: 170px;
+}
+
+.individual-utilization-table th:nth-child(9),
+.individual-utilization-table td:nth-child(9) {
+  min-width: 430px;
+}
+
+.individual-usage-scope {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+}
+
+.individual-usage-scope > div {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.individual-usage-scope span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  line-height: 1.5;
+}
+
+.individual-usage-scope p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .individual-rank {
