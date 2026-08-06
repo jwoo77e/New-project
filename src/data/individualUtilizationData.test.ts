@@ -73,4 +73,28 @@ describe("individualUtilizationData", () => {
       ),
     ).toBe(true);
   });
+
+  it("uses monthly Spend reports for monthly request and token totals", () => {
+    const data = individualUtilizationData;
+
+    expect(data.monthlySpend["2026-05"]?.totals).toMatchObject({
+      requests: 644,
+      totalTokens: 124283890,
+    });
+    expect(data.monthlySpend["2026-06"]?.totals).toMatchObject({
+      requests: 66606,
+      totalTokens: 11861497110,
+    });
+    expect(data.monthlySpend["2026-06"]?.sourceCommit).toBe("8e72279");
+    expect(data.monthlySpend["2026-07"]?.totals).toMatchObject({
+      requests: 107968,
+      totalTokens: 22109534845,
+    });
+    expect(data.monthlySpend["2026-08"]?.totals).toMatchObject({
+      requests: 6568,
+      totalTokens: 1907464286,
+    });
+    expect(data.monthlySpend["2026-08"]?.coverage).toBe("partial");
+    expect(data.monthlySpendSource.missingMonths).toHaveLength(0);
+  });
 });

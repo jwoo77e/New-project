@@ -469,6 +469,9 @@ function App() {
   const [dashboardData, setDashboardData] = useState<DashboardData>(initialState.data);
   const [isStoredData, setIsStoredData] = useState(initialState.isStoredData);
   const [apiUsageData, setApiUsageData] = useState<ApiUsageData>(initialApiUsageData);
+  const [individualSelectedMonth, setIndividualSelectedMonth] = useState(
+    individualUtilizationData.months[individualUtilizationData.months.length - 1] ?? "",
+  );
   const [driveArtifactTrendSnapshot, setDriveArtifactTrendSnapshot] =
     useState<DriveArtifactTrendSnapshot | null>(null);
   const [gensparkDriveSnapshot, setGensparkDriveSnapshot] =
@@ -650,6 +653,13 @@ function App() {
   }, [apiUsageData]);
   const claudeTeamUsageData = initialClaudeTeamUsageData;
   const aiToolApprovalData = initialAiToolApprovalData;
+  const individualMonthlySpend = individualUtilizationData.monthlySpend[individualSelectedMonth] ?? null;
+  const individualMonthlyTrend = individualUtilizationData.monthlyTrend.find(
+    (item) => item.key === individualSelectedMonth,
+  );
+  const individualMonthlyCoverage = individualMonthlySpend
+    ? `${individualMonthlySpend.period}${individualMonthlySpend.coverage === "partial" ? " · 부분 누적" : ""}`
+    : "월별 Spend 미수집";
   const gensparkUsageData = useMemo<GensparkUsageData>(
     () => ({
       ...initialGensparkUsageData,
@@ -980,34 +990,38 @@ function App() {
       eyebrow: "Individual Utilization",
       title: "개인별 활용성",
       description: "개인별 요청·토큰·대화 프롬프트·Code Lines를 월별로 비교하며 Claude Code 상세 미수집을 구분합니다.",
-      freshness: `${individualUtilizationData.source.spend.period} · ${formatKstDateTime(individualUtilizationData.source.generatedAt)}`,
+      freshness: `${fullMonthLabel(individualSelectedMonth)} · ${individualMonthlyCoverage}`,
       metrics: [
         {
           icon: <UserCheck size={19} />,
-          label: "관측 사용자",
-          value: `${individualUtilizationData.totals.users}명`,
-          detail: `Spend ${individualUtilizationData.source.spend.rowCount}행`,
+          label: "활동 사용자",
+          value: `${individualMonthlyTrend?.activeUsers ?? 0}명`,
+          detail: `관측 ${individualUtilizationData.totals.users}명 중`,
           tone: "teal",
         },
         {
           icon: <Bot size={19} />,
-          label: "누적 요청",
-          value: `${numberFormat.format(individualUtilizationData.totals.requests)}건`,
-          detail: individualUtilizationData.source.spend.period,
+          label: "월 누적 요청",
+          value: individualMonthlySpend
+            ? `${numberFormat.format(individualMonthlySpend.totals.requests)}건`
+            : "미수집",
+          detail: individualMonthlyCoverage,
           tone: "steel",
         },
         {
           icon: <Sparkles size={19} />,
           label: "Code Lines",
-          value: `${numberFormat.format(individualUtilizationData.totals.codeLines)}줄`,
-          detail: `${individualUtilizationData.months.length}개월 합계`,
+          value: `${numberFormat.format(individualMonthlyTrend?.codeLines ?? 0)}줄`,
+          detail: `${fullMonthLabel(individualSelectedMonth)} 합계`,
           tone: "green",
         },
         {
           icon: <Activity size={19} />,
-          label: "누적 토큰",
-          value: formatTokens(individualUtilizationData.totals.totalTokens),
-          detail: `입력 ${formatTokens(individualUtilizationData.totals.promptTokens)} · 완료 ${formatTokens(individualUtilizationData.totals.completionTokens)}`,
+          label: "월 누적 토큰",
+          value: individualMonthlySpend ? formatTokens(individualMonthlySpend.totals.totalTokens) : "미수집",
+          detail: individualMonthlySpend
+            ? `입력 ${formatTokens(individualMonthlySpend.totals.promptTokens)} · 완료 ${formatTokens(individualMonthlySpend.totals.completionTokens)}`
+            : "월별 Spend 파일 필요",
           tone: "amber",
         },
       ],
@@ -1410,7 +1424,10 @@ function App() {
       )}
 
       {activeView === "adoption" && (
-        <AdoptionView />
+        <AdoptionView
+          selectedMonth={individualSelectedMonth}
+          onSelectedMonthChange={setIndividualSelectedMonth}
+        />
       )}
 
       {activeView === "approval" && <AiToolApprovalView approvalData={aiToolApprovalData} />}
@@ -4027,25 +4044,30 @@ function approvalPalette(index: number) {
 
 type IndividualSortKey = "activity" | "productivity" | "code" | "prompts" | "tokens";
 
-function AdoptionView() {
+function AdoptionView({
+  selectedMonth,
+  onSelectedMonthChange,
+}: {
+  selectedMonth: string;
+  onSelectedMonthChange: (month: string) => void;
+}) {
   const data = individualUtilizationData;
-  const [selectedMonth, setSelectedMonth] = useState(data.months[data.months.length - 1] ?? "");
   const [sortKey, setSortKey] = useState<IndividualSortKey>("activity");
   const [query, setQuery] = useState("");
   const periodLabel = fullMonthLabel(selectedMonth);
   const trendData = data.monthlyTrend;
-  const latestMonth = data.months[data.months.length - 1];
-  const spendThrough = data.source.spend.period.split(" ~ ")[1];
-  const coverageNote = selectedMonth === latestMonth
-    ? `${spendThrough}까지 누적`
-    : "";
+  const selectedMonthlySpend = data.monthlySpend[selectedMonth] ?? null;
+  const coverageNote = selectedMonthlySpend
+    ? `${selectedMonthlySpend.period}${selectedMonthlySpend.coverage === "partial" ? " · 부분 누적" : ""}`
+    : "월별 Spend 미수집";
 
   const rows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return data.users
       .map((user) => {
         const evaluation = user.monthEvaluations[selectedMonth];
-        return { user, evaluation };
+        const monthlySpend = selectedMonthlySpend?.users[user.email] ?? null;
+        return { user, evaluation, monthlySpend };
       })
       .filter(({ user }) =>
         normalizedQuery.length === 0 ||
@@ -4060,20 +4082,18 @@ function AdoptionView() {
           if (sortKey === "productivity") return row.evaluation?.productivityScore ?? 0;
           if (sortKey === "code") return row.evaluation?.codeLines ?? 0;
           if (sortKey === "prompts") return row.evaluation?.humanPrompts ?? 0;
-          return row.user.totalTokens;
+          return row.monthlySpend?.totalTokens ?? 0;
         };
         return value(b) - value(a) ||
           (bEvaluation?.humanPrompts ?? 0) - (aEvaluation?.humanPrompts ?? 0) ||
           a.user.email.localeCompare(b.user.email);
       });
-  }, [data.users, query, selectedMonth, sortKey]);
+  }, [data.users, query, selectedMonth, selectedMonthlySpend, sortKey]);
 
   const periodSummary = useMemo(
     () =>
       rows.reduce(
         (summary, row) => {
-          summary.requests += row.user.requests;
-          summary.totalTokens += row.user.totalTokens;
           const evaluation = row.evaluation;
           if (!evaluation) return summary;
           if (evaluation.conversations > 0 || evaluation.humanPrompts > 0 || (evaluation.codeLines ?? 0) > 0) {
@@ -4085,12 +4105,23 @@ function AdoptionView() {
         {
           activeUsers: 0,
           codeLines: 0,
-          requests: 0,
-          totalTokens: 0,
         },
       ),
     [rows],
   );
+
+  const monthlySpendSummary = useMemo(() => {
+    if (!selectedMonthlySpend) return null;
+    return rows.reduce(
+      (summary, row) => {
+        if (!row.monthlySpend) return summary;
+        summary.requests += row.monthlySpend.requests;
+        summary.totalTokens += row.monthlySpend.totalTokens;
+        return summary;
+      },
+      { requests: 0, totalTokens: 0 },
+    );
+  }, [rows, selectedMonthlySpend]);
 
   const selectedTrendPoint = trendData.find((item) => item.key === selectedMonth);
   const topActivityUser = rows.find((row) => (row.evaluation?.activityScore ?? 0) > 0);
@@ -4107,7 +4138,7 @@ function AdoptionView() {
           <span className="eyebrow">Period Analysis</span>
           <div className="individual-period-title">
             <h2>{periodLabel} 개인별 활용 평가</h2>
-            {coverageNote && <span className="state-pill warning">부분 기간 · {coverageNote}</span>}
+            <span className="state-pill warning">{coverageNote}</span>
           </div>
           <p>
             대화 Export의 프롬프트·활성일과 월별 Code Lines를 결합하며, Claude Code 상세 미수집은 0으로 처리하지 않습니다.
@@ -4119,7 +4150,7 @@ function AdoptionView() {
             <select
               aria-label="분석 기간"
               value={selectedMonth}
-              onChange={(event) => setSelectedMonth(event.target.value)}
+              onChange={(event) => onSelectedMonthChange(event.target.value)}
             >
               {data.months.map((key) => (
                 <option key={key} value={key}>
@@ -4139,7 +4170,7 @@ function AdoptionView() {
               <option value="productivity">생산성 신호</option>
               <option value="code">Code Lines</option>
               <option value="prompts">프롬프트</option>
-              <option value="tokens">누적 토큰</option>
+              <option value="tokens">월 누적 토큰</option>
             </select>
           </label>
           <label className="individual-search-control">
@@ -4162,9 +4193,9 @@ function AdoptionView() {
           <small>관측 {rows.length}명 중</small>
         </article>
         <article>
-          <span><Bot size={17} />누적 요청</span>
-          <strong>{numberFormat.format(periodSummary.requests)}건</strong>
-          <small>{data.source.spend.period} 전체 누적</small>
+          <span><Bot size={17} />월 누적 요청</span>
+          <strong>{monthlySpendSummary ? `${numberFormat.format(monthlySpendSummary.requests)}건` : "미수집"}</strong>
+          <small>{coverageNote}</small>
         </article>
         <article>
           <span><FileText size={17} />Code Lines</span>
@@ -4172,9 +4203,9 @@ function AdoptionView() {
           <small>사용자별 월 합계</small>
         </article>
         <article>
-          <span><Activity size={17} />누적 토큰</span>
-          <strong>{formatTokens(periodSummary.totalTokens)}</strong>
-          <small>{data.source.spend.period} 전체 누적</small>
+          <span><Activity size={17} />월 누적 토큰</span>
+          <strong>{monthlySpendSummary ? formatTokens(monthlySpendSummary.totalTokens) : "미수집"}</strong>
+          <small>{coverageNote}</small>
         </article>
       </section>
 
@@ -4266,12 +4297,12 @@ function AdoptionView() {
                 <th>대화 프롬프트</th>
                 <th>대화 활성일</th>
                 <th>Code Lines</th>
-                <th>기간 누적 사용량</th>
+                <th>월 누적 사용량</th>
                 <th>주요 사용 범위</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ user, evaluation }, index) => {
+              {rows.map(({ user, evaluation, monthlySpend }, index) => {
                 const productivityScore = evaluation?.productivityScore ?? 0;
                 const productivityLevel = evaluation?.productivityLevel ?? "unobserved";
                 return (
@@ -4313,8 +4344,14 @@ function AdoptionView() {
                         : `${numberFormat.format(evaluation.codeLines)}줄`}
                     </td>
                     <td>
-                      <strong>{formatTokens(user.totalTokens)}</strong>
-                      <small>{numberFormat.format(user.requests)}요청 · {formatPreciseUsd(user.netSpendUsd)}</small>
+                      {monthlySpend ? (
+                        <>
+                          <strong>{formatTokens(monthlySpend.totalTokens)}</strong>
+                          <small>{numberFormat.format(monthlySpend.requests)}요청 · {formatPreciseUsd(monthlySpend.netSpendUsd)}</small>
+                        </>
+                      ) : (
+                        <span className="state-pill neutral">월별 Spend 미수집</span>
+                      )}
                     </td>
                     <td>
                       <div className="individual-usage-scope">

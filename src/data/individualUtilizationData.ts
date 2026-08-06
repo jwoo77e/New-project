@@ -1,4 +1,5 @@
 import snapshotJson from "./individualUtilizationSnapshot.json";
+import monthlySpendSnapshotJson from "./individualMonthlySpendSnapshot.json";
 
 export type IndividualPeriodMode = "month" | "week";
 export type IndividualEvaluationLevel = "leading" | "active" | "growing" | "early" | "unobserved";
@@ -126,7 +127,34 @@ export type IndividualTrendPoint = {
   codeLines: number | null;
 };
 
+export type IndividualMonthlySpendUser = {
+  requests: number;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  netSpendUsd: number;
+};
+
+export type IndividualMonthlySpendPeriod = {
+  month: string;
+  fileName: string;
+  period: string;
+  rowCount: number | null;
+  coverage: "partial" | "complete";
+  sourceCommit?: string;
+  totals: IndividualMonthlySpendUser;
+  users: Record<string, IndividualMonthlySpendUser>;
+};
+
+type RawIndividualMonthlySpendSnapshot = {
+  generatedAt: string;
+  months: IndividualMonthlySpendPeriod[];
+  missingMonths: string[];
+  notes: string[];
+};
+
 const snapshot = snapshotJson as unknown as RawIndividualSnapshot;
+const monthlySpendSnapshot = monthlySpendSnapshotJson as unknown as RawIndividualMonthlySpendSnapshot;
 const emptyActivity: ActivitySignal = {
   conversations: 0,
   humanPrompts: 0,
@@ -182,6 +210,12 @@ function weekLabel(weekStart: string) {
 }
 
 const months = snapshot.source.codeLines.map((item) => item.month).sort();
+const rawMonthlySpendByMonth = new Map(
+  monthlySpendSnapshot.months.map((item) => [item.month, item] as const),
+);
+const monthlySpend = Object.fromEntries(
+  months.map((month) => [month, rawMonthlySpendByMonth.get(month) ?? null]),
+) as Record<string, IndividualMonthlySpendPeriod | null>;
 const weeks = Array.from(new Set(snapshot.users.flatMap((user) => Object.keys(user.weeklyActivity)))).sort();
 const allRequests = snapshot.users.map((user) => user.requests);
 const allTokens = snapshot.users.map((user) => user.totalTokens);
@@ -370,8 +404,10 @@ const weeklyTrend: IndividualTrendPoint[] = weeks.map((week) => {
 
 export const individualUtilizationData = {
   source: snapshot.source,
+  monthlySpendSource: monthlySpendSnapshot,
   totals: snapshot.totals,
   months,
+  monthlySpend,
   weeks,
   users,
   monthlyTrend,
