@@ -653,13 +653,6 @@ function App() {
   }, [apiUsageData]);
   const claudeTeamUsageData = initialClaudeTeamUsageData;
   const aiToolApprovalData = initialAiToolApprovalData;
-  const individualMonthlySpend = individualUtilizationData.monthlySpend[individualSelectedMonth] ?? null;
-  const individualMonthlyTrend = individualUtilizationData.monthlyTrend.find(
-    (item) => item.key === individualSelectedMonth,
-  );
-  const individualMonthlyCoverage = individualMonthlySpend
-    ? `${individualMonthlySpend.period}${individualMonthlySpend.coverage === "partial" ? " · 부분 누적" : ""}`
-    : "월별 Spend 미수집";
   const gensparkUsageData = useMemo<GensparkUsageData>(
     () => ({
       ...initialGensparkUsageData,
@@ -990,38 +983,34 @@ function App() {
       eyebrow: "Individual Utilization",
       title: "개인별 활용성",
       description: "개인별 요청·토큰·대화 프롬프트·Code Lines를 월별로 비교하며 Claude Code 상세 미수집을 구분합니다.",
-      freshness: `${fullMonthLabel(individualSelectedMonth)} · ${individualMonthlyCoverage}`,
+      freshness: `${individualUtilizationData.source.spend.period} · ${formatKstDateTime(individualUtilizationData.source.generatedAt)}`,
       metrics: [
         {
           icon: <UserCheck size={19} />,
           label: "활동 사용자",
-          value: `${individualMonthlyTrend?.activeUsers ?? 0}명`,
-          detail: `관측 ${individualUtilizationData.totals.users}명 중`,
+          value: `${individualUtilizationData.totals.users}명`,
+          detail: "현재까지 관측된 계정",
           tone: "teal",
         },
         {
           icon: <Bot size={19} />,
-          label: "월 누적 요청",
-          value: individualMonthlySpend
-            ? `${numberFormat.format(individualMonthlySpend.totals.requests)}건`
-            : "미수집",
-          detail: individualMonthlyCoverage,
+          label: "누적 요청",
+          value: `${numberFormat.format(individualUtilizationData.totals.requests)}건`,
+          detail: individualUtilizationData.source.spend.period,
           tone: "steel",
         },
         {
           icon: <Sparkles size={19} />,
           label: "Code Lines",
-          value: `${numberFormat.format(individualMonthlyTrend?.codeLines ?? 0)}줄`,
-          detail: `${fullMonthLabel(individualSelectedMonth)} 합계`,
+          value: `${numberFormat.format(individualUtilizationData.totals.codeLines)}줄`,
+          detail: `${individualUtilizationData.months.length}개월 합계`,
           tone: "green",
         },
         {
           icon: <Activity size={19} />,
-          label: "월 누적 토큰",
-          value: individualMonthlySpend ? formatTokens(individualMonthlySpend.totals.totalTokens) : "미수집",
-          detail: individualMonthlySpend
-            ? `입력 ${formatTokens(individualMonthlySpend.totals.promptTokens)} · 완료 ${formatTokens(individualMonthlySpend.totals.completionTokens)}`
-            : "월별 Spend 파일 필요",
+          label: "누적 토큰",
+          value: formatTokens(individualUtilizationData.totals.totalTokens),
+          detail: `입력 ${formatTokens(individualUtilizationData.totals.promptTokens)} · 완료 ${formatTokens(individualUtilizationData.totals.completionTokens)}`,
           tone: "amber",
         },
       ],
