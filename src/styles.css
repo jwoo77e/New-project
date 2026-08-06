@@ -3623,38 +3623,6 @@ td strong {
   gap: 8px;
 }
 
-.individual-period-switch {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(84px, 1fr));
-  min-height: 40px;
-  overflow: hidden;
-  border: 1px solid var(--line-strong);
-  border-radius: 7px;
-  background: var(--surface-soft);
-}
-
-.individual-period-switch button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 0 12px;
-  border-right: 1px solid var(--line);
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  font-weight: 800;
-}
-
-.individual-period-switch button:last-child {
-  border-right: 0;
-}
-
-.individual-period-switch button.is-selected {
-  background: var(--ink);
-  color: #ffffff;
-}
-
 .individual-select-control {
   display: grid;
   gap: 5px;
@@ -3958,6 +3926,11 @@ td strong {
   line-height: 1.5;
 }
 
+.individual-methodology-band dl > div:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  border-right: 0;
+}
+
 @media (max-width: 1120px) {
   .individual-utilization-view {
     grid-template-columns: 1fr;
@@ -3989,10 +3962,6 @@ td strong {
   .individual-controls,
   .individual-select-control,
   .individual-search-control {
-    width: 100%;
-  }
-
-  .individual-period-switch {
     width: 100%;
   }
 

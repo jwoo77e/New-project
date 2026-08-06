@@ -79,7 +79,6 @@ import {
 import {
   individualUtilizationData,
   type IndividualEvaluationLevel,
-  type IndividualPeriodMode,
 } from "./data/individualUtilizationData";
 import {
   approvalMonthlyTotalsForMonth,
@@ -980,7 +979,7 @@ function App() {
     viewHeader = {
       eyebrow: "Individual Utilization",
       title: "개인별 활용성",
-      description: "개인별 요청·토큰·대화·프롬프트·Code Lines를 월별과 주별로 비교해 활용 강도와 생산성 신호를 평가합니다.",
+      description: "개인별 요청·토큰·프롬프트·Code Lines를 월별로 비교해 활용 강도와 생산성 신호를 평가합니다.",
       freshness: `${individualUtilizationData.source.spend.period} · ${formatKstDateTime(individualUtilizationData.source.generatedAt)}`,
       metrics: [
         {
@@ -4030,34 +4029,23 @@ type IndividualSortKey = "activity" | "productivity" | "code" | "prompts" | "tok
 
 function AdoptionView() {
   const data = individualUtilizationData;
-  const [periodMode, setPeriodMode] = useState<IndividualPeriodMode>("month");
   const [selectedMonth, setSelectedMonth] = useState(data.months[data.months.length - 1] ?? "");
-  const [selectedWeek, setSelectedWeek] = useState(data.weeks[data.weeks.length - 1] ?? "");
   const [sortKey, setSortKey] = useState<IndividualSortKey>("activity");
   const [query, setQuery] = useState("");
-  const selectedKey = periodMode === "month" ? selectedMonth : selectedWeek;
-  const periodLabel = periodMode === "month" ? fullMonthLabel(selectedMonth) : fullWeekLabel(selectedWeek);
-  const trendData = periodMode === "month" ? data.monthlyTrend : data.weeklyTrend;
+  const periodLabel = fullMonthLabel(selectedMonth);
+  const trendData = data.monthlyTrend;
   const latestMonth = data.months[data.months.length - 1];
-  const latestWeek = data.weeks[data.weeks.length - 1];
   const spendThrough = data.source.spend.period.split(" ~ ")[1];
-  const conversationThrough = data.source.conversations?.period.split(" ~ ")[1];
-  const coverageNote = periodMode === "month" && selectedMonth === latestMonth
+  const coverageNote = selectedMonth === latestMonth
     ? `${spendThrough}까지 누적`
-    : periodMode === "week" && selectedWeek === latestWeek
-      ? `${conversationThrough}까지 대화 수집`
-      : "";
+    : "";
 
   const rows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return data.users
       .map((user) => {
-        const evaluation = periodMode === "month"
-          ? user.monthEvaluations[selectedMonth]
-          : user.weekEvaluations[selectedWeek];
-        const contextMonth = periodMode === "month" ? selectedMonth : selectedWeek.slice(0, 7);
-        const monthlyProductivity = user.monthEvaluations[contextMonth]?.productivityScore ?? null;
-        return { user, evaluation, monthlyProductivity };
+        const evaluation = user.monthEvaluations[selectedMonth];
+        return { user, evaluation };
       })
       .filter(({ user }) =>
         normalizedQuery.length === 0 ||
@@ -4069,9 +4057,7 @@ function AdoptionView() {
         const bEvaluation = b.evaluation;
         const value = (row: typeof a) => {
           if (sortKey === "activity") return row.evaluation?.activityScore ?? 0;
-          if (sortKey === "productivity") {
-            return row.evaluation?.productivityScore ?? row.monthlyProductivity ?? 0;
-          }
+          if (sortKey === "productivity") return row.evaluation?.productivityScore ?? 0;
           if (sortKey === "code") return row.evaluation?.codeLines ?? 0;
           if (sortKey === "prompts") return row.evaluation?.humanPrompts ?? 0;
           return row.user.totalTokens;
@@ -4080,7 +4066,7 @@ function AdoptionView() {
           (bEvaluation?.humanPrompts ?? 0) - (aEvaluation?.humanPrompts ?? 0) ||
           a.user.email.localeCompare(b.user.email);
       });
-  }, [data.users, periodMode, query, selectedMonth, selectedWeek, sortKey]);
+  }, [data.users, query, selectedMonth, sortKey]);
 
   const periodSummary = useMemo(
     () =>
@@ -4102,12 +4088,12 @@ function AdoptionView() {
     [rows],
   );
 
-  const selectedTrendPoint = trendData.find((item) => item.key === selectedKey);
+  const selectedTrendPoint = trendData.find((item) => item.key === selectedMonth);
   const topActivityUser = rows.find((row) => (row.evaluation?.activityScore ?? 0) > 0);
   const topProductivityUser = [...rows].sort(
     (a, b) =>
-      (b.evaluation?.productivityScore ?? b.monthlyProductivity ?? 0) -
-      (a.evaluation?.productivityScore ?? a.monthlyProductivity ?? 0),
+      (b.evaluation?.productivityScore ?? 0) -
+      (a.evaluation?.productivityScore ?? 0),
   )[0];
 
   return (
@@ -4120,47 +4106,20 @@ function AdoptionView() {
             {coverageNote && <span className="state-pill warning">부분 기간 · {coverageNote}</span>}
           </div>
           <p>
-            {periodMode === "month"
-              ? "대화·프롬프트·활성일과 월별 Code Lines를 같은 달 기준으로 비교합니다."
-              : "Claude 대화 타임스탬프를 기준으로 주별 대화·프롬프트·활성일을 비교합니다."}
+            프롬프트·활성일과 월별 Code Lines를 같은 달 기준으로 비교합니다.
           </p>
         </div>
         <div className="individual-controls">
-          <div className="individual-period-switch" role="radiogroup" aria-label="개인별 활용 집계 단위">
-            <button
-              aria-checked={periodMode === "month"}
-              className={periodMode === "month" ? "is-selected" : ""}
-              role="radio"
-              type="button"
-              onClick={() => setPeriodMode("month")}
-            >
-              <CalendarRange size={16} />
-              월별
-            </button>
-            <button
-              aria-checked={periodMode === "week"}
-              className={periodMode === "week" ? "is-selected" : ""}
-              role="radio"
-              type="button"
-              onClick={() => setPeriodMode("week")}
-            >
-              <Activity size={16} />
-              주별
-            </button>
-          </div>
           <label className="individual-select-control">
             <span>기간</span>
             <select
               aria-label="분석 기간"
-              value={selectedKey}
-              onChange={(event) => {
-                if (periodMode === "month") setSelectedMonth(event.target.value);
-                else setSelectedWeek(event.target.value);
-              }}
+              value={selectedMonth}
+              onChange={(event) => setSelectedMonth(event.target.value)}
             >
-              {(periodMode === "month" ? data.months : data.weeks).map((key) => (
+              {data.months.map((key) => (
                 <option key={key} value={key}>
-                  {periodMode === "month" ? fullMonthLabel(key) : fullWeekLabel(key)}
+                  {fullMonthLabel(key)}
                 </option>
               ))}
             </select>
@@ -4204,13 +4163,9 @@ function AdoptionView() {
           <small>대화 / 사람이 입력한 프롬프트</small>
         </article>
         <article>
-          <span><FileText size={17} />{periodMode === "month" ? "Code Lines" : "응답 신호"}</span>
-          <strong>
-            {periodMode === "month"
-              ? `${numberFormat.format(periodSummary.codeLines)}줄`
-              : `${numberFormat.format(periodSummary.assistantResponses)}건`}
-          </strong>
-          <small>{periodMode === "month" ? "사용자별 월 합계" : "Claude 응답 메시지"}</small>
+          <span><FileText size={17} />Code Lines</span>
+          <strong>{numberFormat.format(periodSummary.codeLines)}줄</strong>
+          <small>사용자별 월 합계</small>
         </article>
         <article>
           <span><TrendingUp size={17} />선도 신호</span>
@@ -4226,11 +4181,9 @@ function AdoptionView() {
         <div className="panel-header">
           <div>
             <span className="eyebrow">Utilization Trend</span>
-            <h2>{periodMode === "month" ? "월별 활동과 코드 산출 추이" : "주별 대화 활동 추이"}</h2>
+            <h2>월별 활동과 코드 산출 추이</h2>
           </div>
-          <span className="state-pill neutral">
-            {periodMode === "month" ? `${data.months.length}개월` : `${data.weeks.length}주`}
-          </span>
+          <span className="state-pill neutral">{data.months.length}개월</span>
         </div>
         <div className="chart-frame individual-trend-chart">
           <ResponsiveContainer width="100%" height="100%">
@@ -4238,16 +4191,14 @@ function AdoptionView() {
               <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
               <XAxis dataKey="label" tickLine={false} axisLine={false} />
               <YAxis yAxisId="activity" tickLine={false} axisLine={false} width={52} allowDecimals={false} />
-              {periodMode === "month" && (
-                <YAxis
-                  yAxisId="code"
-                  orientation="right"
-                  tickFormatter={(value) => formatTokens(Number(value))}
-                  tickLine={false}
-                  axisLine={false}
-                  width={62}
-                />
-              )}
+              <YAxis
+                yAxisId="code"
+                orientation="right"
+                tickFormatter={(value) => formatTokens(Number(value))}
+                tickLine={false}
+                axisLine={false}
+                width={62}
+              />
               <Tooltip
                 formatter={(value, name) => [
                   name === "Code Lines" ? `${numberFormat.format(Number(value))}줄` : `${numberFormat.format(Number(value))}건`,
@@ -4258,9 +4209,7 @@ function AdoptionView() {
               <Bar yAxisId="activity" dataKey="humanPrompts" name="프롬프트" fill="#0f8b8d" radius={[4, 4, 0, 0]} />
               <Line yAxisId="activity" dataKey="conversations" name="대화" stroke="#e85d4f" strokeWidth={2.5} dot={{ r: 3 }} />
               <Line yAxisId="activity" dataKey="activeUsers" name="활동 사용자" stroke="#c58612" strokeWidth={2} dot={{ r: 3 }} />
-              {periodMode === "month" && (
-                <Bar yAxisId="code" dataKey="codeLines" name="Code Lines" fill="#5f6f8c" radius={[4, 4, 0, 0]} />
-              )}
+              <Bar yAxisId="code" dataKey="codeLines" name="Code Lines" fill="#5f6f8c" radius={[4, 4, 0, 0]} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -4282,20 +4231,12 @@ function AdoptionView() {
           <article>
             <span>생산성 신호 상위</span>
             <strong>{topProductivityUser?.user.displayName ?? "-"}</strong>
-            <small>
-              {periodMode === "month"
-                ? topProductivityUser?.evaluation?.evidence
-                : `${fullMonthLabel(selectedWeek.slice(0, 7))} Code Lines 평가 참조`}
-            </small>
+            <small>{topProductivityUser?.evaluation?.evidence}</small>
           </article>
           <article>
             <span>원천 범위</span>
-            <strong>{periodMode === "month" ? "월별 대화 + Code" : "주별 대화"}</strong>
-            <small>
-              {periodMode === "month"
-                ? "Spend는 전체 기간 누적값으로 별도 표기"
-                : "Code Lines와 Spend는 주별 원천 미제공"}
-            </small>
+            <strong>월별 프롬프트 + Code</strong>
+            <small>Spend는 전체 기간 누적값으로 별도 표기</small>
           </article>
           <article>
             <span>선택 기간 합계</span>
@@ -4323,17 +4264,15 @@ function AdoptionView() {
                 <th>생산성 신호</th>
                 <th>프롬프트</th>
                 <th>활성일</th>
-                <th>{periodMode === "month" ? "Code Lines" : "주간 Code"}</th>
+                <th>Code Lines</th>
                 <th>기간 누적 사용량</th>
                 <th>주요 사용 범위</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ user, evaluation, monthlyProductivity }, index) => {
-                const productivityScore = evaluation?.productivityScore ?? monthlyProductivity;
-                const productivityLevel = evaluation?.productivityScore == null
-                  ? user.monthEvaluations[selectedWeek.slice(0, 7)]?.productivityLevel ?? "unobserved"
-                  : evaluation.productivityLevel;
+              {rows.map(({ user, evaluation }, index) => {
+                const productivityScore = evaluation?.productivityScore ?? 0;
+                const productivityLevel = evaluation?.productivityLevel ?? "unobserved";
                 return (
                   <tr key={user.email}>
                     <td><span className="individual-rank">{index + 1}</span></td>
@@ -4349,9 +4288,8 @@ function AdoptionView() {
                     </td>
                     <td>
                       <IndividualScoreBadge
-                        context={periodMode === "week" ? "월간" : undefined}
                         level={productivityLevel}
-                        score={productivityScore ?? 0}
+                        score={productivityScore}
                       />
                     </td>
                     <td>{numberFormat.format(evaluation?.humanPrompts ?? 0)}건</td>
@@ -4400,10 +4338,6 @@ function AdoptionView() {
             <dd>{data.methodology.productivity}</dd>
           </div>
           <div>
-            <dt>주별 해석</dt>
-            <dd>{data.methodology.weekly}</dd>
-          </div>
-          <div>
             <dt>한계</dt>
             <dd>{data.methodology.caveat}</dd>
           </div>
@@ -4414,18 +4348,16 @@ function AdoptionView() {
 }
 
 function IndividualScoreBadge({
-  context,
   level,
   score,
 }: {
-  context?: string;
   level: IndividualEvaluationLevel;
   score: number;
 }) {
   return (
     <div className="individual-score-badge">
       <span className={`state-pill ${individualLevelTone(level)}`}>
-        {context ? `${context} ` : ""}{individualLevelLabel(level)}
+        {individualLevelLabel(level)}
       </span>
       <div className="individual-score-meter" aria-label={`${individualLevelLabel(level)} ${score}점`}>
         <span style={{ width: `${Math.min(Math.max(score, 0), 100)}%` }} />
@@ -5035,26 +4967,6 @@ function workspaceLevelLabel(level: GeminiWorkspaceUserUsageLevel) {
 function fullMonthLabel(month: string) {
   const [year, monthNumber] = month.split("-").map(Number);
   return Number.isFinite(year) && Number.isFinite(monthNumber) ? `${year}년 ${monthNumber}월` : month;
-}
-
-function fullWeekLabel(weekStart: string) {
-  const start = new Date(`${weekStart}T00:00:00+09:00`);
-  if (Number.isNaN(start.getTime())) return weekStart;
-  const end = new Date(start.getTime() + 6 * 24 * 60 * 60 * 1000);
-  const startParts = new Intl.DateTimeFormat("ko-KR", {
-    timeZone: "Asia/Seoul",
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-  }).formatToParts(start);
-  const endParts = new Intl.DateTimeFormat("ko-KR", {
-    timeZone: "Asia/Seoul",
-    month: "numeric",
-    day: "numeric",
-  }).formatToParts(end);
-  const value = (parts: Intl.DateTimeFormatPart[], type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((part) => part.type === type)?.value ?? "";
-  return `${value(startParts, "year")}년 ${value(startParts, "month")}월 ${value(startParts, "day")}일-${value(endParts, "month")}월 ${value(endParts, "day")}일`;
 }
 
 function individualLevelLabel(level: IndividualEvaluationLevel) {
