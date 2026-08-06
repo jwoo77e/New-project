@@ -2301,6 +2301,38 @@ h2 {
   min-width: 1160px;
 }
 
+.approval-person-cost-table table {
+  min-width: 920px;
+}
+
+.approval-person-cost-table th:nth-child(2),
+.approval-person-cost-table td:nth-child(2) {
+  min-width: 180px;
+}
+
+.approval-person-cost-table th:nth-child(3),
+.approval-person-cost-table td:nth-child(3) {
+  min-width: 360px;
+}
+
+.approval-person-cost-table td strong,
+.approval-person-cost-table td small {
+  display: block;
+  max-width: 420px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.approval-person-cost-table td small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.approval-person-cost-note {
+  margin-top: 12px;
+}
+
 .approval-record-table td strong,
 .approval-record-table td small {
   display: block;

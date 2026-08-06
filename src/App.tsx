@@ -82,6 +82,7 @@ import {
 } from "./data/individualUtilizationData";
 import {
   approvalMonthlyTotalsForMonth,
+  buildApprovalPersonCostSummary,
   initialAiToolApprovalData,
   type AiToolApprovalData,
   type AiToolApprovalRecord,
@@ -3878,6 +3879,8 @@ function AiToolApprovalView({ approvalData }: { approvalData: AiToolApprovalData
   const topTool = approvalData.toolSummary[0];
   const topToolTieCount = approvalData.toolSummary.filter((item) => item.monthlyKrw === topTool?.monthlyKrw).length;
   const topDepartment = approvalData.departmentSummary[0];
+  const personCostSummary = buildApprovalPersonCostSummary(approvalData.records);
+  const topPersonCost = personCostSummary.people[0];
 
   return (
     <div className="content-grid approval-view">
@@ -3927,6 +3930,55 @@ function AiToolApprovalView({ approvalData }: { approvalData: AiToolApprovalData
             </article>
           ))}
         </div>
+      </section>
+
+      <section className="panel panel-wide">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Cost Per Person</span>
+            <h2>인당 월 사용 비용</h2>
+          </div>
+          <div className="panel-header-side">
+            <span className="state-pill neutral">{numberFormat.format(personCostSummary.personCount)}명</span>
+            <span className="state-pill ok">인당 평균 {formatWon(personCostSummary.averageMonthlyKrw)}</span>
+          </div>
+        </div>
+        <div className="table-wrap approval-person-cost-table">
+          <table>
+            <thead>
+              <tr>
+                <th>순위</th>
+                <th>사용자/부서</th>
+                <th>사용 도구</th>
+                <th>결재 항목</th>
+                <th>월 사용 비용</th>
+              </tr>
+            </thead>
+            <tbody>
+              {personCostSummary.people.map((person, index) => (
+                <tr key={person.name}>
+                  <td>{index + 1}</td>
+                  <td>
+                    <strong>{person.name}</strong>
+                    <small>{person.departments.join(" · ")}</small>
+                  </td>
+                  <td>
+                    <strong>{person.tools.join(" · ")}</strong>
+                  </td>
+                  <td>{numberFormat.format(person.itemCount)}개</td>
+                  <td>
+                    <strong>{formatWon(person.monthlyKrw)}</strong>
+                    <small>{person.monthlyUsd > 0 ? `${formatPreciseUsd(person.monthlyUsd)} USD` : "원화 고정비"}</small>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <small className="approval-footnote approval-person-cost-note">
+          개인 할당 구독료 {formatWon(personCostSummary.personalMonthlyKrw)}을 기준으로 집계했습니다. 전사·공용·계약 비용 {formatWon(personCostSummary.sharedMonthlyKrw)}은 인당 평균에서 제외했습니다.
+          {topPersonCost ? ` 최고 월 비용은 ${topPersonCost.name} ${formatWon(topPersonCost.monthlyKrw)}입니다.` : ""}
+        </small>
       </section>
 
       <section className="panel panel-wide">

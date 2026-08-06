@@ -22,6 +22,25 @@ export type AiToolApprovalSummary = {
   share: number;
 };
 
+export type AiToolApprovalPersonCost = {
+  name: string;
+  departments: string[];
+  itemCount: number;
+  tools: string[];
+  monthlyUsd: number;
+  monthlyKrw: number;
+};
+
+export type AiToolApprovalPersonCostSummary = {
+  people: AiToolApprovalPersonCost[];
+  personCount: number;
+  personalMonthlyUsd: number;
+  personalMonthlyKrw: number;
+  averageMonthlyKrw: number;
+  sharedMonthlyUsd: number;
+  sharedMonthlyKrw: number;
+};
+
 export type AiToolApprovalData = {
   source: {
     name: string;
@@ -612,6 +631,73 @@ export function approvalMonthlyTotalsForMonth(
     monthlyUsd: sum(activeRecords, "monthlyUsd"),
     monthlyKrw: sum(activeRecords, "monthlyKrw"),
   };
+}
+
+export function buildApprovalPersonCostSummary(
+  recordsToSummarize: AiToolApprovalRecord[],
+): AiToolApprovalPersonCostSummary {
+  const people = new Map<
+    string,
+    Omit<AiToolApprovalPersonCost, "departments" | "tools"> & {
+      departments: Set<string>;
+      tools: Set<string>;
+    }
+  >();
+  const sharedRecords: AiToolApprovalRecord[] = [];
+
+  for (const record of recordsToSummarize) {
+    if (isSharedApprovalRecord(record)) {
+      sharedRecords.push(record);
+      continue;
+    }
+
+    const name = record.owner.split("/")[0]?.trim() || record.owner;
+    const current = people.get(name) ?? {
+      name,
+      departments: new Set<string>(),
+      itemCount: 0,
+      tools: new Set<string>(),
+      monthlyUsd: 0,
+      monthlyKrw: 0,
+    };
+
+    current.departments.add(record.department);
+    current.itemCount += 1;
+    current.tools.add(record.tool);
+    current.monthlyUsd += record.monthlyUsd;
+    current.monthlyKrw += record.monthlyKrw;
+    people.set(name, current);
+  }
+
+  const personCosts = [...people.values()]
+    .map((person) => ({
+      ...person,
+      departments: [...person.departments].sort((a, b) => a.localeCompare(b, "ko")),
+      tools: [...person.tools],
+      monthlyUsd: roundMoney(person.monthlyUsd),
+      monthlyKrw: roundMoney(person.monthlyKrw),
+    }))
+    .sort((a, b) => b.monthlyKrw - a.monthlyKrw || a.name.localeCompare(b.name, "ko"));
+  const personalMonthlyUsd = roundMoney(personCosts.reduce((total, person) => total + person.monthlyUsd, 0));
+  const personalMonthlyKrw = roundMoney(personCosts.reduce((total, person) => total + person.monthlyKrw, 0));
+
+  return {
+    people: personCosts,
+    personCount: personCosts.length,
+    personalMonthlyUsd,
+    personalMonthlyKrw,
+    averageMonthlyKrw: personCosts.length ? roundMoney(personalMonthlyKrw / personCosts.length) : 0,
+    sharedMonthlyUsd: sum(sharedRecords, "monthlyUsd"),
+    sharedMonthlyKrw: sum(sharedRecords, "monthlyKrw"),
+  };
+}
+
+function isSharedApprovalRecord(record: AiToolApprovalRecord) {
+  return (
+    record.owner === "전사" ||
+    record.owner === "회사대표계정" ||
+    record.owner.startsWith("GH AI Agent 개발")
+  );
 }
 
 function summarize(recordsToSummarize: AiToolApprovalRecord[], key: keyof AiToolApprovalRecord, denominatorKrw: number) {

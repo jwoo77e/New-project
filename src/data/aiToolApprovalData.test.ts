@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   approvalMonthlyTotalsForMonth,
+  buildApprovalPersonCostSummary,
   initialAiToolApprovalData,
 } from "./aiToolApprovalData";
 
@@ -166,6 +167,35 @@ describe("initialAiToolApprovalData", () => {
       monthlyUsd: 0,
       monthlyKrw: 1_500_000,
     });
+  });
+
+  it("aggregates monthly approval costs by person and excludes shared costs", () => {
+    const summary = buildApprovalPersonCostSummary(initialAiToolApprovalData.records);
+
+    expect(summary.people[0]).toMatchObject({
+      name: "임성범 부장",
+      departments: ["전략사업팀"],
+      itemCount: 2,
+      monthlyUsd: 494.99,
+      monthlyKrw: 735_060.15,
+    });
+    expect(summary.people.find((person) => person.name === "박연석 전무")).toMatchObject({
+      name: "박연석 전무",
+      departments: ["전략실"],
+      itemCount: 3,
+      monthlyUsd: 455.12,
+      monthlyKrw: 675_853.2,
+    });
+    expect(summary.people.find((person) => person.name === "김재우 부장")).toMatchObject({
+      itemCount: 2,
+      tools: ["chatGPT Pro(5배)", "Claude Team Plan Premium"],
+      monthlyUsd: 235,
+      monthlyKrw: 348_975,
+    });
+    expect(summary.sharedMonthlyKrw).toBe(1_849_153.2);
+    expect(summary.personalMonthlyKrw + summary.sharedMonthlyKrw).toBe(
+      initialAiToolApprovalData.totalMonthlyKrw,
+    );
   });
 
   it("adds the GH AI Agent API fixed service cost from August 2026", () => {
