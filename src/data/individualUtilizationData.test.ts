@@ -9,7 +9,7 @@ describe("individualUtilizationData", () => {
     const data = individualUtilizationData;
 
     expect(data.source.spend.rowCount).toBe(180);
-    expect(data.users).toHaveLength(22);
+    expect(data.users).toHaveLength(24);
     expect(data.users.filter((user) => user.measurementStatus === "measured")).toHaveLength(19);
     expect(data.totals.requests).toBe(264669);
     expect(data.totals.totalTokens).toBe(52004482235);
@@ -28,12 +28,16 @@ describe("individualUtilizationData", () => {
       "임성범 부장",
       "조주연 부장",
       "이형배 상무",
+      "김대일 상무",
+      "박연석 전무",
     ]);
     expect(sharedAccountUsers.every((user) => user.displayAccount === null)).toBe(true);
     expect(sharedAccountUsers.map((user) => user.usageScopeOverride)).toEqual([
       "Claude 및 Genspark 공통 계정 사용",
       "Claude 및 Genspark 공통 계정 사용",
       "Claude 공통 계정 사용",
+      "Claude 가입 계정 사용",
+      "Claude 가입 계정 사용",
     ]);
     expect(
       sharedAccountUsers.every((user) =>

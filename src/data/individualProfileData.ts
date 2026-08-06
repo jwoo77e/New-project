@@ -58,6 +58,11 @@ export type IndividualProfileData = {
     trendSeriesLabel?: string;
     topicBasisLabel?: string;
     fileTotalLabel?: string;
+    analyzedFileCount?: number;
+    outputMetricLabel?: string;
+    outputMetricValue?: number;
+    outputMetricDetail?: string;
+    topicTitle?: string;
   };
   monthlyPromptCounts: Array<{ month: string; prompts: number }>;
   dailyPromptCounts: Array<{ date: string; prompts: number }>;
@@ -582,9 +587,272 @@ export const leeHyeongbaeProfileData: IndividualProfileData = {
   ],
 };
 
+const kimDaeilDriveUrl =
+  "https://drive.google.com/drive/folders/1PV6ISnJ9W86MP1grcOxntHo2eBkCd7NM?usp=drive_link";
+
+export const kimDaeilProfileData: IndividualProfileData = {
+  email: "shared-account:kim-daeil",
+  displayName: "김대일 상무",
+  title: "상무",
+  department: "기술연구소",
+  approvalOwner: "김대일 상무",
+  accountLabel: "Claude 가입 계정 사용",
+  measurementNote:
+    "개인 Drive 산출물은 확인되지만 Claude 가입 계정의 토큰·요청·코드 사용량은 개인 단위로 분리되지 않습니다.",
+  costBasisNote:
+    "AI 도구 결재 현황의 Claude Pro Max 20과 Gemini Workspace 월 고정비를 합산했습니다. API 변동비는 개인에게 배분하지 않았습니다.",
+  sourceLinks: [{ label: "김대일 Claude Drive", url: kimDaeilDriveUrl }],
+  drive: {
+    folderName: "김대일 Claude Drive 산출물 저장소",
+    folderUrl: kimDaeilDriveUrl,
+    collectedAt: "2026-08-07 08:38 KST",
+    period: "2026-03 ~ 2026-08 문서",
+    fileCount: 39,
+    childFolderCount: 0,
+    scannedFolderCount: 1,
+    scanErrors: 0,
+    promptFiles: 46,
+    responseFiles: 0,
+    pairedSessions: 0,
+    responseOnlySessions: 0,
+    outputAndSupportFiles: 46,
+    archiveFiles: 1,
+    metadataDateAnomalies: 0,
+    analyzedFileCount: 46,
+    activityMetricLabel: "분석 문서",
+    activityMetricDetail: "Drive 직접 문서 38개 · ZIP 내부 문서 8개",
+    trendTitle: "Drive 분석 문서 반영 추이",
+    trendSeriesLabel: "분석 문서",
+    topicBasisLabel: "파일명·대표 본문·ZIP 내부 분석 46개",
+    topicTitle: "주요 업무·산출물 영역",
+    outputMetricLabel: "ZIP 내부 문서",
+    outputMetricValue: 8,
+    outputMetricDetail: "임시 해제 후 본문 분석 · Drive 원본 ZIP 유지",
+  },
+  monthlyPromptCounts: [{ month: "2026-08", prompts: 46 }],
+  dailyPromptCounts: [{ date: "2026-08-07", prompts: 46 }],
+  promptTopics: [
+    {
+      label: "특허·국책 R&D",
+      count: 16,
+      description: "ZeromateAI 특허 패밀리와 산업안전 AI 우수사례·실증사업 참여 자료를 구성",
+      examples: ["비침습 조립계층 특허", "다단계 폴백·정규화", "AI 스마트 산업안전 우수사례"],
+      color: "#c58612",
+    },
+    {
+      label: "AI 안전제품·아키텍처",
+      count: 13,
+      description: "VLM·BiRAG·Agentic AI 기반 위험예측 제품의 PRD, 인터페이스와 기술 방향을 설계",
+      examples: ["ZeroGuard VLM PRD", "ZeroVisionCopilot", "RZ-Zeromate 인터페이스"],
+      color: "#0f8b8d",
+    },
+    {
+      label: "고객 제안·구축",
+      count: 11,
+      description: "건설·PM 고객의 AI 안전관리 플랫폼과 스마트안전장비 구축 범위·견적을 구체화",
+      examples: ["한미글로벌 AI 안전관리", "춘천~속초 철도", "KBS 스마트안전장비"],
+      color: "#2f8f46",
+    },
+    {
+      label: "기술경영·지출검증",
+      count: 3,
+      description: "기술연구소 실적과 로드맵, 법인카드 지출검증 AI Agent의 투자안을 경영 자료로 정리",
+      examples: ["AI 지출검증 Agent", "상반기 실적·하반기 계획", "기술연구소 주간보고"],
+      color: "#6f7fd8",
+    },
+    {
+      label: "재해·위험 분석",
+      count: 3,
+      description: "근로자 위험도 알고리즘과 산업재해 조사 결과를 분석 문서로 구조화",
+      examples: ["근로자위험도 알고리즘", "한화오션 재해조사", "고려아연 재해조사"],
+      color: "#e85d4f",
+    },
+  ],
+  fileBreakdown: [
+    { label: "DOCX", count: 15, description: "Drive 7개 · ZIP 내부 8개", color: "#2f8f46" },
+    { label: "PDF", count: 10, description: "제안·보고·계획 문서", color: "#e85d4f" },
+    { label: "PPTX", count: 8, description: "제품·제안·경영 발표자료", color: "#0f8b8d" },
+    { label: "XLSX", count: 7, description: "견적·계획·기준 데이터", color: "#6f7fd8" },
+    { label: "HWP", count: 4, description: "공고·검토·참여 문서", color: "#c58612" },
+    { label: "HWPX", count: 2, description: "산업안전 우수사례 자료", color: "#476a6f" },
+  ],
+  highlights: [
+    {
+      title: "ZeroGuard VLM 모듈 PRD",
+      category: "AI 제품 전략",
+      summary: "사고예측 LLM과 VLM을 결합해 사후 탐지에서 예측형 안전 의사결정으로 확장하는 제품 요구사항과 사업 목표를 정의",
+      result: "제품 목표·사용자 시나리오·성공지표·단계별 로드맵",
+    },
+    {
+      title: "한미글로벌 AI 안전관리 플랫폼",
+      category: "고객 제안",
+      summary: "RAG·온톨로지 기반 문서검색과 체크리스트·일정·보고 자동화를 21개 기능과 구축 단계로 설계",
+      result: "26장 제안서 · 구축계획 · IA · 견적 자료",
+    },
+    {
+      title: "ZeromateAI 특허 패밀리",
+      category: "R&D·IP",
+      summary: "기존 안전 DB와 예측 엔진을 수정하지 않고 연결하는 비침습 조립계층과 6개 세부 발명을 문서화",
+      result: "핵심 특허 1건 · 세부 발명 6건 · 패밀리맵 1건",
+    },
+    {
+      title: "VLM·BiRAG 산업안전 자동화 설계",
+      category: "기술 아키텍처",
+      summary: "엣지 영상 필터, 서버 VLM·근거검색·위험예측, 사용자 알림으로 이어지는 멀티에이전트 구조와 처리량을 검토",
+      result: "개념도 · 시장조사 · 기술회의록 · 선행기술 분석",
+    },
+    {
+      title: "재무 지출검증 AI Agent",
+      category: "경영 자동화",
+      summary: "법인카드 승인내역과 지출결의서를 규칙과 LLM으로 대조하는 폐쇄망 저비용 Agent 도입안을 구성",
+      result: "단일 GPU 구성 · 28주 로드맵 · 비용·통제·보안 검토",
+    },
+  ],
+  notes: [
+    "지정 Drive 루트를 조회했으며 하위 폴더, 조회 오류와 1,000개 제한 도달은 없었습니다.",
+    "Drive 실제 파일은 39개이며 PPTX 8개, HWP 4개, HWPX 2개, XLSX 7개, PDF 10개, DOCX 7개, ZIP 1개입니다.",
+    "ZeromateAI.zip은 무결성 검사를 통과했고 내부 DOCX 8개를 임시 해제해 본문을 분석했습니다. __MACOSX 메타데이터 8개는 집계에서 제외했습니다.",
+    "ZIP 컨테이너는 분석 문서 수에 중복 집계하지 않아 직접 문서 38개와 내부 문서 8개, 총 46개를 분류했습니다.",
+    "Drive 수정시각은 2026년 8월 7일 일괄 반영 시점이므로 문서의 실제 작성일·활동일로 해석하지 않습니다.",
+    "산출물 수는 저장 신호이며 최종 승인·실제 사용·중간본·폐기 여부를 구분하지 않습니다.",
+  ],
+};
+
+const parkYeonseokDriveUrl =
+  "https://drive.google.com/drive/folders/11K6a5HMGcqUkP1CAEDh8TDQ8lD4ixMJs?usp=drive_link";
+
+export const parkYeonseokProfileData: IndividualProfileData = {
+  email: "shared-account:park-yeonseok",
+  displayName: "박연석 전무",
+  title: "전무",
+  department: "전략실",
+  approvalOwner: "박연석 전무",
+  accountLabel: "Claude 가입 계정 사용",
+  measurementNote:
+    "개인 Drive 산출물은 확인되지만 Claude 가입 계정의 토큰·요청·코드 사용량은 개인 단위로 분리되지 않습니다.",
+  costBasisNote:
+    "AI 도구 결재 현황의 ChatGPT Pro(20배), Claude Pro Max 20과 Gemini Workspace 월 고정비를 합산했습니다. API 변동비는 개인에게 배분하지 않았습니다.",
+  sourceLinks: [{ label: "박연석 Claude Drive", url: parkYeonseokDriveUrl }],
+  drive: {
+    folderName: "박연석 Claude Drive 산출물 저장소",
+    folderUrl: parkYeonseokDriveUrl,
+    collectedAt: "2026-08-07 08:38 KST",
+    period: "2026-04 ~ 2026-08 문서",
+    fileCount: 10,
+    childFolderCount: 0,
+    scannedFolderCount: 1,
+    scanErrors: 0,
+    promptFiles: 13,
+    responseFiles: 0,
+    pairedSessions: 0,
+    responseOnlySessions: 0,
+    outputAndSupportFiles: 13,
+    archiveFiles: 1,
+    metadataDateAnomalies: 0,
+    analyzedFileCount: 13,
+    activityMetricLabel: "분석 문서",
+    activityMetricDetail: "Drive 직접 문서 9개 · ZIP 내부 문서 4개",
+    trendTitle: "Drive 분석 문서 반영 추이",
+    trendSeriesLabel: "분석 문서",
+    topicBasisLabel: "파일명·대표 본문·ZIP 내부 분석 13개",
+    topicTitle: "주요 업무·산출물 영역",
+    outputMetricLabel: "ZIP 내부 문서",
+    outputMetricValue: 4,
+    outputMetricDetail: "임시 해제 후 본문 분석 · Drive 원본 ZIP 유지",
+  },
+  monthlyPromptCounts: [{ month: "2026-08", prompts: 13 }],
+  dailyPromptCounts: [{ date: "2026-08-07", prompts: 13 }],
+  promptTopics: [
+    {
+      label: "프로젝트 원가관리",
+      count: 4,
+      description: "수주부터 종료까지 프로젝트 원가코드, R&R, 표준양식과 임원 보고 체계를 정립",
+      examples: ["원가관리 프로세스", "원가코드 표준", "표준양식집"],
+      color: "#0f8b8d",
+    },
+    {
+      label: "제조안전 R&D 수요",
+      count: 4,
+      description: "사고유형학습 AI 제조안전 기술개발의 공고, 제안양식, TRL과 산업기술분류를 검토",
+      examples: ["기술수요조사 공고", "제안기술 양식", "TRL 1~9단계"],
+      color: "#c58612",
+    },
+    {
+      label: "LH 안전문서 체계",
+      count: 2,
+      description: "건설사업 6단계의 안전관리문서 36종과 작성항목 인계 관계를 분석·시각화",
+      examples: ["문서 연관도 분석", "117개 연결", "6개 핵심 흐름"],
+      color: "#2f8f46",
+    },
+    {
+      label: "AI 인프라·모델 검토",
+      count: 2,
+      description: "Claude AWS 서울 리전과 Solar Open 2 공공기관 온프레미스 적용 조건을 사실 검증",
+      examples: ["Anthropic In-Region", "Solar Open 2", "망분리·데이터 레지던시"],
+      color: "#6f7fd8",
+    },
+    {
+      label: "전사 실행 표준",
+      count: 1,
+      description: "프로세스 50종의 정의, R&R, Gate와 실무 표준양식을 하나의 실행 패키지로 구성",
+      examples: ["Riskzero Way 2.0", "프로세스 R&R", "표준 양식 50종"],
+      color: "#e85d4f",
+    },
+  ],
+  fileBreakdown: [
+    { label: "XLSX", count: 4, description: "원가·안전문서·전사 표준", color: "#6f7fd8" },
+    { label: "DOCX", count: 3, description: "프로세스·AI 인프라 검토", color: "#2f8f46" },
+    { label: "HWP", count: 3, description: "ZIP 내부 공고·양식·분류표", color: "#c58612" },
+    { label: "PPTX", count: 2, description: "원가관리·LH 문서 흐름", color: "#0f8b8d" },
+    { label: "HWPX", count: 1, description: "ZIP 내부 TRL 기준", color: "#476a6f" },
+  ],
+  highlights: [
+    {
+      title: "프로젝트 원가관리 표준",
+      category: "경영관리",
+      summary: "사업 인식부터 운영까지 7단계의 책임부서와 원가코드·보고·승인 기준을 표준 프로세스로 정리",
+      result: "프로세스·R&R 정의서 · 원가코드 · 표준양식 · 임원보고",
+    },
+    {
+      title: "Riskzero Way 2.0 실행 패키지",
+      category: "전사 운영체계",
+      summary: "핵심·지원 프로세스의 Gate, 책임, 기한과 표준 산출물을 연결해 실무자가 바로 쓰는 업무 기준을 구성",
+      result: "사업 프로세스 29종 · 지원 프로세스 21종 · 표준양식 50종",
+    },
+    {
+      title: "LH 안전관리문서 연관도",
+      category: "안전문서 분석",
+      summary: "사업계획부터 준공까지 안전문서 작성항목이 어떻게 계승·참조·집계되는지 흐름도로 시각화",
+      result: "안전문서 36종 · 연결 117개 · 작성항목 매핑 49개",
+    },
+    {
+      title: "Claude·Solar 공공 AI 도입 검토",
+      category: "AI 전략",
+      summary: "AWS 서울 리전 데이터 레지던시와 오픈웨이트 LLM의 공공기관 온프레미스 적용 가능성·제약을 비교",
+      result: "In-Region 사실검증 · 하드웨어·라이선스·망분리 검토",
+    },
+    {
+      title: "AI 제조안전 기술수요조사",
+      category: "R&D 기회",
+      summary: "AI 기반 제조안전 기술개발과 데이터 구축 수요 공고의 제출 항목, 기술성숙도와 분류체계를 분석",
+      result: "공고문 · 기술수요조사서 · TRL 기준 · 산업기술분류표",
+    },
+  ],
+  notes: [
+    "지정 Drive 루트를 조회했으며 하위 폴더, 조회 오류와 1,000개 제한 도달은 없었습니다.",
+    "Drive 실제 파일은 10개이며 DOCX 3개, XLSX 4개, PPTX 2개, ZIP 1개입니다.",
+    "제조안전 기술수요조사 ZIP은 무결성 검사를 통과했고 내부 HWP 3개와 HWPX 1개를 임시 해제해 본문과 미리보기를 분석했습니다.",
+    "ZIP 컨테이너는 분석 문서 수에 중복 집계하지 않아 직접 문서 9개와 내부 문서 4개, 총 13개를 분류했습니다.",
+    "Drive 수정시각은 2026년 8월 7일 일괄 반영 시점이므로 문서의 실제 작성일·활동일로 해석하지 않습니다.",
+    "산출물 수는 저장 신호이며 최종 승인·실제 사용·중간본·폐기 여부를 구분하지 않습니다.",
+  ],
+};
+
 export const individualProfileDataByEmail: Readonly<Record<string, IndividualProfileData>> = {
   [kimJaewooProfileData.email]: kimJaewooProfileData,
   [limSeongbeomProfileData.email]: limSeongbeomProfileData,
   [joJooyeonProfileData.email]: joJooyeonProfileData,
   [leeHyeongbaeProfileData.email]: leeHyeongbaeProfileData,
+  [kimDaeilProfileData.email]: kimDaeilProfileData,
+  [parkYeonseokProfileData.email]: parkYeonseokProfileData,
 };

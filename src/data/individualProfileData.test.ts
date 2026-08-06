@@ -3,9 +3,11 @@ import { initialAiToolApprovalData } from "./aiToolApprovalData";
 import {
   individualProfileDataByEmail,
   joJooyeonProfileData,
+  kimDaeilProfileData,
   kimJaewooProfileData,
   leeHyeongbaeProfileData,
   limSeongbeomProfileData,
+  parkYeonseokProfileData,
 } from "./individualProfileData";
 
 describe("kimJaewooProfileData", () => {
@@ -48,6 +50,8 @@ describe("strategy shared-account profiles", () => {
       "shared-account:lim-seongbeom",
       "shared-account:jo-jooyeon",
       "shared-account:lee-hyeongbae",
+      "shared-account:kim-daeil",
+      "shared-account:park-yeonseok",
     ]);
 
     for (const profile of profiles) {
@@ -143,5 +147,66 @@ describe("leeHyeongbaeProfileData", () => {
     ]);
     expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBe(220);
     expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBe(326_700);
+  });
+});
+
+describe("Claude subscribed-account Drive profiles", () => {
+  const cases = [
+    {
+      profile: kimDaeilProfileData,
+      folderId: "1PV6ISnJ9W86MP1grcOxntHo2eBkCd7NM",
+      physicalFiles: 39,
+      analyzedFiles: 46,
+      archiveInnerFiles: 8,
+      tools: ["Claude Pro Max 20", "Gemini(Google Workspace)"],
+      monthlyUsd: 235.12,
+      monthlyKrw: 349_153.2,
+    },
+    {
+      profile: parkYeonseokProfileData,
+      folderId: "11K6a5HMGcqUkP1CAEDh8TDQ8lD4ixMJs",
+      physicalFiles: 10,
+      analyzedFiles: 13,
+      archiveInnerFiles: 4,
+      tools: ["chatGPT Pro(20배)", "Claude Pro Max 20", "Gemini(Google Workspace)"],
+      monthlyUsd: 455.12,
+      monthlyKrw: 675_853.2,
+    },
+  ];
+
+  it("reconciles Drive files and ZIP-internal documents without double-counting the archive", () => {
+    for (const { profile, folderId, physicalFiles, analyzedFiles, archiveInnerFiles } of cases) {
+      expect(profile.drive.folderUrl).toContain(folderId);
+      expect(profile.drive.scanErrors).toBe(0);
+      expect(profile.drive.scannedFolderCount).toBe(profile.drive.childFolderCount + 1);
+      expect(profile.drive.fileCount).toBe(physicalFiles);
+      expect(profile.drive.analyzedFileCount).toBe(analyzedFiles);
+      expect(profile.drive.outputMetricValue).toBe(archiveInnerFiles);
+      expect(profile.promptTopics.reduce((sum, item) => sum + item.count, 0)).toBe(
+        analyzedFiles,
+      );
+      expect(profile.fileBreakdown.reduce((sum, item) => sum + item.count, 0)).toBe(
+        analyzedFiles,
+      );
+      expect(profile.dailyPromptCounts).toEqual([
+        { date: "2026-08-07", prompts: analyzedFiles },
+      ]);
+      expect(profile.monthlyPromptCounts).toEqual([
+        { month: "2026-08", prompts: analyzedFiles },
+      ]);
+    }
+  });
+
+  it("links each profile to the current fixed subscription records", () => {
+    for (const { profile, tools, monthlyUsd, monthlyKrw } of cases) {
+      const records = initialAiToolApprovalData.records.filter((record) =>
+        record.owner.startsWith(profile.approvalOwner),
+      );
+
+      expect(profile.accountLabel).toBe("Claude 가입 계정 사용");
+      expect(records.map((record) => record.tool)).toEqual(tools);
+      expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBeCloseTo(monthlyUsd, 2);
+      expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBeCloseTo(monthlyKrw, 2);
+    }
   });
 });

@@ -386,6 +386,18 @@ const sharedAccountUsers: IndividualUtilizationUser[] = [
     usageScopeOverride: "Claude 공통 계정 사용",
     products: ["Claude"],
   },
+  {
+    email: "shared-account:kim-daeil",
+    displayName: "김대일 상무",
+    usageScopeOverride: "Claude 가입 계정 사용",
+    products: ["Claude"],
+  },
+  {
+    email: "shared-account:park-yeonseok",
+    displayName: "박연석 전무",
+    usageScopeOverride: "Claude 가입 계정 사용",
+    products: ["Claude"],
+  },
 ].map(({ email, displayName, usageScopeOverride, products }) => ({
   email,
   displayName,

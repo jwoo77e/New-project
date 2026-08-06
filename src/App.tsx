@@ -4528,6 +4528,10 @@ function IndividualProfileView({
     `응답 연결 ${numberFormat.format(profile.drive.pairedSessions)}건`;
   const trendTitle = profile.drive.trendTitle ?? "Drive 프롬프트 일별 추이";
   const trendSeriesLabel = profile.drive.trendSeriesLabel ?? "프롬프트";
+  const outputMetricLabel = profile.drive.outputMetricLabel ?? "결과·지원 파일";
+  const outputMetricValue = profile.drive.outputMetricValue ?? profile.drive.outputAndSupportFiles;
+  const outputMetricDetail = profile.drive.outputMetricDetail ??
+    `${profile.drive.fileTotalLabel ?? (profile.attributionMode === "shared" ? "통합 분석 대상" : "전체 저장")} ${numberFormat.format(profile.drive.fileCount)}개 중`;
   const sourceLinks = profile.sourceLinks ?? [
     { label: "Drive 원천", url: profile.drive.folderUrl },
   ];
@@ -4583,11 +4587,9 @@ function IndividualProfileView({
           <small>{activityMetricDetail}</small>
         </article>
         <article>
-          <span><FileText size={17} />결과·지원 파일</span>
-          <strong>{numberFormat.format(profile.drive.outputAndSupportFiles)}개</strong>
-          <small>
-            {profile.drive.fileTotalLabel ?? (profile.attributionMode === "shared" ? "통합 분석 대상" : "전체 저장")} {numberFormat.format(profile.drive.fileCount)}개 중
-          </small>
+          <span><FileText size={17} />{outputMetricLabel}</span>
+          <strong>{numberFormat.format(outputMetricValue)}개</strong>
+          <small>{outputMetricDetail}</small>
         </article>
         <article>
           <span><Gauge size={17} />{fullMonthLabel(selectedMonth)} 생산성</span>
@@ -4683,7 +4685,7 @@ function IndividualProfileView({
         <div className="panel-header">
           <div>
             <span className="eyebrow">Prompt Mix</span>
-            <h2>대화·프롬프트 업무 영역</h2>
+            <h2>{profile.drive.topicTitle ?? "대화·프롬프트 업무 영역"}</h2>
           </div>
           <span className="state-pill neutral">
             {profile.drive.topicBasisLabel ?? `본문 분석 ${profile.drive.promptFiles}건`}
@@ -4711,7 +4713,11 @@ function IndividualProfileView({
             <span className="eyebrow">Drive Inventory</span>
             <h2>저장 파일 구성</h2>
           </div>
-          <span className="state-pill ok">전체 {numberFormat.format(profile.drive.fileCount)}개</span>
+          <span className="state-pill ok">
+            {profile.drive.analyzedFileCount
+              ? `분석 ${numberFormat.format(profile.drive.analyzedFileCount)}개 · Drive ${numberFormat.format(profile.drive.fileCount)}개`
+              : `전체 ${numberFormat.format(profile.drive.fileCount)}개`}
+          </span>
         </div>
         <div className="approval-meter-list">
           {profile.fileBreakdown.map((item) => (
