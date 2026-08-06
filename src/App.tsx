@@ -4402,7 +4402,7 @@ function AdoptionView({
                         >
                           <span>
                             <strong>{user.displayName}</strong>
-                            <small>{user.email}</small>
+                            {user.displayAccount && <small>{user.displayAccount}</small>}
                           </span>
                           <ChevronRight size={17} />
                         </button>
@@ -4522,6 +4522,15 @@ function IndividualProfileView({
   );
   const monthlyFixedKrw = approvalRecords.reduce((sum, record) => sum + record.monthlyKrw, 0);
   const monthlyFixedUsd = approvalRecords.reduce((sum, record) => sum + record.monthlyUsd, 0);
+  const metricsMeasured = user.measurementStatus === "measured";
+  const activityMetricLabel = profile.drive.activityMetricLabel ?? "Drive 프롬프트";
+  const activityMetricDetail = profile.drive.activityMetricDetail ??
+    `응답 연결 ${numberFormat.format(profile.drive.pairedSessions)}건`;
+  const trendTitle = profile.drive.trendTitle ?? "Drive 프롬프트 일별 추이";
+  const trendSeriesLabel = profile.drive.trendSeriesLabel ?? "프롬프트";
+  const sourceLinks = profile.sourceLinks ?? [
+    { label: "Drive 원천", url: profile.drive.folderUrl },
+  ];
   const maxTopicCount = Math.max(...profile.promptTopics.map((topic) => topic.count), 1);
   const maxFileCount = Math.max(...profile.fileBreakdown.map((item) => item.count), 1);
   const recentPromptTrend = profile.dailyPromptCounts.map((item) => ({
@@ -4539,17 +4548,27 @@ function IndividualProfileView({
         <div>
           <span className="eyebrow">Individual Cost & Output</span>
           <h2>{profile.displayName}</h2>
-          <p>{profile.department} · {profile.email}</p>
+          <p>{profile.department} · {profile.accountLabel ?? profile.email}</p>
+          {profile.attributionMode === "shared" && (
+            <span className="state-pill warning">
+              {profile.attributionLabel ?? "공통 계정 기준 · 개인 기여 미분리"}
+            </span>
+          )}
         </div>
-        <a
-          className="individual-profile-drive-link"
-          href={profile.drive.folderUrl}
-          rel="noreferrer"
-          target="_blank"
-        >
-          Drive 원천
-          <ExternalLink size={16} />
-        </a>
+        <div className="individual-profile-drive-links">
+          {sourceLinks.map((source) => (
+            <a
+              className="individual-profile-drive-link"
+              href={source.url}
+              key={source.url}
+              rel="noreferrer"
+              target="_blank"
+            >
+              {source.label}
+              <ExternalLink size={16} />
+            </a>
+          ))}
+        </div>
       </section>
 
       <section className="individual-profile-kpis" aria-label={`${profile.displayName} 비용 및 결과 핵심 지표`}>
@@ -4559,19 +4578,25 @@ function IndividualProfileView({
           <small>{approvalRecords.length}개 구독 · {formatPreciseUsd(monthlyFixedUsd)}</small>
         </article>
         <article>
-          <span><Bot size={17} />Drive 프롬프트</span>
+          <span><Bot size={17} />{activityMetricLabel}</span>
           <strong>{numberFormat.format(profile.drive.promptFiles)}건</strong>
-          <small>응답 연결 {numberFormat.format(profile.drive.pairedSessions)}건</small>
+          <small>{activityMetricDetail}</small>
         </article>
         <article>
           <span><FileText size={17} />결과·지원 파일</span>
           <strong>{numberFormat.format(profile.drive.outputAndSupportFiles)}개</strong>
-          <small>전체 저장 {numberFormat.format(profile.drive.fileCount)}개 중</small>
+          <small>
+            {profile.drive.fileTotalLabel ?? (profile.attributionMode === "shared" ? "통합 분석 대상" : "전체 저장")} {numberFormat.format(profile.drive.fileCount)}개 중
+          </small>
         </article>
         <article>
           <span><Gauge size={17} />{fullMonthLabel(selectedMonth)} 생산성</span>
-          <strong>{evaluation?.productivityScore ?? 0}점</strong>
-          <small>{individualLevelLabel(evaluation?.productivityLevel ?? "unobserved")} · Code {numberFormat.format(evaluation?.codeLines ?? 0)}줄</small>
+          <strong>{metricsMeasured ? `${evaluation?.productivityScore ?? 0}점` : "개인 미측정"}</strong>
+          <small>
+            {metricsMeasured
+              ? `${individualLevelLabel(evaluation?.productivityLevel ?? "unobserved")} · Code ${numberFormat.format(evaluation?.codeLines ?? 0)}줄`
+              : (profile.measurementNote ?? "공통 계정 자료로 개인별 활동을 분리할 수 없습니다.")}
+          </small>
         </article>
       </section>
 
@@ -4609,7 +4634,9 @@ function IndividualProfileView({
             </tbody>
           </table>
         </div>
-        <small className="approval-footnote">AI 도구 결재 현황의 현재 월 고정 구독료이며 API 변동비는 개인에게 배분하지 않았습니다.</small>
+        <small className="approval-footnote">
+          {profile.costBasisNote ?? "AI 도구 결재 현황의 현재 월 고정 구독료이며 API 변동비는 개인에게 배분하지 않았습니다."}
+        </small>
       </section>
 
       <section className="panel individual-profile-usage-panel">
@@ -4620,10 +4647,10 @@ function IndividualProfileView({
           </div>
         </div>
         <dl className="individual-profile-usage-list">
-          <div><dt>월 누적 요청</dt><dd>{monthlySpend ? `${numberFormat.format(monthlySpend.requests)}건` : "미수집"}</dd></div>
-          <div><dt>월 누적 토큰</dt><dd>{monthlySpend ? formatTokens(monthlySpend.totalTokens) : "미수집"}</dd></div>
-          <div><dt>대화 프롬프트</dt><dd>{numberFormat.format(evaluation?.humanPrompts ?? 0)}건</dd></div>
-          <div><dt>Code Lines</dt><dd>{numberFormat.format(evaluation?.codeLines ?? 0)}줄</dd></div>
+          <div><dt>월 누적 요청</dt><dd>{metricsMeasured ? (monthlySpend ? `${numberFormat.format(monthlySpend.requests)}건` : "미수집") : "개인 미측정"}</dd></div>
+          <div><dt>월 누적 토큰</dt><dd>{metricsMeasured ? (monthlySpend ? formatTokens(monthlySpend.totalTokens) : "미수집") : "개인 미측정"}</dd></div>
+          <div><dt>대화 프롬프트</dt><dd>{metricsMeasured ? `${numberFormat.format(evaluation?.humanPrompts ?? 0)}건` : "개인 미측정"}</dd></div>
+          <div><dt>Code Lines</dt><dd>{metricsMeasured ? `${numberFormat.format(evaluation?.codeLines ?? 0)}줄` : "개인 미측정"}</dd></div>
         </dl>
       </section>
 
@@ -4631,7 +4658,7 @@ function IndividualProfileView({
         <div className="panel-header">
           <div>
             <span className="eyebrow">Prompt Activity</span>
-            <h2>Drive 프롬프트 일별 추이</h2>
+            <h2>{trendTitle}</h2>
           </div>
           <div className="panel-header-side">
             {profile.monthlyPromptCounts.map((item) => (
@@ -4645,8 +4672,8 @@ function IndividualProfileView({
               <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
               <XAxis dataKey="label" interval={3} tickLine={false} axisLine={false} />
               <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={36} />
-              <Tooltip formatter={(value) => [`${numberFormat.format(Number(value))}건`, "프롬프트"]} />
-              <Bar dataKey="prompts" name="프롬프트" fill="#0f8b8d" radius={[4, 4, 0, 0]} />
+              <Tooltip formatter={(value) => [`${numberFormat.format(Number(value))}건`, trendSeriesLabel]} />
+              <Bar dataKey="prompts" name={trendSeriesLabel} fill="#0f8b8d" radius={[4, 4, 0, 0]} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -4656,9 +4683,11 @@ function IndividualProfileView({
         <div className="panel-header">
           <div>
             <span className="eyebrow">Prompt Mix</span>
-            <h2>프롬프트 업무 영역</h2>
+            <h2>대화·프롬프트 업무 영역</h2>
           </div>
-          <span className="state-pill neutral">본문 분석 {profile.drive.promptFiles}건</span>
+          <span className="state-pill neutral">
+            {profile.drive.topicBasisLabel ?? `본문 분석 ${profile.drive.promptFiles}건`}
+          </span>
         </div>
         <div className="individual-profile-topic-grid">
           {profile.promptTopics.map((topic) => (
@@ -4731,7 +4760,9 @@ function IndividualProfileView({
           <div>
             <strong>{profile.drive.folderName}</strong>
             <span>{profile.drive.period} · {profile.drive.collectedAt}</span>
-            <span>하위 폴더 {numberFormat.format(profile.drive.childFolderCount)}개 · 조회 폴더 {numberFormat.format(profile.drive.scannedFolderCount)}개</span>
+            <span>
+              원천 폴더 {numberFormat.format(profile.drive.rootFolderCount ?? 1)}개 · 하위 폴더 {numberFormat.format(profile.drive.childFolderCount)}개 · 조회 폴더 {numberFormat.format(profile.drive.scannedFolderCount)}개
+            </span>
           </div>
           <ul>
             {profile.notes.map((note) => <li key={note}>{note}</li>)}

@@ -3775,6 +3775,13 @@ td strong {
   font-size: 0.9rem;
 }
 
+.individual-profile-drive-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .individual-profile-back,
 .individual-profile-drive-link {
   display: inline-flex;
