@@ -54,4 +54,23 @@ describe("individualUtilizationData", () => {
     expect(augustLeader.email).toBe("wody@riskzero.kr");
     expect(data.source.notes).toContain("Code Lines는 사용자별 월 합계이며 주간 값으로 임의 배분하지 않습니다.");
   });
+
+  it("does not treat missing Claude Code prompt details as zero activity", () => {
+    const augustCodeUsersWithoutChatPrompts = individualUtilizationData.users.filter((user) => {
+      const evaluation = user.monthEvaluations["2026-08"];
+      return (evaluation.codeLines ?? 0) > 0 && evaluation.humanPrompts === 0;
+    });
+
+    expect(augustCodeUsersWithoutChatPrompts).toHaveLength(11);
+    expect(
+      augustCodeUsersWithoutChatPrompts.every(
+        (user) => user.monthEvaluations["2026-08"].codeActivityDetailsMissing,
+      ),
+    ).toBe(true);
+    expect(
+      augustCodeUsersWithoutChatPrompts.every(
+        (user) => user.monthEvaluations["2026-08"].evidence.includes("미수집"),
+      ),
+    ).toBe(true);
+  });
 });

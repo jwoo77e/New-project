@@ -3817,6 +3817,23 @@ td strong {
   overflow-wrap: anywhere;
 }
 
+.individual-coverage-cell {
+  display: grid;
+  gap: 3px;
+  min-width: 92px;
+}
+
+.individual-coverage-cell strong {
+  color: var(--amber);
+  font-size: 0.78rem;
+}
+
+.individual-coverage-cell small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
 .individual-rank {
   display: grid;
   width: 30px;

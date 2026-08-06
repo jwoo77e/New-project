@@ -94,6 +94,7 @@ export type IndividualPeriodEvaluation = {
   assistantResponses: number;
   activeDays: number;
   codeLines: number | null;
+  codeActivityDetailsMissing: boolean;
   evidence: string;
 };
 
@@ -226,20 +227,36 @@ const users: IndividualUtilizationUser[] = snapshot.users.map((user) => {
       const monthResponses = snapshot.users.map((item) => (item.monthlyActivity[month] ?? emptyActivity).assistantResponses);
       const monthActiveDays = snapshot.users.map((item) => (item.monthlyActivity[month] ?? emptyActivity).activeDays);
       const monthLines = snapshot.users.map((item) => item.monthlyCodeLines[month] ?? 0);
-      const observed = activity.humanPrompts > 0 || activity.conversations > 0 || monthCodeLines > 0;
-      const activityScore = Math.round(
+      const chatActivityObserved = activity.humanPrompts > 0 || activity.conversations > 0 || activity.activeDays > 0;
+      const codeActivityObserved = monthCodeLines > 0;
+      const observed = chatActivityObserved || codeActivityObserved;
+      const codePercentile = percentile(monthCodeLines, monthLines);
+      const chatWeightedActivity =
         percentile(activity.conversations, monthConversations) * 0.25 +
           percentile(activity.humanPrompts, monthPrompts) * 0.35 +
-          percentile(activity.activeDays, monthActiveDays) * 0.15 +
-          percentile(monthCodeLines, monthLines) * 0.25,
+          percentile(activity.activeDays, monthActiveDays) * 0.15;
+      const activityScore = Math.round(
+        chatActivityObserved
+          ? chatWeightedActivity + codePercentile * 0.25
+          : codeActivityObserved
+            ? codePercentile
+            : 0,
       );
       const productivityScore = Math.round(
-        percentile(monthCodeLines, monthLines) * 0.75 +
-          percentile(activity.humanPrompts, monthPrompts) * 0.1 +
-          percentile(activity.assistantResponses, monthResponses) * 0.1 +
-          percentile(activity.activeDays, monthActiveDays) * 0.05,
+        chatActivityObserved
+          ? codePercentile * 0.75 +
+              percentile(activity.humanPrompts, monthPrompts) * 0.1 +
+              percentile(activity.assistantResponses, monthResponses) * 0.1 +
+              percentile(activity.activeDays, monthActiveDays) * 0.05
+          : codeActivityObserved
+            ? codePercentile
+            : 0,
       );
-      const evidence = `대화 ${activity.conversations}건 · 프롬프트 ${activity.humanPrompts}건 · Code ${monthCodeLines.toLocaleString("ko-KR")}줄`;
+      const chatEvidence = chatActivityObserved
+        ? `대화 ${activity.conversations}건 · 대화 프롬프트 ${activity.humanPrompts}건`
+        : "대화 활동 없음";
+      const codeCoverage = codeActivityObserved ? " · Claude Code 프롬프트·활성일 미수집" : "";
+      const evidence = `${chatEvidence}${codeCoverage} · Code ${monthCodeLines.toLocaleString("ko-KR")}줄`;
 
       return [
         month,
@@ -251,6 +268,7 @@ const users: IndividualUtilizationUser[] = snapshot.users.map((user) => {
           productivityLevel: scoreLevel(productivityScore, observed),
           ...activity,
           codeLines: monthCodeLines,
+          codeActivityDetailsMissing: codeActivityObserved,
           evidence,
         } satisfies IndividualPeriodEvaluation,
       ];
@@ -281,6 +299,7 @@ const users: IndividualUtilizationUser[] = snapshot.users.map((user) => {
           productivityLevel: "unobserved",
           ...activity,
           codeLines: null,
+          codeActivityDetailsMissing: true,
           evidence,
         } satisfies IndividualPeriodEvaluation,
       ];
@@ -359,9 +378,9 @@ export const individualUtilizationData = {
   weeklyTrend,
   methodology: {
     activity: "요청·토큰·대화·프롬프트·활성일·사용 제품 범위를 동료 집단 내 백분위로 합성",
-    productivity: "누적은 Code Lines 65%·완료 토큰 15%·지속성/활성일 20%, 월별은 Code Lines 75% 중심의 산출 대리지표",
-    monthly: "월별 대화·프롬프트·활성일과 월별 Code Lines를 결합",
+    productivity: "월별은 Code Lines 75% 중심이며, 대화 활동이 없는 Code 사용자는 미수집값을 0으로 감점하지 않고 Code Lines 백분위로 평가",
+    monthly: "대화 Export의 프롬프트·활성일과 월별 Code Lines를 결합",
     weekly: "대화 원천의 주별 대화·프롬프트·활성일만 반영하며 Code Lines는 주간으로 나누지 않음",
-    caveat: "속도 절감, 최종 승인, 품질, 실제 업무 적용 데이터가 없어 생산성은 확정 성과가 아닌 비교용 신호입니다.",
+    caveat: "Claude Code CSV에는 프롬프트 수와 활성 날짜가 없어 해당 값은 미수집으로 표시합니다. 생산성은 확정 성과가 아닌 비교용 신호입니다.",
   },
 } as const;

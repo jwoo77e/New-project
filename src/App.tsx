@@ -979,7 +979,7 @@ function App() {
     viewHeader = {
       eyebrow: "Individual Utilization",
       title: "개인별 활용성",
-      description: "개인별 요청·토큰·프롬프트·Code Lines를 월별로 비교해 활용 강도와 생산성 신호를 평가합니다.",
+      description: "개인별 요청·토큰·대화 프롬프트·Code Lines를 월별로 비교하며 Claude Code 상세 미수집을 구분합니다.",
       freshness: `${individualUtilizationData.source.spend.period} · ${formatKstDateTime(individualUtilizationData.source.generatedAt)}`,
       metrics: [
         {
@@ -4106,7 +4106,7 @@ function AdoptionView() {
             {coverageNote && <span className="state-pill warning">부분 기간 · {coverageNote}</span>}
           </div>
           <p>
-            프롬프트·활성일과 월별 Code Lines를 같은 달 기준으로 비교합니다.
+            대화 Export의 프롬프트·활성일과 월별 Code Lines를 결합하며, Claude Code 상세 미수집은 0으로 처리하지 않습니다.
           </p>
         </div>
         <div className="individual-controls">
@@ -4160,7 +4160,7 @@ function AdoptionView() {
         <article>
           <span><Bot size={17} />대화·프롬프트</span>
           <strong>{numberFormat.format(periodSummary.conversations)} / {numberFormat.format(periodSummary.humanPrompts)}</strong>
-          <small>대화 / 사람이 입력한 프롬프트</small>
+          <small>대화 Export 기준 · Claude Code 미포함</small>
         </article>
         <article>
           <span><FileText size={17} />Code Lines</span>
@@ -4235,8 +4235,8 @@ function AdoptionView() {
           </article>
           <article>
             <span>원천 범위</span>
-            <strong>월별 프롬프트 + Code</strong>
-            <small>Spend는 전체 기간 누적값으로 별도 표기</small>
+            <strong>대화 프롬프트 + Code Lines</strong>
+            <small>Claude Code 프롬프트·활성일은 원천 미제공</small>
           </article>
           <article>
             <span>선택 기간 합계</span>
@@ -4262,8 +4262,8 @@ function AdoptionView() {
                 <th>사용자</th>
                 <th>활용 평가</th>
                 <th>생산성 신호</th>
-                <th>프롬프트</th>
-                <th>활성일</th>
+                <th>대화 프롬프트</th>
+                <th>대화 활성일</th>
                 <th>Code Lines</th>
                 <th>기간 누적 사용량</th>
                 <th>주요 사용 범위</th>
@@ -4292,8 +4292,20 @@ function AdoptionView() {
                         score={productivityScore}
                       />
                     </td>
-                    <td>{numberFormat.format(evaluation?.humanPrompts ?? 0)}건</td>
-                    <td>{numberFormat.format(evaluation?.activeDays ?? 0)}일</td>
+                    <td>
+                      <IndividualActivityCoverageCell
+                        detailsMissing={evaluation?.codeActivityDetailsMissing ?? false}
+                        unit="건"
+                        value={evaluation?.humanPrompts ?? 0}
+                      />
+                    </td>
+                    <td>
+                      <IndividualActivityCoverageCell
+                        detailsMissing={evaluation?.codeActivityDetailsMissing ?? false}
+                        unit="일"
+                        value={evaluation?.activeDays ?? 0}
+                      />
+                    </td>
                     <td>
                       {evaluation?.codeLines == null
                         ? <span className="state-pill neutral">월 단위</span>
@@ -4363,6 +4375,25 @@ function IndividualScoreBadge({
         <span style={{ width: `${Math.min(Math.max(score, 0), 100)}%` }} />
       </div>
       <small>{score}점</small>
+    </div>
+  );
+}
+
+function IndividualActivityCoverageCell({
+  detailsMissing,
+  unit,
+  value,
+}: {
+  detailsMissing: boolean;
+  unit: "건" | "일";
+  value: number;
+}) {
+  if (!detailsMissing) return <>{numberFormat.format(value)}{unit}</>;
+
+  return (
+    <div className="individual-coverage-cell">
+      <strong>{value > 0 ? `${numberFormat.format(value)}${unit}` : "미수집"}</strong>
+      <small>Claude Code 미포함</small>
     </div>
   );
 }
