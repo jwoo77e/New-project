@@ -9,13 +9,39 @@ describe("individualUtilizationData", () => {
     const data = individualUtilizationData;
 
     expect(data.source.spend.rowCount).toBe(180);
-    expect(data.users).toHaveLength(19);
+    expect(data.users).toHaveLength(22);
+    expect(data.users.filter((user) => user.measurementStatus === "measured")).toHaveLength(19);
     expect(data.totals.requests).toBe(264669);
     expect(data.totals.totalTokens).toBe(52004482235);
     expect(data.totals.netSpendUsd).toBeCloseTo(1211.75, 2);
     expect(data.source.codeLines).toHaveLength(4);
     expect(sumBy(data.source.codeLines, (item) => item.totalLines)).toBe(912077);
     expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(912077);
+  });
+
+  it("adds shared-account users without fabricating individual metrics", () => {
+    const sharedAccountUsers = individualUtilizationData.users.filter(
+      (user) => user.measurementStatus === "shared-account-unmeasured",
+    );
+
+    expect(sharedAccountUsers.map((user) => user.displayName)).toEqual([
+      "임성범 부장",
+      "조주연 부장",
+      "이형배 상무",
+    ]);
+    expect(sharedAccountUsers.every((user) => user.displayAccount === null)).toBe(true);
+    expect(sharedAccountUsers.map((user) => user.usageScopeOverride)).toEqual([
+      "Claude 및 Genspark 공통 계정 사용",
+      "Claude 및 Genspark 공통 계정 사용",
+      "Claude 공통 계정 사용",
+    ]);
+    expect(
+      sharedAccountUsers.every((user) =>
+        Object.values(user.monthEvaluations).every(
+          (evaluation) => evaluation.productivityScore === null && evaluation.codeLines === null,
+        ),
+      ),
+    ).toBe(true);
   });
 
   it("keeps timestamp-backed weekly activity separate from monthly Code Lines", () => {

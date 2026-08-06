@@ -4124,6 +4124,9 @@ function AdoptionView({
         user.displayName.toLowerCase().includes(normalizedQuery),
       )
       .sort((a, b) => {
+        if (a.user.measurementStatus !== b.user.measurementStatus) {
+          return a.user.measurementStatus === "measured" ? -1 : 1;
+        }
         const aEvaluation = a.evaluation;
         const bEvaluation = b.evaluation;
         const value = (row: typeof a) => {
@@ -4137,6 +4140,9 @@ function AdoptionView({
           a.user.email.localeCompare(b.user.email);
       });
   }, [data.users, query, selectedMonth, selectedMonthlySpend, sortKey]);
+
+  const measuredRowCount = rows.filter((row) => row.user.measurementStatus === "measured").length;
+  const sharedAccountRowCount = rows.length - measuredRowCount;
 
   const periodSummary = useMemo(
     () =>
@@ -4160,7 +4166,11 @@ function AdoptionView({
 
   const monthlySpendSummary = useMemo(() => {
     if (!selectedMonthlySpend) return null;
-    return rows.reduce(
+    const measuredSpendRows = rows.filter(
+      (row) => row.user.measurementStatus === "measured" && row.monthlySpend,
+    );
+    if (measuredSpendRows.length === 0) return null;
+    return measuredSpendRows.reduce(
       (summary, row) => {
         if (!row.monthlySpend) return summary;
         summary.requests += row.monthlySpend.requests;
@@ -4173,11 +4183,17 @@ function AdoptionView({
 
   const selectedTrendPoint = trendData.find((item) => item.key === selectedMonth);
   const topActivityUser = rows.find((row) => (row.evaluation?.activityScore ?? 0) > 0);
-  const topProductivityUser = [...rows].sort(
-    (a, b) =>
-      (b.evaluation?.productivityScore ?? 0) -
-      (a.evaluation?.productivityScore ?? 0),
-  )[0];
+  const topProductivityUser = rows
+    .filter(
+      (row) =>
+        row.user.measurementStatus === "measured" &&
+        (row.evaluation?.productivityScore ?? 0) > 0,
+    )
+    .sort(
+      (a, b) =>
+        (b.evaluation?.productivityScore ?? 0) -
+        (a.evaluation?.productivityScore ?? 0),
+    )[0];
   const selectedProfile = selectedProfileEmail
     ? individualProfileDataByEmail[selectedProfileEmail] ?? null
     : null;
@@ -4254,7 +4270,11 @@ function AdoptionView({
         <article>
           <span><UserCheck size={17} />활동 사용자</span>
           <strong>{periodSummary.activeUsers}명</strong>
-          <small>관측 {rows.length}명 중</small>
+          <small>
+            {sharedAccountRowCount > 0
+              ? `측정 ${measuredRowCount}명 · 공통 계정 ${sharedAccountRowCount}명`
+              : `관측 ${measuredRowCount}명 중`}
+          </small>
         </article>
         <article>
           <span><Bot size={17} />월 누적 요청</span>
@@ -4327,7 +4347,7 @@ function AdoptionView({
           <article>
             <span>생산성 신호 상위</span>
             <strong>{topProductivityUser?.user.displayName ?? "-"}</strong>
-            <small>{topProductivityUser?.evaluation?.evidence}</small>
+            <small>{topProductivityUser?.evaluation?.evidence ?? "관측 데이터 없음"}</small>
           </article>
           <article>
             <span>원천 범위</span>
@@ -4366,6 +4386,7 @@ function AdoptionView({
             </thead>
             <tbody>
               {rows.map(({ user, evaluation, monthlySpend }, index) => {
+                const metricsMeasured = user.measurementStatus === "measured";
                 const productivityScore = evaluation?.productivityScore ?? 0;
                 const productivityLevel = evaluation?.productivityLevel ?? "unobserved";
                 return (
@@ -4388,56 +4409,68 @@ function AdoptionView({
                       ) : (
                         <>
                           <strong>{user.displayName}</strong>
-                          <small>{user.email}</small>
+                          {user.displayAccount && <small>{user.displayAccount}</small>}
                         </>
                       )}
                     </td>
                     <td>
-                      <IndividualScoreBadge
-                        level={productivityLevel}
-                        score={productivityScore}
-                      />
+                      {metricsMeasured && (
+                        <IndividualScoreBadge
+                          level={productivityLevel}
+                          score={productivityScore}
+                        />
+                      )}
                     </td>
                     <td>
-                      <IndividualActivityCoverageCell
-                        detailsMissing={evaluation?.codeActivityDetailsMissing ?? false}
-                        unit="건"
-                        value={evaluation?.humanPrompts ?? 0}
-                      />
+                      {metricsMeasured && (
+                        <IndividualActivityCoverageCell
+                          detailsMissing={evaluation?.codeActivityDetailsMissing ?? false}
+                          unit="건"
+                          value={evaluation?.humanPrompts ?? 0}
+                        />
+                      )}
                     </td>
                     <td>
-                      <IndividualActivityCoverageCell
-                        detailsMissing={evaluation?.codeActivityDetailsMissing ?? false}
-                        unit="일"
-                        value={evaluation?.activeDays ?? 0}
-                      />
+                      {metricsMeasured && (
+                        <IndividualActivityCoverageCell
+                          detailsMissing={evaluation?.codeActivityDetailsMissing ?? false}
+                          unit="일"
+                          value={evaluation?.activeDays ?? 0}
+                        />
+                      )}
                     </td>
                     <td>
-                      {evaluation?.codeLines == null
-                        ? <span className="state-pill neutral">월 단위</span>
-                        : `${numberFormat.format(evaluation.codeLines)}줄`}
+                      {metricsMeasured && (
+                        evaluation?.codeLines == null
+                          ? <span className="state-pill neutral">월 단위</span>
+                          : `${numberFormat.format(evaluation.codeLines)}줄`
+                      )}
                     </td>
                     <td>
-                      {monthlySpend ? (
+                      {metricsMeasured && (monthlySpend ? (
                         <>
                           <strong>{formatTokens(monthlySpend.totalTokens)}</strong>
                           <small>{numberFormat.format(monthlySpend.requests)}요청 · {formatPreciseUsd(monthlySpend.netSpendUsd)}</small>
                         </>
                       ) : (
                         <span className="state-pill neutral">월별 Spend 미수집</span>
-                      )}
+                      ))}
                     </td>
                     <td>
-                      <div className="individual-usage-scope">
-                        <div>
-                          <span>제품</span>
-                          <p>{user.products.join(" · ") || "-"}</p>
+                      {user.usageScopeOverride ? (
+                        <p className="individual-shared-account-scope">{user.usageScopeOverride}</p>
+                      ) : (
+                        <div className="individual-usage-scope">
+                          <div>
+                            <span>제품</span>
+                            <p>{user.products.join(" · ") || "-"}</p>
+                          </div>
+                          <div>
+                            <span>모델</span>
+                            <p>{user.models.join(" · ") || "-"}</p>
+                          </div>
                         </div>
-                        <div>
-                          <span>모델</span>
-                          <p>{user.models.join(" · ") || "-"}</p>
-                        </div>
-                      </div>
+                      )}
                     </td>
                   </tr>
                 );

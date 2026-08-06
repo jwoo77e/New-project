@@ -4206,6 +4206,15 @@ td strong {
   overflow-wrap: anywhere;
 }
 
+.individual-shared-account-scope {
+  max-width: 220px;
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
 .individual-coverage-cell {
   display: grid;
   gap: 3px;

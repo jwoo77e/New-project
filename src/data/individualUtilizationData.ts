@@ -3,6 +3,7 @@ import monthlySpendSnapshotJson from "./individualMonthlySpendSnapshot.json";
 
 export type IndividualPeriodMode = "month" | "week";
 export type IndividualEvaluationLevel = "leading" | "active" | "growing" | "early" | "unobserved";
+export type IndividualMeasurementStatus = "measured" | "shared-account-unmeasured";
 
 type ActivitySignal = {
   conversations: number;
@@ -100,6 +101,9 @@ export type IndividualPeriodEvaluation = {
 };
 
 export type IndividualUtilizationUser = RawIndividualUser & {
+  measurementStatus: IndividualMeasurementStatus;
+  displayAccount: string | null;
+  usageScopeOverride: string | null;
   totalCodeLines: number;
   totalConversations: number;
   totalHumanPrompts: number;
@@ -227,7 +231,7 @@ const allCodeLines = snapshot.users.map((user) =>
   Object.values(user.monthlyCodeLines).reduce((sum, value) => sum + value, 0),
 );
 
-const users: IndividualUtilizationUser[] = snapshot.users.map((user) => {
+const measuredUsers: IndividualUtilizationUser[] = snapshot.users.map((user) => {
   const totalActivity = sumActivity(user.weeklyActivity);
   const totalCodeLines = Object.values(user.monthlyCodeLines).reduce((sum, value) => sum + value, 0);
   const activeCodeMonths = months.filter((month) => (user.monthlyCodeLines[month] ?? 0) > 0).length;
@@ -342,6 +346,9 @@ const users: IndividualUtilizationUser[] = snapshot.users.map((user) => {
 
   return {
     ...user,
+    measurementStatus: "measured",
+    displayAccount: user.email,
+    usageScopeOverride: null,
     totalCodeLines,
     totalConversations: totalActivity.conversations,
     totalHumanPrompts: totalActivity.humanPrompts,
@@ -359,6 +366,104 @@ const users: IndividualUtilizationUser[] = snapshot.users.map((user) => {
     weekEvaluations,
   };
 });
+
+const sharedAccountUsers: IndividualUtilizationUser[] = [
+  {
+    email: "shared-account:lim-seongbeom",
+    displayName: "임성범 부장",
+    usageScopeOverride: "Claude 및 Genspark 공통 계정 사용",
+    products: ["Claude", "Genspark"],
+  },
+  {
+    email: "shared-account:jo-jooyeon",
+    displayName: "조주연 부장",
+    usageScopeOverride: "Claude 및 Genspark 공통 계정 사용",
+    products: ["Claude", "Genspark"],
+  },
+  {
+    email: "shared-account:lee-hyeongbae",
+    displayName: "이형배 상무",
+    usageScopeOverride: "Claude 공통 계정 사용",
+    products: ["Claude"],
+  },
+].map(({ email, displayName, usageScopeOverride, products }) => ({
+  email,
+  displayName,
+  measurementStatus: "shared-account-unmeasured",
+  displayAccount: null,
+  usageScopeOverride,
+  requests: 0,
+  promptTokens: 0,
+  completionTokens: 0,
+  totalTokens: 0,
+  netSpendUsd: 0,
+  grossSpendUsd: 0,
+  uncachedInputTokens: 0,
+  cacheReadTokens: 0,
+  cacheWrite5mTokens: 0,
+  cacheWrite1hTokens: 0,
+  webSearchCount: 0,
+  products,
+  models: [],
+  productUsage: {},
+  modelUsage: {},
+  monthlyCodeLines: {},
+  monthlyActivity: {},
+  weeklyActivity: {},
+  totalCodeLines: 0,
+  totalConversations: 0,
+  totalHumanPrompts: 0,
+  totalAssistantResponses: 0,
+  totalActiveDays: 0,
+  activeWeeks: 0,
+  activeCodeMonths: 0,
+  overallActivityScore: 0,
+  overallProductivityScore: 0,
+  overallActivityLevel: "unobserved",
+  overallProductivityLevel: "unobserved",
+  topProduct: "공통 계정 사용",
+  topModel: "공통 계정 사용",
+  monthEvaluations: Object.fromEntries(
+    months.map((month) => [
+      month,
+      {
+        key: month,
+        activityScore: 0,
+        productivityScore: null,
+        activityLevel: "unobserved",
+        productivityLevel: "unobserved",
+        conversations: 0,
+        humanPrompts: 0,
+        assistantResponses: 0,
+        activeDays: 0,
+        codeLines: null,
+        codeActivityDetailsMissing: false,
+        evidence: "공통 계정 사용으로 개인별 측정 미수집",
+      } satisfies IndividualPeriodEvaluation,
+    ]),
+  ),
+  weekEvaluations: Object.fromEntries(
+    weeks.map((week) => [
+      week,
+      {
+        key: week,
+        activityScore: 0,
+        productivityScore: null,
+        activityLevel: "unobserved",
+        productivityLevel: "unobserved",
+        conversations: 0,
+        humanPrompts: 0,
+        assistantResponses: 0,
+        activeDays: 0,
+        codeLines: null,
+        codeActivityDetailsMissing: false,
+        evidence: "공통 계정 사용으로 개인별 측정 미수집",
+      } satisfies IndividualPeriodEvaluation,
+    ]),
+  ),
+}));
+
+const users = [...measuredUsers, ...sharedAccountUsers];
 
 const monthlyTrend: IndividualTrendPoint[] = months.map((month) => {
   const activity = users.reduce(
