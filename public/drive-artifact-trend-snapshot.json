@@ -3,11 +3,11 @@
   "source": {
     "name": "Claude Drive 날짜별 저장 파일 증감",
     "status": "정상",
-    "collectedAt": "2026-08-06 21:05 KST",
-    "generatedAt": "2026-08-06T12:05:35.000Z",
-    "period": "2026-06-23 ~ 2026-08-06",
+    "collectedAt": "2026-08-07 21:02 KST",
+    "generatedAt": "2026-08-07T12:02:36.988Z",
+    "period": "2026-06-23 ~ 2026-08-07",
     "schedule": "매일 21:00 KST",
-    "note": "김재우·이형배 최신 검증 스냅샷과 전략사업팀 Drive 루트의 연결 조회 결과를 합산했습니다. 세 루트 모두 하위 폴더를 포함하며 파일 생성일을 한국시간 기준으로 집계합니다."
+    "note": "김재우·이형배 최신 검증 스냅샷에 2026-08-07 연결 Drive 하위 폴더 조회 결과를 합산했습니다. 세 루트 모두 하위 폴더를 포함하며 파일 생성일을 한국시간 기준으로 집계합니다."
   },
   "repositories": [
     {
@@ -16,10 +16,10 @@
       "folderUrl": "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link",
       "artifacts": [],
       "inventory": {
-        "fileCount": 1589,
-        "directFileCount": 201,
-        "nestedFileCount": 1388,
-        "folderCount": 442,
+        "fileCount": 1628,
+        "directFileCount": 204,
+        "nestedFileCount": 1424,
+        "folderCount": 452,
         "maxDepth": 6,
         "metadataDateAnomalyCount": 85,
         "dailyCounts": [
@@ -202,6 +202,10 @@
           {
             "date": "2026-08-06",
             "count": 38
+          },
+          {
+            "date": "2026-08-07",
+            "count": 39
           }
         ]
       }
@@ -212,10 +216,10 @@
       "folderUrl": "https://drive.google.com/drive/folders/1OFfN4APAViKNtgURnmn9W51jSvcxy6fg?usp=sharing",
       "artifacts": [],
       "inventory": {
-        "fileCount": 1082,
+        "fileCount": 1093,
         "directFileCount": 1,
-        "nestedFileCount": 1081,
-        "folderCount": 191,
+        "nestedFileCount": 1092,
+        "folderCount": 200,
         "maxDepth": 4,
         "metadataDateAnomalyCount": 0,
         "dailyCounts": [
@@ -350,6 +354,10 @@
           {
             "date": "2026-08-06",
             "count": 42
+          },
+          {
+            "date": "2026-08-07",
+            "count": 11
           }
         ]
       }
@@ -376,10 +384,10 @@
     }
   ],
   "totals": {
-    "files": 2674,
-    "directFiles": 203,
-    "nestedFiles": 2471,
-    "folders": 634,
+    "files": 2724,
+    "directFiles": 206,
+    "nestedFiles": 2518,
+    "folders": 653,
     "metadataDateAnomalies": 85
   }
 }
