@@ -1753,7 +1753,6 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
           <ul>
             <li><CheckCircle2 size={15} /><span><b>{workforce.uncoveredEmployees}명 계정 할당</b>개인별 투입 비용과 산출 현황 연결</span></li>
             <li><CheckCircle2 size={15} /><span><b>저활용 {workforce.lowUsageUsers.length}명 별도 관리</b>프로젝트 종료·채팅 중심 사용에 따라 재배치 또는 코칭</span></li>
-            <li><CheckCircle2 size={15} /><span><b>고활용 {workforce.powerUsers.length}명 확산 리더</b>하네스·스킬·Codex 활용 방식을 표준화</span></li>
           </ul>
           <footer>현재 월 최소 비용 대비 +{formatRate(incrementalRate)} · 질적 사유는 운영 확인 기준</footer>
         </aside>
