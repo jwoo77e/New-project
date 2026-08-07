@@ -129,7 +129,7 @@ import {
   type GensparkDriveSnapshot,
 } from "./lib/gensparkDriveSnapshot";
 
-type ViewKey = "overview" | "monthly" | "adoption" | "approval" | "api";
+type ViewKey = "overview" | "monthly" | "adoption" | "approval";
 type LayoutMode = "command" | "editorial" | "signal";
 type ViewHeaderMetric = {
   label: string;
@@ -634,32 +634,6 @@ function App() {
     sourceMeta.totalActual > 0 ? (commonDepartment.total / sourceMeta.totalActual) * 100 : 0;
   const actualRange = monthRangeLabel(monthlyActuals);
   const forecastRange = monthRangeLabel(forecast);
-  const apiTotals = useMemo(() => {
-    const totalRequests = apiUsageData.providers.reduce((sum, item) => sum + item.requests, 0);
-    const totalTokens = apiUsageData.providers.reduce(
-      (sum, item) => sum + item.inputTokens + item.outputTokens,
-      0,
-    );
-    const totalCostUsd = apiUsageData.providers.reduce((sum, item) => sum + item.costUsd, 0);
-    const weightedErrors = apiUsageData.providers.reduce(
-      (sum, item) => sum + item.errorRate * item.requests,
-      0,
-    );
-    const weightedLatency = apiUsageData.providers.reduce(
-      (sum, item) => sum + item.avgLatencyMs * item.requests,
-      0,
-    );
-    const activeKeys = apiUsageData.providers.reduce((sum, item) => sum + item.activeKeys, 0);
-
-    return {
-      totalRequests,
-      totalTokens,
-      totalCostUsd,
-      avgErrorRate: totalRequests ? weightedErrors / totalRequests : 0,
-      avgLatencyMs: totalRequests ? weightedLatency / totalRequests : 0,
-      activeKeys,
-    };
-  }, [apiUsageData]);
   const claudeTeamUsageData = initialClaudeTeamUsageData;
   const aiToolApprovalData = initialAiToolApprovalData;
   const gensparkUsageData = useMemo<GensparkUsageData>(
@@ -1062,43 +1036,6 @@ function App() {
         },
       ],
     };
-  } else {
-    viewHeader = {
-      eyebrow: "API Operations",
-      title: "API 사용",
-      description: "공급자별 토큰·요청·비용·키 상태를 분리해 이상 사용과 수집 누락을 빠르게 확인합니다.",
-      freshness: `${apiUsageData.source.period} · ${formatKstDateTime(apiUsageData.source.generatedAt)}`,
-      metrics: [
-        {
-          icon: <WalletCards size={19} />,
-          label: "API 계약 고정비",
-          value: formatManWon(fixedApiServiceMonthlyKrw),
-          detail: "GH AI Agent · 8월부터",
-          tone: "green",
-        },
-        {
-          icon: <CircleDollarSign size={19} />,
-          label: "실측 API 변동비",
-          value: formatUsd(apiTotals.totalCostUsd),
-          detail: apiUsageData.source.mode,
-          tone: "amber",
-        },
-        {
-          icon: <Bot size={19} />,
-          label: "API 토큰",
-          value: formatTokens(apiTotals.totalTokens),
-          detail: "OpenAI · Gemini · Claude",
-          tone: "teal",
-        },
-        {
-          icon: <Cpu size={19} />,
-          label: "수집된 요청",
-          value: `${numberFormat.format(apiTotals.totalRequests)}건`,
-          detail: "Claude 요청 수 미제공",
-          tone: "green",
-        },
-      ],
-    };
   }
 
   return (
@@ -1217,14 +1154,6 @@ function App() {
           <LineChart size={17} />
           월별/예측
         </button>
-        <button
-          className={activeView === "api" ? "is-active" : ""}
-          type="button"
-          onClick={() => setActiveView("api")}
-        >
-          <Bot size={17} />
-          API 사용
-        </button>
       </nav>
 
       {viewHeader && <DashboardViewHeader model={viewHeader} />}
@@ -1258,37 +1187,6 @@ function App() {
             tone="steel"
             value={formatManWon(productivityModel.lastClosedCostKrw)}
             footer={`사용 데이터 대비 ${productivityModel.lagMonths}개월 후행`}
-          />
-        </section>
-      ) : activeView === "api" ? (
-        <section className="metric-grid" aria-label="API 사용 핵심 지표">
-          <MetricCard
-            icon={<WalletCards size={21} />}
-            label="API 계약 고정비"
-            tone="green"
-            value={formatManWon(fixedApiServiceMonthlyKrw)}
-            footer="GH AI Agent 개발 · 2026년 8월부터"
-          />
-          <MetricCard
-            icon={<Bot size={21} />}
-            label={`${apiUsageData.source.period} API 토큰`}
-            tone="teal"
-            value={formatTokens(apiTotals.totalTokens)}
-            footer={`OpenAI · Gemini · Claude`}
-          />
-          <MetricCard
-            icon={<Cpu size={21} />}
-            label="수집된 요청"
-            tone="steel"
-            value={`${numberFormat.format(apiTotals.totalRequests)}건`}
-            footer="Claude는 요청 수 미제공"
-          />
-          <MetricCard
-            icon={<CircleDollarSign size={21} />}
-            label="실측 API 변동비"
-            tone="amber"
-            value={formatUsd(apiTotals.totalCostUsd)}
-            footer={apiUsageData.source.mode}
           />
         </section>
       ) : activeView === "approval" ? (
@@ -1392,10 +1290,6 @@ function App() {
       )}
 
       {activeView === "approval" && <AiToolApprovalView approvalData={aiToolApprovalData} />}
-
-      {activeView === "api" && (
-        <ApiUsageView apiUsageData={apiUsageData} fixedApiServiceRecords={fixedApiServiceRecords} />
-      )}
 
       {toast && <div className="toast">{toast}</div>}
     </main>
@@ -1568,7 +1462,6 @@ function ExecutiveDesignOverview({
           </div>
         </div>
         <ExecutiveWorkforceDecisionBoard model={model} />
-        <AxStageStrip stages={stageSignals} />
       </section>
     );
   }
@@ -1609,7 +1502,6 @@ function ExecutiveDesignOverview({
           {chart}
         </div>
         <div className="editorial-bottom">
-          <AxStageStrip stages={stageSignals} />
           <section className="management-notes">
             <div className="section-heading">
               <div>
@@ -1866,42 +1758,6 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
           <footer>현재 월 최소 비용 대비 +{formatRate(incrementalRate)} · 질적 사유는 운영 확인 기준</footer>
         </aside>
       </div>
-    </section>
-  );
-}
-
-function AxStageStrip({
-  stages,
-}: {
-  stages: Array<{
-    step: string;
-    label: string;
-    value: string;
-    detail: string;
-    direction: string;
-    tone: string;
-  }>;
-}) {
-  return (
-    <section className="ax-stage-strip" aria-label="AX 단계별 현황">
-      <div className="ax-stage-strip-title">
-        <ListOrdered size={18} />
-        <div>
-          <strong>AX 단계별 실행 현황</strong>
-          <small>보급 → 활용 → 산출</small>
-        </div>
-      </div>
-      {stages.map((stage, index) => (
-        <div className="ax-stage-summary" key={stage.step}>
-          <span className={`signal-step ${stage.tone}`}>{stage.step}</span>
-          <div>
-            <small>{stage.label} KPI</small>
-            <strong>{stage.value}</strong>
-            <span>{stage.detail} · {stage.direction}</span>
-          </div>
-          {index < stages.length - 1 && <ArrowRight size={18} aria-hidden="true" />}
-        </div>
-      ))}
     </section>
   );
 }
