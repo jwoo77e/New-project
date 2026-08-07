@@ -397,8 +397,8 @@ const unmeasuredUserSeeds: Array<{
     displayName: "조주연 부장",
     measurementStatus: "shared-account-unmeasured",
     displayAccount: null,
-    usageScopeOverride: "Claude 및 Genspark 공통 계정 사용",
-    products: ["Claude", "Genspark"],
+    usageScopeOverride: "Claude, Genspark 및 Gamma 공통 계정 사용",
+    products: ["Claude", "Genspark", "Gamma"],
     topProduct: "공통 계정 사용",
     topModel: "공통 계정 사용",
     evidence: "공통 계정 사용으로 개인별 측정 미수집",
@@ -447,6 +447,40 @@ const unmeasuredUserSeeds: Array<{
     topModel: "미수집",
     evidence: "가입 계정이나 Spend·Code Lines 원천 사용량 미수집",
   },
+  ...([
+    ["park-sujin", "박수진 과장"],
+    ["song-inna", "송인나 대리"],
+    ["choi-jongyun", "최종윤 이사"],
+    ["yoon-jongho", "윤종호 부장"],
+    ["lee-changseop", "이창섭 부장"],
+    ["jo-uksang", "조욱상 이사"],
+    ["lee-byeonghyeon", "이병현 이사"],
+    ["kang-hoon", "강훈 부장"],
+    ["lee-jinuk", "이진욱 부장"],
+    ["park-myeongsu", "박명수 과장"],
+    ["kim-doyul", "김도율 차장"],
+    ["kim-jinhee", "김진희 과장"],
+    ["ko-wonsang", "고원상 대리"],
+    ["choi-yongho", "최용호 대리"],
+    ["kang-jaemin", "강재민 사원"],
+    ["park-byeongmin", "박병민 이사"],
+  ] as const).map(([id, displayName]) => {
+    const usesClaudeCommonAccount =
+      id === "kim-doyul" || id === "choi-jongyun" || id === "park-byeongmin";
+    return {
+      email: `chatgpt-account:${id}`,
+      displayName,
+      measurementStatus: "source-uncollected" as const,
+      displayAccount: null,
+      usageScopeOverride: usesClaudeCommonAccount
+        ? "chatGPT 공통 계정 사용 · Claude 공통 계정 사용"
+        : "chatGPT 공통 계정 사용",
+      products: usesClaudeCommonAccount ? ["ChatGPT", "Claude"] : ["ChatGPT"],
+      topProduct: usesClaudeCommonAccount ? "chatGPT · Claude 공통 계정" : "chatGPT 공통 계정",
+      topModel: "미수집",
+      evidence: "공통 계정 사용 · 세부 사용량 원천 미수집",
+    };
+  }),
 ];
 
 const unmeasuredUsers: IndividualUtilizationUser[] = unmeasuredUserSeeds.map(({ evidence, ...seed }) => ({

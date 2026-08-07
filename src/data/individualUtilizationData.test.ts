@@ -9,7 +9,7 @@ describe("individualUtilizationData", () => {
     const data = individualUtilizationData;
 
     expect(data.source.spend.rowCount).toBe(180);
-    expect(data.users).toHaveLength(25);
+    expect(data.users).toHaveLength(41);
     expect(data.users.filter((user) => user.measurementStatus === "measured")).toHaveLength(19);
     expect(data.totals.requests).toBe(264669);
     expect(data.totals.totalTokens).toBe(52004482235);
@@ -34,7 +34,7 @@ describe("individualUtilizationData", () => {
     expect(sharedAccountUsers.every((user) => user.displayAccount === null)).toBe(true);
     expect(sharedAccountUsers.map((user) => user.usageScopeOverride)).toEqual([
       "Claude 및 Genspark 공통 계정 사용",
-      "Claude 및 Genspark 공통 계정 사용",
+      "Claude, Genspark 및 Gamma 공통 계정 사용",
       "Claude 공통 계정 사용",
       "Claude 가입 계정 사용",
       "Claude 가입 계정 사용",
@@ -68,6 +68,57 @@ describe("individualUtilizationData", () => {
           evaluation.productivityScore === null &&
           evaluation.codeLines === null &&
           evaluation.evidence.includes("원천 사용량 미수집"),
+      ),
+    ).toBe(true);
+  });
+
+  it("adds the requested ChatGPT users with uncollected metrics", () => {
+    const expectedNames = [
+      "박수진 과장",
+      "송인나 대리",
+      "최종윤 이사",
+      "윤종호 부장",
+      "이창섭 부장",
+      "조욱상 이사",
+      "이병현 이사",
+      "강훈 부장",
+      "이진욱 부장",
+      "박명수 과장",
+      "김도율 차장",
+      "김진희 과장",
+      "고원상 대리",
+      "최용호 대리",
+      "강재민 사원",
+      "박병민 이사",
+    ];
+    const users = individualUtilizationData.users.filter((user) =>
+      user.email.startsWith("chatgpt-account:"),
+    );
+
+    expect(users.map((user) => user.displayName)).toEqual(expectedNames);
+    const claudeCommonAccountNames = new Set([
+      "김도율 차장",
+      "최종윤 이사",
+      "박병민 이사",
+    ]);
+    expect(
+      users.every(
+        (user) =>
+          user.measurementStatus === "source-uncollected" &&
+          user.displayAccount === null &&
+          user.usageScopeOverride === (
+            claudeCommonAccountNames.has(user.displayName)
+              ? "chatGPT 공통 계정 사용 · Claude 공통 계정 사용"
+              : "chatGPT 공통 계정 사용"
+          ) &&
+          user.requests === 0 &&
+          user.totalTokens === 0 &&
+          user.totalCodeLines === 0 &&
+          Object.values(user.monthEvaluations).every(
+            (evaluation) =>
+              evaluation.productivityScore === null &&
+              evaluation.codeLines === null,
+          ),
       ),
     ).toBe(true);
   });

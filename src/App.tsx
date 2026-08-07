@@ -4370,7 +4370,7 @@ function AdoptionView({
             <tbody>
               {rows.map(({ user, evaluation, monthlySpend }, index) => {
                 const metricsMeasured = user.measurementStatus === "measured";
-                const sourceUncollected = user.measurementStatus === "source-uncollected";
+                const metricsUncollected = !metricsMeasured;
                 const productivityScore = evaluation?.productivityScore ?? 0;
                 const productivityLevel = evaluation?.productivityLevel ?? "unobserved";
                 return (
@@ -4403,7 +4403,7 @@ function AdoptionView({
                           level={productivityLevel}
                           score={productivityScore}
                         />
-                      ) : sourceUncollected ? <span className="state-pill neutral">미수집</span> : null}
+                      ) : metricsUncollected ? <span className="state-pill neutral">미수집</span> : null}
                     </td>
                     <td>
                       {metricsMeasured ? (
@@ -4412,7 +4412,7 @@ function AdoptionView({
                           unit="건"
                           value={evaluation?.humanPrompts ?? 0}
                         />
-                      ) : sourceUncollected ? <span className="state-pill neutral">미수집</span> : null}
+                      ) : metricsUncollected ? <span className="state-pill neutral">미수집</span> : null}
                     </td>
                     <td>
                       {metricsMeasured ? (
@@ -4421,14 +4421,14 @@ function AdoptionView({
                           unit="일"
                           value={evaluation?.activeDays ?? 0}
                         />
-                      ) : sourceUncollected ? <span className="state-pill neutral">미수집</span> : null}
+                      ) : metricsUncollected ? <span className="state-pill neutral">미수집</span> : null}
                     </td>
                     <td>
                       {metricsMeasured ? (
                         evaluation?.codeLines == null
                           ? <span className="state-pill neutral">월 단위</span>
                           : `${numberFormat.format(evaluation.codeLines)}줄`
-                      ) : sourceUncollected ? <span className="state-pill neutral">미수집</span> : null}
+                      ) : metricsUncollected ? <span className="state-pill neutral">미수집</span> : null}
                     </td>
                     <td>
                       {metricsMeasured ? (monthlySpend ? (
@@ -4438,7 +4438,7 @@ function AdoptionView({
                         </>
                       ) : (
                         <span className="state-pill neutral">월별 Spend 미수집</span>
-                      )) : sourceUncollected ? <span className="state-pill neutral">미수집</span> : null}
+                      )) : metricsUncollected ? <span className="state-pill neutral">미수집</span> : null}
                     </td>
                     <td>
                       {user.usageScopeOverride ? (
