@@ -949,45 +949,8 @@ function App() {
     window.setTimeout(() => setToast(""), 2400);
   };
 
-  let viewHeader: ViewHeaderModel;
-  if (activeView === "overview") {
-    viewHeader = {
-      eyebrow: "Executive Overview",
-      title: "경영 인사이트",
-      description: "확정 비용과 최신 활동·산출 신호를 같은 월 기준으로 연결해 경영 판단에 필요한 변화만 보여줍니다.",
-      freshness: `${productivityModel.currentMonthLabel} Drive 저장 · ${productivityModel.classifiedActivityMonthLabel} 대화 분류 · ${productivityModel.lastClosedMonthLabel} 비용 확정`,
-      metrics: [
-        {
-          icon: <ShieldCheck size={19} />,
-          label: "최근 확정 비용",
-          value: formatManWon(productivityModel.lastClosedCostKrw),
-          detail: `${productivityModel.lagMonths}개월 후행`,
-          tone: "steel",
-        },
-        {
-          icon: <CircleDollarSign size={19} />,
-          label: "현재 월 최소 비용",
-          value: formatManWon(productivityModel.currentFixedCostKrw),
-          detail: "API·변동비 미포함",
-          tone: "amber",
-        },
-        {
-          icon: <UserCheck size={19} />,
-          label: "Claude 활성",
-          value: `${productivityModel.activeUsers}/${productivityModel.licensedUsers}명`,
-          detail: `활성률 ${formatRate(productivityModel.activationRate)}`,
-          tone: "teal",
-        },
-        {
-          icon: <FileText size={19} />,
-          label: `${productivityModel.currentMonthLabel} Drive 신규 저장`,
-          value: `${numberFormat.format(productivityModel.currentMonthDriveStoredFiles)}개`,
-          detail: `매일 21시 · 누적 저장 ${numberFormat.format(latestDriveFileTotal)}개`,
-          tone: "green",
-        },
-      ],
-    };
-  } else if (activeView === "adoption") {
+  let viewHeader: ViewHeaderModel | null = null;
+  if (activeView === "adoption") {
     viewHeader = {
       eyebrow: "Individual Utilization",
       title: "개인별 활용성",
@@ -1264,7 +1227,7 @@ function App() {
         </button>
       </nav>
 
-      <DashboardViewHeader model={viewHeader} />
+      {viewHeader && <DashboardViewHeader model={viewHeader} />}
 
       {activeView === "overview" ? (
         <section className="metric-grid" aria-label="비용과 생산성 핵심 지표">
@@ -1603,55 +1566,8 @@ function ExecutiveDesignOverview({
             <span className="eyebrow">Executive Command Center</span>
             <h2>개인 산출 추적 범위와 AI 투자 효율을 한 화면에서 판단</h2>
           </div>
-          {rangeControl}
         </div>
         <ExecutiveWorkforceDecisionBoard model={model} />
-        <div className="command-grid">
-          <section className="command-chart-area">
-            <div className="section-heading">
-              <div>
-                <strong>비용 대비 AX 신호 추이</strong>
-                <span>확정·최소 비용, Claude Export·Drive 통합 대화, 매일 수집되는 Drive 저장 파일</span>
-              </div>
-              <span className="state-pill neutral">비용 후행 보정</span>
-            </div>
-            {chart}
-          </section>
-          <aside className="decision-rail" aria-label="이번 주 판단">
-            <div className="section-heading">
-              <div>
-                <strong>이번 주 판단</strong>
-                <span>우선순위가 높은 관리 신호</span>
-              </div>
-            </div>
-            <ol>
-              <li>
-                <span className="decision-rank coral">1</span>
-                <div>
-                  <b>월 {formatManWon(workforce.incrementalMonthlyKrw)} 증액 승인 검토</b>
-                  <p>{workforce.uncoveredEmployees}명 추가 계정으로 개인 산출 추적률을 100%까지 확대합니다.</p>
-                </div>
-                <ChevronRight size={17} />
-              </li>
-              <li>
-                <span className="decision-rank amber">2</span>
-                <div>
-                  <b>저활용 {workforce.lowUsageUsers.length}명은 업무 적합성 재점검</b>
-                  <p>프로젝트 종료와 채팅 중심 사용을 구분해 계정 회수보다 재배치·활용 코칭을 우선합니다.</p>
-                </div>
-                <ChevronRight size={17} />
-              </li>
-              <li>
-                <span className="decision-rank green">3</span>
-                <div>
-                  <b>고활용 {workforce.powerUsers.length}명의 실행 방식을 표준화</b>
-                  <p>하네스·스킬·Codex 병행 방식을 사내 플레이북과 동료 코칭으로 확산합니다.</p>
-                </div>
-                <ChevronRight size={17} />
-              </li>
-            </ol>
-          </aside>
-        </div>
         <AxStageStrip stages={stageSignals} />
       </section>
     );
