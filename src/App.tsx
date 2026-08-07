@@ -4104,7 +4104,10 @@ function AdoptionView({
   const [query, setQuery] = useState("");
   const [selectedProfileEmail, setSelectedProfileEmail] = useState<string | null>(null);
   const periodLabel = fullMonthLabel(selectedMonth);
-  const trendData = data.monthlyTrend;
+  const trendData = data.monthlyTrend.map((item) => ({
+    ...item,
+    totalTokens: data.monthlySpend[item.key]?.totals.totalTokens ?? null,
+  }));
   const selectedMonthlySpend = data.monthlySpend[selectedMonth] ?? null;
   const coverageNote = selectedMonthlySpend
     ? `${selectedMonthlySpend.period}${selectedMonthlySpend.coverage === "partial" ? " · 부분 누적" : ""}`
@@ -4125,7 +4128,12 @@ function AdoptionView({
       )
       .sort((a, b) => {
         if (a.user.measurementStatus !== b.user.measurementStatus) {
-          return a.user.measurementStatus === "measured" ? -1 : 1;
+          const statusRank = (user: IndividualUtilizationUser) => {
+            if (user.measurementStatus === "measured") return 0;
+            if (user.measurementStatus === "source-uncollected") return 1;
+            return 2;
+          };
+          return statusRank(a.user) - statusRank(b.user);
         }
         const aEvaluation = a.evaluation;
         const bEvaluation = b.evaluation;
@@ -4142,7 +4150,12 @@ function AdoptionView({
   }, [data.users, query, selectedMonth, selectedMonthlySpend, sortKey]);
 
   const measuredRowCount = rows.filter((row) => row.user.measurementStatus === "measured").length;
-  const sharedAccountRowCount = rows.length - measuredRowCount;
+  const sharedAccountRowCount = rows.filter(
+    (row) => row.user.measurementStatus === "shared-account-unmeasured",
+  ).length;
+  const sourceUncollectedRowCount = rows.filter(
+    (row) => row.user.measurementStatus === "source-uncollected",
+  ).length;
 
   const periodSummary = useMemo(
     () =>
@@ -4181,19 +4194,6 @@ function AdoptionView({
     );
   }, [rows, selectedMonthlySpend]);
 
-  const selectedTrendPoint = trendData.find((item) => item.key === selectedMonth);
-  const topActivityUser = rows.find((row) => (row.evaluation?.activityScore ?? 0) > 0);
-  const topProductivityUser = rows
-    .filter(
-      (row) =>
-        row.user.measurementStatus === "measured" &&
-        (row.evaluation?.productivityScore ?? 0) > 0,
-    )
-    .sort(
-      (a, b) =>
-        (b.evaluation?.productivityScore ?? 0) -
-        (a.evaluation?.productivityScore ?? 0),
-    )[0];
   const selectedProfile = selectedProfileEmail
     ? individualProfileDataByEmail[selectedProfileEmail] ?? null
     : null;
@@ -4271,8 +4271,8 @@ function AdoptionView({
           <span><UserCheck size={17} />활동 사용자</span>
           <strong>{periodSummary.activeUsers}명</strong>
           <small>
-            {sharedAccountRowCount > 0
-              ? `측정 ${measuredRowCount}명 · 공통 계정 ${sharedAccountRowCount}명`
+            {sharedAccountRowCount > 0 || sourceUncollectedRowCount > 0
+              ? `측정 ${measuredRowCount}명 · 공통 계정 ${sharedAccountRowCount}명 · 미수집 ${sourceUncollectedRowCount}명`
               : `관측 ${measuredRowCount}명 중`}
           </small>
         </article>
@@ -4293,11 +4293,11 @@ function AdoptionView({
         </article>
       </section>
 
-      <section className="panel panel-large individual-trend-panel">
+      <section className="panel panel-wide individual-trend-panel">
         <div className="panel-header">
           <div>
             <span className="eyebrow">Utilization Trend</span>
-            <h2>월별 활동과 코드 산출 추이</h2>
+            <h2>월별 Code Lines와 토큰 사용량 추이</h2>
           </div>
           <span className="state-pill neutral">{data.months.length}개월</span>
         </div>
@@ -4306,9 +4306,16 @@ function AdoptionView({
             <ComposedChart data={trendData} margin={{ top: 12, right: 18, left: 0, bottom: 0 }}>
               <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
               <XAxis dataKey="label" tickLine={false} axisLine={false} />
-              <YAxis yAxisId="activity" tickLine={false} axisLine={false} width={52} allowDecimals={false} />
               <YAxis
                 yAxisId="code"
+                tickFormatter={(value) => formatTokens(Number(value))}
+                tickLine={false}
+                axisLine={false}
+                width={62}
+                allowDecimals={false}
+              />
+              <YAxis
+                yAxisId="tokens"
                 orientation="right"
                 tickFormatter={(value) => formatTokens(Number(value))}
                 tickLine={false}
@@ -4317,48 +4324,24 @@ function AdoptionView({
               />
               <Tooltip
                 formatter={(value, name) => [
-                  name === "Code Lines" ? `${numberFormat.format(Number(value))}줄` : `${numberFormat.format(Number(value))}건`,
+                  name === "Code Lines"
+                    ? `${numberFormat.format(Number(value))}줄`
+                    : `${formatTokens(Number(value))} 토큰`,
                   name,
                 ]}
               />
               <Legend />
-              <Bar yAxisId="activity" dataKey="humanPrompts" name="프롬프트" fill="#0f8b8d" radius={[4, 4, 0, 0]} />
-              <Line yAxisId="activity" dataKey="conversations" name="대화" stroke="#e85d4f" strokeWidth={2.5} dot={{ r: 3 }} />
-              <Line yAxisId="activity" dataKey="activeUsers" name="활동 사용자" stroke="#c58612" strokeWidth={2} dot={{ r: 3 }} />
-              <Bar yAxisId="code" dataKey="codeLines" name="Code Lines" fill="#5f6f8c" radius={[4, 4, 0, 0]} />
+              <Bar yAxisId="code" dataKey="codeLines" name="Code Lines" fill="#0f8b8d" radius={[4, 4, 0, 0]} />
+              <Line
+                yAxisId="tokens"
+                dataKey="totalTokens"
+                name="월 누적 토큰"
+                stroke="#e85d4f"
+                strokeWidth={3}
+                dot={{ r: 4 }}
+              />
             </ComposedChart>
           </ResponsiveContainer>
-        </div>
-      </section>
-
-      <section className="panel individual-signal-panel">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">Signal Readout</span>
-            <h2>{periodLabel} 판단 신호</h2>
-          </div>
-        </div>
-        <div className="individual-signal-list">
-          <article>
-            <span>활용 상위</span>
-            <strong>{topActivityUser?.user.displayName ?? "-"}</strong>
-            <small>{topActivityUser?.evaluation?.evidence ?? "관측 데이터 없음"}</small>
-          </article>
-          <article>
-            <span>생산성 신호 상위</span>
-            <strong>{topProductivityUser?.user.displayName ?? "-"}</strong>
-            <small>{topProductivityUser?.evaluation?.evidence ?? "관측 데이터 없음"}</small>
-          </article>
-          <article>
-            <span>원천 범위</span>
-            <strong>대화 프롬프트 + Code Lines</strong>
-            <small>Claude Code 프롬프트·활성일은 원천 미제공</small>
-          </article>
-          <article>
-            <span>선택 기간 합계</span>
-            <strong>{numberFormat.format(selectedTrendPoint?.humanPrompts ?? 0)}개 프롬프트</strong>
-            <small>{numberFormat.format(selectedTrendPoint?.activeUsers ?? 0)}명 활동</small>
-          </article>
         </div>
       </section>
 
@@ -4387,6 +4370,7 @@ function AdoptionView({
             <tbody>
               {rows.map(({ user, evaluation, monthlySpend }, index) => {
                 const metricsMeasured = user.measurementStatus === "measured";
+                const sourceUncollected = user.measurementStatus === "source-uncollected";
                 const productivityScore = evaluation?.productivityScore ?? 0;
                 const productivityLevel = evaluation?.productivityLevel ?? "unobserved";
                 return (
@@ -4414,47 +4398,47 @@ function AdoptionView({
                       )}
                     </td>
                     <td>
-                      {metricsMeasured && (
+                      {metricsMeasured ? (
                         <IndividualScoreBadge
                           level={productivityLevel}
                           score={productivityScore}
                         />
-                      )}
+                      ) : sourceUncollected ? <span className="state-pill neutral">미수집</span> : null}
                     </td>
                     <td>
-                      {metricsMeasured && (
+                      {metricsMeasured ? (
                         <IndividualActivityCoverageCell
                           detailsMissing={evaluation?.codeActivityDetailsMissing ?? false}
                           unit="건"
                           value={evaluation?.humanPrompts ?? 0}
                         />
-                      )}
+                      ) : sourceUncollected ? <span className="state-pill neutral">미수집</span> : null}
                     </td>
                     <td>
-                      {metricsMeasured && (
+                      {metricsMeasured ? (
                         <IndividualActivityCoverageCell
                           detailsMissing={evaluation?.codeActivityDetailsMissing ?? false}
                           unit="일"
                           value={evaluation?.activeDays ?? 0}
                         />
-                      )}
+                      ) : sourceUncollected ? <span className="state-pill neutral">미수집</span> : null}
                     </td>
                     <td>
-                      {metricsMeasured && (
+                      {metricsMeasured ? (
                         evaluation?.codeLines == null
                           ? <span className="state-pill neutral">월 단위</span>
                           : `${numberFormat.format(evaluation.codeLines)}줄`
-                      )}
+                      ) : sourceUncollected ? <span className="state-pill neutral">미수집</span> : null}
                     </td>
                     <td>
-                      {metricsMeasured && (monthlySpend ? (
+                      {metricsMeasured ? (monthlySpend ? (
                         <>
                           <strong>{formatTokens(monthlySpend.totalTokens)}</strong>
                           <small>{numberFormat.format(monthlySpend.requests)}요청 · {formatPreciseUsd(monthlySpend.netSpendUsd)}</small>
                         </>
                       ) : (
                         <span className="state-pill neutral">월별 Spend 미수집</span>
-                      ))}
+                      )) : sourceUncollected ? <span className="state-pill neutral">미수집</span> : null}
                     </td>
                     <td>
                       {user.usageScopeOverride ? (

@@ -9,7 +9,7 @@ describe("individualUtilizationData", () => {
     const data = individualUtilizationData;
 
     expect(data.source.spend.rowCount).toBe(180);
-    expect(data.users).toHaveLength(24);
+    expect(data.users).toHaveLength(25);
     expect(data.users.filter((user) => user.measurementStatus === "measured")).toHaveLength(19);
     expect(data.totals.requests).toBe(264669);
     expect(data.totals.totalTokens).toBe(52004482235);
@@ -44,6 +44,30 @@ describe("individualUtilizationData", () => {
         Object.values(user.monthEvaluations).every(
           (evaluation) => evaluation.productivityScore === null && evaluation.codeLines === null,
         ),
+      ),
+    ).toBe(true);
+  });
+
+  it("adds Lee Donghun as an enrolled account with uncollected usage", () => {
+    const user = individualUtilizationData.users.find(
+      (item) => item.email === "dhlee@riskzero.kr",
+    );
+
+    expect(user).toMatchObject({
+      displayName: "이동훈 부장",
+      measurementStatus: "source-uncollected",
+      displayAccount: "dhlee@riskzero.kr",
+      usageScopeOverride: "Claude Team Plan Standard · 사용량 원천 미수집",
+      requests: 0,
+      totalTokens: 0,
+      totalCodeLines: 0,
+    });
+    expect(
+      Object.values(user?.monthEvaluations ?? {}).every(
+        (evaluation) =>
+          evaluation.productivityScore === null &&
+          evaluation.codeLines === null &&
+          evaluation.evidence.includes("원천 사용량 미수집"),
       ),
     ).toBe(true);
   });
