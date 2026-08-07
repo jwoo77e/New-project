@@ -2802,6 +2802,383 @@ td strong {
   font-size: 1.18rem;
 }
 
+.workforce-decision-board {
+  border-bottom: 1px solid var(--line);
+  background: #ffffff;
+}
+
+.workforce-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-bottom: 1px solid var(--line);
+}
+
+.workforce-kpi-strip article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-width: 0;
+  gap: 11px;
+  padding: 16px 18px;
+  border-right: 1px solid var(--line);
+}
+
+.workforce-kpi-strip article:last-child {
+  border-right: 0;
+}
+
+.workforce-kpi-strip small,
+.workforce-kpi-strip strong,
+.workforce-kpi-strip p {
+  display: block;
+}
+
+.workforce-kpi-strip small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.workforce-kpi-strip strong {
+  margin-top: 4px;
+  font-size: 1.18rem;
+  line-height: 1.15;
+}
+
+.workforce-kpi-strip p {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.workforce-kpi-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 6px;
+}
+
+.workforce-kpi-icon.blue {
+  background: #eaf1ff;
+  color: #2563eb;
+}
+
+.workforce-kpi-icon.teal {
+  background: var(--teal-soft);
+  color: var(--teal);
+}
+
+.workforce-kpi-icon.amber {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.workforce-kpi-icon.green {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.workforce-analysis-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.15fr) minmax(330px, 0.95fr);
+}
+
+.workforce-coverage-panel,
+.workforce-intensity-panel,
+.workforce-investment-panel {
+  min-width: 0;
+  padding: 18px;
+}
+
+.workforce-intensity-panel,
+.workforce-investment-panel {
+  border-left: 1px solid var(--line);
+}
+
+.coverage-score-row {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin-top: 18px;
+}
+
+.coverage-score-row > strong {
+  color: var(--teal);
+  font-size: 2rem;
+}
+
+.coverage-score-row > span {
+  color: #9aa5a1;
+  font-size: 1.2rem;
+}
+
+.coverage-score-row > b {
+  font-size: 1.15rem;
+}
+
+.coverage-score-row small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.coverage-track,
+.usage-segment-track {
+  overflow: hidden;
+  border-radius: 4px;
+  background: #e8edeb;
+}
+
+.coverage-track {
+  height: 12px;
+  margin-top: 13px;
+}
+
+.coverage-track > span,
+.usage-segment-track > span {
+  display: block;
+  height: 100%;
+}
+
+.coverage-track > span {
+  background: var(--teal);
+}
+
+.coverage-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 9px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.coverage-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.coverage-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.coverage-legend i.tracked {
+  background: var(--teal);
+}
+
+.coverage-legend i.gap {
+  background: #d3dad7;
+}
+
+.tracked-user-groups {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid var(--line);
+}
+
+.tracked-user-groups p {
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.tracked-user-groups b {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--ink);
+  font-size: 0.73rem;
+}
+
+.usage-segment-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.usage-segment {
+  min-width: 0;
+}
+
+.usage-segment-heading {
+  display: grid;
+  grid-template-columns: minmax(70px, auto) auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+}
+
+.usage-segment-heading b {
+  font-size: 0.79rem;
+}
+
+.usage-segment-heading span {
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.usage-segment-heading small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  text-align: right;
+}
+
+.usage-segment-track {
+  height: 6px;
+  margin-top: 5px;
+}
+
+.usage-segment.power .usage-segment-track > span {
+  background: #2563eb;
+}
+
+.usage-segment.regular .usage-segment-track > span {
+  background: var(--teal);
+}
+
+.usage-segment.low .usage-segment-track > span {
+  background: var(--amber);
+}
+
+.usage-segment.artifact .usage-segment-track > span {
+  background: #708090;
+}
+
+.usage-segment > p {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
+.usage-interpretation {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.usage-interpretation p {
+  padding: 9px 10px;
+  border-left: 3px solid #2563eb;
+  background: #f5f8fc;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.usage-interpretation p:last-child {
+  border-left-color: var(--amber);
+  background: #fffaf0;
+}
+
+.usage-interpretation b {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--ink);
+}
+
+.workforce-investment-panel {
+  background: #f7faf8;
+}
+
+.investment-kicker {
+  color: var(--green);
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.workforce-investment-panel h3 {
+  margin-top: 6px;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.workforce-investment-panel > p {
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.cost-bridge {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 5px;
+  margin-top: 13px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.cost-bridge div {
+  min-width: 0;
+}
+
+.cost-bridge span,
+.cost-bridge strong {
+  display: block;
+}
+
+.cost-bridge span {
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.cost-bridge strong {
+  margin-top: 4px;
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
+}
+
+.cost-bridge svg {
+  color: #9aa5a1;
+}
+
+.workforce-investment-panel ul {
+  display: grid;
+  gap: 9px;
+  margin-top: 13px;
+  padding: 0;
+  list-style: none;
+}
+
+.workforce-investment-panel li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.workforce-investment-panel li svg {
+  margin-top: 2px;
+  color: var(--green);
+}
+
+.workforce-investment-panel li b {
+  display: block;
+  color: var(--ink);
+}
+
+.workforce-investment-panel footer {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+
 .section-heading strong,
 .section-heading span {
   display: block;
@@ -4466,8 +4843,27 @@ td strong {
   .command-grid,
   .signal-main-grid,
   .signal-bottom-grid,
-  .editorial-bottom {
+  .editorial-bottom,
+  .workforce-analysis-grid {
     grid-template-columns: 1fr;
+  }
+
+  .workforce-kpi-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .workforce-kpi-strip article:nth-child(2) {
+    border-right: 0;
+  }
+
+  .workforce-kpi-strip article:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .workforce-intensity-panel,
+  .workforce-investment-panel {
+    border-top: 1px solid var(--line);
+    border-left: 0;
   }
 
   .decision-rail,
@@ -4669,8 +5065,34 @@ td strong {
 
   .editorial-flow,
   .ax-stage-strip,
-  .editorial-bottom .ax-stage-strip {
+  .editorial-bottom .ax-stage-strip,
+  .workforce-kpi-strip,
+  .usage-interpretation {
     grid-template-columns: 1fr;
+  }
+
+  .workforce-kpi-strip article,
+  .workforce-kpi-strip article:nth-child(2) {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .workforce-kpi-strip article:last-child {
+    border-bottom: 0;
+  }
+
+  .workforce-coverage-panel,
+  .workforce-intensity-panel,
+  .workforce-investment-panel {
+    padding: 16px;
+  }
+
+  .cost-bridge {
+    grid-template-columns: 1fr;
+  }
+
+  .cost-bridge svg {
+    transform: rotate(90deg);
   }
 
   .flow-step {
