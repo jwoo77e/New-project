@@ -2972,6 +2972,10 @@ td strong {
   background: var(--teal);
 }
 
+.coverage-legend i.convert {
+  background: var(--amber);
+}
+
 .coverage-legend i.gap {
   background: #d3dad7;
 }

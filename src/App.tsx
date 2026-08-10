@@ -657,8 +657,6 @@ function App() {
       }),
     [driveArtifactTrendSnapshot, gensparkUsageData, monthlyActuals],
   );
-  const latestDriveFileTotal =
-    driveArtifactTrendSnapshot?.totals.files ?? driveArtifactRepositoryData.totals.files;
   const isApiUsageCollected = apiUsageData.source.generatedAt !== initialApiUsageData.source.generatedAt;
   const apiForecast = useMemo(() => {
     if (!isApiUsageCollected) {
@@ -1168,11 +1166,11 @@ function App() {
             footer={`활성률 ${formatRate(productivityModel.activationRate)} · 멤버 CSV ${initialClaudeTeamUsageData.source.generatedAt}`}
           />
           <MetricCard
-            icon={<FileText size={21} />}
-            label={`${productivityModel.currentMonthLabel} Drive 신규 저장`}
+            icon={<UserCheck size={21} />}
+            label="Claude Team Plan 보급"
             tone="green"
-            value={`${numberFormat.format(productivityModel.currentMonthDriveStoredFiles)}개`}
-            footer={`매일 21시 자동 집계 · 누적 저장 ${numberFormat.format(latestDriveFileTotal)}개`}
+            value={`${executiveWorkforceInsightData.teamPlanUsers}/${executiveWorkforceInsightData.eligibleEmployees}명`}
+            footer={`${formatRate(executiveWorkforceInsightData.teamPlanCoverageRate)} · Standard ${executiveWorkforceInsightData.teamPlanStandardUsers} / Premium ${executiveWorkforceInsightData.teamPlanPremiumUsers}`}
           />
           <MetricCard
             icon={<CircleDollarSign size={21} />}
@@ -1339,14 +1337,11 @@ function ExecutiveDesignOverview({
       model.costUsageSeries.map((item) => ({
         ...item,
         conversations: item.claudeConversations,
-        outputSignals: item.driveStoredFiles ?? item.driveOutputSignals,
       })),
     [model.costUsageSeries],
   );
   const visibleSeries =
     range === "all" ? trendSeries : trendSeries.slice(range === "3m" ? -3 : -6);
-  const outputDirection = model.axKpis.output.dailyGrowthRate >= 0 ? "증가" : "감소";
-  const activityDirection = model.axKpis.activity.dailyGrowthRate >= 0 ? "증가" : "감소";
   const workforce = executiveWorkforceInsightData;
 
   const chart = (
@@ -1375,7 +1370,7 @@ function ExecutiveDesignOverview({
               const label = String(name);
               const formattedValue = label.startsWith("AI 비용")
                 ? formatWon(Number(value))
-                : `${numberFormat.format(Number(value))}${label.startsWith("Drive") ? "개" : "건"}`;
+                : `${numberFormat.format(Number(value))}건`;
               return [formattedValue, name];
             }}
           />
@@ -1390,21 +1385,12 @@ function ExecutiveDesignOverview({
           />
           <Line
             dataKey="conversations"
-            name="Claude 통합 대화(Export+Drive)"
+            name="Claude 통합 대화"
             yAxisId="signal"
             type="monotone"
             stroke="#ef5a47"
             strokeWidth={2.5}
             dot={{ r: 3, fill: "#ef5a47" }}
-          />
-          <Line
-            dataKey="outputSignals"
-            name="Drive 신규 저장 파일"
-            yAxisId="signal"
-            type="monotone"
-            stroke="#169c74"
-            strokeWidth={2.5}
-            dot={{ r: 3, fill: "#169c74" }}
           />
         </ComposedChart>
       </ResponsiveContainer>
@@ -1429,25 +1415,25 @@ function ExecutiveDesignOverview({
     {
       step: "1",
       label: "보급",
-      value: formatRate(workforce.dedicatedToolCoverageRate),
-      detail: `${workforce.dedicatedToolUsers}/${workforce.eligibleEmployees}명 개인 산출 추적`,
-      direction: "유지",
+      value: formatRate(workforce.teamPlanCoverageRate),
+      detail: `${workforce.teamPlanUsers}/${workforce.eligibleEmployees}명 Team Plan`,
+      direction: "현황",
       tone: "teal",
     },
     {
       step: "2",
-      label: "활용",
-      value: `${workforce.powerUsers.length}명`,
-      detail: `7월 1B 이상 · 100M 미만 ${workforce.lowUsageUsers.length}명`,
-      direction: activityDirection,
+      label: "측정",
+      value: `${workforce.tokenMeasuredUsers}/${workforce.tokenMeasurementTarget}명`,
+      detail: `원천 연결 대기 ${workforce.tokenPendingUsers.length}명`,
+      direction: "3명 대기",
       tone: "blue",
     },
     {
       step: "3",
-      label: "산출",
-      value: `${model.axKpis.output.outputsPerConversation.toFixed(2)}개`,
-      detail: `${model.classifiedOutputMonthLabel} Drive 대화당 산출`,
-      direction: outputDirection,
+      label: "평가",
+      value: "2트랙",
+      detail: "개발자 코드 · 비개발자 결과물",
+      direction: "운영 기준",
       tone: "green",
     },
   ];
@@ -1458,7 +1444,7 @@ function ExecutiveDesignOverview({
         <div className="overview-title-row">
           <div>
             <span className="eyebrow">Executive Command Center</span>
-            <h2>개인 산출 추적 범위와 AI 투자 효율을 한 화면에서 판단</h2>
+            <h2>Team Plan 보급, 토큰 측정, 직군별 활용 기준을 한 화면에서 판단</h2>
           </div>
         </div>
         <ExecutiveWorkforceDecisionBoard model={model} />
@@ -1472,7 +1458,7 @@ function ExecutiveDesignOverview({
         <div className="overview-title-row editorial-title-row">
           <div>
             <span className="eyebrow">Investment to Outcome</span>
-            <h2>현재 비용에서 전사 개인 산출 추적까지, 투자 흐름으로 읽는 운영 보드</h2>
+            <h2>현재 비용에서 전사 Team Plan 전환까지, 투자 흐름으로 읽는 운영 보드</h2>
           </div>
           {rangeControl}
         </div>
@@ -1480,9 +1466,9 @@ function ExecutiveDesignOverview({
         <div className="editorial-flow" aria-label="AI 투자 흐름">
           {[
             ["비용", formatManWon(model.currentFixedCostKrw), "현재 월 최소"],
-            ["개인 보급", formatRate(workforce.dedicatedToolCoverageRate), `${workforce.dedicatedToolUsers}/${workforce.eligibleEmployees}명`],
-            ["고활용", `${workforce.powerUsers.length}명`, "7월 토큰 1B 이상"],
-            ["전사 추적", `+${formatManWon(workforce.incrementalMonthlyKrw)}`, `${workforce.uncoveredEmployees}명 추가`],
+            ["Team Plan", formatRate(workforce.teamPlanCoverageRate), `${workforce.teamPlanUsers}/${workforce.eligibleEmployees}명`],
+            ["토큰 측정", `${workforce.tokenMeasuredUsers}/${workforce.tokenMeasurementTarget}명`, `${workforce.tokenPendingUsers.length}명 연결 대기`],
+            ["순수 신규", `${workforce.pureAdditionalSeats}석`, `전환 ${workforce.conversionSeats} + 신규 ${workforce.pureAdditionalSeats}`],
           ].map(([label, value, detail], index) => (
             <div className={`flow-step flow-step-${index + 1}`} key={label}>
               <span>{label}</span>
@@ -1495,8 +1481,8 @@ function ExecutiveDesignOverview({
         <div className="editorial-chart-area">
           <div className="section-heading">
             <div>
-              <strong>월별 비용·활동·산출 추이</strong>
-              <span>비용은 확정·고정비 최소값, Drive 저장은 매일 21시 수집 기준</span>
+              <strong>월별 비용·대화 활동 추이</strong>
+              <span>비용은 확정·고정비 최소값, 대화는 통합 수집 기준</span>
             </div>
           </div>
           {chart}
@@ -1512,15 +1498,15 @@ function ExecutiveDesignOverview({
             <ol>
               <li>
                 <span>01</span>
-                <p>개인 산출 추적 보급률은 {formatRate(workforce.dedicatedToolCoverageRate)}로, 전사 기준 {workforce.uncoveredEmployees}명이 아직 공백입니다.</p>
+                <p>Team Plan 보급률은 {formatRate(workforce.teamPlanCoverageRate)}로, {workforce.eligibleEmployees}명 중 {workforce.teamPlanUsers}명이 사용 중입니다.</p>
               </li>
               <li>
                 <span>02</span>
-                <p>7월 고활용 {workforce.powerUsers.length}명과 저활용 {workforce.lowUsageUsers.length}명의 격차를 확산·코칭 정책으로 분리 대응합니다.</p>
+                <p>개인 계정 {workforce.personalConversionAccounts.length}건과 공용 계정 {workforce.sharedConversionAccounts.length}건을 Team Plan으로 전환하면 순수 신규 수량은 {workforce.pureAdditionalSeats}석입니다.</p>
               </li>
               <li>
                 <span>03</span>
-                <p>월 약 {formatManWon(workforce.roundedInvestmentKrw)} 추가 투자 시 전 임직원의 개인 산출 추적 기반을 확보할 수 있습니다.</p>
+                <p>토큰 미연결 {workforce.tokenPendingUsers.length}명을 추가한 뒤 개발자는 토큰·Code Lines, 비개발자는 토큰·생성 결과물로 구분 평가합니다.</p>
               </li>
             </ol>
           </section>
@@ -1534,7 +1520,7 @@ function ExecutiveDesignOverview({
       <div className="overview-title-row">
         <div>
           <span className="eyebrow">Signal Matrix</span>
-          <h2>비용 대비 개인 보급·활용·산출 신호</h2>
+          <h2>비용 대비 Team Plan 보급·측정·평가 신호</h2>
         </div>
         {rangeControl}
       </div>
@@ -1543,8 +1529,8 @@ function ExecutiveDesignOverview({
         <section className="signal-chart-area">
           <div className="section-heading">
             <div>
-              <strong>비용·대화·Drive 저장 신호</strong>
-              <span>상세 분석의 일일 Drive 저장 데이터를 동일한 월 축에 반영합니다.</span>
+              <strong>비용·대화 활동 신호</strong>
+              <span>월별 비용과 통합 대화량을 동일한 축에서 비교합니다.</span>
             </div>
           </div>
           {chart}
@@ -1576,10 +1562,7 @@ function ExecutiveDesignOverview({
               <AlertTriangle size={16} /> 주의 필요
             </strong>
             <p>당월 비용은 고정 구독비 최소값이며 API·변동비는 확정 대기입니다.</p>
-            <p>
-              Drive 신규 저장은 매일 반영하며 대화 분류는 {model.classifiedActivityMonthLabel}, 산출 분류는{" "}
-              {model.classifiedOutputMonthLabel}까지입니다.
-            </p>
+            <p>대화 분류는 {model.classifiedActivityMonthLabel}까지이며, 개인별 토큰 측정 원천은 3명 연결 대기입니다.</p>
           </div>
         </section>
       </div>
@@ -1615,22 +1598,22 @@ function ExecutiveDesignOverview({
             <li>
               <span>1</span>
               <div>
-                <b>전사 추적 계정 투자안 결정</b>
-                <small>{workforce.uncoveredEmployees}명 · 월 {formatManWon(workforce.incrementalMonthlyKrw)}</small>
+                <b>Team Plan 전환안 결정</b>
+                <small>개인 2건 · 공용 2건 · 순수 신규 {workforce.pureAdditionalSeats}석</small>
               </div>
             </li>
             <li>
               <span>2</span>
               <div>
-                <b>저활용군 원인별 관리</b>
-                <small>프로젝트 종료 · 채팅 중심 사용 · 업무 재배치</small>
+                <b>토큰 측정 원천 연결</b>
+                <small>{workforce.tokenPendingUsers.map((user) => user.name).join(" · ")}</small>
               </div>
             </li>
             <li>
               <span>3</span>
               <div>
-                <b>고활용군 실행 표준 확산</b>
-                <small>하네스 · 스킬 · Codex 품질 개선 방식</small>
+                <b>직군별 평가 기준 적용</b>
+                <small>개발자 Code Lines · 비개발자 생성 결과물</small>
               </div>
             </li>
           </ol>
@@ -1642,13 +1625,10 @@ function ExecutiveDesignOverview({
 
 function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecutiveModel }) {
   const workforce = executiveWorkforceInsightData;
-  const projectedMonthlyKrw = model.currentFixedCostKrw + workforce.incrementalMonthlyKrw;
-  const incrementalRate = model.currentFixedCostKrw > 0
-    ? (workforce.incrementalMonthlyKrw / model.currentFixedCostKrw) * 100
-    : 0;
+  const projectedMonthlyKrw = model.currentFixedCostKrw + workforce.netMonthlyChangeKrw;
 
   return (
-    <section className="workforce-decision-board" aria-label="개인 산출 추적 투자 의사결정">
+    <section className="workforce-decision-board" aria-label="Team Plan 보급 및 활용 측정 의사결정">
       <div className="workforce-kpi-strip">
         <article>
           <span className="workforce-kpi-icon blue"><CircleDollarSign size={18} /></span>
@@ -1661,25 +1641,25 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
         <article>
           <span className="workforce-kpi-icon teal"><UserCheck size={18} /></span>
           <div>
-            <small>개인 산출 추적 보급률</small>
-            <strong>{formatRate(workforce.dedicatedToolCoverageRate)}</strong>
-            <p>{workforce.dedicatedToolUsers}/{workforce.eligibleEmployees}명 · {workforce.source.workforceBasis}</p>
+            <small>Team Plan 보급률</small>
+            <strong>{formatRate(workforce.teamPlanCoverageRate)}</strong>
+            <p>{workforce.teamPlanUsers}/{workforce.eligibleEmployees}명 · Standard {workforce.teamPlanStandardUsers} / Premium {workforce.teamPlanPremiumUsers}</p>
           </div>
         </article>
         <article>
           <span className="workforce-kpi-icon amber"><Gauge size={18} /></span>
           <div>
-            <small>7월 활용 양극화</small>
-            <strong>{workforce.powerUsers.length}명 / {workforce.lowUsageUsers.length}명</strong>
-            <p>1B 이상 / 100M 미만 · 토큰 측정 {workforce.tokenMeasuredUsers}명</p>
+            <small>토큰 측정 커버리지</small>
+            <strong>{workforce.tokenMeasuredUsers}/{workforce.tokenMeasurementTarget}명</strong>
+            <p>현재 {workforce.tokenMeasuredUsers}명 · 원천 연결 대기 {workforce.tokenPendingUsers.length}명</p>
           </div>
         </article>
         <article>
           <span className="workforce-kpi-icon green"><Sparkles size={18} /></span>
           <div>
-            <small>전사 추적 추가 투자</small>
-            <strong>+{formatManWon(workforce.incrementalMonthlyKrw)}/월</strong>
-            <p>{workforce.uncoveredEmployees}명 × 약 {formatManWon(workforce.estimatedSeatCostKrw)} · 총 약 {formatManWon(workforce.roundedInvestmentKrw)}</p>
+            <small>순수 신규 Team Plan</small>
+            <strong>{workforce.pureAdditionalSeats}석</strong>
+            <p>기존 {workforce.teamPlanUsers} + 전환 {workforce.conversionSeats} + 신규 {workforce.pureAdditionalSeats} = {workforce.eligibleEmployees}명</p>
           </div>
         </article>
       </div>
@@ -1688,35 +1668,40 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
         <section className="workforce-coverage-panel">
           <div className="section-heading">
             <div>
-              <strong>개인 산출 추적 커버리지</strong>
-              <span>개인 사용량과 Drive 산출 연결 기준</span>
+              <strong>Team Plan 보급 및 전환 구조</strong>
+              <span>{workforce.source.workforceBasis} · 현재 결재 현황 기준</span>
             </div>
             <span className="state-pill neutral">목표 100%</span>
           </div>
           <div className="coverage-score-row">
-            <strong>{workforce.dedicatedToolUsers}<small>명 추적 가능</small></strong>
+            <strong>{workforce.teamPlanUsers}<small>명 Team Plan</small></strong>
             <span>/</span>
             <b>{workforce.eligibleEmployees}<small>명 대상</small></b>
           </div>
-          <div className="coverage-track" aria-label={`개인 보급률 ${formatRate(workforce.dedicatedToolCoverageRate)}`}>
-            <span style={{ width: `${workforce.dedicatedToolCoverageRate}%` }} />
+          <div className="coverage-track" aria-label={`Team Plan 보급률 ${formatRate(workforce.teamPlanCoverageRate)}`}>
+            <span style={{ width: `${workforce.teamPlanCoverageRate}%` }} />
           </div>
           <div className="coverage-legend">
-            <span><i className="tracked" />추적 가능 {workforce.dedicatedToolUsers}명</span>
-            <span><i className="gap" />추가 필요 {workforce.uncoveredEmployees}명</span>
+            <span><i className="tracked" />기존 Team Plan {workforce.teamPlanUsers}명</span>
+            <span><i className="convert" />전환 대상 {workforce.conversionSeats}건</span>
+            <span><i className="gap" />순수 신규 {workforce.pureAdditionalSeats}석</span>
           </div>
           <div className="tracked-user-groups">
-            <p><b>토큰 측정 {workforce.tokenMeasuredUsers}명</b>{workforce.trackedUsers.slice(0, workforce.tokenMeasuredUsers).join(" · ")}</p>
-            <p><b>Drive 산출 추적 {workforce.artifactTrackedUsers.length}명</b>{workforce.artifactTrackedUsers.join(" · ")}</p>
+            <p><b>현재 Team Plan {workforce.teamPlanUsers}명</b>Standard {workforce.teamPlanStandardUsers}명 · Premium {workforce.teamPlanPremiumUsers}명</p>
+            <p><b>개인 계정 전환 {workforce.personalConversionAccounts.length}건</b>{workforce.personalConversionAccounts.map((account) => `${account.name} (${account.currentPlan})`).join(" · ")}</p>
+            <p><b>공용 계정 전환 {workforce.sharedConversionAccounts.length}건</b>{workforce.sharedConversionAccounts.map((account) => `${account.name} (${account.currentPlan})`).join(" · ")}</p>
           </div>
         </section>
 
         <section className="workforce-intensity-panel">
           <div className="section-heading">
             <div>
-              <strong>7월 개인 활용 강도</strong>
-              <span>{workforce.source.tokenPeriod} · 토큰 측정과 Drive 산출 추적 분리</span>
+              <strong>토큰 측정 및 직군별 평가</strong>
+              <span>{workforce.source.tokenPeriod} · 현재 {workforce.tokenMeasuredUsers}명 / 목표 {workforce.tokenMeasurementTarget}명</span>
             </div>
+          </div>
+          <div className="tracked-user-groups">
+            <p><b>원천 연결 대기 {workforce.tokenPendingUsers.length}명</b>{workforce.tokenPendingUsers.map((user) => user.name).join(" · ")}</p>
           </div>
           <div className="usage-segment-list">
             {workforce.usageSegments.map((segment) => (
@@ -1727,34 +1712,41 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
                   <small>{segment.criteria}</small>
                 </div>
                 <div className="usage-segment-track">
-                  <span style={{ width: `${(segment.count / workforce.dedicatedToolUsers) * 100}%` }} />
+                  <span style={{ width: `${(segment.count / workforce.tokenMeasuredUsers) * 100}%` }} />
                 </div>
                 <p>{segment.users.join(" · ")}</p>
               </div>
             ))}
           </div>
           <div className="usage-interpretation">
-            <p><b>고활용</b>{workforce.interpretations.powerUsage}</p>
-            <p><b>활용 미진</b>{workforce.interpretations.lowUsage}</p>
+            <p>
+              <b>{workforce.evaluationFramework.developer.label}</b>
+              {workforce.evaluationFramework.developer.measures.join(" + ")} · {workforce.evaluationFramework.developer.description}
+            </p>
+            <p>
+              <b>{workforce.evaluationFramework.nonDeveloper.label}</b>
+              {workforce.evaluationFramework.nonDeveloper.measures.join(" + ")} · {workforce.evaluationFramework.nonDeveloper.description}
+            </p>
           </div>
         </section>
 
         <aside className="workforce-investment-panel">
           <div className="investment-kicker">Decision</div>
-          <h3>월 {formatManWon(workforce.incrementalMonthlyKrw)} 증액으로 전사 추적 기반 확보</h3>
-          <p>현재 개인 보급률 {formatRate(workforce.dedicatedToolCoverageRate)}를 100%로 높이는 계정 투자안입니다.</p>
+          <h3>4건 전환 + 15석 신규로 41명 Team Plan 체계</h3>
+          <p>개인·공용 Claude 4건을 Standard로 전환하고 순수 신규 {workforce.pureAdditionalSeats}석을 추가하는 비교 시나리오입니다.</p>
           <div className="cost-bridge">
             <div><span>현재 최소 비용</span><strong>{formatManWon(model.currentFixedCostKrw)}</strong></div>
             <ArrowRight size={17} />
-            <div><span>추가 투자</span><strong>+{formatManWon(workforce.incrementalMonthlyKrw)}</strong></div>
+            <div><span>월 순변화</span><strong>{workforce.netMonthlyChangeKrw < 0 ? "절감 " : "+"}{formatManWon(Math.abs(workforce.netMonthlyChangeKrw))}</strong></div>
             <ArrowRight size={17} />
-            <div><span>투자 후 최소</span><strong>{formatManWon(projectedMonthlyKrw)}</strong></div>
+            <div><span>시나리오 최소</span><strong>{formatManWon(projectedMonthlyKrw)}</strong></div>
           </div>
           <ul>
-            <li><CheckCircle2 size={15} /><span><b>{workforce.uncoveredEmployees}명 계정 할당</b>개인별 투입 비용과 산출 현황 연결</span></li>
-            <li><CheckCircle2 size={15} /><span><b>저활용 {workforce.lowUsageUsers.length}명 별도 관리</b>프로젝트 종료·채팅 중심 사용에 따라 재배치 또는 코칭</span></li>
+            <li><CheckCircle2 size={15} /><span><b>기존 비팀플랜 4건 전환</b>개인 2건 · 공용 2건을 개인 Team Plan으로 전환</span></li>
+            <li><CheckCircle2 size={15} /><span><b>순수 신규 {workforce.pureAdditionalSeats}석 추가</b>기존 22명과 전환 4명을 제외한 수량</span></li>
+            <li><CheckCircle2 size={15} /><span><b>총 {workforce.totalTeamPlanActions}건 조치</b>전환 {workforce.conversionSeats}건 + 신규 {workforce.pureAdditionalSeats}석</span></li>
           </ul>
-          <footer>현재 월 최소 비용 대비 +{formatRate(incrementalRate)} · 질적 사유는 운영 확인 기준</footer>
+          <footer>현재 비팀플랜 4건 {formatManWon(workforce.currentConversionCostKrw)} → Standard {workforce.totalTeamPlanActions}석 {formatManWon(workforce.proposedTeamPlanActionCostKrw)} · {workforce.source.conversionAssumption}</footer>
         </aside>
       </div>
     </section>

@@ -109,6 +109,33 @@ describe("initialAiToolApprovalData", () => {
     });
   });
 
+  it("assigns Park Sujin and Song Inna to Claude Team Standard from August 2026", () => {
+    expect(
+      initialAiToolApprovalData.records.filter((record) =>
+        ["sjpark@riskzero.kr", "songinna@riskzero.kr"].includes(record.account),
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        owner: "박수진 과장 / 미기재",
+        department: "미기재",
+        tool: "Claude Team Plan Standard",
+        monthlyUsd: 25,
+        monthlyKrw: 37_125,
+        startMonth: "2026-08",
+        paymentMethod: "AI 전용 카드",
+      }),
+      expect.objectContaining({
+        owner: "송인나 대리 / 미기재",
+        department: "미기재",
+        tool: "Claude Team Plan Standard",
+        monthlyUsd: 25,
+        monthlyKrw: 37_125,
+        startMonth: "2026-08",
+        paymentMethod: "AI 전용 카드",
+      }),
+    ]);
+  });
+
   it("reconciles the updated plan mix and monthly totals", () => {
     expect(
       initialAiToolApprovalData.toolSummary.find(
@@ -124,9 +151,9 @@ describe("initialAiToolApprovalData", () => {
         (item) => item.key === "Claude Team Plan Standard",
       ),
     ).toMatchObject({
-      count: 14,
-      monthlyUsd: 350,
-      monthlyKrw: 519_750,
+      count: 16,
+      monthlyUsd: 400,
+      monthlyKrw: 594_000,
     });
     expect(
       initialAiToolApprovalData.toolSummary.find(
@@ -146,20 +173,20 @@ describe("initialAiToolApprovalData", () => {
       monthlyUsd: 660,
       monthlyKrw: 980_100,
     });
-    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(3_125.59);
-    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(6_141_501.15);
+    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(3_175.59);
+    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(6_215_751.15);
   });
 
   it("keeps category and payment totals aligned with the updated total", () => {
     expect(
       initialAiToolApprovalData.categorySummary.find((item) => item.key === "Claude"),
     ).toMatchObject({
-      count: 26,
-      monthlyUsd: 2_090,
-      monthlyKrw: 3_103_650,
+      count: 28,
+      monthlyUsd: 2_140,
+      monthlyKrw: 3_177_900,
     });
-    expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(37);
-    expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(4_641_501.15);
+    expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(39);
+    expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(4_715_751.15);
     expect(
       initialAiToolApprovalData.paymentSummary.find((item) => item.key === "계약 고정비"),
     ).toMatchObject({
@@ -218,9 +245,9 @@ describe("initialAiToolApprovalData", () => {
       monthlyKrw: 4_478_151.15,
     });
     expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-08")).toMatchObject({
-      count: 38,
-      monthlyUsd: 3_125.59,
-      monthlyKrw: 6_141_501.15,
+      count: 40,
+      monthlyUsd: 3_175.59,
+      monthlyKrw: 6_215_751.15,
     });
   });
 

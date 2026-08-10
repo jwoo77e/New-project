@@ -2,24 +2,46 @@ import { describe, expect, it } from "vitest";
 import { executiveWorkforceInsightData } from "./executiveWorkforceInsightData";
 
 describe("executiveWorkforceInsightData", () => {
-  it("reconciles the workforce coverage and full-coverage investment", () => {
+  it("reconciles Team Plan coverage, conversions, and pure new seats", () => {
     expect(executiveWorkforceInsightData.eligibleEmployees).toBe(41);
-    expect(executiveWorkforceInsightData.dedicatedToolUsers).toBe(24);
-    expect(executiveWorkforceInsightData.trackedUsers).toHaveLength(24);
-    expect(executiveWorkforceInsightData.dedicatedToolCoverageRate).toBeCloseTo((24 / 41) * 100, 5);
-    expect(executiveWorkforceInsightData.uncoveredEmployees).toBe(17);
-    expect(executiveWorkforceInsightData.incrementalMonthlyKrw).toBe(680_000);
+    expect(executiveWorkforceInsightData.teamPlanUsers).toBe(22);
+    expect(executiveWorkforceInsightData.teamPlanStandardUsers).toBe(16);
+    expect(executiveWorkforceInsightData.teamPlanPremiumUsers).toBe(6);
+    expect(executiveWorkforceInsightData.teamPlanCoverageRate).toBeCloseTo((22 / 41) * 100, 5);
+    expect(executiveWorkforceInsightData.personalConversionAccounts).toHaveLength(2);
+    expect(executiveWorkforceInsightData.sharedConversionAccounts).toHaveLength(2);
+    expect(executiveWorkforceInsightData.conversionSeats).toBe(4);
+    expect(executiveWorkforceInsightData.pureAdditionalSeats).toBe(15);
+    expect(executiveWorkforceInsightData.totalTeamPlanActions).toBe(19);
+    expect(
+      executiveWorkforceInsightData.teamPlanUsers
+        + executiveWorkforceInsightData.conversionSeats
+        + executiveWorkforceInsightData.pureAdditionalSeats,
+    ).toBe(executiveWorkforceInsightData.eligibleEmployees);
   });
 
-  it("uses the July token thresholds without mixing in artifact-only users", () => {
+  it("calculates the Standard conversion scenario from current approval costs", () => {
+    expect(executiveWorkforceInsightData.currentConversionCostKrw).toBe(1_143_450);
+    expect(executiveWorkforceInsightData.proposedConversionCostKrw).toBe(148_500);
+    expect(executiveWorkforceInsightData.pureAdditionalCostKrw).toBe(556_875);
+    expect(executiveWorkforceInsightData.proposedTeamPlanActionCostKrw).toBe(705_375);
+    expect(executiveWorkforceInsightData.netMonthlyChangeKrw).toBe(-438_075);
+  });
+
+  it("keeps July token measurement separate from pending source connections", () => {
     expect(executiveWorkforceInsightData.tokenMeasuredUsers).toBe(19);
+    expect(executiveWorkforceInsightData.tokenMeasurementTarget).toBe(22);
+    expect(executiveWorkforceInsightData.tokenPendingUsers.map((user) => user.name)).toEqual([
+      "이동훈 부장",
+      "박수진 과장",
+      "송인나 대리",
+    ]);
     expect(executiveWorkforceInsightData.powerUsers).toHaveLength(8);
     expect(executiveWorkforceInsightData.regularUsers).toHaveLength(6);
     expect(executiveWorkforceInsightData.lowUsageUsers).toHaveLength(5);
-    expect(executiveWorkforceInsightData.artifactTrackedUsers).toHaveLength(5);
     expect(
       executiveWorkforceInsightData.usageSegments.reduce((sum, segment) => sum + segment.count, 0),
-    ).toBe(24);
+    ).toBe(19);
   });
 
   it("keeps the named high- and low-usage cohorts visible for management follow-up", () => {
@@ -40,5 +62,17 @@ describe("executiveWorkforceInsightData", () => {
       "박재현 상무",
       "김성진 부장",
     ]);
+  });
+
+  it("defines role-based utilization measures without Drive tracking", () => {
+    expect(executiveWorkforceInsightData.evaluationFramework.developer.measures).toEqual([
+      "토큰 사용량",
+      "생성 Code Lines",
+    ]);
+    expect(executiveWorkforceInsightData.evaluationFramework.nonDeveloper.measures).toEqual([
+      "토큰 사용량",
+      "생성 결과물",
+    ]);
+    expect(JSON.stringify(executiveWorkforceInsightData)).not.toContain("Drive");
   });
 });

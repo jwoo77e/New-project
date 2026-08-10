@@ -72,10 +72,45 @@ describe("individualUtilizationData", () => {
     ).toBe(true);
   });
 
+  it("adds Park Sujin and Song Inna as enrolled accounts with uncollected usage", () => {
+    const users = individualUtilizationData.users.filter((user) =>
+      ["sjpark@riskzero.kr", "songinna@riskzero.kr"].includes(user.email),
+    );
+
+    expect(users).toEqual([
+      expect.objectContaining({
+        displayName: "박수진 과장",
+        displayAccount: "sjpark@riskzero.kr",
+        measurementStatus: "source-uncollected",
+        usageScopeOverride: "chatGPT 공통 계정 사용 · Claude Team Plan Standard · 사용량 원천 미수집",
+        requests: 0,
+        totalTokens: 0,
+        totalCodeLines: 0,
+      }),
+      expect.objectContaining({
+        displayName: "송인나 대리",
+        displayAccount: "songinna@riskzero.kr",
+        measurementStatus: "source-uncollected",
+        usageScopeOverride: "chatGPT 공통 계정 사용 · Claude Team Plan Standard · 사용량 원천 미수집",
+        requests: 0,
+        totalTokens: 0,
+        totalCodeLines: 0,
+      }),
+    ]);
+    expect(
+      users.every((user) =>
+        Object.values(user.monthEvaluations).every(
+          (evaluation) =>
+            evaluation.productivityScore === null &&
+            evaluation.codeLines === null &&
+            evaluation.evidence.includes("원천 사용량 미수집"),
+        ),
+      ),
+    ).toBe(true);
+  });
+
   it("adds the requested ChatGPT users with uncollected metrics", () => {
     const expectedNames = [
-      "박수진 과장",
-      "송인나 대리",
       "최종윤 이사",
       "윤종호 부장",
       "이창섭 부장",

@@ -1,26 +1,32 @@
+import { initialAiToolApprovalData, type AiToolApprovalRecord } from "./aiToolApprovalData";
 import { individualUtilizationData } from "./individualUtilizationData";
 
 export type ExecutiveUsageSegment = {
-  key: "power" | "regular" | "low" | "artifact";
+  key: "power" | "regular" | "low";
   label: string;
   count: number;
   criteria: string;
   users: string[];
 };
 
+type TeamPlanConversionAccount = {
+  name: string;
+  account: string;
+  currentPlan: string;
+  currentMonthlyKrw: number;
+};
+
 const eligibleEmployees = 41;
 const leaveExcludedEmployees = 2;
-const dedicatedToolUsers = 24;
-const estimatedSeatCostKrw = 40_000;
 const tokenReferenceMonth = "2026-07";
 const powerUserThreshold = 1_000_000_000;
 const lowUsageThreshold = 100_000_000;
-const artifactTrackedUserNames = [
-  "임성범 부장",
-  "조주연 부장",
-  "이형배 상무",
-  "김대일 상무",
-  "박연석 전무",
+const teamPlanStandardUsd = 25;
+const teamPlanStandardKrw = 37_125;
+const tokenPendingUsers = [
+  { name: "이동훈 부장", email: "dhlee@riskzero.kr" },
+  { name: "박수진 과장", email: "sjpark@riskzero.kr" },
+  { name: "송인나 대리", email: "songinna@riskzero.kr" },
 ] as const;
 
 const julySpend = individualUtilizationData.monthlySpend[tokenReferenceMonth];
@@ -28,6 +34,63 @@ const julySpend = individualUtilizationData.monthlySpend[tokenReferenceMonth];
 if (!julySpend) {
   throw new Error("경영 인사이트에 필요한 2026년 7월 개인별 사용량이 없습니다.");
 }
+
+const approvalRecords = initialAiToolApprovalData.records;
+const teamPlanRecords = approvalRecords.filter((record) => record.tool.startsWith("Claude Team Plan"));
+const teamPlanStandardUsers = teamPlanRecords.filter((record) => record.tool.endsWith("Standard")).length;
+const teamPlanPremiumUsers = teamPlanRecords.filter((record) => record.tool.endsWith("Premium")).length;
+const teamPlanUsers = teamPlanRecords.length;
+
+function findClaudeRecord(predicate: (record: AiToolApprovalRecord) => boolean, description: string) {
+  const record = approvalRecords.find(
+    (candidate) => candidate.category === "Claude" && predicate(candidate),
+  );
+
+  if (!record) {
+    throw new Error(`경영 인사이트에 필요한 Claude 결재 항목이 없습니다: ${description}`);
+  }
+
+  return record;
+}
+
+function toConversionAccount(record: AiToolApprovalRecord, name: string): TeamPlanConversionAccount {
+  return {
+    name,
+    account: record.account,
+    currentPlan: record.tool,
+    currentMonthlyKrw: record.monthlyKrw,
+  };
+}
+
+const personalConversionAccounts = [
+  toConversionAccount(
+    findClaudeRecord((record) => record.owner.startsWith("박연석 전무"), "박연석 전무 개인 계정"),
+    "박연석 전무",
+  ),
+  toConversionAccount(
+    findClaudeRecord((record) => record.owner.startsWith("김대일 상무"), "김대일 상무 개인 계정"),
+    "김대일 상무",
+  ),
+] as const;
+const sharedConversionAccounts = [
+  toConversionAccount(
+    findClaudeRecord((record) => record.account === "riskzero.marketing@gmail.com", "전략사업팀 공용 계정"),
+    "전략사업팀",
+  ),
+  toConversionAccount(
+    findClaudeRecord((record) => record.account === "infra@riskzero.kr", "기술연구소 공용 계정"),
+    "기술연구소",
+  ),
+] as const;
+const conversionSeats = personalConversionAccounts.length + sharedConversionAccounts.length;
+const pureAdditionalSeats = eligibleEmployees - teamPlanUsers - conversionSeats;
+const totalTeamPlanActions = conversionSeats + pureAdditionalSeats;
+const currentConversionCostKrw = [...personalConversionAccounts, ...sharedConversionAccounts]
+  .reduce((sum, account) => sum + account.currentMonthlyKrw, 0);
+const proposedConversionCostKrw = conversionSeats * teamPlanStandardKrw;
+const pureAdditionalCostKrw = pureAdditionalSeats * teamPlanStandardKrw;
+const proposedTeamPlanActionCostKrw = proposedConversionCostKrw + pureAdditionalCostKrw;
+const netMonthlyChangeKrw = proposedTeamPlanActionCostKrw - currentConversionCostKrw;
 
 const userNameByEmail = new Map(
   individualUtilizationData.users.map((user) => [user.email, user.displayName]),
@@ -44,37 +107,45 @@ const lowUsageUsers = julyTokenUsers.filter((user) => user.totalTokens < lowUsag
 const regularUsers = julyTokenUsers.filter(
   (user) => user.totalTokens >= lowUsageThreshold && user.totalTokens < powerUserThreshold,
 );
-const measuredUserNames = individualUtilizationData.users
-  .filter((user) => user.measurementStatus === "measured")
-  .map((user) => user.displayName);
-const trackedUsers = [...measuredUserNames, ...artifactTrackedUserNames];
-const additionalSeats = eligibleEmployees - dedicatedToolUsers;
-const incrementalMonthlyKrw = additionalSeats * estimatedSeatCostKrw;
+const tokenMeasuredUsers = julyTokenUsers.length;
+const tokenMeasurementTarget = tokenMeasuredUsers + tokenPendingUsers.length;
 
 export const executiveWorkforceInsightData = {
   source: {
     workforceBasis: `휴직자 ${leaveExcludedEmployees}명 제외 기준`,
     tokenPeriod: julySpend.period,
     tokenCoverage: julySpend.coverage,
-    qualitativeBasis: "프로젝트 종료, 채팅 중심 사용, 하네스·스킬·Codex 병행 여부는 운영 확인 내용",
+    teamPlanBasis: `${initialAiToolApprovalData.source.collectedAt} AI 도구 결재 현황`,
+    conversionAssumption: "전환 및 신규 좌석은 Claude Team Plan Standard 기준 시나리오",
   },
   eligibleEmployees,
   leaveExcludedEmployees,
-  dedicatedToolUsers,
-  dedicatedToolCoverageRate: (dedicatedToolUsers / eligibleEmployees) * 100,
-  uncoveredEmployees: additionalSeats,
-  estimatedSeatCostKrw,
-  incrementalMonthlyKrw,
-  roundedInvestmentKrw: 700_000,
+  teamPlanUsers,
+  teamPlanStandardUsers,
+  teamPlanPremiumUsers,
+  teamPlanCoverageRate: (teamPlanUsers / eligibleEmployees) * 100,
+  personalConversionAccounts,
+  sharedConversionAccounts,
+  conversionSeats,
+  pureAdditionalSeats,
+  totalTeamPlanActions,
+  teamPlanStandardUsd,
+  teamPlanStandardKrw,
+  currentConversionCostKrw,
+  proposedConversionCostKrw,
+  pureAdditionalCostKrw,
+  proposedTeamPlanActionCostKrw,
+  netMonthlyChangeKrw,
   projectedCoverageRate: 100,
-  tokenMeasuredUsers: julyTokenUsers.length,
+  tokenMeasuredUsers,
+  tokenMeasurementTarget,
+  tokenMeasurementCoverageRate: (tokenMeasuredUsers / tokenMeasurementTarget) * 100,
+  tokenPendingUsers,
   powerUserThreshold,
   lowUsageThreshold,
   powerUsers: powerUsers.map((user) => user.displayName),
   lowUsageUsers: lowUsageUsers.map((user) => user.displayName),
   regularUsers: regularUsers.map((user) => user.displayName),
-  artifactTrackedUsers: [...artifactTrackedUserNames],
-  trackedUsers,
   usageSegments: [
     {
       key: "power",
@@ -97,16 +168,17 @@ export const executiveWorkforceInsightData = {
       criteria: "7월 토큰 100M 미만",
       users: lowUsageUsers.map((user) => user.displayName),
     },
-    {
-      key: "artifact",
-      label: "산출 추적",
-      count: artifactTrackedUserNames.length,
-      criteria: "Drive 개인 산출 기준",
-      users: [...artifactTrackedUserNames],
-    },
   ] satisfies ExecutiveUsageSegment[],
-  interpretations: {
-    lowUsage: "프로젝트 완료에 따른 업무량 감소와 채팅 중심 사용이 공통 원인으로 파악됨",
-    powerUsage: "하네스·스킬 등 AI 활용 지식을 보유하고 Codex를 병행해 산출물 품질을 개선하는 집단",
+  evaluationFramework: {
+    developer: {
+      label: "개발자",
+      measures: ["토큰 사용량", "생성 Code Lines"],
+      description: "AI 사용 강도와 코드 산출량을 함께 확인",
+    },
+    nonDeveloper: {
+      label: "비개발자",
+      measures: ["토큰 사용량", "생성 결과물"],
+      description: "AI 사용 강도와 업무 결과물 수를 함께 확인",
+    },
   },
 } as const;
