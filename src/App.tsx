@@ -1718,6 +1718,10 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
               </div>
             ))}
           </div>
+          <div className="usage-low-reason">
+            <AlertTriangle size={16} aria-hidden="true" />
+            <p><b>활용 미진 사유</b>{workforce.lowUsageReason}</p>
+          </div>
           <div className="usage-interpretation">
             <p>
               <b>{workforce.evaluationFramework.developer.label}</b>

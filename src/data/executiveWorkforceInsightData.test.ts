@@ -65,6 +65,9 @@ describe("executiveWorkforceInsightData", () => {
   });
 
   it("defines role-based utilization measures without Drive tracking", () => {
+    expect(executiveWorkforceInsightData.lowUsageReason).toBe(
+      "업무량 감소 및 Chat을 통한 검색·질의 중심 사용으로 토큰 활용이 미진함",
+    );
     expect(executiveWorkforceInsightData.evaluationFramework.developer.measures).toEqual([
       "토큰 사용량",
       "생성 Code Lines",

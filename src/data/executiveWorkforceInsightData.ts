@@ -169,6 +169,7 @@ export const executiveWorkforceInsightData = {
       users: lowUsageUsers.map((user) => user.displayName),
     },
   ] satisfies ExecutiveUsageSegment[],
+  lowUsageReason: "업무량 감소 및 Chat을 통한 검색·질의 중심 사용으로 토큰 활용이 미진함",
   evaluationFramework: {
     developer: {
       label: "개발자",

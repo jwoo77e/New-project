@@ -2881,7 +2881,20 @@ td strong {
 
 .workforce-analysis-grid {
   display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.15fr) minmax(330px, 0.95fr);
+  grid-template-areas: "coverage decision intensity";
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 0.95fr) minmax(330px, 1.15fr);
+}
+
+.workforce-coverage-panel {
+  grid-area: coverage;
+}
+
+.workforce-investment-panel {
+  grid-area: decision;
+}
+
+.workforce-intensity-panel {
+  grid-area: intensity;
 }
 
 .workforce-coverage-panel,
@@ -3059,6 +3072,33 @@ td strong {
   color: var(--muted);
   font-size: 0.68rem;
   line-height: 1.35;
+}
+
+.usage-low-reason {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+  padding: 10px;
+  border-left: 3px solid var(--amber);
+  background: #fffaf0;
+  color: var(--muted);
+}
+
+.usage-low-reason svg {
+  margin-top: 1px;
+  color: var(--amber);
+}
+
+.usage-low-reason p {
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.usage-low-reason b {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--ink);
 }
 
 .usage-interpretation {
@@ -4693,6 +4733,13 @@ td strong {
   .editorial-bottom,
   .workforce-analysis-grid {
     grid-template-columns: 1fr;
+  }
+
+  .workforce-analysis-grid {
+    grid-template-areas:
+      "coverage"
+      "decision"
+      "intensity";
   }
 
   .workforce-kpi-strip {
