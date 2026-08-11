@@ -149,37 +149,37 @@ export const executiveWorkforceInsightData = {
   usageSegments: [
     {
       key: "power",
-      label: "고활용",
+      label: "높은 활동량",
       count: powerUsers.length,
       criteria: "7월 토큰 1B 이상",
       users: powerUsers.map((user) => user.displayName),
     },
     {
       key: "regular",
-      label: "일반 활용",
+      label: "중간 활동량",
       count: regularUsers.length,
       criteria: "7월 토큰 100M 이상 1B 미만",
       users: regularUsers.map((user) => user.displayName),
     },
     {
       key: "low",
-      label: "활용 미진",
+      label: "낮은 활동량",
       count: lowUsageUsers.length,
       criteria: "7월 토큰 100M 미만",
       users: lowUsageUsers.map((user) => user.displayName),
     },
   ] satisfies ExecutiveUsageSegment[],
-  lowUsageReason: "업무량 감소 및 Chat을 통한 검색·질의 중심 사용으로 토큰 활용이 미진함",
+  lowUsageReason: "토큰량은 업무량·업무유형·타 AI 도구 사용에 영향을 받으므로 미활용이나 저성과로 단정하지 않음",
   evaluationFramework: {
     developer: {
       label: "개발자",
-      measures: ["토큰 사용량", "생성 Code Lines"],
-      description: "AI 사용 강도와 코드 산출량을 함께 확인",
+      measures: ["병합·배포", "품질·재작업", "시간 절감"],
+      description: "토큰과 Code Lines는 접근·활동 맥락으로만 확인",
     },
     nonDeveloper: {
       label: "비개발자",
-      measures: ["토큰 사용량", "생성 결과물"],
-      description: "AI 사용 강도와 업무 결과물 수를 함께 확인",
+      measures: ["승인·실사용", "품질·재작업", "재사용·시간 절감"],
+      description: "토큰과 파일 수는 접근·활동 맥락으로만 확인",
     },
   },
 } as const;

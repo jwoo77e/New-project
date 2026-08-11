@@ -64,17 +64,19 @@ describe("executiveWorkforceInsightData", () => {
     ]);
   });
 
-  it("defines role-based utilization measures without Drive tracking", () => {
+  it("keeps role-based outcomes separate from raw AI activity", () => {
     expect(executiveWorkforceInsightData.lowUsageReason).toBe(
-      "업무량 감소 및 Chat을 통한 검색·질의 중심 사용으로 토큰 활용이 미진함",
+      "토큰량은 업무량·업무유형·타 AI 도구 사용에 영향을 받으므로 미활용이나 저성과로 단정하지 않음",
     );
     expect(executiveWorkforceInsightData.evaluationFramework.developer.measures).toEqual([
-      "토큰 사용량",
-      "생성 Code Lines",
+      "병합·배포",
+      "품질·재작업",
+      "시간 절감",
     ]);
     expect(executiveWorkforceInsightData.evaluationFramework.nonDeveloper.measures).toEqual([
-      "토큰 사용량",
-      "생성 결과물",
+      "승인·실사용",
+      "품질·재작업",
+      "재사용·시간 절감",
     ]);
     expect(JSON.stringify(executiveWorkforceInsightData)).not.toContain("Drive");
   });

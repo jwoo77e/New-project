@@ -19,6 +19,12 @@ describe("individualUtilizationData", () => {
     expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(912077);
   });
 
+  it("keeps activity metrics behind an explicit HR evidence gate", () => {
+    expect(individualUtilizationData.methodology.productivity).toContain("개인 고과에 직접 사용하지 않음");
+    expect(individualUtilizationData.methodology.evaluationGate).toContain("최종 승인");
+    expect(individualUtilizationData.methodology.evaluationGate).toContain("재사용");
+  });
+
   it("adds shared-account users without fabricating individual metrics", () => {
     const sharedAccountUsers = individualUtilizationData.users.filter(
       (user) => user.measurementStatus === "shared-account-unmeasured",

@@ -80,7 +80,6 @@ import {
 } from "./data/claudeTeamUsageData";
 import {
   individualUtilizationData,
-  type IndividualEvaluationLevel,
   type IndividualUtilizationUser,
 } from "./data/individualUtilizationData";
 import { executiveWorkforceInsightData } from "./data/executiveWorkforceInsightData";
@@ -925,8 +924,8 @@ function App() {
   if (activeView === "adoption") {
     viewHeader = {
       eyebrow: "Individual Utilization",
-      title: "개인별 활용성",
-      description: "개인별 요청·토큰·대화 프롬프트·Code Lines를 월별로 비교하며 Claude Code 상세 미수집을 구분합니다.",
+      title: "개인별 AI 활동 근거",
+      description: "요청·토큰·프롬프트·Code Lines를 활동 근거로 확인하고, 측정 누락과 인사평가 활용 제한을 함께 표시합니다.",
       freshness: `${individualUtilizationData.source.spend.period} · ${formatKstDateTime(individualUtilizationData.source.generatedAt)}`,
       metrics: [
         {
@@ -1134,7 +1133,7 @@ function App() {
           onClick={() => setActiveView("adoption")}
         >
           <UserCheck size={17} />
-          개인별 활용성
+          개인별 AI 활동
         </button>
         <button
           className={activeView === "approval" ? "is-active" : ""}
@@ -1157,7 +1156,7 @@ function App() {
       {viewHeader && <DashboardViewHeader model={viewHeader} />}
 
       {activeView === "overview" ? (
-        <section className="metric-grid" aria-label="비용과 생산성 핵심 지표">
+        <section className="metric-grid" aria-label="비용과 AI 활동 핵심 지표">
           <MetricCard
             icon={<UserCheck size={21} />}
             label={`${productivityModel.currentMonthLabel} Claude 활성`}
@@ -1430,10 +1429,10 @@ function ExecutiveDesignOverview({
     },
     {
       step: "3",
-      label: "평가",
-      value: "2트랙",
-      detail: "개발자 코드 · 비개발자 결과물",
-      direction: "운영 기준",
+      label: "검증",
+      value: "성과 근거",
+      detail: "승인 · 실사용 · 품질 · 재사용",
+      direction: "연계 필요",
       tone: "green",
     },
   ];
@@ -1506,7 +1505,7 @@ function ExecutiveDesignOverview({
               </li>
               <li>
                 <span>03</span>
-                <p>토큰 미연결 {workforce.tokenPendingUsers.length}명을 추가한 뒤 개발자는 토큰·Code Lines, 비개발자는 토큰·생성 결과물로 구분 평가합니다.</p>
+                <p>토큰 미연결 {workforce.tokenPendingUsers.length}명의 원천을 추가하고, 직무별 산출물의 승인·실사용·품질·재사용을 확인해야 성과 근거로 전환할 수 있습니다.</p>
               </li>
             </ol>
           </section>
@@ -1520,7 +1519,7 @@ function ExecutiveDesignOverview({
       <div className="overview-title-row">
         <div>
           <span className="eyebrow">Signal Matrix</span>
-          <h2>비용 대비 Team Plan 보급·측정·평가 신호</h2>
+          <h2>비용 대비 Team Plan 보급·측정·성과 근거 신호</h2>
         </div>
         {rangeControl}
       </div>
@@ -1612,8 +1611,8 @@ function ExecutiveDesignOverview({
             <li>
               <span>3</span>
               <div>
-                <b>직군별 평가 기준 적용</b>
-                <small>개발자 Code Lines · 비개발자 생성 결과물</small>
+                <b>직군별 성과 근거 정의</b>
+                <small>개발·비개발 모두 승인 · 실사용 · 품질 · 재사용 확인</small>
               </div>
             </li>
           </ol>
@@ -1696,7 +1695,7 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
         <section className="workforce-intensity-panel">
           <div className="section-heading">
             <div>
-              <strong>토큰 측정 및 직군별 평가</strong>
+              <strong>AI 활동 구간 및 직군별 근거</strong>
               <span>{workforce.source.tokenPeriod} · 현재 {workforce.tokenMeasuredUsers}명 / 목표 {workforce.tokenMeasurementTarget}명</span>
             </div>
           </div>
@@ -1720,7 +1719,7 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
           </div>
           <div className="usage-low-reason">
             <AlertTriangle size={16} aria-hidden="true" />
-            <p><b>활용 미진 사유</b>{workforce.lowUsageReason}</p>
+            <p><b>낮은 활동량 구간 해석</b>{workforce.lowUsageReason}</p>
           </div>
           <div className="usage-interpretation">
             <p>
@@ -1958,7 +1957,7 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
         <div className="panel-header">
           <div>
             <span className="eyebrow">Current Pulse</span>
-            <h2>{model.currentMonthLabel} 생산성 잠정치</h2>
+            <h2>{model.currentMonthLabel} AI 활동 잠정치</h2>
           </div>
           <span className="state-pill warning">잠정</span>
         </div>
@@ -2013,7 +2012,7 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
         <div className="insight-box compact-insight">
           <Activity size={18} />
           <div>
-            <strong>사용 확산은 확인, 생산성 효과는 잠정</strong>
+            <strong>사용 확산은 확인, 업무성과는 검증 대기</strong>
             <span>실제 업무 채택·재사용·절감시간 데이터가 추가되기 전에는 ROI로 확정하지 않습니다.</span>
           </div>
         </div>
@@ -2324,7 +2323,7 @@ function ExecutiveOverviewView({ model }: { model: ProductivityExecutiveModel })
         <div className="panel-header">
           <div>
             <span className="eyebrow">Source Freshness</span>
-            <h2>생산성·비용 원천 상태</h2>
+            <h2>AI 활동·비용 원천 상태</h2>
           </div>
           <span className="state-pill neutral">상세 파일 목록 비노출</span>
         </div>
@@ -3764,7 +3763,6 @@ function AiToolApprovalView({ approvalData }: { approvalData: AiToolApprovalData
   const topToolTieCount = approvalData.toolSummary.filter((item) => item.monthlyKrw === topTool?.monthlyKrw).length;
   const topDepartment = approvalData.departmentSummary[0];
   const personCostSummary = buildApprovalPersonCostSummary(approvalData.records);
-  const topPersonCost = personCostSummary.people[0];
 
   return (
     <div className="content-grid approval-view">
@@ -3831,7 +3829,6 @@ function AiToolApprovalView({ approvalData }: { approvalData: AiToolApprovalData
           <table>
             <thead>
               <tr>
-                <th>순위</th>
                 <th>사용자/부서</th>
                 <th>사용 도구</th>
                 <th>결재 항목</th>
@@ -3839,9 +3836,8 @@ function AiToolApprovalView({ approvalData }: { approvalData: AiToolApprovalData
               </tr>
             </thead>
             <tbody>
-              {personCostSummary.people.map((person, index) => (
+              {personCostSummary.people.map((person) => (
                 <tr key={person.name}>
-                  <td>{index + 1}</td>
                   <td>
                     <strong>{person.name}</strong>
                     <small>{person.departments.join(" · ")}</small>
@@ -3861,7 +3857,7 @@ function AiToolApprovalView({ approvalData }: { approvalData: AiToolApprovalData
         </div>
         <small className="approval-footnote approval-person-cost-note">
           개인 할당 구독료 {formatWon(personCostSummary.personalMonthlyKrw)}을 기준으로 집계했습니다. 전사·공용·계약 비용 {formatWon(personCostSummary.sharedMonthlyKrw)}은 인당 평균에서 제외했습니다.
-          {topPersonCost ? ` 최고 월 비용은 ${topPersonCost.name} ${formatWon(topPersonCost.monthlyKrw)}입니다.` : ""}
+          개인별 비용은 도구 접근 기회를 설명하는 운영 정보이며 업무성과 점수가 아닙니다.
         </small>
       </section>
 
@@ -3967,7 +3963,7 @@ function approvalPalette(index: number) {
   return colors[index % colors.length];
 }
 
-type IndividualSortKey = "productivity" | "code" | "prompts" | "tokens";
+type IndividualSortKey = "code" | "prompts" | "tokens";
 
 function AdoptionView({
   selectedMonth,
@@ -3977,7 +3973,7 @@ function AdoptionView({
   onSelectedMonthChange: (month: string) => void;
 }) {
   const data = individualUtilizationData;
-  const [sortKey, setSortKey] = useState<IndividualSortKey>("productivity");
+  const [sortKey, setSortKey] = useState<IndividualSortKey>("prompts");
   const [query, setQuery] = useState("");
   const [selectedProfileEmail, setSelectedProfileEmail] = useState<string | null>(null);
   const periodLabel = fullMonthLabel(selectedMonth);
@@ -4015,7 +4011,6 @@ function AdoptionView({
         const aEvaluation = a.evaluation;
         const bEvaluation = b.evaluation;
         const value = (row: typeof a) => {
-          if (sortKey === "productivity") return row.evaluation?.productivityScore ?? 0;
           if (sortKey === "code") return row.evaluation?.codeLines ?? 0;
           if (sortKey === "prompts") return row.evaluation?.humanPrompts ?? 0;
           return row.monthlySpend?.totalTokens ?? 0;
@@ -4033,6 +4028,18 @@ function AdoptionView({
   const sourceUncollectedRowCount = rows.filter(
     (row) => row.user.measurementStatus === "source-uncollected",
   ).length;
+  const totalMeasuredUserCount = data.users.filter(
+    (user) => user.measurementStatus === "measured",
+  ).length;
+  const totalSharedAccountUserCount = data.users.filter(
+    (user) => user.measurementStatus === "shared-account-unmeasured",
+  ).length;
+  const totalSourceUncollectedUserCount = data.users.filter(
+    (user) => user.measurementStatus === "source-uncollected",
+  ).length;
+  const individualCoverageRate = data.users.length
+    ? (totalMeasuredUserCount / data.users.length) * 100
+    : 0;
 
   const periodSummary = useMemo(
     () =>
@@ -4095,11 +4102,11 @@ function AdoptionView({
         <div className="individual-period-copy">
           <span className="eyebrow">Period Analysis</span>
           <div className="individual-period-title">
-            <h2>{periodLabel} 개인별 활용 평가</h2>
+            <h2>{periodLabel} 개인별 AI 활동 근거</h2>
             <span className="state-pill warning">{coverageNote}</span>
           </div>
           <p>
-            대화 Export의 프롬프트·활성일과 월별 Code Lines를 결합하며, Claude Code 상세 미수집은 0으로 처리하지 않습니다.
+            대화 Export의 프롬프트·활성일과 월별 Code Lines를 결합합니다. 활동량은 업무성과가 아니며 누락값은 0점으로 처리하지 않습니다.
           </p>
         </div>
         <div className="individual-controls">
@@ -4120,13 +4127,12 @@ function AdoptionView({
           <label className="individual-select-control">
             <span>정렬</span>
             <select
-              aria-label="개인별 활용 정렬"
+              aria-label="개인별 AI 활동 정렬"
               value={sortKey}
               onChange={(event) => setSortKey(event.target.value as IndividualSortKey)}
             >
-              <option value="productivity">생산성 신호</option>
-              <option value="code">Code Lines</option>
               <option value="prompts">프롬프트</option>
+              <option value="code">Code Lines</option>
               <option value="tokens">월 누적 토큰</option>
             </select>
           </label>
@@ -4140,6 +4146,24 @@ function AdoptionView({
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
+        </div>
+      </section>
+
+      <section className="individual-evaluation-guardrail" aria-label="인사평가 활용 제한">
+        <div className="individual-guardrail-copy">
+          <AlertTriangle size={20} aria-hidden="true" />
+          <div>
+            <strong>인사평가 직접 활용 제한</strong>
+            <span>
+              현재 화면은 AI 활동·수집 상태를 보여주는 운영 자료입니다. 직무군과 승인·실사용·품질·재사용 정보가 연결되기 전에는 개인 고과나 순위로 사용하지 않습니다.
+            </span>
+          </div>
+        </div>
+        <div className="individual-guardrail-stats">
+          <span>개인 측정 <b>{totalMeasuredUserCount}/{data.users.length}명 · {formatRate(individualCoverageRate)}</b></span>
+          <span>공용·미수집 <b>{totalSharedAccountUserCount + totalSourceUncollectedUserCount}명</b></span>
+          <span>직무군 <b>미연계</b></span>
+          <span>원천 갱신 <b>{formatKstDateTime(data.source.generatedAt)}</b></span>
         </div>
       </section>
 
@@ -4226,7 +4250,7 @@ function AdoptionView({
         <div className="panel-header">
           <div>
             <span className="eyebrow">Individual Scorecard</span>
-            <h2>{periodLabel} 개인별 활용·생산성 평가</h2>
+            <h2>{periodLabel} 개인별 AI 활동 근거</h2>
           </div>
           <span className="state-pill neutral">{rows.length}명</span>
         </div>
@@ -4234,9 +4258,8 @@ function AdoptionView({
           <table>
             <thead>
               <tr>
-                <th>순위</th>
                 <th>사용자</th>
-                <th>생산성 신호</th>
+                <th>측정 상태</th>
                 <th>대화 프롬프트</th>
                 <th>대화 활성일</th>
                 <th>Code Lines</th>
@@ -4245,14 +4268,15 @@ function AdoptionView({
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ user, evaluation, monthlySpend }, index) => {
+              {rows.map(({ user, evaluation, monthlySpend }) => {
                 const metricsMeasured = user.measurementStatus === "measured";
                 const metricsUncollected = !metricsMeasured;
-                const productivityScore = evaluation?.productivityScore ?? 0;
-                const productivityLevel = evaluation?.productivityLevel ?? "unobserved";
+                const measurementPartiallyAvailable = metricsMeasured && (
+                  evaluation?.codeActivityDetailsMissing === true ||
+                  selectedMonthlySpend?.coverage === "partial"
+                );
                 return (
                   <tr key={user.email}>
-                    <td><span className="individual-rank">{index + 1}</span></td>
                     <td>
                       {individualProfileDataByEmail[user.email] ? (
                         <button
@@ -4275,12 +4299,22 @@ function AdoptionView({
                       )}
                     </td>
                     <td>
-                      {metricsMeasured ? (
-                        <IndividualScoreBadge
-                          level={productivityLevel}
-                          score={productivityScore}
-                        />
-                      ) : metricsUncollected ? <span className="state-pill neutral">미수집</span> : null}
+                      <div className="individual-measurement-cell">
+                        <span className={`state-pill ${metricsUncollected ? "neutral" : measurementPartiallyAvailable ? "warning" : "ok"}`}>
+                          {metricsUncollected ? "측정 불가" : measurementPartiallyAvailable ? "부분 측정" : "측정 가능"}
+                        </span>
+                        <small>
+                          {user.measurementStatus === "shared-account-unmeasured"
+                            ? "공용 계정 · 개인 귀속 불가"
+                            : user.measurementStatus === "source-uncollected"
+                              ? "사용 원천 미수집"
+                              : evaluation?.codeActivityDetailsMissing
+                                ? "Claude Code 상세 미수집"
+                                : selectedMonthlySpend?.coverage === "partial"
+                                  ? "부분 기간 누적"
+                                  : "Claude 원천 기준"}
+                        </small>
+                      </div>
                     </td>
                     <td>
                       {metricsMeasured ? (
@@ -4341,19 +4375,23 @@ function AdoptionView({
         </div>
       </section>
 
-      <section className="individual-methodology-band" aria-label="개인별 활용 평가 기준">
+      <section className="individual-methodology-band" aria-label="개인별 AI 활동 분석 기준">
         <div>
           <span className="eyebrow">Methodology</span>
-          <h2>평가 기준과 해석 범위</h2>
+          <h2>분석 기준과 해석 범위</h2>
         </div>
         <dl>
           <div>
-            <dt>활용지수</dt>
+            <dt>AI 활동 정보</dt>
             <dd>{data.methodology.activity}</dd>
           </div>
           <div>
-            <dt>생산성 신호</dt>
+            <dt>Code Lines 해석</dt>
             <dd>{data.methodology.productivity}</dd>
+          </div>
+          <div>
+            <dt>평가 전환 조건</dt>
+            <dd>{data.methodology.evaluationGate}</dd>
           </div>
           <div>
             <dt>한계</dt>
@@ -4384,6 +4422,10 @@ function IndividualProfileView({
   const monthlyFixedKrw = approvalRecords.reduce((sum, record) => sum + record.monthlyKrw, 0);
   const monthlyFixedUsd = approvalRecords.reduce((sum, record) => sum + record.monthlyUsd, 0);
   const metricsMeasured = user.measurementStatus === "measured";
+  const profileMeasurementPartial = metricsMeasured && (
+    evaluation?.codeActivityDetailsMissing === true ||
+    individualUtilizationData.monthlySpend[selectedMonth]?.coverage === "partial"
+  );
   const activityMetricLabel = profile.drive.activityMetricLabel ?? "Drive 프롬프트";
   const activityMetricDetail = profile.drive.activityMetricDetail ??
     `응답 연결 ${numberFormat.format(profile.drive.pairedSessions)}건`;
@@ -4408,7 +4450,7 @@ function IndividualProfileView({
       <section className="individual-profile-header">
         <button className="individual-profile-back" onClick={onBack} type="button">
           <ArrowLeft size={18} />
-          개인별 활용 목록
+          개인별 AI 활동 목록
         </button>
         <div>
           <span className="eyebrow">Individual Cost & Output</span>
@@ -4453,12 +4495,16 @@ function IndividualProfileView({
           <small>{outputMetricDetail}</small>
         </article>
         <article>
-          <span><Gauge size={17} />{fullMonthLabel(selectedMonth)} 생산성</span>
-          <strong>{metricsMeasured ? `${evaluation?.productivityScore ?? 0}점` : "개인 미측정"}</strong>
+          <span><Gauge size={17} />{fullMonthLabel(selectedMonth)} 측정 상태</span>
+          <strong>{!metricsMeasured ? "측정 불가" : profileMeasurementPartial ? "부분 측정" : "측정 가능"}</strong>
           <small>
-            {metricsMeasured
-              ? `${individualLevelLabel(evaluation?.productivityLevel ?? "unobserved")} · Code ${numberFormat.format(evaluation?.codeLines ?? 0)}줄`
-              : (profile.measurementNote ?? "공통 계정 자료로 개인별 활동을 분리할 수 없습니다.")}
+            {!metricsMeasured
+              ? (profile.measurementNote ?? "공통 계정 자료로 개인별 활동을 분리할 수 없습니다.")
+              : evaluation?.codeActivityDetailsMissing
+                ? "Claude Code 프롬프트·활성일 미수집"
+                : individualUtilizationData.monthlySpend[selectedMonth]?.coverage === "partial"
+                  ? "부분 기간 누적 · 월 마감 전"
+                  : "Claude 원천 기준 · 인사평가 직접 사용 금지"}
           </small>
         </article>
       </section>
@@ -4574,7 +4620,7 @@ function IndividualProfileView({
             <span className="eyebrow">Drive Inventory</span>
             <h2>저장 파일 구성</h2>
           </div>
-          <span className="state-pill ok">
+          <span className="state-pill neutral">
             {profile.drive.analyzedFileCount
               ? `분석 ${numberFormat.format(profile.drive.analyzedFileCount)}개 · Drive ${numberFormat.format(profile.drive.fileCount)}개`
               : `전체 ${numberFormat.format(profile.drive.fileCount)}개`}
@@ -4591,6 +4637,9 @@ function IndividualProfileView({
             />
           ))}
         </div>
+        <small className="approval-footnote">
+          파일 수는 저장 신호입니다. 승인·실사용·품질·재사용 상태가 확인된 항목만 인사평가 근거 후보로 사용할 수 있습니다.
+        </small>
       </section>
 
       <section className="panel individual-profile-highlight-panel">
@@ -4599,6 +4648,7 @@ function IndividualProfileView({
             <span className="eyebrow">Output Highlights</span>
             <h2>대표 결과물</h2>
           </div>
+          <span className="state-pill warning">성과 검증 대기</span>
         </div>
         <div className="individual-profile-highlight-list">
           {profile.highlights.map((item, index) => (
@@ -4636,26 +4686,6 @@ function IndividualProfileView({
           </ul>
         </div>
       </section>
-    </div>
-  );
-}
-
-function IndividualScoreBadge({
-  level,
-  score,
-}: {
-  level: IndividualEvaluationLevel;
-  score: number;
-}) {
-  return (
-    <div className="individual-score-badge">
-      <span className={`state-pill ${individualLevelTone(level)}`}>
-        {individualLevelLabel(level)}
-      </span>
-      <div className="individual-score-meter" aria-label={`${individualLevelLabel(level)} ${score}점`}>
-        <span style={{ width: `${Math.min(Math.max(score, 0), 100)}%` }} />
-      </div>
-      <small>{score}점</small>
     </div>
   );
 }
@@ -4984,7 +5014,7 @@ function LegacyAdoptionView({
                 <th>계정</th>
                 <th>이름</th>
                 <th>활용 단계</th>
-                <th>생산성 신호</th>
+                <th>AI 활동 신호</th>
                 <th>Spend</th>
                 <th>요청</th>
                 <th aria-sort="descending">토큰</th>
@@ -5279,18 +5309,6 @@ function workspaceLevelLabel(level: GeminiWorkspaceUserUsageLevel) {
 function fullMonthLabel(month: string) {
   const [year, monthNumber] = month.split("-").map(Number);
   return Number.isFinite(year) && Number.isFinite(monthNumber) ? `${year}년 ${monthNumber}월` : month;
-}
-
-function individualLevelLabel(level: IndividualEvaluationLevel) {
-  if (level === "leading") return "선도";
-  if (level === "active") return "활발";
-  if (level === "growing") return "성장";
-  if (level === "early") return "초기";
-  return "관찰 없음";
-}
-
-function individualLevelTone(level: IndividualEvaluationLevel) {
-  return `individual-${level}`;
 }
 
 function workspaceLevelTone(level: GeminiWorkspaceUserUsageLevel) {

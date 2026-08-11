@@ -628,10 +628,11 @@ export const individualUtilizationData = {
   monthlyTrend,
   weeklyTrend,
   methodology: {
-    activity: "요청·토큰·대화·프롬프트·활성일·사용 제품 범위를 동료 집단 내 백분위로 합성",
-    productivity: "월별은 Code Lines 75% 중심이며, 대화 활동이 없는 Code 사용자는 미수집값을 0으로 감점하지 않고 Code Lines 백분위로 평가",
+    activity: "요청·토큰·대화·프롬프트·활성일·사용 제품 범위는 AI 활동 흐름을 확인하는 운영 참고정보로만 사용",
+    productivity: "Code Lines 중심 비교값은 개발 활동 신호일 뿐 품질·승인·배포·업무성과를 의미하지 않으며 개인 고과에 직접 사용하지 않음",
     monthly: "대화 Export의 프롬프트·활성일과 월별 Code Lines를 결합",
     weekly: "대화 원천의 주별 대화·프롬프트·활성일만 반영하며 Code Lines는 주간으로 나누지 않음",
-    caveat: "Claude Code CSV에는 프롬프트 수와 활성 날짜가 없어 해당 값은 미수집으로 표시합니다. 생산성은 확정 성과가 아닌 비교용 신호입니다.",
+    caveat: "Claude Code CSV에는 프롬프트 수와 활성 날짜가 없고 공용·타 AI 계정의 개인 귀속도 불완전합니다. 누락은 0점이 아닌 측정 불가로 표시합니다.",
+    evaluationGate: "직무군, 최종 승인, 실제 사용, 품질·재작업, 시간 절감, 재사용 정보가 연결된 산출물만 인사평가 근거 후보로 전환",
   },
 } as const;

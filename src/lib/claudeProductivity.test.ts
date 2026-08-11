@@ -21,4 +21,12 @@ describe("Claude productivity signals", () => {
     expect(signals.get("ykchj1011@riskzero.kr")?.level).toBe("no-code");
     expect(signals.get("mjlee0828@riskzero.kr")?.level).toBe("insufficient");
   });
+
+  it("labels the comparison as an activity signal rather than an HR performance score", () => {
+    const signals = buildClaudeProductivitySignals(initialClaudeTeamUsageData.users);
+    const signal = signals.get("wody@riskzero.kr");
+
+    expect(signal?.label).toBe("높은 활동 신호");
+    expect(signal?.detail).toContain("인사평가 점수가 아닌 운영 참고 신호");
+  });
 });

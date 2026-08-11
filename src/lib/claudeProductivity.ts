@@ -18,11 +18,11 @@ export type ClaudeProductivitySignal = {
 };
 
 const labels: Record<ClaudeProductivityLevel, string> = {
-  top: "생산성 신호 상위",
-  efficient: "고효율 활용",
-  balanced: "균형 활용",
+  top: "높은 활동 신호",
+  efficient: "효율 신호 관찰",
+  balanced: "활동 신호 관찰",
   insufficient: "표본 부족",
-  "no-code": "코드 산출 없음",
+  "no-code": "코드 원천 없음",
 };
 
 export function buildClaudeProductivitySignals(users: ClaudeTeamUserUsage[]) {
@@ -112,7 +112,7 @@ function buildSignal({
     score: round(score),
     linesPerMillionTokens: round(linesPerMillionTokens),
     linesPerThousandRequests: round(linesPerThousandRequests),
-    detail: `생산성 신호 ${round(score)}점 · 수락 코드 ${user.codeLines.toLocaleString("ko-KR")}줄 · Claude Code 100만 토큰당 ${round(linesPerMillionTokens).toLocaleString("ko-KR")}줄`,
+    detail: `AI 활동 비교지수 ${round(score)}점 · 수락 코드 ${user.codeLines.toLocaleString("ko-KR")}줄 · Claude Code 100만 토큰당 ${round(linesPerMillionTokens).toLocaleString("ko-KR")}줄 · 인사평가 점수가 아닌 운영 참고 신호`,
   };
 }
 
