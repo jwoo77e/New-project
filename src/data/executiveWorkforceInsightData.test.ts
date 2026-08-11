@@ -64,20 +64,24 @@ describe("executiveWorkforceInsightData", () => {
     ]);
   });
 
-  it("keeps role-based outcomes separate from raw AI activity", () => {
+  it("defines role-based AI activity estimation signals", () => {
     expect(executiveWorkforceInsightData.lowUsageReason).toBe(
       "업무량 감소, 질의 및 검색에 사용",
     );
     expect(executiveWorkforceInsightData.evaluationFramework.developer.measures).toEqual([
-      "병합·배포",
-      "품질·재작업",
-      "시간 절감",
+      "토큰",
+      "Code Lines",
     ]);
+    expect(executiveWorkforceInsightData.evaluationFramework.developer.description).toBe(
+      "토큰과 Code Lines를 통해 활동량 추정",
+    );
     expect(executiveWorkforceInsightData.evaluationFramework.nonDeveloper.measures).toEqual([
-      "승인·실사용",
-      "품질·재작업",
-      "재사용·시간 절감",
+      "토큰",
+      "생성 결과물 수",
     ]);
+    expect(executiveWorkforceInsightData.evaluationFramework.nonDeveloper.description).toBe(
+      "토큰과 생성 결과물의 수를 통해 활동량 추정",
+    );
     expect(JSON.stringify(executiveWorkforceInsightData)).not.toContain("Drive");
   });
 });

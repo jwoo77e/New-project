@@ -1724,11 +1724,11 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
           <div className="usage-interpretation">
             <p>
               <b>{workforce.evaluationFramework.developer.label}</b>
-              {workforce.evaluationFramework.developer.measures.join(" + ")} · {workforce.evaluationFramework.developer.description}
+              {workforce.evaluationFramework.developer.description}
             </p>
             <p>
               <b>{workforce.evaluationFramework.nonDeveloper.label}</b>
-              {workforce.evaluationFramework.nonDeveloper.measures.join(" + ")} · {workforce.evaluationFramework.nonDeveloper.description}
+              {workforce.evaluationFramework.nonDeveloper.description}
             </p>
           </div>
         </section>

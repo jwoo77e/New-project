@@ -173,13 +173,13 @@ export const executiveWorkforceInsightData = {
   evaluationFramework: {
     developer: {
       label: "개발자",
-      measures: ["병합·배포", "품질·재작업", "시간 절감"],
-      description: "토큰과 Code Lines는 접근·활동 맥락으로만 확인",
+      measures: ["토큰", "Code Lines"],
+      description: "토큰과 Code Lines를 통해 활동량 추정",
     },
     nonDeveloper: {
       label: "비개발자",
-      measures: ["승인·실사용", "품질·재작업", "재사용·시간 절감"],
-      description: "토큰과 파일 수는 접근·활동 맥락으로만 확인",
+      measures: ["토큰", "생성 결과물 수"],
+      description: "토큰과 생성 결과물의 수를 통해 활동량 추정",
     },
   },
 } as const;
