@@ -1719,7 +1719,7 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
           </div>
           <div className="usage-low-reason">
             <AlertTriangle size={16} aria-hidden="true" />
-            <p><b>낮은 활동량 구간 해석</b>{workforce.lowUsageReason}</p>
+            <p><b>낮은 활동량 사유</b>{workforce.lowUsageReason}</p>
           </div>
           <div className="usage-interpretation">
             <p>

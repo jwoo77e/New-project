@@ -66,7 +66,7 @@ describe("executiveWorkforceInsightData", () => {
 
   it("keeps role-based outcomes separate from raw AI activity", () => {
     expect(executiveWorkforceInsightData.lowUsageReason).toBe(
-      "토큰량은 업무량·업무유형·타 AI 도구 사용에 영향을 받으므로 미활용이나 저성과로 단정하지 않음",
+      "업무량 감소, 질의 및 검색에 사용",
     );
     expect(executiveWorkforceInsightData.evaluationFramework.developer.measures).toEqual([
       "병합·배포",

@@ -169,7 +169,7 @@ export const executiveWorkforceInsightData = {
       users: lowUsageUsers.map((user) => user.displayName),
     },
   ] satisfies ExecutiveUsageSegment[],
-  lowUsageReason: "토큰량은 업무량·업무유형·타 AI 도구 사용에 영향을 받으므로 미활용이나 저성과로 단정하지 않음",
+  lowUsageReason: "업무량 감소, 질의 및 검색에 사용",
   evaluationFramework: {
     developer: {
       label: "개발자",
