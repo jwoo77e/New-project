@@ -4259,7 +4259,6 @@ function AdoptionView({
             <thead>
               <tr>
                 <th>사용자</th>
-                <th>측정 상태</th>
                 <th>대화 프롬프트</th>
                 <th>대화 활성일</th>
                 <th>Code Lines</th>
@@ -4271,10 +4270,6 @@ function AdoptionView({
               {rows.map(({ user, evaluation, monthlySpend }) => {
                 const metricsMeasured = user.measurementStatus === "measured";
                 const metricsUncollected = !metricsMeasured;
-                const measurementPartiallyAvailable = metricsMeasured && (
-                  evaluation?.codeActivityDetailsMissing === true ||
-                  selectedMonthlySpend?.coverage === "partial"
-                );
                 return (
                   <tr key={user.email}>
                     <td>
@@ -4297,24 +4292,6 @@ function AdoptionView({
                           {user.displayAccount && <small>{user.displayAccount}</small>}
                         </>
                       )}
-                    </td>
-                    <td>
-                      <div className="individual-measurement-cell">
-                        <span className={`state-pill ${metricsUncollected ? "neutral" : measurementPartiallyAvailable ? "warning" : "ok"}`}>
-                          {metricsUncollected ? "측정 불가" : measurementPartiallyAvailable ? "부분 측정" : "측정 가능"}
-                        </span>
-                        <small>
-                          {user.measurementStatus === "shared-account-unmeasured"
-                            ? "공용 계정 · 개인 귀속 불가"
-                            : user.measurementStatus === "source-uncollected"
-                              ? "사용 원천 미수집"
-                              : evaluation?.codeActivityDetailsMissing
-                                ? "Claude Code 상세 미수집"
-                                : selectedMonthlySpend?.coverage === "partial"
-                                  ? "부분 기간 누적"
-                                  : "Claude 원천 기준"}
-                        </small>
-                      </div>
                     </td>
                     <td>
                       {metricsMeasured ? (

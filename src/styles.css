@@ -4531,23 +4531,6 @@ td strong {
   white-space: nowrap;
 }
 
-.individual-measurement-cell {
-  display: grid;
-  gap: 5px;
-  min-width: 138px;
-}
-
-.individual-measurement-cell .state-pill {
-  justify-self: start;
-}
-
-.individual-measurement-cell small {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.68rem;
-  line-height: 1.35;
-}
-
 .individual-methodology-band {
   display: grid;
   grid-column: 1 / -1;
