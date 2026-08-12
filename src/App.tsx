@@ -925,7 +925,7 @@ function App() {
     viewHeader = {
       eyebrow: "Individual Utilization",
       title: "개인별 AI 활동 근거",
-      description: "요청·토큰·프롬프트·Code Lines를 활동 근거로 확인하고, 측정 누락과 인사평가 활용 제한을 함께 표시합니다.",
+      description: "요청·토큰·프롬프트·Code Lines를 활동 근거로 확인하고 측정 상태를 함께 표시합니다.",
       freshness: `${individualUtilizationData.source.spend.period} · ${formatKstDateTime(individualUtilizationData.source.generatedAt)}`,
       metrics: [
         {
@@ -4028,18 +4028,6 @@ function AdoptionView({
   const sourceUncollectedRowCount = rows.filter(
     (row) => row.user.measurementStatus === "source-uncollected",
   ).length;
-  const totalMeasuredUserCount = data.users.filter(
-    (user) => user.measurementStatus === "measured",
-  ).length;
-  const totalSharedAccountUserCount = data.users.filter(
-    (user) => user.measurementStatus === "shared-account-unmeasured",
-  ).length;
-  const totalSourceUncollectedUserCount = data.users.filter(
-    (user) => user.measurementStatus === "source-uncollected",
-  ).length;
-  const individualCoverageRate = data.users.length
-    ? (totalMeasuredUserCount / data.users.length) * 100
-    : 0;
 
   const periodSummary = useMemo(
     () =>
@@ -4146,24 +4134,6 @@ function AdoptionView({
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
-        </div>
-      </section>
-
-      <section className="individual-evaluation-guardrail" aria-label="인사평가 활용 제한">
-        <div className="individual-guardrail-copy">
-          <AlertTriangle size={20} aria-hidden="true" />
-          <div>
-            <strong>인사평가 직접 활용 제한</strong>
-            <span>
-              현재 화면은 AI 활동·수집 상태를 보여주는 운영 자료입니다. 직무군과 승인·실사용·품질·재사용 정보가 연결되기 전에는 개인 고과나 순위로 사용하지 않습니다.
-            </span>
-          </div>
-        </div>
-        <div className="individual-guardrail-stats">
-          <span>개인 측정 <b>{totalMeasuredUserCount}/{data.users.length}명 · {formatRate(individualCoverageRate)}</b></span>
-          <span>공용·미수집 <b>{totalSharedAccountUserCount + totalSourceUncollectedUserCount}명</b></span>
-          <span>직무군 <b>미연계</b></span>
-          <span>원천 갱신 <b>{formatKstDateTime(data.source.generatedAt)}</b></span>
         </div>
       </section>
 
