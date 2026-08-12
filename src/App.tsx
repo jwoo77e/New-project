@@ -1598,7 +1598,7 @@ function ExecutiveDesignOverview({
               <span>1</span>
               <div>
                 <b>Team Plan 전환안 결정</b>
-                <small>개인 2건 · 공용 2건 · 순수 신규 {workforce.pureAdditionalSeats}석</small>
+                <small>개인 {workforce.personalConversionAccounts.length}건 · 공용 {workforce.sharedConversionAccounts.length}건 · 순수 신규 {workforce.pureAdditionalSeats}석</small>
               </div>
             </li>
             <li>
@@ -1624,7 +1624,7 @@ function ExecutiveDesignOverview({
 
 function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecutiveModel }) {
   const workforce = executiveWorkforceInsightData;
-  const projectedMonthlyKrw = model.currentFixedCostKrw + workforce.netMonthlyChangeKrw;
+  const projectedMonthlyKrw = workforce.projectedMonthlyKrw;
 
   return (
     <section className="workforce-decision-board" aria-label="Team Plan 보급 및 활용 측정 의사결정">
@@ -1735,8 +1735,8 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
 
         <aside className="workforce-investment-panel">
           <div className="investment-kicker">Decision</div>
-          <h3>4건 전환 + 15석 신규로 41명 Team Plan 체계</h3>
-          <p>개인·공용 Claude 4건을 Standard로 전환하고 순수 신규 {workforce.pureAdditionalSeats}석을 추가하는 비교 시나리오입니다.</p>
+          <h3>{workforce.conversionSeats}건 전환 + {workforce.pureAdditionalSeats}석 신규로 41명 Team Plan 체계</h3>
+          <p>개인·공용 Claude {workforce.conversionSeats}건을 Standard로 전환하고 순수 신규 {workforce.pureAdditionalSeats}석을 추가하는 비교 시나리오입니다.</p>
           <div className="cost-bridge">
             <div><span>현재 최소 비용</span><strong>{formatManWon(model.currentFixedCostKrw)}</strong></div>
             <ArrowRight size={17} />
@@ -1745,11 +1745,11 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
             <div><span>시나리오 최소</span><strong>{formatManWon(projectedMonthlyKrw)}</strong></div>
           </div>
           <ul>
-            <li><CheckCircle2 size={15} /><span><b>기존 비팀플랜 4건 전환</b>개인 2건 · 공용 2건을 개인 Team Plan으로 전환</span></li>
-            <li><CheckCircle2 size={15} /><span><b>순수 신규 {workforce.pureAdditionalSeats}석 추가</b>기존 22명과 전환 4명을 제외한 수량</span></li>
+            <li><CheckCircle2 size={15} /><span><b>기존 비팀플랜 {workforce.conversionSeats}건 전환</b>개인 {workforce.personalConversionAccounts.length}건 · 공용 {workforce.sharedConversionAccounts.length}건을 개인 Team Plan으로 전환</span></li>
+            <li><CheckCircle2 size={15} /><span><b>순수 신규 {workforce.pureAdditionalSeats}석 추가</b>기존 {workforce.teamPlanUsers}명과 전환 {workforce.conversionSeats}명을 제외한 수량</span></li>
             <li><CheckCircle2 size={15} /><span><b>총 {workforce.totalTeamPlanActions}건 조치</b>전환 {workforce.conversionSeats}건 + 신규 {workforce.pureAdditionalSeats}석</span></li>
           </ul>
-          <footer>현재 비팀플랜 4건 {formatManWon(workforce.currentConversionCostKrw)} → Standard {workforce.totalTeamPlanActions}석 {formatManWon(workforce.proposedTeamPlanActionCostKrw)} · {workforce.source.conversionAssumption}</footer>
+          <footer>현재 비팀플랜 {workforce.conversionSeats}건 {formatManWon(workforce.currentConversionCostKrw)} → Standard {workforce.totalTeamPlanActions}석 {formatManWon(workforce.proposedTeamPlanActionCostKrw)} · {workforce.source.conversionAssumption}</footer>
         </aside>
       </div>
     </section>

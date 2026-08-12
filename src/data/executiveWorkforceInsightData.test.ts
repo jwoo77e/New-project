@@ -8,10 +8,22 @@ describe("executiveWorkforceInsightData", () => {
     expect(executiveWorkforceInsightData.teamPlanStandardUsers).toBe(16);
     expect(executiveWorkforceInsightData.teamPlanPremiumUsers).toBe(6);
     expect(executiveWorkforceInsightData.teamPlanCoverageRate).toBeCloseTo((22 / 41) * 100, 5);
-    expect(executiveWorkforceInsightData.personalConversionAccounts).toHaveLength(2);
+    expect(executiveWorkforceInsightData.personalConversionAccounts).toHaveLength(4);
+    expect(executiveWorkforceInsightData.personalConversionAccounts.map((account) => account.name)).toEqual([
+      "박연석 전무",
+      "김대일 상무",
+      "조욱상 이사",
+      "이병현 이사",
+    ]);
+    expect(executiveWorkforceInsightData.personalConversionAccounts.map((account) => account.currentPlan)).toEqual([
+      "Claude Pro Max 20",
+      "Claude Pro Max 20",
+      "Claude Pro Max 5",
+      "Claude Pro Max 5",
+    ]);
     expect(executiveWorkforceInsightData.sharedConversionAccounts).toHaveLength(2);
-    expect(executiveWorkforceInsightData.conversionSeats).toBe(4);
-    expect(executiveWorkforceInsightData.pureAdditionalSeats).toBe(15);
+    expect(executiveWorkforceInsightData.conversionSeats).toBe(6);
+    expect(executiveWorkforceInsightData.pureAdditionalSeats).toBe(13);
     expect(executiveWorkforceInsightData.totalTeamPlanActions).toBe(19);
     expect(
       executiveWorkforceInsightData.teamPlanUsers
@@ -21,11 +33,12 @@ describe("executiveWorkforceInsightData", () => {
   });
 
   it("calculates the Standard conversion scenario from current approval costs", () => {
-    expect(executiveWorkforceInsightData.currentConversionCostKrw).toBe(1_143_450);
-    expect(executiveWorkforceInsightData.proposedConversionCostKrw).toBe(148_500);
-    expect(executiveWorkforceInsightData.pureAdditionalCostKrw).toBe(556_875);
+    expect(executiveWorkforceInsightData.currentConversionCostKrw).toBe(1_470_150);
+    expect(executiveWorkforceInsightData.proposedConversionCostKrw).toBe(222_750);
+    expect(executiveWorkforceInsightData.pureAdditionalCostKrw).toBe(482_625);
     expect(executiveWorkforceInsightData.proposedTeamPlanActionCostKrw).toBe(705_375);
-    expect(executiveWorkforceInsightData.netMonthlyChangeKrw).toBe(-438_075);
+    expect(executiveWorkforceInsightData.netMonthlyChangeKrw).toBe(-764_775);
+    expect(executiveWorkforceInsightData.projectedMonthlyKrw).toBeCloseTo(5_450_976.15, 2);
   });
 
   it("keeps July token measurement separate from pending source connections", () => {

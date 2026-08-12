@@ -71,6 +71,17 @@ const personalConversionAccounts = [
     findClaudeRecord((record) => record.owner.startsWith("김대일 상무"), "김대일 상무 개인 계정"),
     "김대일 상무",
   ),
+  toConversionAccount(
+    findClaudeRecord((record) => record.owner.startsWith("조욱상 이사"), "조욱상 이사 개인 계정"),
+    "조욱상 이사",
+  ),
+  toConversionAccount(
+    findClaudeRecord(
+      (record) => record.owner.startsWith("이병현 이사") || record.owner.startsWith("이병헌 이사"),
+      "이병현 이사 개인 계정",
+    ),
+    "이병현 이사",
+  ),
 ] as const;
 const sharedConversionAccounts = [
   toConversionAccount(
@@ -91,6 +102,7 @@ const proposedConversionCostKrw = conversionSeats * teamPlanStandardKrw;
 const pureAdditionalCostKrw = pureAdditionalSeats * teamPlanStandardKrw;
 const proposedTeamPlanActionCostKrw = proposedConversionCostKrw + pureAdditionalCostKrw;
 const netMonthlyChangeKrw = proposedTeamPlanActionCostKrw - currentConversionCostKrw;
+const projectedMonthlyKrw = initialAiToolApprovalData.totalMonthlyKrw + netMonthlyChangeKrw;
 
 const userNameByEmail = new Map(
   individualUtilizationData.users.map((user) => [user.email, user.displayName]),
@@ -136,6 +148,7 @@ export const executiveWorkforceInsightData = {
   pureAdditionalCostKrw,
   proposedTeamPlanActionCostKrw,
   netMonthlyChangeKrw,
+  projectedMonthlyKrw,
   projectedCoverageRate: 100,
   tokenMeasuredUsers,
   tokenMeasurementTarget,
