@@ -23,6 +23,8 @@ const powerUserThreshold = 1_000_000_000;
 const lowUsageThreshold = 100_000_000;
 const teamPlanStandardUsd = 25;
 const teamPlanStandardKrw = 37_125;
+const teamPlanPremiumUsd = 125;
+const teamPlanPremiumKrw = 185_625;
 const tokenPendingUsers = [
   { name: "이동훈 부장", email: "dhlee@riskzero.kr" },
   { name: "박수진 과장", email: "sjpark@riskzero.kr" },
@@ -98,7 +100,7 @@ const pureAdditionalSeats = eligibleEmployees - teamPlanUsers - conversionSeats;
 const totalTeamPlanActions = conversionSeats + pureAdditionalSeats;
 const currentConversionCostKrw = [...personalConversionAccounts, ...sharedConversionAccounts]
   .reduce((sum, account) => sum + account.currentMonthlyKrw, 0);
-const proposedConversionCostKrw = conversionSeats * teamPlanStandardKrw;
+const proposedConversionCostKrw = conversionSeats * teamPlanPremiumKrw;
 const pureAdditionalCostKrw = pureAdditionalSeats * teamPlanStandardKrw;
 const proposedTeamPlanActionCostKrw = proposedConversionCostKrw + pureAdditionalCostKrw;
 const netMonthlyChangeKrw = proposedTeamPlanActionCostKrw - currentConversionCostKrw;
@@ -128,7 +130,7 @@ export const executiveWorkforceInsightData = {
     tokenPeriod: julySpend.period,
     tokenCoverage: julySpend.coverage,
     teamPlanBasis: `${initialAiToolApprovalData.source.collectedAt} AI 도구 결재 현황`,
-    conversionAssumption: "전환 및 신규 좌석은 Claude Team Plan Standard 기준 시나리오",
+    conversionAssumption: "전환 6석은 Claude Team Plan Premium, 순수 신규 13석은 Standard 기준 시나리오",
   },
   eligibleEmployees,
   leaveExcludedEmployees,
@@ -143,6 +145,8 @@ export const executiveWorkforceInsightData = {
   totalTeamPlanActions,
   teamPlanStandardUsd,
   teamPlanStandardKrw,
+  teamPlanPremiumUsd,
+  teamPlanPremiumKrw,
   currentConversionCostKrw,
   proposedConversionCostKrw,
   pureAdditionalCostKrw,

@@ -32,13 +32,15 @@ describe("executiveWorkforceInsightData", () => {
     ).toBe(executiveWorkforceInsightData.eligibleEmployees);
   });
 
-  it("calculates the Standard conversion scenario from current approval costs", () => {
+  it("calculates Premium conversions and Standard pure-new seats from current approval costs", () => {
     expect(executiveWorkforceInsightData.currentConversionCostKrw).toBe(1_470_150);
-    expect(executiveWorkforceInsightData.proposedConversionCostKrw).toBe(222_750);
+    expect(executiveWorkforceInsightData.teamPlanPremiumKrw).toBe(185_625);
+    expect(executiveWorkforceInsightData.teamPlanStandardKrw).toBe(37_125);
+    expect(executiveWorkforceInsightData.proposedConversionCostKrw).toBe(1_113_750);
     expect(executiveWorkforceInsightData.pureAdditionalCostKrw).toBe(482_625);
-    expect(executiveWorkforceInsightData.proposedTeamPlanActionCostKrw).toBe(705_375);
-    expect(executiveWorkforceInsightData.netMonthlyChangeKrw).toBe(-764_775);
-    expect(executiveWorkforceInsightData.projectedMonthlyKrw).toBeCloseTo(5_450_976.15, 2);
+    expect(executiveWorkforceInsightData.proposedTeamPlanActionCostKrw).toBe(1_596_375);
+    expect(executiveWorkforceInsightData.netMonthlyChangeKrw).toBe(126_225);
+    expect(executiveWorkforceInsightData.projectedMonthlyKrw).toBeCloseTo(6_341_976.15, 2);
   });
 
   it("keeps July token measurement separate from pending source connections", () => {
