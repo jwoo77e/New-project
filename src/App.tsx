@@ -3998,7 +3998,7 @@ function AdoptionView({
       ? `${selectedWeeklyUsage.startDate} ~ ${selectedWeeklyUsage.endDate} · 누적 스냅샷 순증`
       : "주차별 원천 미수집"
     : selectedMonthlySpend
-      ? `${selectedMonthlySpend.period}${selectedMonthlySpend.coverage === "partial" ? " · 부분 누적" : ""}`
+      ? `${selectedMonthlySpend.period}${selectedMonthlySpend.coverage === "partial" ? " · 월 진행 중 누적" : ""}`
       : "월별 Spend 미수집";
 
   const rows = useMemo(() => {

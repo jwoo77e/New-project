@@ -258,10 +258,26 @@ describe("individualUtilizationData", () => {
       totalTokens: 22109534845,
     });
     expect(data.monthlySpend["2026-08"]?.totals).toMatchObject({
-      requests: 6568,
-      totalTokens: 1907464286,
+      requests: 283175,
+      promptTokens: 57105130417,
+      completionTokens: 225584592,
+      totalTokens: 57330715009,
     });
     expect(data.monthlySpend["2026-08"]?.coverage).toBe("partial");
+    expect(data.monthlySpend["2026-08"]?.period).toBe("2026-08-01 ~ 2026-08-13");
+    expect(data.monthlySpend["2026-08"]?.users["woosung.jeon@riskzero.kr"]).toMatchObject({
+      requests: 40773,
+      totalTokens: 9312885218,
+    });
+    expect(data.monthlySpend["2026-08"]?.users["jungyr98@riskzero.kr"]).toMatchObject({
+      requests: 15281,
+      totalTokens: 1276224049,
+    });
+    expect(
+      Object.values(data.monthlySpend["2026-08"]?.users ?? {}).every(
+        (usage) => usage.requests >= 0 && usage.totalTokens >= 0,
+      ),
+    ).toBe(true);
     expect(data.monthlySpendSource.missingMonths).toHaveLength(0);
   });
 });
