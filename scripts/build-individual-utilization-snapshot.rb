@@ -22,6 +22,7 @@ OptionParser.new do |parser|
   USAGE
 
   parser.on("--spend PATH", "Claude Team spend report CSV") { |value| options[:spend] = value }
+  parser.on("--spend-period PERIOD", "Spend report coverage label") { |value| options[:spend_period] = value }
   parser.on("--code MONTH:PATH", "Monthly Claude Code lines CSV (repeatable)") do |value|
     month, path = value.split(":", 2)
     raise OptionParser::InvalidArgument, "--code requires MONTH:PATH" unless month&.match?(/\A\d{4}-\d{2}\z/) && path
@@ -30,6 +31,9 @@ OptionParser.new do |parser|
   end
   parser.on("--conversations PATH", "Claude export conversations.json") { |value| options[:conversations] = value }
   parser.on("--users PATH", "Claude export users.json") { |value| options[:users] = value }
+  parser.on("--preserve-activity-revision REV", "Keep conversation activity from a verified Git snapshot") do |value|
+    options[:preserve_activity_revision] = value
+  end
   parser.on("--output PATH", "Output JSON path") { |value| options[:output] = value }
 end.parse!
 
@@ -57,6 +61,8 @@ DISPLAY_NAMES = {
   "jaewoo.kim@riskzero.kr" => "김재우 부장",
   "jhpark@riskzero.kr" => "박재현 상무",
   "dhlee@riskzero.kr" => "이동훈 부장",
+  "sjpark@riskzero.kr" => "박수진 과장",
+  "songinna@riskzero.kr" => "송인나 대리",
 }.freeze
 
 def number(row, key)
@@ -260,6 +266,25 @@ serialized_users = users.sort.map do |email, user|
   }
 end
 
+if options[:preserve_activity_revision]
+  source = IO.popen(
+    ["git", "show", "#{options[:preserve_activity_revision]}:src/data/individualUtilizationSnapshot.json"],
+    &:read
+  )
+  abort "failed to read preserved activity snapshot" unless $?.success?
+
+  preserved_snapshot = JSON.parse(source)
+  preserved_by_email = preserved_snapshot.fetch("users").to_h { |user| [user.fetch("email"), user] }
+  serialized_users.each do |user|
+    preserved = preserved_by_email[user.fetch("email")]
+    next unless preserved
+
+    user["monthlyActivity"] = preserved.fetch("monthlyActivity", {})
+    user["weeklyActivity"] = preserved.fetch("weeklyActivity", {})
+  end
+  conversation_source = preserved_snapshot.dig("source", "conversations")
+end
+
 totals = serialized_users.each_with_object({
   "users" => serialized_users.length,
   "requests" => 0,
@@ -290,7 +315,7 @@ snapshot = {
     "generatedAt" => Time.now.getlocal("+09:00").iso8601,
     "spend" => {
       "fileName" => File.basename(options[:spend]),
-      "period" => "2026-05-07 ~ 2026-08-05",
+      "period" => options[:spend_period] || "조회 기간 미지정",
       "rowCount" => spend_rows,
       "grain" => "user_product_model_cumulative",
     },

@@ -3920,6 +3920,39 @@ td strong {
   gap: 8px;
 }
 
+.individual-period-mode {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(62px, 1fr));
+  min-height: 40px;
+  padding: 3px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--surface-muted);
+}
+
+.individual-period-mode button {
+  min-width: 62px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.individual-period-mode button.active {
+  background: var(--surface);
+  color: var(--teal-deep);
+  box-shadow: 0 1px 4px rgba(26, 45, 41, 0.12);
+}
+
+.individual-period-mode button:focus-visible {
+  outline: 3px solid rgba(15, 139, 141, 0.18);
+  outline-offset: 1px;
+}
+
 .individual-select-control {
   display: grid;
   gap: 5px;

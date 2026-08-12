@@ -1,5 +1,6 @@
 import snapshotJson from "./individualUtilizationSnapshot.json";
 import monthlySpendSnapshotJson from "./individualMonthlySpendSnapshot.json";
+import weeklyUsageSnapshotJson from "./individualWeeklyUsageSnapshot.json";
 
 export type IndividualPeriodMode = "month" | "week";
 export type IndividualEvaluationLevel = "leading" | "active" | "growing" | "early" | "unobserved";
@@ -153,6 +154,35 @@ export type IndividualMonthlySpendPeriod = {
   users: Record<string, IndividualMonthlySpendUser>;
 };
 
+export type IndividualWeeklyUsageMetrics = IndividualMonthlySpendUser & {
+  codeLines: number;
+};
+
+export type IndividualWeeklyUsageUser = IndividualWeeklyUsageMetrics & {
+  products: string[];
+  models: string[];
+};
+
+export type IndividualWeeklyUsagePeriod = {
+  key: string;
+  label: string;
+  startDate: string;
+  endDate: string;
+  coverage: "complete" | "partial";
+  source: {
+    previousSpendFile: string;
+    currentSpendFile: string;
+    previousSpendRows: number;
+    currentSpendRows: number;
+    previousCodeFile: string;
+    currentCodeFile: string;
+    method: string;
+  };
+  totals: IndividualWeeklyUsageMetrics & { activeUsers: number };
+  users: Record<string, IndividualWeeklyUsageUser>;
+  notes: string[];
+};
+
 type RawIndividualMonthlySpendSnapshot = {
   generatedAt: string;
   months: IndividualMonthlySpendPeriod[];
@@ -160,8 +190,14 @@ type RawIndividualMonthlySpendSnapshot = {
   notes: string[];
 };
 
+type RawIndividualWeeklyUsageSnapshot = {
+  generatedAt: string;
+  periods: IndividualWeeklyUsagePeriod[];
+};
+
 const snapshot = snapshotJson as unknown as RawIndividualSnapshot;
 const monthlySpendSnapshot = monthlySpendSnapshotJson as unknown as RawIndividualMonthlySpendSnapshot;
+const weeklyUsageSnapshot = weeklyUsageSnapshotJson as unknown as RawIndividualWeeklyUsageSnapshot;
 const emptyActivity: ActivitySignal = {
   conversations: 0,
   humanPrompts: 0,
@@ -233,6 +269,10 @@ const allActiveDays = snapshot.users.map((user) => sumActivity(user.weeklyActivi
 const allCodeLines = snapshot.users.map((user) =>
   Object.values(user.monthlyCodeLines).reduce((sum, value) => sum + value, 0),
 );
+const measuredUsageScopeOverrides: Record<string, string> = {
+  "sjpark@riskzero.kr": "chatGPT 공통 계정 사용 · Claude Team Plan Standard",
+  "songinna@riskzero.kr": "chatGPT 공통 계정 사용 · Claude Team Plan Standard",
+};
 
 const measuredUsers: IndividualUtilizationUser[] = snapshot.users.map((user) => {
   const totalActivity = sumActivity(user.weeklyActivity);
@@ -351,7 +391,7 @@ const measuredUsers: IndividualUtilizationUser[] = snapshot.users.map((user) => 
     ...user,
     measurementStatus: "measured",
     displayAccount: user.email,
-    usageScopeOverride: null,
+    usageScopeOverride: measuredUsageScopeOverrides[user.email] ?? null,
     totalCodeLines,
     totalConversations: totalActivity.conversations,
     totalHumanPrompts: totalActivity.humanPrompts,
@@ -503,7 +543,10 @@ const unmeasuredUserSeeds: Array<{
   }),
 ];
 
-const unmeasuredUsers: IndividualUtilizationUser[] = unmeasuredUserSeeds.map(({ evidence, ...seed }) => ({
+const measuredEmails = new Set(measuredUsers.map((user) => user.email));
+const unmeasuredUsers: IndividualUtilizationUser[] = unmeasuredUserSeeds
+  .filter((seed) => !measuredEmails.has(seed.email))
+  .map(({ evidence, ...seed }) => ({
   ...seed,
   requests: 0,
   promptTokens: 0,
@@ -571,7 +614,7 @@ const unmeasuredUsers: IndividualUtilizationUser[] = unmeasuredUserSeeds.map(({ 
       } satisfies IndividualPeriodEvaluation,
     ]),
   ),
-}));
+  }));
 
 const users = [...measuredUsers, ...unmeasuredUsers];
 
@@ -617,6 +660,19 @@ const weeklyTrend: IndividualTrendPoint[] = weeks.map((week) => {
   };
 });
 
+const weeklyUsage = Object.fromEntries(
+  weeklyUsageSnapshot.periods.map((period) => [period.key, period] as const),
+) as Record<string, IndividualWeeklyUsagePeriod>;
+const usageWeeks = weeklyUsageSnapshot.periods.map((period) => period.key);
+const weeklyUsageTrend = weeklyUsageSnapshot.periods.map((period) => ({
+  key: period.key,
+  label: period.label,
+  activeUsers: period.totals.activeUsers,
+  requests: period.totals.requests,
+  totalTokens: period.totals.totalTokens,
+  codeLines: period.totals.codeLines,
+}));
+
 export const individualUtilizationData = {
   source: snapshot.source,
   monthlySpendSource: monthlySpendSnapshot,
@@ -624,14 +680,18 @@ export const individualUtilizationData = {
   months,
   monthlySpend,
   weeks,
+  usageWeeks,
+  weeklyUsage,
+  weeklyUsageSource: weeklyUsageSnapshot,
   users,
   monthlyTrend,
   weeklyTrend,
+  weeklyUsageTrend,
   methodology: {
     activity: "요청·토큰·대화·프롬프트·활성일·사용 제품 범위는 AI 활동 흐름을 확인하는 운영 참고정보로만 사용",
     productivity: "Code Lines 중심 비교값은 개발 활동 신호일 뿐 품질·승인·배포·업무성과를 의미하지 않으며 개인 고과에 직접 사용하지 않음",
     monthly: "대화 Export의 프롬프트·활성일과 월별 Code Lines를 결합",
-    weekly: "대화 원천의 주별 대화·프롬프트·활성일만 반영하며 Code Lines는 주간으로 나누지 않음",
+    weekly: "동일 조건으로 7일 간격 수집한 Spend·Code Lines 누적 스냅샷의 차이를 주차별 요청·토큰·Code Lines로 반영",
     caveat: "Claude Code CSV에는 프롬프트 수와 활성 날짜가 없고 공용·타 AI 계정의 개인 귀속도 불완전합니다. 누락은 0점이 아닌 측정 불가로 표시합니다.",
     evaluationGate: "직무군, 최종 승인, 실제 사용, 품질·재작업, 시간 절감, 재사용 정보가 연결된 산출물만 인사평가 근거 후보로 전환",
   },

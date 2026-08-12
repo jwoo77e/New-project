@@ -80,6 +80,7 @@ import {
 } from "./data/claudeTeamUsageData";
 import {
   individualUtilizationData,
+  type IndividualPeriodMode,
   type IndividualUtilizationUser,
 } from "./data/individualUtilizationData";
 import { executiveWorkforceInsightData } from "./data/executiveWorkforceInsightData";
@@ -3974,17 +3975,31 @@ function AdoptionView({
 }) {
   const data = individualUtilizationData;
   const [sortKey, setSortKey] = useState<IndividualSortKey>("prompts");
+  const [periodMode, setPeriodMode] = useState<IndividualPeriodMode>("week");
+  const [selectedWeek, setSelectedWeek] = useState(
+    data.usageWeeks[data.usageWeeks.length - 1] ?? "",
+  );
   const [query, setQuery] = useState("");
   const [selectedProfileEmail, setSelectedProfileEmail] = useState<string | null>(null);
-  const periodLabel = fullMonthLabel(selectedMonth);
-  const trendData = data.monthlyTrend.map((item) => ({
-    ...item,
-    totalTokens: data.monthlySpend[item.key]?.totals.totalTokens ?? null,
-  }));
+  const selectedWeeklyUsage = data.weeklyUsage[selectedWeek] ?? null;
+  const isWeekly = periodMode === "week";
+  const periodLabel = isWeekly
+    ? selectedWeeklyUsage?.label ?? "주차 미선택"
+    : fullMonthLabel(selectedMonth);
+  const trendData = isWeekly
+    ? data.weeklyUsageTrend
+    : data.monthlyTrend.map((item) => ({
+        ...item,
+        totalTokens: data.monthlySpend[item.key]?.totals.totalTokens ?? null,
+      }));
   const selectedMonthlySpend = data.monthlySpend[selectedMonth] ?? null;
-  const coverageNote = selectedMonthlySpend
-    ? `${selectedMonthlySpend.period}${selectedMonthlySpend.coverage === "partial" ? " · 부분 누적" : ""}`
-    : "월별 Spend 미수집";
+  const coverageNote = isWeekly
+    ? selectedWeeklyUsage
+      ? `${selectedWeeklyUsage.startDate} ~ ${selectedWeeklyUsage.endDate} · 누적 스냅샷 순증`
+      : "주차별 원천 미수집"
+    : selectedMonthlySpend
+      ? `${selectedMonthlySpend.period}${selectedMonthlySpend.coverage === "partial" ? " · 부분 누적" : ""}`
+      : "월별 Spend 미수집";
 
   const rows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -3992,7 +4007,8 @@ function AdoptionView({
       .map((user) => {
         const evaluation = user.monthEvaluations[selectedMonth];
         const monthlySpend = selectedMonthlySpend?.users[user.email] ?? null;
-        return { user, evaluation, monthlySpend };
+        const weeklyUsage = selectedWeeklyUsage?.users[user.email] ?? null;
+        return { user, evaluation, monthlySpend, weeklyUsage };
       })
       .filter(({ user }) =>
         normalizedQuery.length === 0 ||
@@ -4011,15 +4027,15 @@ function AdoptionView({
         const aEvaluation = a.evaluation;
         const bEvaluation = b.evaluation;
         const value = (row: typeof a) => {
-          if (sortKey === "code") return row.evaluation?.codeLines ?? 0;
-          if (sortKey === "prompts") return row.evaluation?.humanPrompts ?? 0;
-          return row.monthlySpend?.totalTokens ?? 0;
+          if (sortKey === "code") return isWeekly ? row.weeklyUsage?.codeLines ?? 0 : row.evaluation?.codeLines ?? 0;
+          if (sortKey === "prompts") return isWeekly ? row.weeklyUsage?.requests ?? 0 : row.evaluation?.humanPrompts ?? 0;
+          return isWeekly ? row.weeklyUsage?.totalTokens ?? 0 : row.monthlySpend?.totalTokens ?? 0;
         };
         return value(b) - value(a) ||
           (bEvaluation?.humanPrompts ?? 0) - (aEvaluation?.humanPrompts ?? 0) ||
           a.user.email.localeCompare(b.user.email);
       });
-  }, [data.users, query, selectedMonth, selectedMonthlySpend, sortKey]);
+  }, [data.users, isWeekly, query, selectedMonth, selectedMonthlySpend, selectedWeeklyUsage, sortKey]);
 
   const measuredRowCount = rows.filter((row) => row.user.measurementStatus === "measured").length;
   const sharedAccountRowCount = rows.filter(
@@ -4034,11 +4050,13 @@ function AdoptionView({
       rows.reduce(
         (summary, row) => {
           const evaluation = row.evaluation;
-          if (!evaluation) return summary;
-          if (evaluation.conversations > 0 || evaluation.humanPrompts > 0 || (evaluation.codeLines ?? 0) > 0) {
+          const active = isWeekly
+            ? (row.weeklyUsage?.requests ?? 0) > 0 || (row.weeklyUsage?.totalTokens ?? 0) > 0 || (row.weeklyUsage?.codeLines ?? 0) > 0
+            : evaluation && (evaluation.conversations > 0 || evaluation.humanPrompts > 0 || (evaluation.codeLines ?? 0) > 0);
+          if (active) {
             summary.activeUsers += 1;
           }
-          summary.codeLines += evaluation.codeLines ?? 0;
+          summary.codeLines += isWeekly ? row.weeklyUsage?.codeLines ?? 0 : evaluation?.codeLines ?? 0;
           return summary;
         },
         {
@@ -4046,10 +4064,13 @@ function AdoptionView({
           codeLines: 0,
         },
       ),
-    [rows],
+    [isWeekly, rows],
   );
 
-  const monthlySpendSummary = useMemo(() => {
+  const usageSummary = useMemo(() => {
+    if (isWeekly) {
+      return selectedWeeklyUsage?.totals ?? null;
+    }
     if (!selectedMonthlySpend) return null;
     const measuredSpendRows = rows.filter(
       (row) => row.user.measurementStatus === "measured" && row.monthlySpend,
@@ -4064,7 +4085,7 @@ function AdoptionView({
       },
       { requests: 0, totalTokens: 0 },
     );
-  }, [rows, selectedMonthlySpend]);
+  }, [isWeekly, rows, selectedMonthlySpend, selectedWeeklyUsage]);
 
   const selectedProfile = selectedProfileEmail
     ? individualProfileDataByEmail[selectedProfileEmail] ?? null
@@ -4094,22 +4115,51 @@ function AdoptionView({
             <span className="state-pill warning">{coverageNote}</span>
           </div>
           <p>
-            대화 Export의 프롬프트·활성일과 월별 Code Lines를 결합합니다. 활동량은 업무성과가 아니며 누락값은 0점으로 처리하지 않습니다.
+            {isWeekly
+              ? "7일 간격 누적 스냅샷의 차이로 개인별 요청·토큰·Code Lines를 집계합니다. 원천 재산정은 활동량과 구분합니다."
+              : "대화 Export의 프롬프트·활성일과 월별 Code Lines를 결합합니다. 활동량은 업무성과가 아니며 누락값은 0점으로 처리하지 않습니다."}
           </p>
         </div>
         <div className="individual-controls">
+          <div className="individual-period-mode" aria-label="집계 단위" role="group">
+            <button
+              aria-pressed={!isWeekly}
+              className={!isWeekly ? "active" : ""}
+              onClick={() => setPeriodMode("month")}
+              type="button"
+            >
+              월별
+            </button>
+            <button
+              aria-pressed={isWeekly}
+              className={isWeekly ? "active" : ""}
+              onClick={() => setPeriodMode("week")}
+              type="button"
+            >
+              주차별
+            </button>
+          </div>
           <label className="individual-select-control">
             <span>기간</span>
             <select
               aria-label="분석 기간"
-              value={selectedMonth}
-              onChange={(event) => onSelectedMonthChange(event.target.value)}
+              value={isWeekly ? selectedWeek : selectedMonth}
+              onChange={(event) => {
+                if (isWeekly) setSelectedWeek(event.target.value);
+                else onSelectedMonthChange(event.target.value);
+              }}
             >
-              {data.months.map((key) => (
-                <option key={key} value={key}>
-                  {fullMonthLabel(key)}
-                </option>
-              ))}
+              {isWeekly
+                ? data.usageWeeks.map((key) => (
+                    <option key={key} value={key}>
+                      {data.weeklyUsage[key].label} ({data.weeklyUsage[key].startDate.slice(5)}~{data.weeklyUsage[key].endDate.slice(5)})
+                    </option>
+                  ))
+                : data.months.map((key) => (
+                    <option key={key} value={key}>
+                      {fullMonthLabel(key)}
+                    </option>
+                  ))}
             </select>
           </label>
           <label className="individual-select-control">
@@ -4119,9 +4169,9 @@ function AdoptionView({
               value={sortKey}
               onChange={(event) => setSortKey(event.target.value as IndividualSortKey)}
             >
-              <option value="prompts">프롬프트</option>
+              <option value="prompts">{isWeekly ? "주간 요청" : "프롬프트"}</option>
               <option value="code">Code Lines</option>
-              <option value="tokens">월 누적 토큰</option>
+              <option value="tokens">{isWeekly ? "주간 토큰" : "월 누적 토큰"}</option>
             </select>
           </label>
           <label className="individual-search-control">
@@ -4148,18 +4198,18 @@ function AdoptionView({
           </small>
         </article>
         <article>
-          <span><Bot size={17} />월 누적 요청</span>
-          <strong>{monthlySpendSummary ? `${numberFormat.format(monthlySpendSummary.requests)}건` : "미수집"}</strong>
+          <span><Bot size={17} />{isWeekly ? "주간 요청" : "월 누적 요청"}</span>
+          <strong>{usageSummary ? `${numberFormat.format(usageSummary.requests)}건` : "미수집"}</strong>
           <small>{coverageNote}</small>
         </article>
         <article>
           <span><FileText size={17} />Code Lines</span>
           <strong>{numberFormat.format(periodSummary.codeLines)}줄</strong>
-          <small>사용자별 월 합계</small>
+          <small>{isWeekly ? "이전 스냅샷 대비 순증" : "사용자별 월 합계"}</small>
         </article>
         <article>
-          <span><Activity size={17} />월 누적 토큰</span>
-          <strong>{monthlySpendSummary ? formatTokens(monthlySpendSummary.totalTokens) : "미수집"}</strong>
+          <span><Activity size={17} />{isWeekly ? "주간 토큰" : "월 누적 토큰"}</span>
+          <strong>{usageSummary ? formatTokens(usageSummary.totalTokens) : "미수집"}</strong>
           <small>{coverageNote}</small>
         </article>
       </section>
@@ -4168,9 +4218,9 @@ function AdoptionView({
         <div className="panel-header">
           <div>
             <span className="eyebrow">Utilization Trend</span>
-            <h2>월별 Code Lines와 토큰 사용량 추이</h2>
+            <h2>{isWeekly ? "주차별 Code Lines와 토큰 사용량 추이" : "월별 Code Lines와 토큰 사용량 추이"}</h2>
           </div>
-          <span className="state-pill neutral">{data.months.length}개월</span>
+          <span className="state-pill neutral">{isWeekly ? `${data.usageWeeks.length}개 주차` : `${data.months.length}개월`}</span>
         </div>
         <div className="chart-frame individual-trend-chart">
           <ResponsiveContainer width="100%" height="100%">
@@ -4206,7 +4256,7 @@ function AdoptionView({
               <Line
                 yAxisId="tokens"
                 dataKey="totalTokens"
-                name="월 누적 토큰"
+                name={isWeekly ? "주간 토큰" : "월 누적 토큰"}
                 stroke="#e85d4f"
                 strokeWidth={3}
                 dot={{ r: 4 }}
@@ -4229,17 +4279,20 @@ function AdoptionView({
             <thead>
               <tr>
                 <th>사용자</th>
-                <th>대화 프롬프트</th>
-                <th>대화 활성일</th>
+                <th>{isWeekly ? "주간 요청" : "대화 프롬프트"}</th>
+                <th>{isWeekly ? "프롬프트 토큰" : "대화 활성일"}</th>
                 <th>Code Lines</th>
-                <th>월 누적 사용량</th>
+                <th>{isWeekly ? "주간 사용량" : "월 누적 사용량"}</th>
                 <th>주요 사용 범위</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ user, evaluation, monthlySpend }) => {
+              {rows.map(({ user, evaluation, monthlySpend, weeklyUsage }) => {
                 const metricsMeasured = user.measurementStatus === "measured";
                 const metricsUncollected = !metricsMeasured;
+                const weeklyRecalculated = isWeekly && weeklyUsage != null && (
+                  weeklyUsage.requests < 0 || weeklyUsage.totalTokens < 0
+                );
                 return (
                   <tr key={user.email}>
                     <td>
@@ -4265,38 +4318,57 @@ function AdoptionView({
                     </td>
                     <td>
                       {metricsMeasured ? (
-                        <IndividualActivityCoverageCell
-                          detailsMissing={evaluation?.codeActivityDetailsMissing ?? false}
-                          unit="건"
-                          value={evaluation?.humanPrompts ?? 0}
-                        />
+                        isWeekly
+                          ? weeklyRecalculated
+                            ? <span className="state-pill warning">원천 재산정</span>
+                            : `${numberFormat.format(weeklyUsage?.requests ?? 0)}건`
+                          : <IndividualActivityCoverageCell
+                              detailsMissing={evaluation?.codeActivityDetailsMissing ?? false}
+                              unit="건"
+                              value={evaluation?.humanPrompts ?? 0}
+                            />
                       ) : metricsUncollected ? <span className="state-pill neutral">미수집</span> : null}
                     </td>
                     <td>
                       {metricsMeasured ? (
-                        <IndividualActivityCoverageCell
-                          detailsMissing={evaluation?.codeActivityDetailsMissing ?? false}
-                          unit="일"
-                          value={evaluation?.activeDays ?? 0}
-                        />
+                        isWeekly
+                          ? weeklyRecalculated
+                            ? <small>{formatTokens(Math.abs(weeklyUsage?.promptTokens ?? 0))} 감소 보정</small>
+                            : formatTokens(weeklyUsage?.promptTokens ?? 0)
+                          : <IndividualActivityCoverageCell
+                              detailsMissing={evaluation?.codeActivityDetailsMissing ?? false}
+                              unit="일"
+                              value={evaluation?.activeDays ?? 0}
+                            />
                       ) : metricsUncollected ? <span className="state-pill neutral">미수집</span> : null}
                     </td>
                     <td>
                       {metricsMeasured ? (
-                        evaluation?.codeLines == null
-                          ? <span className="state-pill neutral">월 단위</span>
-                          : `${numberFormat.format(evaluation.codeLines)}줄`
+                        isWeekly
+                          ? `${numberFormat.format(weeklyUsage?.codeLines ?? 0)}줄`
+                          : evaluation?.codeLines == null
+                            ? <span className="state-pill neutral">월 단위</span>
+                            : `${numberFormat.format(evaluation.codeLines)}줄`
                       ) : metricsUncollected ? <span className="state-pill neutral">미수집</span> : null}
                     </td>
                     <td>
-                      {metricsMeasured ? (monthlySpend ? (
-                        <>
-                          <strong>{formatTokens(monthlySpend.totalTokens)}</strong>
-                          <small>{numberFormat.format(monthlySpend.requests)}요청 · {formatPreciseUsd(monthlySpend.netSpendUsd)}</small>
-                        </>
-                      ) : (
-                        <span className="state-pill neutral">월별 Spend 미수집</span>
-                      )) : metricsUncollected ? <span className="state-pill neutral">미수집</span> : null}
+                      {metricsMeasured ? (
+                        isWeekly
+                          ? weeklyUsage
+                            ? weeklyRecalculated
+                              ? <span className="state-pill warning">활동량 산정 제외</span>
+                              : <>
+                                  <strong>{formatTokens(weeklyUsage.totalTokens)}</strong>
+                                  <small>{numberFormat.format(weeklyUsage.requests)}요청 · 비용 순증 {formatPreciseUsd(weeklyUsage.netSpendUsd)}</small>
+                                </>
+                            : <span className="state-pill neutral">주차별 미수집</span>
+                          : monthlySpend
+                            ? <>
+                                <strong>{formatTokens(monthlySpend.totalTokens)}</strong>
+                                <small>{numberFormat.format(monthlySpend.requests)}요청 · {formatPreciseUsd(monthlySpend.netSpendUsd)}</small>
+                              </>
+                            : <span className="state-pill neutral">월별 Spend 미수집</span>
+                      ) : metricsUncollected ? <span className="state-pill neutral">미수집</span> : null}
                     </td>
                     <td>
                       {user.usageScopeOverride ? (
@@ -4305,11 +4377,11 @@ function AdoptionView({
                         <div className="individual-usage-scope">
                           <div>
                             <span>제품</span>
-                            <p>{user.products.join(" · ") || "-"}</p>
+                            <p>{(isWeekly ? weeklyUsage?.products : user.products)?.join(" · ") || "-"}</p>
                           </div>
                           <div>
                             <span>모델</span>
-                            <p>{user.models.join(" · ") || "-"}</p>
+                            <p>{(isWeekly ? weeklyUsage?.models : user.models)?.join(" · ") || "-"}</p>
                           </div>
                         </div>
                       )}
