@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-13T08:36:51+09:00",
+  "generatedAt": "2026-08-13T09:08:49+09:00",
   "months": [
     {
       "month": "2026-05",
@@ -304,58 +304,58 @@
     },
     {
       "month": "2026-08",
-      "fileName": "2026-08-13-spend-report.csv",
-      "period": "2026-08-01 ~ 2026-08-13",
-      "rowCount": 183,
+      "fileName": "2026-08-06-spend-report.csv + 2026-08-13-spend-report.csv",
+      "period": "2026-08-01 ~ 2026-08-12",
+      "rowCount": 235,
       "coverage": "partial",
       "totals": {
-        "requests": 283175,
-        "promptTokens": 57105130417,
-        "completionTokens": 225584592,
-        "totalTokens": 57330715009,
-        "netSpendUsd": 1120.23
+        "requests": 295045,
+        "promptTokens": 59119888969,
+        "completionTokens": 235441907,
+        "totalTokens": 59355330876,
+        "netSpendUsd": 1246.68
       },
       "users": {
         "crow326@riskzero.kr": {
-          "requests": 3643,
-          "promptTokens": 622945966,
-          "completionTokens": 1906534,
-          "totalTokens": 624852500,
+          "requests": 3720,
+          "promptTokens": 623677129,
+          "completionTokens": 1913447,
+          "totalTokens": 625590576,
           "netSpendUsd": 0.0
         },
         "hchbae1001@riskzero.kr": {
-          "requests": 38958,
-          "promptTokens": 10146495090,
-          "completionTokens": 26805269,
-          "totalTokens": 10173300359,
+          "requests": 39711,
+          "promptTokens": 10205765640,
+          "completionTokens": 27297422,
+          "totalTokens": 10233063062,
           "netSpendUsd": 10.16
         },
         "hhlee0227@riskzero.kr": {
-          "requests": 23013,
-          "promptTokens": 3938809233,
-          "completionTokens": 16760425,
-          "totalTokens": 3955569658,
+          "requests": 24161,
+          "promptTokens": 4120243011,
+          "completionTokens": 17483692,
+          "totalTokens": 4137726703,
           "netSpendUsd": 77.06
         },
         "huizhen0227@riskzero.kr": {
-          "requests": 11946,
-          "promptTokens": 2059809534,
-          "completionTokens": 6087026,
-          "totalTokens": 2065896560,
+          "requests": 11947,
+          "promptTokens": 2059809542,
+          "completionTokens": 6087027,
+          "totalTokens": 2065896569,
           "netSpendUsd": 0.0
         },
         "jaewoo.kim@riskzero.kr": {
-          "requests": 23452,
-          "promptTokens": 7217739582,
-          "completionTokens": 29642326,
-          "totalTokens": 7247381908,
-          "netSpendUsd": 687.54
+          "requests": 23906,
+          "promptTokens": 7343979647,
+          "completionTokens": 30396311,
+          "totalTokens": 7374375958,
+          "netSpendUsd": 697.37
         },
         "jhpark@riskzero.kr": {
-          "requests": 53,
-          "promptTokens": 3953420,
-          "completionTokens": 87890,
-          "totalTokens": 4041310,
+          "requests": 54,
+          "promptTokens": 4009951,
+          "completionTokens": 90146,
+          "totalTokens": 4100097,
           "netSpendUsd": 0.0
         },
         "jisub1221@riskzero.kr": {
@@ -366,24 +366,24 @@
           "netSpendUsd": 0.0
         },
         "jungyr98@riskzero.kr": {
-          "requests": 15281,
-          "promptTokens": 1267552768,
-          "completionTokens": 8671281,
-          "totalTokens": 1276224049,
+          "requests": 16492,
+          "promptTokens": 1368366521,
+          "completionTokens": 9700864,
+          "totalTokens": 1378067385,
           "netSpendUsd": 0.0
         },
         "kys0392@riskzero.kr": {
-          "requests": 19856,
-          "promptTokens": 4279493166,
-          "completionTokens": 19288933,
-          "totalTokens": 4298782099,
+          "requests": 20568,
+          "promptTokens": 4412803893,
+          "completionTokens": 20018551,
+          "totalTokens": 4432822444,
           "netSpendUsd": 18.25
         },
         "mjkim1122@riskzero.kr": {
-          "requests": 6993,
-          "promptTokens": 724579382,
-          "completionTokens": 3903074,
-          "totalTokens": 728482456,
+          "requests": 7753,
+          "promptTokens": 870095721,
+          "completionTokens": 4363996,
+          "totalTokens": 874459717,
           "netSpendUsd": 0.0
         },
         "mjlee0828@riskzero.kr": {
@@ -394,31 +394,31 @@
           "netSpendUsd": 0.0
         },
         "mygu@riskzero.kr": {
-          "requests": 7124,
-          "promptTokens": 1245254003,
-          "completionTokens": 6577467,
-          "totalTokens": 1251831470,
-          "netSpendUsd": 123.95
+          "requests": 7565,
+          "promptTokens": 1338302753,
+          "completionTokens": 6838386,
+          "totalTokens": 1345141139,
+          "netSpendUsd": 123.99
         },
         "rkgmf1230@riskzero.kr": {
-          "requests": 7446,
-          "promptTokens": 605971849,
-          "completionTokens": 3747596,
-          "totalTokens": 609719445,
+          "requests": 8033,
+          "promptTokens": 729915643,
+          "completionTokens": 4112926,
+          "totalTokens": 734028569,
           "netSpendUsd": 12.94
         },
         "sieghaft@riskzero.kr": {
-          "requests": 1865,
-          "promptTokens": 681328101,
-          "completionTokens": 1512415,
-          "totalTokens": 682840516,
+          "requests": 1868,
+          "promptTokens": 681407832,
+          "completionTokens": 1512823,
+          "totalTokens": 682920655,
           "netSpendUsd": 0.0
         },
         "sjlim@riskzero.kr": {
-          "requests": 1959,
-          "promptTokens": 175810172,
-          "completionTokens": 1571633,
-          "totalTokens": 177381805,
+          "requests": 2113,
+          "promptTokens": 182743883,
+          "completionTokens": 1632376,
+          "totalTokens": 184376259,
           "netSpendUsd": 0.0
         },
         "sjpark@riskzero.kr": {
@@ -429,32 +429,32 @@
           "netSpendUsd": 0.0
         },
         "songinna@riskzero.kr": {
-          "requests": 11,
-          "promptTokens": 771800,
-          "completionTokens": 31637,
-          "totalTokens": 803437,
+          "requests": 17,
+          "promptTokens": 1488058,
+          "completionTokens": 34972,
+          "totalTokens": 1523030,
           "netSpendUsd": 0.0
         },
         "staycurious@riskzero.kr": {
-          "requests": 16637,
-          "promptTokens": 4447206800,
-          "completionTokens": 10455129,
-          "totalTokens": 4457661929,
+          "requests": 17496,
+          "promptTokens": 4707267993,
+          "completionTokens": 11009063,
+          "totalTokens": 4718277056,
           "netSpendUsd": 42.35
         },
         "wody@riskzero.kr": {
-          "requests": 58285,
-          "promptTokens": 9997781733,
-          "completionTokens": 51788471,
-          "totalTokens": 10049570204,
-          "netSpendUsd": 110.65
+          "requests": 60866,
+          "promptTokens": 10354824012,
+          "completionTokens": 54178116,
+          "totalTokens": 10409002128,
+          "netSpendUsd": 227.2
         },
         "woosung.jeon@riskzero.kr": {
-          "requests": 40773,
-          "promptTokens": 9278528326,
-          "completionTokens": 34356892,
-          "totalTokens": 9312885218,
-          "netSpendUsd": 37.33
+          "requests": 42895,
+          "promptTokens": 9704088248,
+          "completionTokens": 36381195,
+          "totalTokens": 9740469443,
+          "netSpendUsd": 37.36
         },
         "ykchj1011@riskzero.kr": {
           "requests": 1512,
@@ -470,7 +470,7 @@
 
   ],
   "notes": [
-    "월별 요청·토큰은 각 월 Spend report의 조회 기간 누적값입니다.",
+    "월별 요청·토큰은 해당 월의 주차별 Spend report를 합산한 값입니다.",
     "월말 이전에 종료된 report는 부분 누적으로 표시합니다.",
     "원본 CSV가 현재 없고 검증된 과거 커밋에 개인별 합계가 남은 달은 해당 스냅샷을 합산합니다.",
     "월별 Spend report가 없는 달은 다른 기간 자료로 추정하지 않습니다."

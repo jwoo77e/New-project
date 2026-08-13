@@ -170,13 +170,14 @@ export type IndividualWeeklyUsagePeriod = {
   endDate: string;
   coverage: "complete" | "partial";
   source: {
-    previousSpendFile: string;
+    previousSpendFile: string | null;
     currentSpendFile: string;
     previousSpendRows: number;
     currentSpendRows: number;
-    previousCodeFile: string;
+    previousCodeFile: string | null;
     currentCodeFile: string;
-    method: string;
+    spendMethod: string;
+    codeMethod: string;
   };
   totals: IndividualWeeklyUsageMetrics & { activeUsers: number };
   users: Record<string, IndividualWeeklyUsageUser>;
@@ -691,7 +692,7 @@ export const individualUtilizationData = {
     activity: "요청·토큰·대화·프롬프트·활성일·사용 제품 범위는 AI 활동 흐름을 확인하는 운영 참고정보로만 사용",
     productivity: "Code Lines 중심 비교값은 개발 활동 신호일 뿐 품질·승인·배포·업무성과를 의미하지 않으며 개인 고과에 직접 사용하지 않음",
     monthly: "월 누적 Spend 최신본과 최신 월 Code Lines를 결합하고 주차별 값은 직전 누적 스냅샷 대비 순증으로 분리",
-    weekly: "동일 조건으로 7일 간격 수집한 Spend·Code Lines 누적 스냅샷의 차이를 주차별 요청·토큰·Code Lines로 반영",
+    weekly: "Spend는 각 주차 기간 파일의 원값을 반영하고 Code Lines는 월 누적 스냅샷 간 순증으로 계산",
     caveat: "Claude Code CSV에는 프롬프트 수와 활성 날짜가 없고 공용·타 AI 계정의 개인 귀속도 불완전합니다. 누락은 0점이 아닌 측정 불가로 표시합니다.",
     evaluationGate: "직무군, 최종 승인, 실제 사용, 품질·재작업, 시간 절감, 재사용 정보가 연결된 산출물만 인사평가 근거 후보로 전환",
   },

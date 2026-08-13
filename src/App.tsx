@@ -3995,7 +3995,7 @@ function AdoptionView({
   const selectedMonthlySpend = data.monthlySpend[selectedMonth] ?? null;
   const coverageNote = isWeekly
     ? selectedWeeklyUsage
-      ? `${selectedWeeklyUsage.startDate} ~ ${selectedWeeklyUsage.endDate} · 누적 스냅샷 순증`
+      ? `${selectedWeeklyUsage.startDate} ~ ${selectedWeeklyUsage.endDate} · 주차 사용량`
       : "주차별 원천 미수집"
     : selectedMonthlySpend
       ? `${selectedMonthlySpend.period}${selectedMonthlySpend.coverage === "partial" ? " · 월 진행 중 누적" : ""}`
@@ -4116,7 +4116,7 @@ function AdoptionView({
           </div>
           <p>
             {isWeekly
-              ? "7일 간격 누적 스냅샷의 차이로 개인별 요청·토큰·Code Lines를 집계합니다. 원천 재산정은 활동량과 구분합니다."
+              ? "요청·토큰은 각 주차 기간 파일을 사용하고, Code Lines는 월 누적 스냅샷 간 차이로 해당 주차 순증을 계산합니다."
               : "대화 Export의 프롬프트·활성일과 월별 Code Lines를 결합합니다. 활동량은 업무성과가 아니며 누락값은 0점으로 처리하지 않습니다."}
           </p>
         </div>
@@ -4205,7 +4205,7 @@ function AdoptionView({
         <article>
           <span><FileText size={17} />Code Lines</span>
           <strong>{numberFormat.format(periodSummary.codeLines)}줄</strong>
-          <small>{isWeekly ? "이전 스냅샷 대비 순증" : "사용자별 월 합계"}</small>
+          <small>{isWeekly ? "해당 주차 순증" : "최신 월 누적"}</small>
         </article>
         <article>
           <span><Activity size={17} />{isWeekly ? "주간 토큰" : "월 누적 토큰"}</span>
@@ -4359,7 +4359,7 @@ function AdoptionView({
                               ? <span className="state-pill warning">활동량 산정 제외</span>
                               : <>
                                   <strong>{formatTokens(weeklyUsage.totalTokens)}</strong>
-                                  <small>{numberFormat.format(weeklyUsage.requests)}요청 · 비용 순증 {formatPreciseUsd(weeklyUsage.netSpendUsd)}</small>
+                                  <small>{numberFormat.format(weeklyUsage.requests)}요청 · 기간 비용 {formatPreciseUsd(weeklyUsage.netSpendUsd)}</small>
                                 </>
                             : <span className="state-pill neutral">주차별 미수집</span>
                           : monthlySpend

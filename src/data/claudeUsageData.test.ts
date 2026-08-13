@@ -10,15 +10,15 @@ describe("Claude usage snapshots", () => {
   it("captures the provided August source windows", () => {
     expect(initialClaudeTeamUsageData.source).toMatchObject({
       generatedAt: "2026-08-13",
-      spendFile: "2026-08-13-spend-report.csv",
+      spendFile: "2026-08-06-spend-report.csv + 2026-08-13-spend-report.csv",
       codeLinesFile: "2026-08-13-claude_code.csv",
     });
-    expect(initialClaudeTeamUsageData.source.verification.spendRecords).toBe(183);
+    expect(initialClaudeTeamUsageData.source.verification.spendRecords).toBe(235);
     expect(initialClaudeTeamUsageData.licensedUsers).toBe(22);
     expect(initialClaudeTeamUsageData.activeUsers).toBe(22);
-    expect(initialClaudeTeamUsageData.totalRequests).toBe(283175);
-    expect(initialClaudeTeamUsageData.totalTokens).toBe(57330715009);
-    expect(initialClaudeTeamUsageData.totalGrossSpendUsd).toBeCloseTo(1133.1, 2);
+    expect(initialClaudeTeamUsageData.totalRequests).toBe(295045);
+    expect(initialClaudeTeamUsageData.totalTokens).toBe(59355330876);
+    expect(initialClaudeTeamUsageData.totalGrossSpendUsd).toBeCloseTo(1251.45, 2);
     expect(initialClaudeTeamUsageData.totalCodeLines).toBe(166729);
 
     expect(claudeExportUsageData.source).toMatchObject({

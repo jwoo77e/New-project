@@ -8,14 +8,17 @@ require "time"
 
 options = {
   output: "src/data/individualWeeklyUsageSnapshot.json",
+  spend_mode: "cumulative-delta",
+  code_mode: "cumulative-delta",
 }
 
 OptionParser.new do |parser|
   parser.banner = <<~USAGE
     Usage: ruby scripts/build-individual-weekly-usage-snapshot.rb \
-      --key 2026-08-W2 --label "8월 2주차" --start 2026-08-07 --end 2026-08-13 \
-      --previous-spend /path/to/previous-spend.csv --current-spend /path/to/current-spend.csv \
-      --previous-code /path/to/previous-code.csv --current-code /path/to/current-code.csv
+      --key 2026-08-W2 --label "8월 2주차" --start 2026-08-06 --end 2026-08-12 \
+      --spend-mode period --current-spend /path/to/current-spend.csv \
+      --code-mode cumulative-delta --previous-code /path/to/previous-code.csv \
+      --current-code /path/to/current-code.csv
   USAGE
 
   parser.on("--key KEY", "Stable weekly period key") { |value| options[:key] = value }
@@ -24,18 +27,23 @@ OptionParser.new do |parser|
   parser.on("--end DATE", "Inclusive period end") { |value| options[:end_date] = value }
   parser.on("--previous-spend PATH", "Previous cumulative Spend report") { |value| options[:previous_spend] = value }
   parser.on("--current-spend PATH", "Current cumulative Spend report") { |value| options[:current_spend] = value }
+  parser.on("--spend-mode MODE", %w[period cumulative-delta], "Spend source mode") { |value| options[:spend_mode] = value }
   parser.on("--previous-code PATH", "Previous cumulative Code Lines report") { |value| options[:previous_code] = value }
   parser.on("--current-code PATH", "Current cumulative Code Lines report") { |value| options[:current_code] = value }
+  parser.on("--code-mode MODE", %w[period cumulative-delta], "Code Lines source mode") { |value| options[:code_mode] = value }
   parser.on("--output PATH", "Output JSON path") { |value| options[:output] = value }
 end.parse!
 
-required = %i[key label start_date end_date previous_spend current_spend previous_code current_code]
+required = %i[key label start_date end_date current_spend current_code]
+required << :previous_spend if options[:spend_mode] == "cumulative-delta"
+required << :previous_code if options[:code_mode] == "cumulative-delta"
 missing = required.select { |key| options[key].to_s.empty? }
 abort "missing options: #{missing.join(', ')}" unless missing.empty?
 
 start_date = Date.iso8601(options[:start_date])
 end_date = Date.iso8601(options[:end_date])
-abort "weekly period must contain exactly 7 days" unless (end_date - start_date).to_i == 6
+period_days = (end_date - start_date).to_i + 1
+abort "weekly period must contain 1 to 7 days" unless period_days.between?(1, 7)
 
 METRICS = {
   "requests" => "total_requests",
@@ -90,14 +98,14 @@ def read_code(path)
   rows
 end
 
-previous_spend, previous_spend_rows = read_spend(options[:previous_spend])
+previous_spend, previous_spend_rows = options[:spend_mode] == "cumulative-delta" ? read_spend(options[:previous_spend]) : [{}, 0]
 current_spend, current_spend_rows = read_spend(options[:current_spend])
-previous_code = read_code(options[:previous_code])
+previous_code = options[:code_mode] == "cumulative-delta" ? read_code(options[:previous_code]) : {}
 current_code = read_code(options[:current_code])
 
 emails = (previous_spend.keys | current_spend.keys | previous_code.keys | current_code.keys).sort
 users = emails.to_h do |email|
-  previous = previous_spend[email]
+  previous = previous_spend.fetch(email, {})
   current = current_spend[email]
   values = METRICS.keys.to_h do |metric|
     delta = current.fetch(metric, 0) - previous.fetch(metric, 0)
@@ -133,19 +141,22 @@ period = {
   "endDate" => end_date.iso8601,
   "coverage" => "complete",
   "source" => {
-    "previousSpendFile" => File.basename(options[:previous_spend]),
+    "previousSpendFile" => options[:previous_spend] && File.basename(options[:previous_spend]),
     "currentSpendFile" => File.basename(options[:current_spend]),
     "previousSpendRows" => previous_spend_rows,
     "currentSpendRows" => current_spend_rows,
-    "previousCodeFile" => File.basename(options[:previous_code]),
+    "previousCodeFile" => options[:previous_code] && File.basename(options[:previous_code]),
     "currentCodeFile" => File.basename(options[:current_code]),
-    "method" => "current_cumulative_minus_previous_cumulative",
+    "spendMethod" => options[:spend_mode] == "period" ? "period_total" : "current_cumulative_minus_previous_cumulative",
+    "codeMethod" => options[:code_mode] == "period" ? "period_total" : "current_cumulative_minus_previous_cumulative",
   },
   "totals" => totals,
   "users" => users,
   "notes" => [
-    "동일한 조회 시작일·조직·필터로 받은 7일 간격 누적 스냅샷의 순증입니다.",
-    "비용 감소는 과거 사용료 재산정 영향을 포함할 수 있어 활동량 판단에는 요청·토큰·Code Lines를 우선 사용합니다.",
+    "Spend는 해당 주차 조회 기간 합계를 사용합니다.",
+    options[:code_mode] == "period" ?
+      "Code Lines는 해당 주차 파일의 기간 합계를 사용합니다." :
+      "Code Lines는 최신 월 누적 스냅샷에서 직전 스냅샷을 뺀 주차 순증입니다.",
   ],
 }
 

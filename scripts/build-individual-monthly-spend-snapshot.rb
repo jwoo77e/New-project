@@ -142,14 +142,59 @@ git_months = options[:git_snapshots].sort.map do |month, start_date, end_date, r
   }
 end
 
-months = (months + git_months).sort_by { |item| item.fetch("month") }
+months = (months + git_months).group_by { |item| item.fetch("month") }.map do |month, sources|
+  next sources.first if sources.length == 1
+
+  users = Hash.new do |hash, email|
+    hash[email] = {
+      "requests" => 0,
+      "promptTokens" => 0,
+      "completionTokens" => 0,
+      "totalTokens" => 0,
+      "netSpendUsd" => 0.0,
+    }
+  end
+  sources.each do |source|
+    source.fetch("users").each do |email, usage|
+      %w[requests promptTokens completionTokens totalTokens].each do |key|
+        users[email][key] += usage.fetch(key)
+      end
+      users[email]["netSpendUsd"] += usage.fetch("netSpendUsd")
+    end
+  end
+  users.each_value { |usage| usage["netSpendUsd"] = usage["netSpendUsd"].round(6) }
+  totals = users.each_value.each_with_object({
+    "requests" => 0,
+    "promptTokens" => 0,
+    "completionTokens" => 0,
+    "totalTokens" => 0,
+    "netSpendUsd" => 0.0,
+  }) do |usage, memo|
+    %w[requests promptTokens completionTokens totalTokens].each { |key| memo[key] += usage[key] }
+    memo["netSpendUsd"] += usage["netSpendUsd"]
+  end
+  totals["netSpendUsd"] = totals["netSpendUsd"].round(6)
+  start_dates = sources.map { |source| Date.parse(source.fetch("period").split(" ~ ").first) }
+  end_dates = sources.map { |source| Date.parse(source.fetch("period").split(" ~ ").last) }
+  month_end = Date.new(*month.split("-").map(&:to_i), -1)
+
+  {
+    "month" => month,
+    "fileName" => sources.map { |source| source.fetch("fileName") }.join(" + "),
+    "period" => "#{start_dates.min.iso8601} ~ #{end_dates.max.iso8601}",
+    "rowCount" => sources.all? { |source| source["rowCount"] } ? sources.sum { |source| source.fetch("rowCount") } : nil,
+    "coverage" => end_dates.max < month_end ? "partial" : "complete",
+    "totals" => totals,
+    "users" => users.sort.to_h,
+  }
+end.sort_by { |item| item.fetch("month") }
 
 snapshot = {
   "generatedAt" => Time.now.getlocal("+09:00").iso8601,
   "months" => months,
   "missingMonths" => options[:missing].uniq.sort,
   "notes" => [
-    "월별 요청·토큰은 각 월 Spend report의 조회 기간 누적값입니다.",
+    "월별 요청·토큰은 해당 월의 주차별 Spend report를 합산한 값입니다.",
     "월말 이전에 종료된 report는 부분 누적으로 표시합니다.",
     "원본 CSV가 현재 없고 검증된 과거 커밋에 개인별 합계가 남은 달은 해당 스냅샷을 합산합니다.",
     "월별 Spend report가 없는 달은 다른 기간 자료로 추정하지 않습니다.",

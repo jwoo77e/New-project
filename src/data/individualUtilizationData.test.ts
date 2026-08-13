@@ -8,12 +8,12 @@ describe("individualUtilizationData", () => {
   it("reconciles the five requested CSV sources", () => {
     const data = individualUtilizationData;
 
-    expect(data.source.spend.rowCount).toBe(183);
+    expect(data.source.spend.rowCount).toBe(235);
     expect(data.users).toHaveLength(41);
     expect(data.users.filter((user) => user.measurementStatus === "measured")).toHaveLength(21);
-    expect(data.totals.requests).toBe(283175);
-    expect(data.totals.totalTokens).toBe(57330715009);
-    expect(data.totals.netSpendUsd).toBeCloseTo(1120.23, 2);
+    expect(data.totals.requests).toBe(295045);
+    expect(data.totals.totalTokens).toBe(59355330876);
+    expect(data.totals.netSpendUsd).toBeCloseTo(1246.68, 2);
     expect(data.source.codeLines).toHaveLength(4);
     expect(sumBy(data.source.codeLines, (item) => item.totalLines)).toBe(1014276);
     expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(1014276);
@@ -98,8 +98,8 @@ describe("individualUtilizationData", () => {
         displayAccount: "songinna@riskzero.kr",
         measurementStatus: "measured",
         usageScopeOverride: "chatGPT 공통 계정 사용 · Claude Team Plan Standard",
-        requests: 11,
-        totalTokens: 803437,
+        requests: 17,
+        totalTokens: 1523030,
         totalCodeLines: 0,
       }),
     ]);
@@ -172,34 +172,45 @@ describe("individualUtilizationData", () => {
     ).toBe(true);
   });
 
-  it("publishes the second August snapshot delta as a filterable weekly period", () => {
+  it("publishes both August period files as filterable weekly totals", () => {
     const data = individualUtilizationData;
-    const week = data.weeklyUsage["2026-08-W2"];
+    const firstWeek = data.weeklyUsage["2026-08-W1"];
+    const secondWeek = data.weeklyUsage["2026-08-W2"];
 
-    expect(data.usageWeeks).toEqual(["2026-08-W2"]);
-    expect(week).toMatchObject({
+    expect(data.usageWeeks).toEqual(["2026-08-W1", "2026-08-W2"]);
+    expect(firstWeek).toMatchObject({
+      label: "8월 1주차",
+      startDate: "2026-08-01",
+      endDate: "2026-08-05",
+      totals: {
+        activeUsers: 19,
+        requests: 264669,
+        totalTokens: 52004482235,
+        netSpendUsd: 1211.75,
+        codeLines: 64530,
+      },
+    });
+    expect(secondWeek).toMatchObject({
       label: "8월 2주차",
-      startDate: "2026-08-07",
-      endDate: "2026-08-13",
+      startDate: "2026-08-06",
+      endDate: "2026-08-12",
       totals: {
         activeUsers: 18,
-        requests: 18506,
-        promptTokens: 5308537756,
-        completionTokens: 17695018,
-        totalTokens: 5326232774,
-        netSpendUsd: -91.52,
+        requests: 30376,
+        promptTokens: 7323296308,
+        completionTokens: 27552333,
+        totalTokens: 7350848641,
+        netSpendUsd: 34.93,
         codeLines: 102199,
       },
     });
-    expect(week.users["woosung.jeon@riskzero.kr"]).toMatchObject({
-      requests: 3807,
-      totalTokens: 1142996697,
+    expect(secondWeek.users["woosung.jeon@riskzero.kr"]).toMatchObject({
+      requests: 5929,
+      totalTokens: 1570580922,
       codeLines: 32418,
     });
-    expect(week.users["jungyr98@riskzero.kr"].totalTokens).toBeLessThan(0);
-    expect(data.weeklyUsageTrend).toEqual([
-      expect.objectContaining({ label: "8월 2주차", totalTokens: 5326232774, codeLines: 102199 }),
-    ]);
+    expect(Object.values(secondWeek.users).every((usage) => usage.totalTokens >= 0)).toBe(true);
+    expect(data.weeklyUsageTrend).toHaveLength(2);
   });
 
   it("produces bounded peer-comparison scores for every user and period", () => {
@@ -219,7 +230,7 @@ describe("individualUtilizationData", () => {
       (a, b) => b.monthEvaluations["2026-08"].productivityScore! - a.monthEvaluations["2026-08"].productivityScore!,
     )[0];
     expect(augustLeader.email).toBe("woosung.jeon@riskzero.kr");
-    expect(data.source.notes).toContain("Code Lines는 사용자별 월 합계이며 주간 값으로 임의 배분하지 않습니다.");
+    expect(data.source.notes).toContain("Code Lines는 월 누적 스냅샷의 최신 파일을 월 누적값으로 사용하고 주차 값은 스냅샷 간 순증으로 계산합니다.");
   });
 
   it("does not treat missing Claude Code prompt details as zero activity", () => {
@@ -258,20 +269,20 @@ describe("individualUtilizationData", () => {
       totalTokens: 22109534845,
     });
     expect(data.monthlySpend["2026-08"]?.totals).toMatchObject({
-      requests: 283175,
-      promptTokens: 57105130417,
-      completionTokens: 225584592,
-      totalTokens: 57330715009,
+      requests: 295045,
+      promptTokens: 59119888969,
+      completionTokens: 235441907,
+      totalTokens: 59355330876,
     });
     expect(data.monthlySpend["2026-08"]?.coverage).toBe("partial");
-    expect(data.monthlySpend["2026-08"]?.period).toBe("2026-08-01 ~ 2026-08-13");
+    expect(data.monthlySpend["2026-08"]?.period).toBe("2026-08-01 ~ 2026-08-12");
     expect(data.monthlySpend["2026-08"]?.users["woosung.jeon@riskzero.kr"]).toMatchObject({
-      requests: 40773,
-      totalTokens: 9312885218,
+      requests: 42895,
+      totalTokens: 9740469443,
     });
     expect(data.monthlySpend["2026-08"]?.users["jungyr98@riskzero.kr"]).toMatchObject({
-      requests: 15281,
-      totalTokens: 1276224049,
+      requests: 16492,
+      totalTokens: 1378067385,
     });
     expect(
       Object.values(data.monthlySpend["2026-08"]?.users ?? {}).every(

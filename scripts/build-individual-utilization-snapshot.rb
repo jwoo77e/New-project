@@ -9,6 +9,7 @@ require "time"
 
 options = {
   code: [],
+  spend: [],
   output: "src/data/individualUtilizationSnapshot.json",
 }
 
@@ -21,7 +22,7 @@ OptionParser.new do |parser|
       --users /path/to/users.json
   USAGE
 
-  parser.on("--spend PATH", "Claude Team spend report CSV") { |value| options[:spend] = value }
+  parser.on("--spend PATH", "Claude Team spend report CSV (repeatable)") { |value| options[:spend] << value }
   parser.on("--spend-period PERIOD", "Spend report coverage label") { |value| options[:spend_period] = value }
   parser.on("--code MONTH:PATH", "Monthly Claude Code lines CSV (repeatable)") do |value|
     month, path = value.split(":", 2)
@@ -37,7 +38,7 @@ OptionParser.new do |parser|
   parser.on("--output PATH", "Output JSON path") { |value| options[:output] = value }
 end.parse!
 
-abort "--spend is required" unless options[:spend]
+abort "--spend is required" if options[:spend].empty?
 abort "at least one --code is required" if options[:code].empty?
 
 DISPLAY_NAMES = {
@@ -111,7 +112,8 @@ end
 users = Hash.new { |hash, email| hash[email] = blank_user }
 spend_rows = 0
 
-CSV.foreach(options[:spend], headers: true) do |row|
+options[:spend].each do |spend_path|
+CSV.foreach(spend_path, headers: true) do |row|
   email = row["user_email"].to_s.strip.downcase
   next if email.empty?
 
@@ -160,8 +162,13 @@ CSV.foreach(options[:spend], headers: true) do |row|
     model_usage["netSpendUsd"] += net_spend
   end
 end
+end
 
-code_sources = options[:code].sort.map do |month, path|
+latest_code_inputs = options[:code].each_with_object({}) do |(month, path), inputs|
+  inputs[month] = path
+end
+
+code_sources = latest_code_inputs.sort.map do |month, path|
   row_count = 0
   total_lines = 0
 
@@ -314,16 +321,16 @@ snapshot = {
   "source" => {
     "generatedAt" => Time.now.getlocal("+09:00").iso8601,
     "spend" => {
-      "fileName" => File.basename(options[:spend]),
+      "fileName" => options[:spend].map { |path| File.basename(path) }.join(" + "),
       "period" => options[:spend_period] || "조회 기간 미지정",
       "rowCount" => spend_rows,
-      "grain" => "user_product_model_cumulative",
+      "grain" => "user_product_model_period_sum",
     },
     "codeLines" => code_sources,
     "conversations" => conversation_source,
     "notes" => [
-      "Spend report는 기간 누적 사용자·제품·모델 합계이며 월·주 날짜 열이 없습니다.",
-      "Code Lines는 사용자별 월 합계이며 주간 값으로 임의 배분하지 않습니다.",
+      "Spend report는 주차별 사용자·제품·모델 기간 합계이며 월 누적은 주차 파일을 더해 계산합니다.",
+      "Code Lines는 월 누적 스냅샷의 최신 파일을 월 누적값으로 사용하고 주차 값은 스냅샷 간 순증으로 계산합니다.",
       "주간 활동은 Claude 대화 원천의 대화·메시지 타임스탬프만 사용합니다.",
     ],
   },

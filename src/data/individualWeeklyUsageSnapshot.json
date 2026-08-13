@@ -1,38 +1,39 @@
 {
-  "generatedAt": "2026-08-13T08:22:17+09:00",
+  "generatedAt": "2026-08-13T09:14:42+09:00",
   "periods": [
     {
-      "key": "2026-08-W2",
-      "label": "8월 2주차",
-      "startDate": "2026-08-07",
-      "endDate": "2026-08-13",
+      "key": "2026-08-W1",
+      "label": "8월 1주차",
+      "startDate": "2026-08-01",
+      "endDate": "2026-08-05",
       "coverage": "complete",
       "source": {
-        "previousSpendFile": "2026-08-06-spend-report.csv",
-        "currentSpendFile": "2026-08-13-spend-report.csv",
-        "previousSpendRows": 180,
-        "currentSpendRows": 183,
-        "previousCodeFile": "2026-08-06-claude_code.csv",
-        "currentCodeFile": "2026-08-13-claude_code.csv",
-        "method": "current_cumulative_minus_previous_cumulative"
+        "previousSpendFile": null,
+        "currentSpendFile": "2026-08-06-spend-report.csv",
+        "previousSpendRows": 0,
+        "currentSpendRows": 180,
+        "previousCodeFile": null,
+        "currentCodeFile": "2026-08-06-claude_code.csv",
+        "spendMethod": "period_total",
+        "codeMethod": "period_total"
       },
       "totals": {
-        "activeUsers": 18,
-        "requests": 18506,
-        "promptTokens": 5308537756,
-        "completionTokens": 17695018,
-        "totalTokens": 5326232774,
-        "netSpendUsd": -91.52,
-        "codeLines": 102199
+        "activeUsers": 19,
+        "requests": 264669,
+        "promptTokens": 51796592661,
+        "completionTokens": 207889574,
+        "totalTokens": 52004482235,
+        "netSpendUsd": 1211.75,
+        "codeLines": 64530
       },
       "users": {
         "crow326@riskzero.kr": {
-          "requests": 620,
-          "promptTokens": 46240906,
-          "completionTokens": 294929,
+          "requests": 3023,
+          "promptTokens": 576705060,
+          "completionTokens": 1611605,
           "netSpendUsd": 0.0,
-          "totalTokens": 46535835,
-          "codeLines": 487,
+          "totalTokens": 578316665,
+          "codeLines": 373,
           "products": [
             "Chat",
             "Claude Code",
@@ -48,12 +49,12 @@
           ]
         },
         "hchbae1001@riskzero.kr": {
-          "requests": 820,
-          "promptTokens": 109068542,
-          "completionTokens": 652741,
-          "netSpendUsd": 0.0,
-          "totalTokens": 109721283,
-          "codeLines": 5418,
+          "requests": 38138,
+          "promptTokens": 10037426548,
+          "completionTokens": 26152528,
+          "netSpendUsd": 10.16,
+          "totalTokens": 10063579076,
+          "codeLines": 1852,
           "products": [
             "Chat",
             "Claude Code",
@@ -71,12 +72,12 @@
           ]
         },
         "hhlee0227@riskzero.kr": {
-          "requests": 1372,
-          "promptTokens": 230803534,
-          "completionTokens": 799509,
-          "netSpendUsd": 0.0,
-          "totalTokens": 231603043,
-          "codeLines": 5883,
+          "requests": 21641,
+          "promptTokens": 3708005699,
+          "completionTokens": 15960916,
+          "netSpendUsd": 77.06,
+          "totalTokens": 3723966615,
+          "codeLines": 1027,
           "products": [
             "Chat",
             "Claude Code",
@@ -93,12 +94,12 @@
           ]
         },
         "huizhen0227@riskzero.kr": {
-          "requests": 353,
-          "promptTokens": 22470106,
-          "completionTokens": 113928,
+          "requests": 11593,
+          "promptTokens": 2037339428,
+          "completionTokens": 5973098,
           "netSpendUsd": 0.0,
-          "totalTokens": 22584034,
-          "codeLines": 304,
+          "totalTokens": 2043312526,
+          "codeLines": 3923,
           "products": [
             "Claude Code"
           ],
@@ -109,12 +110,12 @@
           ]
         },
         "jaewoo.kim@riskzero.kr": {
-          "requests": 2397,
-          "promptTokens": 808358455,
-          "completionTokens": 4205206,
-          "netSpendUsd": -9.83,
-          "totalTokens": 812563661,
-          "codeLines": 4622,
+          "requests": 21055,
+          "promptTokens": 6409381127,
+          "completionTokens": 25437120,
+          "netSpendUsd": 697.37,
+          "totalTokens": 6434818247,
+          "codeLines": 6236,
           "products": [
             "Chat",
             "Claude Code",
@@ -132,11 +133,11 @@
           ]
         },
         "jhpark@riskzero.kr": {
-          "requests": 2,
-          "promptTokens": 121484,
-          "completionTokens": 3710,
+          "requests": 51,
+          "promptTokens": 3831936,
+          "completionTokens": 84180,
           "netSpendUsd": 0.0,
-          "totalTokens": 125194,
+          "totalTokens": 3916116,
           "codeLines": 0,
           "products": [
             "Chat"
@@ -147,11 +148,11 @@
           ]
         },
         "jisub1221@riskzero.kr": {
-          "requests": 0,
-          "promptTokens": 0,
-          "completionTokens": 0,
+          "requests": 3899,
+          "promptTokens": 284774376,
+          "completionTokens": 1629875,
           "netSpendUsd": 0.0,
-          "totalTokens": 0,
+          "totalTokens": 286404251,
           "codeLines": 0,
           "products": [
             "Claude Code",
@@ -164,12 +165,12 @@
           ]
         },
         "jungyr98@riskzero.kr": {
-          "requests": -684,
-          "promptTokens": -52421308,
-          "completionTokens": -601152,
+          "requests": 15965,
+          "promptTokens": 1319974076,
+          "completionTokens": 9272433,
           "netSpendUsd": 0.0,
-          "totalTokens": -53022460,
-          "codeLines": 323,
+          "totalTokens": 1329246509,
+          "codeLines": 309,
           "products": [
             "Claude Code"
           ],
@@ -181,12 +182,12 @@
           ]
         },
         "kys0392@riskzero.kr": {
-          "requests": 4102,
-          "promptTokens": 1102726384,
-          "completionTokens": 4224460,
-          "netSpendUsd": 18.25,
-          "totalTokens": 1106950844,
-          "codeLines": 12022,
+          "requests": 15754,
+          "promptTokens": 3176766782,
+          "completionTokens": 15064473,
+          "netSpendUsd": 0.0,
+          "totalTokens": 3191831255,
+          "codeLines": 9892,
           "products": [
             "Claude Code",
             "Cowork"
@@ -200,12 +201,12 @@
           ]
         },
         "mjkim1122@riskzero.kr": {
-          "requests": 462,
-          "promptTokens": 114536832,
-          "completionTokens": 454273,
+          "requests": 6531,
+          "promptTokens": 610042550,
+          "completionTokens": 3448801,
           "netSpendUsd": 0.0,
-          "totalTokens": 114991105,
-          "codeLines": 2086,
+          "totalTokens": 613491351,
+          "codeLines": 313,
           "products": [
             "Claude Code"
           ],
@@ -216,12 +217,12 @@
           ]
         },
         "mjlee0828@riskzero.kr": {
-          "requests": 3,
-          "promptTokens": 147406,
-          "completionTokens": 3760,
+          "requests": 453,
+          "promptTokens": 34095065,
+          "completionTokens": 355290,
           "netSpendUsd": 0.0,
-          "totalTokens": 151166,
-          "codeLines": 0,
+          "totalTokens": 34450355,
+          "codeLines": 5,
           "products": [
             "Chat",
             "Claude Code",
@@ -233,12 +234,12 @@
           ]
         },
         "mygu@riskzero.kr": {
-          "requests": 745,
-          "promptTokens": 292881150,
-          "completionTokens": 570489,
-          "netSpendUsd": -0.04,
-          "totalTokens": 293451639,
-          "codeLines": 7075,
+          "requests": 6379,
+          "promptTokens": 952372853,
+          "completionTokens": 6006978,
+          "netSpendUsd": 123.99,
+          "totalTokens": 958379831,
+          "codeLines": 0,
           "products": [
             "Chat",
             "Claude Code",
@@ -256,12 +257,12 @@
           ]
         },
         "rkgmf1230@riskzero.kr": {
-          "requests": 979,
-          "promptTokens": 123615392,
-          "completionTokens": 552280,
-          "netSpendUsd": 0.0,
-          "totalTokens": 124167672,
-          "codeLines": 2591,
+          "requests": 6467,
+          "promptTokens": 482356457,
+          "completionTokens": 3195316,
+          "netSpendUsd": 12.94,
+          "totalTokens": 485551773,
+          "codeLines": 666,
           "products": [
             "Claude Code",
             "Cowork"
@@ -275,11 +276,11 @@
           ]
         },
         "sieghaft@riskzero.kr": {
-          "requests": -3,
-          "promptTokens": -79731,
-          "completionTokens": -408,
+          "requests": 1868,
+          "promptTokens": 681407832,
+          "completionTokens": 1512823,
           "netSpendUsd": 0.0,
-          "totalTokens": -80139,
+          "totalTokens": 682920655,
           "codeLines": 0,
           "products": [
             "Chat",
@@ -293,12 +294,12 @@
           ]
         },
         "sjlim@riskzero.kr": {
-          "requests": 187,
-          "promptTokens": 18582338,
-          "completionTokens": 171453,
+          "requests": 1772,
+          "promptTokens": 157227834,
+          "completionTokens": 1400180,
           "netSpendUsd": 0.0,
-          "totalTokens": 18753791,
-          "codeLines": 1549,
+          "totalTokens": 158628014,
+          "codeLines": 1421,
           "products": [
             "Chat",
             "Claude Code",
@@ -315,43 +316,13 @@
             "claude-sonnet-5"
           ]
         },
-        "sjpark@riskzero.kr": {
-          "requests": 13,
-          "promptTokens": 777591,
-          "completionTokens": 8663,
-          "netSpendUsd": 0.0,
-          "totalTokens": 786254,
-          "codeLines": 0,
-          "products": [
-            "Cowork"
-          ],
-          "models": [
-            "claude-haiku-4-5-20251001",
-            "claude-sonnet-5"
-          ]
-        },
-        "songinna@riskzero.kr": {
-          "requests": 11,
-          "promptTokens": 771800,
-          "completionTokens": 31637,
-          "netSpendUsd": 0.0,
-          "totalTokens": 803437,
-          "codeLines": 0,
-          "products": [
-            "Cowork"
-          ],
-          "models": [
-            "claude-haiku-4-5-20251001",
-            "claude-sonnet-5"
-          ]
-        },
         "staycurious@riskzero.kr": {
-          "requests": 2055,
-          "promptTokens": 822642915,
-          "completionTokens": 1194462,
-          "netSpendUsd": 0.0,
-          "totalTokens": 823837377,
-          "codeLines": 9767,
+          "requests": 14582,
+          "promptTokens": 3624563885,
+          "completionTokens": 9260667,
+          "netSpendUsd": 42.35,
+          "totalTokens": 3633824552,
+          "codeLines": 3629,
           "products": [
             "Chat",
             "Claude Code",
@@ -366,12 +337,12 @@
           ]
         },
         "wody@riskzero.kr": {
-          "requests": 1265,
-          "promptTokens": 528774057,
-          "completionTokens": 538284,
-          "netSpendUsd": -99.87,
-          "totalTokens": 529312341,
-          "codeLines": 17654,
+          "requests": 57020,
+          "promptTokens": 9469007676,
+          "completionTokens": 51250187,
+          "netSpendUsd": 210.52,
+          "totalTokens": 9520257863,
+          "codeLines": 17995,
           "products": [
             "Chat",
             "Claude Code",
@@ -390,18 +361,19 @@
           ]
         },
         "woosung.jeon@riskzero.kr": {
-          "requests": 3807,
-          "promptTokens": 1138519903,
-          "completionTokens": 4476794,
-          "netSpendUsd": -0.03,
-          "totalTokens": 1142996697,
-          "codeLines": 32418,
+          "requests": 36966,
+          "promptTokens": 8140008423,
+          "completionTokens": 29880098,
+          "netSpendUsd": 37.36,
+          "totalTokens": 8169888521,
+          "codeLines": 16889,
           "products": [
             "Chat",
             "Claude Code"
           ],
           "models": [
             "claude-haiku-4-5-20251001",
+            "claude-opus-4-7",
             "claude-opus-4-8",
             "claude-opus-5",
             "claude-sonnet-4-6",
@@ -409,11 +381,11 @@
           ]
         },
         "ykchj1011@riskzero.kr": {
-          "requests": 0,
-          "promptTokens": 0,
-          "completionTokens": 0,
+          "requests": 1512,
+          "promptTokens": 91305054,
+          "completionTokens": 393006,
           "netSpendUsd": 0.0,
-          "totalTokens": 0,
+          "totalTokens": 91698060,
           "codeLines": 0,
           "products": [
             "Chat",
@@ -427,8 +399,325 @@
         }
       },
       "notes": [
-        "동일한 조회 시작일·조직·필터로 받은 7일 간격 누적 스냅샷의 순증입니다.",
-        "비용 감소는 과거 사용료 재산정 영향을 포함할 수 있어 활동량 판단에는 요청·토큰·Code Lines를 우선 사용합니다."
+        "Spend는 해당 주차 조회 기간 합계를 사용합니다.",
+        "Code Lines는 해당 주차 파일의 기간 합계를 사용합니다."
+      ]
+    },
+    {
+      "key": "2026-08-W2",
+      "label": "8월 2주차",
+      "startDate": "2026-08-06",
+      "endDate": "2026-08-12",
+      "coverage": "complete",
+      "source": {
+        "previousSpendFile": null,
+        "currentSpendFile": "2026-08-13-spend-report.csv",
+        "previousSpendRows": 0,
+        "currentSpendRows": 55,
+        "previousCodeFile": "2026-08-06-claude_code.csv",
+        "currentCodeFile": "2026-08-13-claude_code.csv",
+        "spendMethod": "period_total",
+        "codeMethod": "current_cumulative_minus_previous_cumulative"
+      },
+      "totals": {
+        "activeUsers": 18,
+        "requests": 30376,
+        "promptTokens": 7323296308,
+        "completionTokens": 27552333,
+        "totalTokens": 7350848641,
+        "netSpendUsd": 34.93,
+        "codeLines": 102199
+      },
+      "users": {
+        "crow326@riskzero.kr": {
+          "requests": 697,
+          "promptTokens": 46972069,
+          "completionTokens": 301842,
+          "netSpendUsd": 0.0,
+          "totalTokens": 47273911,
+          "codeLines": 487,
+          "products": [
+            "Claude Code"
+          ],
+          "models": [
+            "claude-haiku-4-5-20251001",
+            "claude-sonnet-5"
+          ]
+        },
+        "hchbae1001@riskzero.kr": {
+          "requests": 1573,
+          "promptTokens": 168339092,
+          "completionTokens": 1144894,
+          "netSpendUsd": 0.0,
+          "totalTokens": 169483986,
+          "codeLines": 5418,
+          "products": [
+            "Chat",
+            "Claude Code",
+            "Cowork"
+          ],
+          "models": [
+            "claude-fable-5",
+            "claude-haiku-4-5-20251001",
+            "claude-opus-5",
+            "claude-sonnet-5"
+          ]
+        },
+        "hhlee0227@riskzero.kr": {
+          "requests": 2520,
+          "promptTokens": 412237312,
+          "completionTokens": 1522776,
+          "netSpendUsd": 0.0,
+          "totalTokens": 413760088,
+          "codeLines": 5883,
+          "products": [
+            "Claude Code"
+          ],
+          "models": [
+            "claude-haiku-4-5-20251001",
+            "claude-opus-5"
+          ]
+        },
+        "huizhen0227@riskzero.kr": {
+          "requests": 354,
+          "promptTokens": 22470114,
+          "completionTokens": 113929,
+          "netSpendUsd": 0.0,
+          "totalTokens": 22584043,
+          "codeLines": 304,
+          "products": [
+            "Claude Code"
+          ],
+          "models": [
+            "claude-haiku-4-5-20251001",
+            "claude-sonnet-5"
+          ]
+        },
+        "jaewoo.kim@riskzero.kr": {
+          "requests": 2851,
+          "promptTokens": 934598520,
+          "completionTokens": 4959191,
+          "netSpendUsd": 0.0,
+          "totalTokens": 939557711,
+          "codeLines": 4622,
+          "products": [
+            "Claude Code",
+            "Claude in Chrome",
+            "Cowork"
+          ],
+          "models": [
+            "claude-fable-5",
+            "claude-haiku-4-5-20251001",
+            "claude-opus-4-8",
+            "claude-opus-5",
+            "claude-sonnet-5"
+          ]
+        },
+        "jhpark@riskzero.kr": {
+          "requests": 3,
+          "promptTokens": 178015,
+          "completionTokens": 5966,
+          "netSpendUsd": 0.0,
+          "totalTokens": 183981,
+          "codeLines": 0,
+          "products": [
+            "Chat"
+          ],
+          "models": [
+            "claude-sonnet-5"
+          ]
+        },
+        "jungyr98@riskzero.kr": {
+          "requests": 527,
+          "promptTokens": 48392445,
+          "completionTokens": 428431,
+          "netSpendUsd": 0.0,
+          "totalTokens": 48820876,
+          "codeLines": 323,
+          "products": [
+            "Claude Code"
+          ],
+          "models": [
+            "claude-haiku-4-5-20251001",
+            "claude-sonnet-5"
+          ]
+        },
+        "kys0392@riskzero.kr": {
+          "requests": 4814,
+          "promptTokens": 1236037111,
+          "completionTokens": 4954078,
+          "netSpendUsd": 18.25,
+          "totalTokens": 1240991189,
+          "codeLines": 12022,
+          "products": [
+            "Claude Code"
+          ],
+          "models": [
+            "claude-haiku-4-5-20251001",
+            "claude-sonnet-5"
+          ]
+        },
+        "mjkim1122@riskzero.kr": {
+          "requests": 1222,
+          "promptTokens": 260053171,
+          "completionTokens": 915195,
+          "netSpendUsd": 0.0,
+          "totalTokens": 260968366,
+          "codeLines": 2086,
+          "products": [
+            "Claude Code"
+          ],
+          "models": [
+            "claude-haiku-4-5-20251001",
+            "claude-sonnet-5"
+          ]
+        },
+        "mjlee0828@riskzero.kr": {
+          "requests": 3,
+          "promptTokens": 147406,
+          "completionTokens": 3760,
+          "netSpendUsd": 0.0,
+          "totalTokens": 151166,
+          "codeLines": 0,
+          "products": [
+            "Chat"
+          ],
+          "models": [
+            "claude-sonnet-5"
+          ]
+        },
+        "mygu@riskzero.kr": {
+          "requests": 1186,
+          "promptTokens": 385929900,
+          "completionTokens": 831408,
+          "netSpendUsd": 0.0,
+          "totalTokens": 386761308,
+          "codeLines": 7075,
+          "products": [
+            "Chat",
+            "Claude Code",
+            "Cowork"
+          ],
+          "models": [
+            "claude-haiku-4-5-20251001",
+            "claude-opus-5",
+            "claude-sonnet-5"
+          ]
+        },
+        "rkgmf1230@riskzero.kr": {
+          "requests": 1566,
+          "promptTokens": 247559186,
+          "completionTokens": 917610,
+          "netSpendUsd": 0.0,
+          "totalTokens": 248476796,
+          "codeLines": 2591,
+          "products": [
+            "Claude Code"
+          ],
+          "models": [
+            "claude-haiku-4-5-20251001",
+            "claude-opus-5",
+            "claude-sonnet-5"
+          ]
+        },
+        "sjlim@riskzero.kr": {
+          "requests": 341,
+          "promptTokens": 25516049,
+          "completionTokens": 232196,
+          "netSpendUsd": 0.0,
+          "totalTokens": 25748245,
+          "codeLines": 1549,
+          "products": [
+            "Claude Code"
+          ],
+          "models": [
+            "claude-haiku-4-5-20251001",
+            "claude-opus-5"
+          ]
+        },
+        "sjpark@riskzero.kr": {
+          "requests": 13,
+          "promptTokens": 777591,
+          "completionTokens": 8663,
+          "netSpendUsd": 0.0,
+          "totalTokens": 786254,
+          "codeLines": 0,
+          "products": [
+            "Cowork"
+          ],
+          "models": [
+            "claude-haiku-4-5-20251001",
+            "claude-sonnet-5"
+          ]
+        },
+        "songinna@riskzero.kr": {
+          "requests": 17,
+          "promptTokens": 1488058,
+          "completionTokens": 34972,
+          "netSpendUsd": 0.0,
+          "totalTokens": 1523030,
+          "codeLines": 0,
+          "products": [
+            "Cowork"
+          ],
+          "models": [
+            "claude-haiku-4-5-20251001",
+            "claude-sonnet-5"
+          ]
+        },
+        "staycurious@riskzero.kr": {
+          "requests": 2914,
+          "promptTokens": 1082704108,
+          "completionTokens": 1748396,
+          "netSpendUsd": 0.0,
+          "totalTokens": 1084452504,
+          "codeLines": 9767,
+          "products": [
+            "Claude Code"
+          ],
+          "models": [
+            "claude-haiku-4-5-20251001",
+            "claude-opus-4-8",
+            "claude-opus-5"
+          ]
+        },
+        "wody@riskzero.kr": {
+          "requests": 3846,
+          "promptTokens": 885816336,
+          "completionTokens": 2927929,
+          "netSpendUsd": 16.68,
+          "totalTokens": 888744265,
+          "codeLines": 17654,
+          "products": [
+            "Claude Code"
+          ],
+          "models": [
+            "claude-fable-5",
+            "claude-haiku-4-5-20251001",
+            "claude-opus-5",
+            "claude-sonnet-5"
+          ]
+        },
+        "woosung.jeon@riskzero.kr": {
+          "requests": 5929,
+          "promptTokens": 1564079825,
+          "completionTokens": 6501097,
+          "netSpendUsd": 0.0,
+          "totalTokens": 1570580922,
+          "codeLines": 32418,
+          "products": [
+            "Claude Code"
+          ],
+          "models": [
+            "claude-haiku-4-5-20251001",
+            "claude-opus-5",
+            "claude-sonnet-5"
+          ]
+        }
+      },
+      "notes": [
+        "Spend는 해당 주차 조회 기간 합계를 사용합니다.",
+        "Code Lines는 최신 월 누적 스냅샷에서 직전 스냅샷을 뺀 주차 순증입니다."
       ]
     }
   ]
