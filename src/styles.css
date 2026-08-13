@@ -4426,7 +4426,7 @@ td strong {
 }
 
 .individual-utilization-table table {
-  min-width: 1180px;
+  min-width: 1400px;
 }
 
 .individual-utilization-table th:nth-child(1),
@@ -4436,7 +4436,8 @@ td strong {
 
 .individual-utilization-table th:nth-child(2),
 .individual-utilization-table td:nth-child(2) {
-  min-width: 150px;
+  min-width: 360px;
+  white-space: normal;
 }
 
 .individual-utilization-table th:nth-child(3),
@@ -4448,6 +4449,82 @@ td strong {
 .individual-utilization-table th:nth-child(4),
 .individual-utilization-table td:nth-child(4) {
   min-width: 430px;
+}
+
+.individual-code-density-cell {
+  display: grid;
+  grid-template-columns: minmax(72px, auto) 112px minmax(96px, auto);
+  align-items: center;
+  width: 100%;
+  gap: 9px;
+}
+
+.individual-code-lines {
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.individual-density-sparkline {
+  display: block;
+  width: 112px;
+  height: 36px;
+  overflow: visible;
+}
+
+.individual-density-sparkline-baseline {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.individual-density-sparkline-line {
+  fill: none;
+  stroke: var(--green);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
+}
+
+.individual-density-sparkline-dot {
+  fill: var(--surface);
+  stroke: var(--green);
+  stroke-width: 1.75;
+}
+
+.individual-density-sparkline-dot.current {
+  fill: var(--green);
+}
+
+.individual-density-readout {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.individual-density-readout small,
+.individual-density-readout em {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-style: normal;
+  font-weight: 750;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.individual-density-readout b {
+  color: var(--green);
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+}
+
+.individual-density-readout.down b,
+.individual-density-readout.down em {
+  color: var(--amber);
+}
+
+.individual-density-readout.flat b {
+  color: var(--steel);
 }
 
 .individual-token-cell {

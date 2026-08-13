@@ -122,6 +122,12 @@ import {
   type TokenUsageSample,
   type TokenUsageTrend,
 } from "./lib/tokenUsageTrend";
+import {
+  buildCodeOutputDensityTrend,
+  isMonthlyCodePeriodAligned,
+  type CodeOutputDensitySample,
+  type CodeOutputDensityTrend,
+} from "./lib/codeOutputDensity";
 import { buildDriveArtifactDailyTrend } from "./lib/driveArtifactTrend";
 import { buildIntegratedConversationAnalysis } from "./lib/integratedConversationAnalysis";
 import {
@@ -4012,6 +4018,167 @@ function weeklyTokenSamplesForUser(email: string, selectedWeek: string): TokenUs
   });
 }
 
+function monthlyCodeDensitySamplesForUser(
+  user: IndividualUtilizationUser,
+  selectedMonth: string,
+): CodeOutputDensitySample[] {
+  const selectedIndex = individualUtilizationData.months.indexOf(selectedMonth);
+  if (selectedIndex < 0) return [];
+
+  return individualUtilizationData.months.slice(0, selectedIndex + 1).flatMap((month) => {
+    const spendPeriod = individualUtilizationData.monthlySpend[month];
+    const usage = spendPeriod?.users[user.email];
+    const codeSource = individualUtilizationData.source.codeLines.find((item) => item.month === month);
+    if (!spendPeriod || !usage || !codeSource) return [];
+    const [spendStartDate, spendEndDate] = spendPeriod.period.split(/\s*~\s*/);
+    if (!spendStartDate || !spendEndDate) return [];
+
+    return [{
+      key: month,
+      label: monthLabel(month),
+      codeLines: user.monthlyCodeLines[month] ?? 0,
+      totalTokens: usage.totalTokens,
+      periodAligned: isMonthlyCodePeriodAligned({
+        codeFileName: codeSource.fileName,
+        month,
+        spendStartDate,
+        spendEndDate,
+      }),
+    }];
+  });
+}
+
+function weeklyCodeDensitySamplesForUser(
+  email: string,
+  selectedWeek: string,
+): CodeOutputDensitySample[] {
+  const selectedIndex = individualUtilizationData.usageWeeks.indexOf(selectedWeek);
+  if (selectedIndex < 0) return [];
+
+  return individualUtilizationData.usageWeeks.slice(0, selectedIndex + 1).flatMap((week) => {
+    const period = individualUtilizationData.weeklyUsage[week];
+    const usage = period?.users[email];
+    if (!period || !usage) return [];
+    return [{
+      key: week,
+      label: period.label,
+      codeLines: usage.codeLines,
+      totalTokens: usage.totalTokens,
+      periodAligned: true,
+    }];
+  });
+}
+
+function formatCodeDensity(value: number) {
+  if (value >= 1_000) return numberFormat.format(Math.round(value));
+  if (value >= 10) return value.toFixed(1);
+  if (value >= 1) return value.toFixed(2);
+  return value.toFixed(3);
+}
+
+function CodeOutputDensitySparkline({ trend }: { trend: CodeOutputDensityTrend }) {
+  const width = 112;
+  const height = 36;
+  const paddingX = 5;
+  const paddingY = 5;
+  const points = trend.points.slice(-4);
+  if (points.length === 0 || !trend.currentPoint) return null;
+
+  const values = points.map((point) => point.linesPerMillionTokens);
+  const minimum = Math.min(...values);
+  const maximum = Math.max(...values);
+  const range = maximum - minimum;
+  const xAt = (index: number) =>
+    paddingX + (index / Math.max(points.length - 1, 1)) * (width - paddingX * 2);
+  const yAt = (value: number) =>
+    range === 0
+      ? height / 2
+      : paddingY + ((maximum - value) / range) * (height - paddingY * 2);
+  const coordinates = points.map((point, index) => ({
+    x: xAt(index),
+    y: yAt(point.linesPerMillionTokens),
+  }));
+  const description = points
+    .map((point) => `${point.label} 1M 토큰당 ${formatCodeDensity(point.linesPerMillionTokens)}줄`)
+    .join("; ");
+
+  return (
+    <svg
+      aria-label={`코드 산출 밀도 추이. ${description}`}
+      className="individual-density-sparkline"
+      role="img"
+      viewBox={`0 0 ${width} ${height}`}
+    >
+      <title>{`코드 산출 밀도 추이. ${description}`}</title>
+      <line className="individual-density-sparkline-baseline" x1={paddingX} x2={width - paddingX} y1={height - paddingY} y2={height - paddingY} />
+      {coordinates.length > 1 && (
+        <polyline
+          className="individual-density-sparkline-line"
+          points={coordinates.map((point) => `${point.x},${point.y}`).join(" ")}
+        />
+      )}
+      {coordinates.map((point, index) => (
+        <circle
+          className={index === coordinates.length - 1 ? "individual-density-sparkline-dot current" : "individual-density-sparkline-dot"}
+          cx={point.x}
+          cy={point.y}
+          key={points[index].key}
+          r={index === coordinates.length - 1 ? 3 : 2.4}
+        />
+      ))}
+    </svg>
+  );
+}
+
+function densityChangeLabel(trend: CodeOutputDensityTrend) {
+  if (trend.direction === "baseline") return "기준 축적";
+  if (trend.changeRate == null) return trend.direction === "up" ? "신규 산출" : "변화 없음";
+  if (trend.direction === "flat") return `전기 대비 ${formatRate(trend.changeRate, true)}`;
+  return `전기 대비 ${formatRate(trend.changeRate, true)}`;
+}
+
+function IndividualCodeDensityCell({
+  codeLines,
+  selectedSample,
+  trend,
+}: {
+  codeLines: number;
+  selectedSample: CodeOutputDensitySample | null;
+  trend: CodeOutputDensityTrend;
+}) {
+  const currentPoint = trend.currentPoint;
+  const unavailableLabel = !selectedSample
+    ? "토큰 미수집"
+    : !selectedSample.periodAligned
+      ? "기간 불일치"
+      : selectedSample.totalTokens <= 0
+        ? "토큰 없음"
+        : "산정 불가";
+
+  return (
+    <div className="individual-code-density-cell">
+      <strong className="individual-code-lines">{numberFormat.format(codeLines)}줄</strong>
+      {currentPoint ? (
+        <>
+          <CodeOutputDensitySparkline trend={trend} />
+          <span
+            className={`individual-density-readout ${trend.direction}`}
+            title="동일 기간 Code Lines를 총 토큰으로 나눈 1M 토큰당 코드 산출량입니다. 품질이나 개인 성과를 직접 의미하지 않습니다."
+          >
+            <small>1M 토큰당</small>
+            <b>{formatCodeDensity(currentPoint.linesPerMillionTokens)}줄</b>
+            <em>{densityChangeLabel(trend)}</em>
+          </span>
+        </>
+      ) : (
+        <span className={`state-pill ${unavailableLabel === "기간 불일치" ? "warning" : "neutral"}`}>
+          {unavailableLabel}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function TokenUsageSparkline({
   mode,
   trend,
@@ -4157,7 +4324,22 @@ function AdoptionView({
         const tokenTrend = isWeekly
           ? buildWeeklyTokenUsageTrend(weeklyTokenSamplesForUser(user.email, selectedWeek))
           : buildMonthlyTokenUsageTrend(monthlyTokenSamplesForUser(user.email, selectedMonth));
-        return { user, evaluation, monthlySpend, weeklyUsage, tokenTrend };
+        const codeDensitySamples = isWeekly
+          ? weeklyCodeDensitySamplesForUser(user.email, selectedWeek)
+          : monthlyCodeDensitySamplesForUser(user, selectedMonth);
+        const selectedDensityKey = isWeekly ? selectedWeek : selectedMonth;
+        const codeDensityTrend = buildCodeOutputDensityTrend(codeDensitySamples, selectedDensityKey);
+        const selectedDensitySample =
+          codeDensitySamples.find((sample) => sample.key === selectedDensityKey) ?? null;
+        return {
+          user,
+          evaluation,
+          monthlySpend,
+          weeklyUsage,
+          tokenTrend,
+          codeDensityTrend,
+          selectedDensitySample,
+        };
       })
       .filter(({ user }) =>
         normalizedQuery.length === 0 ||
@@ -4183,7 +4365,7 @@ function AdoptionView({
           (bEvaluation?.humanPrompts ?? 0) - (aEvaluation?.humanPrompts ?? 0) ||
           a.user.email.localeCompare(b.user.email);
       });
-  }, [data.users, isWeekly, query, selectedMonth, selectedMonthlySpend, selectedWeeklyUsage, sortKey]);
+  }, [data.users, isWeekly, query, selectedMonth, selectedMonthlySpend, selectedWeek, selectedWeeklyUsage, sortKey]);
 
   const measuredRowCount = rows.filter((row) => row.user.measurementStatus === "measured").length;
   const sharedAccountRowCount = rows.filter(
@@ -4264,8 +4446,8 @@ function AdoptionView({
           </div>
           <p>
             {isWeekly
-              ? "토큰은 주차별 Spend 기간값을 사용하고, Code Lines는 월 누적 스냅샷 간 차이로 해당 주차 순증을 계산합니다."
-              : "토큰은 월 누적 Spend를 사용하고, Code Lines는 최신 월 누적 스냅샷을 사용합니다."}
+              ? "토큰은 주차별 Spend 기간값을 사용하고, Code Lines는 월 누적 스냅샷 간 차이로 해당 주차 순증을 계산합니다. 코드 산출 밀도는 1M 토큰당 Code Lines입니다."
+              : "토큰은 월 누적 Spend를 사용하고, Code Lines는 최신 월 누적 스냅샷을 사용합니다. 코드 산출 밀도는 집계 기간이 일치할 때만 계산합니다."}
           </p>
         </div>
         <div className="individual-controls">
@@ -4426,13 +4608,21 @@ function AdoptionView({
             <thead>
               <tr>
                 <th>사용자</th>
-                <th>Code Lines</th>
+                <th>Code Lines · 산출 밀도</th>
                 <th>토큰 사용량</th>
                 <th>주요 사용 범위</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ user, evaluation, monthlySpend, weeklyUsage, tokenTrend }) => {
+              {rows.map(({
+                user,
+                evaluation,
+                monthlySpend,
+                weeklyUsage,
+                tokenTrend,
+                codeDensityTrend,
+                selectedDensitySample,
+              }) => {
                 const metricsMeasured = user.measurementStatus === "measured";
                 const metricsUncollected = !metricsMeasured;
                 const weeklyRecalculated = isWeekly && weeklyUsage != null && (
@@ -4468,10 +4658,20 @@ function AdoptionView({
                     <td>
                       {metricsMeasured ? (
                         isWeekly
-                          ? `${numberFormat.format(weeklyUsage?.codeLines ?? 0)}줄`
+                          ? weeklyUsage
+                            ? <IndividualCodeDensityCell
+                                codeLines={weeklyUsage.codeLines}
+                                selectedSample={selectedDensitySample}
+                                trend={codeDensityTrend}
+                              />
+                            : <span className="state-pill neutral">주차별 미수집</span>
                           : evaluation?.codeLines == null
                             ? <span className="state-pill neutral">월 단위</span>
-                            : `${numberFormat.format(evaluation.codeLines)}줄`
+                            : <IndividualCodeDensityCell
+                                codeLines={evaluation.codeLines}
+                                selectedSample={selectedDensitySample}
+                                trend={codeDensityTrend}
+                              />
                       ) : metricsUncollected ? <span className="state-pill neutral">미수집</span> : null}
                     </td>
                     <td>
