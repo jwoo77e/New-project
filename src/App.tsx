@@ -3976,7 +3976,7 @@ function approvalPalette(index: number) {
   return colors[index % colors.length];
 }
 
-type IndividualSortKey = "code" | "tokens";
+type IndividualSortKey = "code" | "tokens" | "density";
 
 function monthlyTokenSamplesForUser(email: string, selectedMonth: string): TokenUsageSample[] {
   const selectedIndex = individualUtilizationData.months.indexOf(selectedMonth);
@@ -4359,6 +4359,7 @@ function AdoptionView({
         const bEvaluation = b.evaluation;
         const value = (row: typeof a) => {
           if (sortKey === "code") return isWeekly ? row.weeklyUsage?.codeLines ?? 0 : row.evaluation?.codeLines ?? 0;
+          if (sortKey === "density") return row.codeDensityTrend.currentPoint?.linesPerMillionTokens ?? -1;
           return isWeekly ? row.weeklyUsage?.totalTokens ?? 0 : row.monthlySpend?.totalTokens ?? 0;
         };
         return value(b) - value(a) ||
@@ -4501,6 +4502,7 @@ function AdoptionView({
             >
               <option value="tokens">토큰 사용량</option>
               <option value="code">Code Lines</option>
+              <option value="density">코드 산출 밀도</option>
             </select>
           </label>
           <label className="individual-search-control">
