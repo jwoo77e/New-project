@@ -3998,7 +3998,7 @@ function AdoptionView({
       ? `${selectedWeeklyUsage.startDate} ~ ${selectedWeeklyUsage.endDate} · 주차 사용량`
       : "주차별 원천 미수집"
     : selectedMonthlySpend
-      ? `${selectedMonthlySpend.period}${selectedMonthlySpend.coverage === "partial" ? " · 월 진행 중 누적" : ""}`
+      ? `${selectedMonthlySpend.period}${selectedMonthlySpend.coverage === "partial" ? " · 부분 집계" : ""}`
       : "월별 Spend 미수집";
 
   const rows = useMemo(() => {
@@ -4289,12 +4289,10 @@ function AdoptionView({
                 const weeklyRecalculated = isWeekly && weeklyUsage != null && (
                   weeklyUsage.requests < 0 || weeklyUsage.totalTokens < 0
                 );
-                const scopeProducts = isWeekly && weeklyUsage?.products.length
-                  ? weeklyUsage.products
-                  : user.products;
-                const scopeModels = isWeekly && weeklyUsage?.models.length
-                  ? weeklyUsage.models
-                  : user.models;
+                const periodProducts = isWeekly ? weeklyUsage?.products : monthlySpend?.products;
+                const periodModels = isWeekly ? weeklyUsage?.models : monthlySpend?.models;
+                const scopeProducts = periodProducts?.length ? periodProducts : user.products;
+                const scopeModels = periodModels?.length ? periodModels : user.models;
                 return (
                   <tr key={user.email}>
                     <td>

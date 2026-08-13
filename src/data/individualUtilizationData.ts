@@ -135,12 +135,17 @@ export type IndividualTrendPoint = {
   codeLines: number | null;
 };
 
-export type IndividualMonthlySpendUser = {
+export type IndividualUsageMetrics = {
   requests: number;
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
   netSpendUsd: number;
+};
+
+export type IndividualMonthlySpendUser = IndividualUsageMetrics & {
+  products: string[];
+  models: string[];
 };
 
 export type IndividualMonthlySpendPeriod = {
@@ -150,11 +155,11 @@ export type IndividualMonthlySpendPeriod = {
   rowCount: number | null;
   coverage: "partial" | "complete";
   sourceCommit?: string;
-  totals: IndividualMonthlySpendUser;
+  totals: IndividualUsageMetrics;
   users: Record<string, IndividualMonthlySpendUser>;
 };
 
-export type IndividualWeeklyUsageMetrics = IndividualMonthlySpendUser & {
+export type IndividualWeeklyUsageMetrics = IndividualUsageMetrics & {
   codeLines: number;
 };
 

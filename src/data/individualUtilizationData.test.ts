@@ -260,17 +260,26 @@ describe("individualUtilizationData", () => {
     const data = individualUtilizationData;
 
     expect(data.monthlySpend["2026-05"]?.totals).toMatchObject({
-      requests: 644,
-      totalTokens: 124283890,
+      requests: 30856,
+      totalTokens: 4151596632,
     });
+    expect(data.monthlySpend["2026-05"]?.coverage).toBe("partial");
+    expect(data.monthlySpend["2026-05"]?.period).toBe("2026-05-14 ~ 2026-05-31");
     expect(data.monthlySpend["2026-06"]?.totals).toMatchObject({
-      requests: 66606,
-      totalTokens: 11861497110,
+      requests: 91857,
+      totalTokens: 18193157446,
     });
-    expect(data.monthlySpend["2026-06"]?.sourceCommit).toBe("8e72279");
+    expect(data.monthlySpend["2026-06"]?.coverage).toBe("complete");
     expect(data.monthlySpend["2026-07"]?.totals).toMatchObject({
-      requests: 107968,
-      totalTokens: 22109534845,
+      requests: 117300,
+      totalTokens: 23991487530,
+    });
+    expect(data.monthlySpend["2026-07"]?.coverage).toBe("complete");
+    expect(data.monthlySpend["2026-07"]?.users["ykchj1011@riskzero.kr"]).toMatchObject({
+      requests: 1512,
+      totalTokens: 91698060,
+      products: ["Chat", "Claude Code", "Cowork"],
+      models: ["claude-haiku-4-5-20251001", "claude-sonnet-5"],
     });
     expect(data.monthlySpend["2026-08"]?.totals).toMatchObject({
       requests: 50524,
@@ -294,5 +303,18 @@ describe("individualUtilizationData", () => {
       ),
     ).toBe(true);
     expect(data.monthlySpendSource.missingMonths).toHaveLength(0);
+  });
+
+  it("reconciles the provided May through July Code Lines files", () => {
+    const data = individualUtilizationData;
+
+    expect(data.source.codeLines.filter((item) => item.month <= "2026-07")).toEqual([
+      expect.objectContaining({ month: "2026-05", rowCount: 11, totalLines: 125684 }),
+      expect.objectContaining({ month: "2026-06", rowCount: 14, totalLines: 344036 }),
+      expect.objectContaining({ month: "2026-07", rowCount: 17, totalLines: 377827 }),
+    ]);
+    expect(
+      data.users.find((user) => user.email === "ykchj1011@riskzero.kr")?.monthlyCodeLines["2026-07"],
+    ).toBe(864);
   });
 });

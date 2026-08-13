@@ -4,6 +4,7 @@ require "csv"
 require "date"
 require "json"
 require "optparse"
+require "set"
 require "time"
 
 options = {
@@ -50,6 +51,26 @@ def decimal(row, key)
   row[key].to_s.delete(",").to_f
 end
 
+def coverage_for(month, periods)
+  year, month_number = month.split("-").map(&:to_i)
+  month_start = Date.new(year, month_number, 1)
+  month_end = Date.new(year, month_number, -1)
+  intervals = periods.map do |period|
+    start_date, end_date = period.split(" ~ ").map { |value| Date.parse(value) }
+    [start_date, end_date]
+  end.sort_by(&:first)
+
+  return "partial" if intervals.empty? || intervals.first.first > month_start
+
+  covered_through = intervals.first.last
+  intervals.drop(1).each do |start_date, end_date|
+    return "partial" if start_date > covered_through + 1
+
+    covered_through = [covered_through, end_date].max
+  end
+  covered_through >= month_end ? "complete" : "partial"
+end
+
 months = options[:months].sort.map do |month, start_date, end_date, path|
   users = Hash.new do |hash, email|
     hash[email] = {
@@ -58,6 +79,8 @@ months = options[:months].sort.map do |month, start_date, end_date, path|
       "completionTokens" => 0,
       "totalTokens" => 0,
       "netSpendUsd" => 0.0,
+      "products" => Set.new,
+      "models" => Set.new,
     }
   end
   row_count = 0
@@ -75,6 +98,10 @@ months = options[:months].sort.map do |month, start_date, end_date, path|
     user["completionTokens"] += completion_tokens
     user["totalTokens"] += prompt_tokens + completion_tokens
     user["netSpendUsd"] += decimal(row, "total_net_spend_usd")
+    product = row["product"].to_s.strip
+    model = row["model"].to_s.strip
+    user["products"] << product unless product.empty?
+    user["models"] << model unless model.empty?
   end
 
   users.each_value { |user| user["netSpendUsd"] = user["netSpendUsd"].round(6) }
@@ -90,15 +117,18 @@ months = options[:months].sort.map do |month, start_date, end_date, path|
   end
   totals["netSpendUsd"] = totals["netSpendUsd"].round(6)
 
-  month_end = Date.new(*month.split("-").map(&:to_i), -1)
+  serialized_users = users.sort.to_h do |email, user|
+    [email, user.merge("products" => user["products"].to_a.sort, "models" => user["models"].to_a.sort)]
+  end
+  period = "#{start_date} ~ #{end_date}"
   {
     "month" => month,
     "fileName" => File.basename(path),
-    "period" => "#{start_date} ~ #{end_date}",
+    "period" => period,
     "rowCount" => row_count,
-    "coverage" => Date.parse(end_date) < month_end ? "partial" : "complete",
+    "coverage" => coverage_for(month, [period]),
     "totals" => totals,
-    "users" => users.sort.to_h,
+    "users" => serialized_users,
   }
 end
 
@@ -119,17 +149,19 @@ git_months = options[:git_snapshots].sort.map do |month, start_date, end_date, r
         "completionTokens" => user.fetch("completionTokens"),
         "totalTokens" => user.fetch("totalTokens"),
         "netSpendUsd" => user.fetch("netSpendUsd"),
+        "products" => user.fetch("products", []),
+        "models" => user.fetch("models", []),
       },
     ]
   end
-  month_end = Date.new(*month.split("-").map(&:to_i), -1)
+  period = "#{start_date} ~ #{end_date}"
 
   {
     "month" => month,
     "fileName" => data.dig("source", "spendFile"),
-    "period" => "#{start_date} ~ #{end_date}",
+    "period" => period,
     "rowCount" => nil,
-    "coverage" => Date.parse(end_date) < month_end ? "partial" : "complete",
+    "coverage" => coverage_for(month, [period]),
     "sourceCommit" => revision,
     "totals" => {
       "requests" => data.fetch("totalRequests"),
@@ -152,6 +184,8 @@ months = (months + git_months).group_by { |item| item.fetch("month") }.map do |m
       "completionTokens" => 0,
       "totalTokens" => 0,
       "netSpendUsd" => 0.0,
+      "products" => Set.new,
+      "models" => Set.new,
     }
   end
   sources.each do |source|
@@ -160,6 +194,8 @@ months = (months + git_months).group_by { |item| item.fetch("month") }.map do |m
         users[email][key] += usage.fetch(key)
       end
       users[email]["netSpendUsd"] += usage.fetch("netSpendUsd")
+      users[email]["products"].merge(usage.fetch("products", []))
+      users[email]["models"].merge(usage.fetch("models", []))
     end
   end
   users.each_value { |usage| usage["netSpendUsd"] = usage["netSpendUsd"].round(6) }
@@ -176,16 +212,19 @@ months = (months + git_months).group_by { |item| item.fetch("month") }.map do |m
   totals["netSpendUsd"] = totals["netSpendUsd"].round(6)
   start_dates = sources.map { |source| Date.parse(source.fetch("period").split(" ~ ").first) }
   end_dates = sources.map { |source| Date.parse(source.fetch("period").split(" ~ ").last) }
-  month_end = Date.new(*month.split("-").map(&:to_i), -1)
+  serialized_users = users.sort.to_h do |email, usage|
+    [email, usage.merge("products" => usage["products"].to_a.sort, "models" => usage["models"].to_a.sort)]
+  end
+  periods = sources.map { |source| source.fetch("period") }
 
   {
     "month" => month,
     "fileName" => sources.map { |source| source.fetch("fileName") }.join(" + "),
     "period" => "#{start_dates.min.iso8601} ~ #{end_dates.max.iso8601}",
     "rowCount" => sources.all? { |source| source["rowCount"] } ? sources.sum { |source| source.fetch("rowCount") } : nil,
-    "coverage" => end_dates.max < month_end ? "partial" : "complete",
+    "coverage" => coverage_for(month, periods),
     "totals" => totals,
-    "users" => users.sort.to_h,
+    "users" => serialized_users,
   }
 end.sort_by { |item| item.fetch("month") }
 
@@ -195,7 +234,7 @@ snapshot = {
   "missingMonths" => options[:missing].uniq.sort,
   "notes" => [
     "월별 요청·토큰은 해당 월의 주차별 Spend report를 합산한 값입니다.",
-    "월말 이전에 종료된 report는 부분 누적으로 표시합니다.",
+    "월초 이후에 시작하거나 월말 이전에 종료되거나 기간 사이에 공백이 있는 report는 부분 누적으로 표시합니다.",
     "원본 CSV가 현재 없고 검증된 과거 커밋에 개인별 합계가 남은 달은 해당 스냅샷을 합산합니다.",
     "월별 Spend report가 없는 달은 다른 기간 자료로 추정하지 않습니다.",
   ],
