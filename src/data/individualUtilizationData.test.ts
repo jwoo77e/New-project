@@ -8,12 +8,12 @@ describe("individualUtilizationData", () => {
   it("reconciles the five requested CSV sources", () => {
     const data = individualUtilizationData;
 
-    expect(data.source.spend.rowCount).toBe(235);
+    expect(data.source.spend.rowCount).toBe(119);
     expect(data.users).toHaveLength(41);
     expect(data.users.filter((user) => user.measurementStatus === "measured")).toHaveLength(21);
-    expect(data.totals.requests).toBe(295045);
-    expect(data.totals.totalTokens).toBe(59355330876);
-    expect(data.totals.netSpendUsd).toBeCloseTo(1246.68, 2);
+    expect(data.totals.requests).toBe(50524);
+    expect(data.totals.totalTokens).toBe(12554215370);
+    expect(data.totals.netSpendUsd).toBeCloseTo(34.93, 2);
     expect(data.source.codeLines).toHaveLength(4);
     expect(sumBy(data.source.codeLines, (item) => item.totalLines)).toBe(1014276);
     expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(1014276);
@@ -88,7 +88,9 @@ describe("individualUtilizationData", () => {
         displayName: "박수진 과장",
         displayAccount: "sjpark@riskzero.kr",
         measurementStatus: "measured",
-        usageScopeOverride: "chatGPT 공통 계정 사용 · Claude Team Plan Standard",
+        usageScopeOverride: null,
+        products: ["Cowork"],
+        models: ["claude-haiku-4-5-20251001", "claude-sonnet-5"],
         requests: 13,
         totalTokens: 786254,
         totalCodeLines: 0,
@@ -97,7 +99,9 @@ describe("individualUtilizationData", () => {
         displayName: "송인나 대리",
         displayAccount: "songinna@riskzero.kr",
         measurementStatus: "measured",
-        usageScopeOverride: "chatGPT 공통 계정 사용 · Claude Team Plan Standard",
+        usageScopeOverride: null,
+        products: ["Cowork"],
+        models: ["claude-haiku-4-5-20251001", "claude-sonnet-5"],
         requests: 17,
         totalTokens: 1523030,
         totalCodeLines: 0,
@@ -183,10 +187,10 @@ describe("individualUtilizationData", () => {
       startDate: "2026-08-01",
       endDate: "2026-08-05",
       totals: {
-        activeUsers: 19,
-        requests: 264669,
-        totalTokens: 52004482235,
-        netSpendUsd: 1211.75,
+        activeUsers: 18,
+        requests: 20148,
+        totalTokens: 5203366729,
+        netSpendUsd: 0,
         codeLines: 64530,
       },
     });
@@ -269,20 +273,20 @@ describe("individualUtilizationData", () => {
       totalTokens: 22109534845,
     });
     expect(data.monthlySpend["2026-08"]?.totals).toMatchObject({
-      requests: 295045,
-      promptTokens: 59119888969,
-      completionTokens: 235441907,
-      totalTokens: 59355330876,
+      requests: 50524,
+      promptTokens: 12508404680,
+      completionTokens: 45810690,
+      totalTokens: 12554215370,
     });
     expect(data.monthlySpend["2026-08"]?.coverage).toBe("partial");
     expect(data.monthlySpend["2026-08"]?.period).toBe("2026-08-01 ~ 2026-08-12");
     expect(data.monthlySpend["2026-08"]?.users["woosung.jeon@riskzero.kr"]).toMatchObject({
-      requests: 42895,
-      totalTokens: 9740469443,
+      requests: 10135,
+      totalTokens: 2899028449,
     });
     expect(data.monthlySpend["2026-08"]?.users["jungyr98@riskzero.kr"]).toMatchObject({
-      requests: 16492,
-      totalTokens: 1378067385,
+      requests: 1260,
+      totalTokens: 113282866,
     });
     expect(
       Object.values(data.monthlySpend["2026-08"]?.users ?? {}).every(

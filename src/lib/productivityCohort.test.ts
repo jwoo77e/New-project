@@ -275,7 +275,7 @@ describe("buildProductivityExecutiveModel", () => {
     expect(initialClaudeTeamUsageData.source.verification.approvedButNoUsage).toBe(1);
     expect(initialClaudeTeamUsageData.users).toHaveLength(22);
     expect(initialClaudeTeamUsageData.activeUsers).toBe(22);
-    expect(initialClaudeTeamUsageData.spendUsers).toBe(21);
+    expect(initialClaudeTeamUsageData.spendUsers).toBe(20);
     expect(initialClaudeTeamUsageData.codeUsers).toBe(15);
     expect(
       initialClaudeTeamUsageData.users.find((user) => user.email === "dhlee@riskzero.kr"),

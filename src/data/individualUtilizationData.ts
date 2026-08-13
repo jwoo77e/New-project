@@ -270,11 +270,6 @@ const allActiveDays = snapshot.users.map((user) => sumActivity(user.weeklyActivi
 const allCodeLines = snapshot.users.map((user) =>
   Object.values(user.monthlyCodeLines).reduce((sum, value) => sum + value, 0),
 );
-const measuredUsageScopeOverrides: Record<string, string> = {
-  "sjpark@riskzero.kr": "chatGPT 공통 계정 사용 · Claude Team Plan Standard",
-  "songinna@riskzero.kr": "chatGPT 공통 계정 사용 · Claude Team Plan Standard",
-};
-
 const measuredUsers: IndividualUtilizationUser[] = snapshot.users.map((user) => {
   const totalActivity = sumActivity(user.weeklyActivity);
   const totalCodeLines = Object.values(user.monthlyCodeLines).reduce((sum, value) => sum + value, 0);
@@ -392,7 +387,7 @@ const measuredUsers: IndividualUtilizationUser[] = snapshot.users.map((user) => 
     ...user,
     measurementStatus: "measured",
     displayAccount: user.email,
-    usageScopeOverride: measuredUsageScopeOverrides[user.email] ?? null,
+    usageScopeOverride: null,
     totalCodeLines,
     totalConversations: totalActivity.conversations,
     totalHumanPrompts: totalActivity.humanPrompts,

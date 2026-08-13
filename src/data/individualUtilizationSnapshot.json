@@ -1,10 +1,10 @@
 {
   "source": {
-    "generatedAt": "2026-08-13T09:14:42+09:00",
+    "generatedAt": "2026-08-13T09:23:15+09:00",
     "spend": {
       "fileName": "2026-08-06-spend-report.csv + 2026-08-13-spend-report.csv",
       "period": "2026-08-01 ~ 2026-08-12",
-      "rowCount": 235,
+      "rowCount": 119,
       "grain": "user_product_model_period_sum"
     },
     "codeLines": [
@@ -49,12 +49,12 @@
   },
   "totals": {
     "users": 21,
-    "requests": 295045,
-    "promptTokens": 59119888969,
-    "completionTokens": 235441907,
-    "totalTokens": 59355330876,
-    "netSpendUsd": 1246.68,
-    "grossSpendUsd": 1251.45,
+    "requests": 50524,
+    "promptTokens": 12508404680,
+    "completionTokens": 45810690,
+    "totalTokens": 12554215370,
+    "netSpendUsd": 34.93,
+    "grossSpendUsd": 35.32,
     "codeLines": 1014276,
     "conversations": 168,
     "humanPrompts": 1429,
@@ -64,76 +64,52 @@
     {
       "email": "crow326@riskzero.kr",
       "displayName": "박정원 차장",
-      "requests": 3720,
-      "promptTokens": 623677129,
-      "completionTokens": 1913447,
-      "totalTokens": 625590576,
+      "requests": 1384,
+      "promptTokens": 106777841,
+      "completionTokens": 594050,
+      "totalTokens": 107371891,
       "netSpendUsd": 0.0,
-      "grossSpendUsd": 0.22,
-      "uncachedInputTokens": 470255,
-      "cacheReadTokens": 613782712,
-      "cacheWrite5mTokens": 1990263,
-      "cacheWrite1hTokens": 7433899,
-      "webSearchCount": 22,
+      "grossSpendUsd": 0.02,
+      "uncachedInputTokens": 278681,
+      "cacheReadTokens": 103999298,
+      "cacheWrite5mTokens": 1410352,
+      "cacheWrite1hTokens": 1089510,
+      "webSearchCount": 2,
       "products": [
         "Chat",
-        "Claude Code",
-        "Cowork"
+        "Claude Code"
       ],
       "models": [
-        "claude-fable-5",
         "claude-haiku-4-5-20251001",
-        "claude-opus-4-7",
-        "claude-opus-4-8",
         "claude-opus-5",
         "claude-sonnet-5"
       ],
       "productUsage": {
         "Chat": {
-          "requests": 131,
-          "tokens": 8659115,
+          "requests": 11,
+          "tokens": 790626,
           "netSpendUsd": 0.0
         },
         "Claude Code": {
-          "requests": 3576,
-          "tokens": 616496087,
-          "netSpendUsd": 0.0
-        },
-        "Cowork": {
-          "requests": 13,
-          "tokens": 435374,
+          "requests": 1373,
+          "tokens": 106581265,
           "netSpendUsd": 0.0
         }
       },
       "modelUsage": {
-        "claude-fable-5": {
-          "requests": 7,
-          "tokens": 526097,
-          "netSpendUsd": 0.0
-        },
         "claude-haiku-4-5-20251001": {
-          "requests": 848,
-          "tokens": 197233,
-          "netSpendUsd": 0.0
-        },
-        "claude-opus-4-7": {
-          "requests": 24,
-          "tokens": 1134563,
-          "netSpendUsd": 0.0
-        },
-        "claude-opus-4-8": {
-          "requests": 111,
-          "tokens": 6673807,
+          "requests": 401,
+          "tokens": 32590,
           "netSpendUsd": 0.0
         },
         "claude-opus-5": {
-          "requests": 38,
-          "tokens": 2697507,
+          "requests": 11,
+          "tokens": 790626,
           "netSpendUsd": 0.0
         },
         "claude-sonnet-5": {
-          "requests": 2692,
-          "tokens": 614361369,
+          "requests": 972,
+          "tokens": 106548675,
           "netSpendUsd": 0.0
         }
       },
@@ -191,17 +167,17 @@
     {
       "email": "hchbae1001@riskzero.kr",
       "displayName": "배현철 사원",
-      "requests": 39711,
-      "promptTokens": 10205765640,
-      "completionTokens": 27297422,
-      "totalTokens": 10233063062,
-      "netSpendUsd": 10.16,
-      "grossSpendUsd": 11.56,
-      "uncachedInputTokens": 9320051,
-      "cacheReadTokens": 10060597463,
-      "cacheWrite5mTokens": 10801121,
-      "cacheWrite1hTokens": 125047005,
-      "webSearchCount": 383,
+      "requests": 2318,
+      "promptTokens": 291065277,
+      "completionTokens": 1705893,
+      "totalTokens": 292771170,
+      "netSpendUsd": 0.0,
+      "grossSpendUsd": 0.01,
+      "uncachedInputTokens": 227975,
+      "cacheReadTokens": 279345169,
+      "cacheWrite5mTokens": 0,
+      "cacheWrite1hTokens": 11492133,
+      "webSearchCount": 1,
       "products": [
         "Chat",
         "Claude Code",
@@ -210,70 +186,52 @@
       "models": [
         "claude-fable-5",
         "claude-haiku-4-5-20251001",
-        "claude-opus-4-6",
-        "claude-opus-4-7",
         "claude-opus-4-8",
         "claude-opus-5",
-        "claude-sonnet-4-6",
         "claude-sonnet-5"
       ],
       "productUsage": {
         "Chat": {
-          "requests": 1570,
-          "tokens": 206532392,
-          "netSpendUsd": 0.66
+          "requests": 282,
+          "tokens": 31291788,
+          "netSpendUsd": 0.0
         },
         "Claude Code": {
-          "requests": 37046,
-          "tokens": 9903024246,
-          "netSpendUsd": 9.5
+          "requests": 1910,
+          "tokens": 251983094,
+          "netSpendUsd": 0.0
         },
         "Cowork": {
-          "requests": 1095,
-          "tokens": 123506424,
+          "requests": 126,
+          "tokens": 9496288,
           "netSpendUsd": 0.0
         }
       },
       "modelUsage": {
         "claude-fable-5": {
-          "requests": 3342,
-          "tokens": 761157277,
-          "netSpendUsd": 1.51
+          "requests": 1273,
+          "tokens": 192006254,
+          "netSpendUsd": 0.0
         },
         "claude-haiku-4-5-20251001": {
-          "requests": 4062,
-          "tokens": 41913692,
-          "netSpendUsd": 0.0
-        },
-        "claude-opus-4-6": {
-          "requests": 63,
-          "tokens": 2159169,
-          "netSpendUsd": 0.0
-        },
-        "claude-opus-4-7": {
-          "requests": 1065,
-          "tokens": 178759619,
+          "requests": 126,
+          "tokens": 594070,
           "netSpendUsd": 0.0
         },
         "claude-opus-4-8": {
-          "requests": 27030,
-          "tokens": 8853406187,
-          "netSpendUsd": 7.13
-        },
-        "claude-opus-5": {
-          "requests": 1021,
-          "tokens": 102799111,
+          "requests": 55,
+          "tokens": 12882921,
           "netSpendUsd": 0.0
         },
-        "claude-sonnet-4-6": {
-          "requests": 2030,
-          "tokens": 164622831,
-          "netSpendUsd": 0.86
+        "claude-opus-5": {
+          "requests": 651,
+          "tokens": 60805902,
+          "netSpendUsd": 0.0
         },
         "claude-sonnet-5": {
-          "requests": 1098,
-          "tokens": 128245176,
-          "netSpendUsd": 0.66
+          "requests": 213,
+          "tokens": 26482023,
+          "netSpendUsd": 0.0
         }
       },
       "monthlyCodeLines": {
@@ -374,41 +332,31 @@
     {
       "email": "hhlee0227@riskzero.kr",
       "displayName": "이한호 대리",
-      "requests": 24161,
-      "promptTokens": 4120243011,
-      "completionTokens": 17483692,
-      "totalTokens": 4137726703,
-      "netSpendUsd": 77.06,
-      "grossSpendUsd": 77.07,
-      "uncachedInputTokens": 3575849,
-      "cacheReadTokens": 4026475586,
-      "cacheWrite5mTokens": 19642902,
-      "cacheWrite1hTokens": 70548674,
-      "webSearchCount": 2,
+      "requests": 3608,
+      "promptTokens": 533324789,
+      "completionTokens": 2062050,
+      "totalTokens": 535386839,
+      "netSpendUsd": 0.0,
+      "grossSpendUsd": 0.0,
+      "uncachedInputTokens": 235496,
+      "cacheReadTokens": 524564152,
+      "cacheWrite5mTokens": 302081,
+      "cacheWrite1hTokens": 8223060,
+      "webSearchCount": 0,
       "products": [
-        "Chat",
         "Claude Code",
         "Cowork"
       ],
       "models": [
-        "claude-fable-5",
         "claude-haiku-4-5-20251001",
-        "claude-opus-4-7",
-        "claude-opus-4-8",
         "claude-opus-5",
-        "claude-sonnet-4-6",
         "claude-sonnet-5"
       ],
       "productUsage": {
-        "Chat": {
-          "requests": 33,
-          "tokens": 1115607,
-          "netSpendUsd": 0.04
-        },
         "Claude Code": {
-          "requests": 24112,
-          "tokens": 4135805877,
-          "netSpendUsd": 77.02
+          "requests": 3592,
+          "tokens": 534581620,
+          "netSpendUsd": 0.0
         },
         "Cowork": {
           "requests": 16,
@@ -417,39 +365,19 @@
         }
       },
       "modelUsage": {
-        "claude-fable-5": {
-          "requests": 889,
-          "tokens": 191796805,
-          "netSpendUsd": 21.05
-        },
         "claude-haiku-4-5-20251001": {
-          "requests": 3173,
-          "tokens": 54604986,
+          "requests": 885,
+          "tokens": 100818,
           "netSpendUsd": 0.0
-        },
-        "claude-opus-4-7": {
-          "requests": 3357,
-          "tokens": 617466044,
-          "netSpendUsd": 29.97
-        },
-        "claude-opus-4-8": {
-          "requests": 4995,
-          "tokens": 976488747,
-          "netSpendUsd": 26.0
         },
         "claude-opus-5": {
           "requests": 2109,
           "tokens": 418202088,
           "netSpendUsd": 0.0
         },
-        "claude-sonnet-4-6": {
-          "requests": 60,
-          "tokens": 2473017,
-          "netSpendUsd": 0.04
-        },
         "claude-sonnet-5": {
-          "requests": 9578,
-          "tokens": 1876695016,
+          "requests": 614,
+          "tokens": 117083933,
           "netSpendUsd": 0.0
         }
       },
@@ -509,46 +437,40 @@
     {
       "email": "huizhen0227@riskzero.kr",
       "displayName": "김혜진 과장",
-      "requests": 11947,
-      "promptTokens": 2059809542,
-      "completionTokens": 6087027,
-      "totalTokens": 2065896569,
+      "requests": 1522,
+      "promptTokens": 478774023,
+      "completionTokens": 706611,
+      "totalTokens": 479480634,
       "netSpendUsd": 0.0,
-      "grossSpendUsd": 0.04,
-      "uncachedInputTokens": 863660,
-      "cacheReadTokens": 2033949014,
-      "cacheWrite5mTokens": 2018522,
-      "cacheWrite1hTokens": 22978346,
-      "webSearchCount": 4,
+      "grossSpendUsd": 0.0,
+      "uncachedInputTokens": 74546,
+      "cacheReadTokens": 474736278,
+      "cacheWrite5mTokens": 229139,
+      "cacheWrite1hTokens": 3734060,
+      "webSearchCount": 0,
       "products": [
         "Claude Code"
       ],
       "models": [
         "claude-haiku-4-5-20251001",
-        "claude-sonnet-4-6",
         "claude-sonnet-5"
       ],
       "productUsage": {
         "Claude Code": {
-          "requests": 11947,
-          "tokens": 2065896569,
+          "requests": 1522,
+          "tokens": 479480634,
           "netSpendUsd": 0.0
         }
       },
       "modelUsage": {
         "claude-haiku-4-5-20251001": {
-          "requests": 407,
-          "tokens": 5628257,
-          "netSpendUsd": 0.0
-        },
-        "claude-sonnet-4-6": {
-          "requests": 3978,
-          "tokens": 400374152,
+          "requests": 30,
+          "tokens": 8705,
           "netSpendUsd": 0.0
         },
         "claude-sonnet-5": {
-          "requests": 7562,
-          "tokens": 1659894160,
+          "requests": 1492,
+          "tokens": 479471929,
           "netSpendUsd": 0.0
         }
       },
@@ -566,88 +488,70 @@
     {
       "email": "jaewoo.kim@riskzero.kr",
       "displayName": "김재우 부장",
-      "requests": 23906,
-      "promptTokens": 7343979647,
-      "completionTokens": 30396311,
-      "totalTokens": 7374375958,
-      "netSpendUsd": 697.37,
-      "grossSpendUsd": 697.96,
-      "uncachedInputTokens": 18688274,
-      "cacheReadTokens": 6889481952,
-      "cacheWrite5mTokens": 823981,
-      "cacheWrite1hTokens": 434985440,
-      "webSearchCount": 106,
+      "requests": 5011,
+      "promptTokens": 1650097340,
+      "completionTokens": 9396053,
+      "totalTokens": 1659493393,
+      "netSpendUsd": 0.0,
+      "grossSpendUsd": 0.06,
+      "uncachedInputTokens": 1750419,
+      "cacheReadTokens": 1586703007,
+      "cacheWrite5mTokens": 0,
+      "cacheWrite1hTokens": 61643914,
+      "webSearchCount": 6,
       "products": [
-        "Chat",
         "Claude Code",
         "Claude in Chrome",
-        "Cowork",
-        "Office Agents"
+        "Cowork"
       ],
       "models": [
         "claude-fable-5",
         "claude-haiku-4-5-20251001",
         "claude-opus-4-8",
         "claude-opus-5",
-        "claude-sonnet-4-6",
         "claude-sonnet-5"
       ],
       "productUsage": {
-        "Chat": {
-          "requests": 12,
-          "tokens": 2906285,
+        "Claude Code": {
+          "requests": 1229,
+          "tokens": 187583460,
           "netSpendUsd": 0.0
         },
-        "Claude Code": {
-          "requests": 4123,
-          "tokens": 598802533,
-          "netSpendUsd": 3.59
-        },
         "Claude in Chrome": {
-          "requests": 98,
-          "tokens": 3165646,
-          "netSpendUsd": 0.04
+          "requests": 29,
+          "tokens": 1136942,
+          "netSpendUsd": 0.0
         },
         "Cowork": {
-          "requests": 19616,
-          "tokens": 6763849338,
-          "netSpendUsd": 684.0400000000001
-        },
-        "Office Agents": {
-          "requests": 57,
-          "tokens": 5652156,
-          "netSpendUsd": 9.7
+          "requests": 3753,
+          "tokens": 1470772991,
+          "netSpendUsd": 0.0
         }
       },
       "modelUsage": {
         "claude-fable-5": {
-          "requests": 1816,
-          "tokens": 568180786,
-          "netSpendUsd": 529.5300000000001
-        },
-        "claude-haiku-4-5-20251001": {
-          "requests": 545,
-          "tokens": 6048625,
-          "netSpendUsd": 0.04
-        },
-        "claude-opus-4-8": {
-          "requests": 19439,
-          "tokens": 6506389370,
-          "netSpendUsd": 167.8
-        },
-        "claude-opus-5": {
-          "requests": 1655,
-          "tokens": 252292092,
+          "requests": 165,
+          "tokens": 42239982,
           "netSpendUsd": 0.0
         },
-        "claude-sonnet-4-6": {
-          "requests": 436,
-          "tokens": 40734613,
+        "claude-haiku-4-5-20251001": {
+          "requests": 137,
+          "tokens": 1832453,
+          "netSpendUsd": 0.0
+        },
+        "claude-opus-4-8": {
+          "requests": 3498,
+          "tokens": 1427441134,
+          "netSpendUsd": 0.0
+        },
+        "claude-opus-5": {
+          "requests": 1203,
+          "tokens": 187560735,
           "netSpendUsd": 0.0
         },
         "claude-sonnet-5": {
-          "requests": 15,
-          "tokens": 730472,
+          "requests": 8,
+          "tokens": 419089,
           "netSpendUsd": 0.0
         }
       },
@@ -706,40 +610,34 @@
     {
       "email": "jhpark@riskzero.kr",
       "displayName": "박재현 상무",
-      "requests": 54,
-      "promptTokens": 4009951,
-      "completionTokens": 90146,
-      "totalTokens": 4100097,
+      "requests": 4,
+      "promptTokens": 227265,
+      "completionTokens": 8109,
+      "totalTokens": 235374,
       "netSpendUsd": 0.0,
-      "grossSpendUsd": 0.03,
-      "uncachedInputTokens": 478,
-      "cacheReadTokens": 3580818,
+      "grossSpendUsd": 0.0,
+      "uncachedInputTokens": 10,
+      "cacheReadTokens": 190926,
       "cacheWrite5mTokens": 0,
-      "cacheWrite1hTokens": 428655,
-      "webSearchCount": 3,
+      "cacheWrite1hTokens": 36329,
+      "webSearchCount": 0,
       "products": [
         "Chat"
       ],
       "models": [
-        "claude-haiku-4-5-20251001",
         "claude-sonnet-5"
       ],
       "productUsage": {
         "Chat": {
-          "requests": 54,
-          "tokens": 4100097,
+          "requests": 4,
+          "tokens": 235374,
           "netSpendUsd": 0.0
         }
       },
       "modelUsage": {
-        "claude-haiku-4-5-20251001": {
-          "requests": 1,
-          "tokens": 361,
-          "netSpendUsd": 0.0
-        },
         "claude-sonnet-5": {
-          "requests": 53,
-          "tokens": 4099736,
+          "requests": 4,
+          "tokens": 235374,
           "netSpendUsd": 0.0
         }
       },
@@ -789,17 +687,17 @@
     {
       "email": "jisub1221@riskzero.kr",
       "displayName": "심지섭 대리",
-      "requests": 3899,
-      "promptTokens": 284774376,
-      "completionTokens": 1629875,
-      "totalTokens": 286404251,
+      "requests": 58,
+      "promptTokens": 2013665,
+      "completionTokens": 14235,
+      "totalTokens": 2027900,
       "netSpendUsd": 0.0,
-      "grossSpendUsd": 0.03,
-      "uncachedInputTokens": 985489,
-      "cacheReadTokens": 277210886,
-      "cacheWrite5mTokens": 776663,
-      "cacheWrite1hTokens": 5801338,
-      "webSearchCount": 3,
+      "grossSpendUsd": 0.0,
+      "uncachedInputTokens": 7260,
+      "cacheReadTokens": 1898999,
+      "cacheWrite5mTokens": 15351,
+      "cacheWrite1hTokens": 92055,
+      "webSearchCount": 0,
       "products": [
         "Claude Code",
         "Cowork"
@@ -811,30 +709,30 @@
       ],
       "productUsage": {
         "Claude Code": {
-          "requests": 3881,
-          "tokens": 285693026,
+          "requests": 47,
+          "tokens": 1719386,
           "netSpendUsd": 0.0
         },
         "Cowork": {
-          "requests": 18,
-          "tokens": 711225,
+          "requests": 11,
+          "tokens": 308514,
           "netSpendUsd": 0.0
         }
       },
       "modelUsage": {
         "claude-haiku-4-5-20251001": {
-          "requests": 466,
-          "tokens": 6533838,
+          "requests": 8,
+          "tokens": 61891,
           "netSpendUsd": 0.0
         },
         "claude-sonnet-4-6": {
-          "requests": 3422,
-          "tokens": 279220532,
+          "requests": 46,
+          "tokens": 1718839,
           "netSpendUsd": 0.0
         },
         "claude-sonnet-5": {
-          "requests": 11,
-          "tokens": 649881,
+          "requests": 4,
+          "tokens": 247170,
           "netSpendUsd": 0.0
         }
       },
@@ -849,52 +747,40 @@
     {
       "email": "jungyr98@riskzero.kr",
       "displayName": "정유라 사원",
-      "requests": 16492,
-      "promptTokens": 1368366521,
-      "completionTokens": 9700864,
-      "totalTokens": 1378067385,
+      "requests": 1260,
+      "promptTokens": 112493749,
+      "completionTokens": 789117,
+      "totalTokens": 113282866,
       "netSpendUsd": 0.0,
       "grossSpendUsd": 0.0,
-      "uncachedInputTokens": 1787925,
-      "cacheReadTokens": 1324637054,
-      "cacheWrite5mTokens": 11101449,
-      "cacheWrite1hTokens": 30840093,
-      "webSearchCount": 1,
+      "uncachedInputTokens": 243759,
+      "cacheReadTokens": 108931083,
+      "cacheWrite5mTokens": 1054614,
+      "cacheWrite1hTokens": 2264293,
+      "webSearchCount": 0,
       "products": [
         "Claude Code"
       ],
       "models": [
-        "claude-fable-5",
         "claude-haiku-4-5-20251001",
-        "claude-sonnet-4-6",
         "claude-sonnet-5"
       ],
       "productUsage": {
         "Claude Code": {
-          "requests": 16492,
-          "tokens": 1378067385,
+          "requests": 1260,
+          "tokens": 113282866,
           "netSpendUsd": 0.0
         }
       },
       "modelUsage": {
-        "claude-fable-5": {
-          "requests": 285,
-          "tokens": 28007469,
-          "netSpendUsd": 0.0
-        },
         "claude-haiku-4-5-20251001": {
-          "requests": 2767,
-          "tokens": 86726628,
-          "netSpendUsd": 0.0
-        },
-        "claude-sonnet-4-6": {
-          "requests": 8021,
-          "tokens": 671438419,
+          "requests": 75,
+          "tokens": 275847,
           "netSpendUsd": 0.0
         },
         "claude-sonnet-5": {
-          "requests": 5419,
-          "tokens": 591894869,
+          "requests": 1185,
+          "tokens": 113007019,
           "netSpendUsd": 0.0
         }
       },
@@ -912,64 +798,46 @@
     {
       "email": "kys0392@riskzero.kr",
       "displayName": "김영산 과장",
-      "requests": 20568,
-      "promptTokens": 4412803893,
-      "completionTokens": 20018551,
-      "totalTokens": 4432822444,
+      "requests": 7487,
+      "promptTokens": 2037509399,
+      "completionTokens": 7691403,
+      "totalTokens": 2045200802,
       "netSpendUsd": 18.25,
-      "grossSpendUsd": 18.75,
-      "uncachedInputTokens": 2234599,
-      "cacheReadTokens": 4323117625,
-      "cacheWrite5mTokens": 8317304,
-      "cacheWrite1hTokens": 79134365,
-      "webSearchCount": 66,
+      "grossSpendUsd": 18.47,
+      "uncachedInputTokens": 465425,
+      "cacheReadTokens": 2004071242,
+      "cacheWrite5mTokens": 4246378,
+      "cacheWrite1hTokens": 28726354,
+      "webSearchCount": 22,
       "products": [
         "Claude Code",
         "Cowork"
       ],
       "models": [
-        "claude-fable-5",
         "claude-haiku-4-5-20251001",
-        "claude-opus-4-8",
-        "claude-sonnet-4-6",
         "claude-sonnet-5"
       ],
       "productUsage": {
         "Claude Code": {
-          "requests": 19029,
-          "tokens": 4096094753,
+          "requests": 7366,
+          "tokens": 2038261148,
           "netSpendUsd": 18.25
         },
         "Cowork": {
-          "requests": 1539,
-          "tokens": 336727691,
+          "requests": 121,
+          "tokens": 6939654,
           "netSpendUsd": 0.0
         }
       },
       "modelUsage": {
-        "claude-fable-5": {
-          "requests": 125,
-          "tokens": 4668249,
-          "netSpendUsd": 0.0
-        },
         "claude-haiku-4-5-20251001": {
-          "requests": 639,
-          "tokens": 3012172,
-          "netSpendUsd": 0.0
-        },
-        "claude-opus-4-8": {
-          "requests": 196,
-          "tokens": 43911979,
-          "netSpendUsd": 0.0
-        },
-        "claude-sonnet-4-6": {
-          "requests": 2711,
-          "tokens": 220084872,
+          "requests": 176,
+          "tokens": 296261,
           "netSpendUsd": 0.0
         },
         "claude-sonnet-5": {
-          "requests": 16897,
-          "tokens": 4161145172,
+          "requests": 7311,
+          "tokens": 2044904541,
           "netSpendUsd": 18.25
         }
       },
@@ -986,46 +854,40 @@
     {
       "email": "mjkim1122@riskzero.kr",
       "displayName": "김민정 차장",
-      "requests": 7753,
-      "promptTokens": 870095721,
-      "completionTokens": 4363996,
-      "totalTokens": 874459717,
+      "requests": 1581,
+      "promptTokens": 310640070,
+      "completionTokens": 1129707,
+      "totalTokens": 311769777,
       "netSpendUsd": 0.0,
-      "grossSpendUsd": 0.06,
-      "uncachedInputTokens": 1031712,
-      "cacheReadTokens": 840124148,
-      "cacheWrite5mTokens": 3054768,
-      "cacheWrite1hTokens": 25885093,
-      "webSearchCount": 6,
+      "grossSpendUsd": 0.02,
+      "uncachedInputTokens": 111352,
+      "cacheReadTokens": 302679044,
+      "cacheWrite5mTokens": 509069,
+      "cacheWrite1hTokens": 7340605,
+      "webSearchCount": 2,
       "products": [
         "Claude Code"
       ],
       "models": [
         "claude-haiku-4-5-20251001",
-        "claude-sonnet-4-6",
         "claude-sonnet-5"
       ],
       "productUsage": {
         "Claude Code": {
-          "requests": 7753,
-          "tokens": 874459717,
+          "requests": 1581,
+          "tokens": 311769777,
           "netSpendUsd": 0.0
         }
       },
       "modelUsage": {
         "claude-haiku-4-5-20251001": {
-          "requests": 423,
-          "tokens": 8457966,
-          "netSpendUsd": 0.0
-        },
-        "claude-sonnet-4-6": {
-          "requests": 3335,
-          "tokens": 250986706,
+          "requests": 24,
+          "tokens": 28484,
           "netSpendUsd": 0.0
         },
         "claude-sonnet-5": {
-          "requests": 3995,
-          "tokens": 615015045,
+          "requests": 1557,
+          "tokens": 311741293,
           "netSpendUsd": 0.0
         }
       },
@@ -1043,16 +905,16 @@
     {
       "email": "mjlee0828@riskzero.kr",
       "displayName": "이민재 부장",
-      "requests": 456,
-      "promptTokens": 34242471,
-      "completionTokens": 359050,
-      "totalTokens": 34601521,
+      "requests": 312,
+      "promptTokens": 24712224,
+      "completionTokens": 260717,
+      "totalTokens": 24972941,
       "netSpendUsd": 0.0,
       "grossSpendUsd": 0.02,
-      "uncachedInputTokens": 42209,
-      "cacheReadTokens": 32041949,
+      "uncachedInputTokens": 38123,
+      "cacheReadTokens": 23107080,
       "cacheWrite5mTokens": 72196,
-      "cacheWrite1hTokens": 2086117,
+      "cacheWrite1hTokens": 1494825,
       "webSearchCount": 2,
       "products": [
         "Chat",
@@ -1065,30 +927,30 @@
       ],
       "productUsage": {
         "Chat": {
-          "requests": 93,
-          "tokens": 6723599,
+          "requests": 12,
+          "tokens": 990671,
           "netSpendUsd": 0.0
         },
         "Claude Code": {
-          "requests": 142,
-          "tokens": 6929900,
+          "requests": 100,
+          "tokens": 4250615,
           "netSpendUsd": 0.0
         },
         "Cowork": {
-          "requests": 221,
-          "tokens": 20948022,
+          "requests": 200,
+          "tokens": 19731655,
           "netSpendUsd": 0.0
         }
       },
       "modelUsage": {
         "claude-haiku-4-5-20251001": {
-          "requests": 27,
-          "tokens": 71369,
+          "requests": 21,
+          "tokens": 69668,
           "netSpendUsd": 0.0
         },
         "claude-sonnet-5": {
-          "requests": 429,
-          "tokens": 34530152,
+          "requests": 291,
+          "tokens": 24903273,
           "netSpendUsd": 0.0
         }
       },
@@ -1134,88 +996,58 @@
     {
       "email": "mygu@riskzero.kr",
       "displayName": "구문영 사원",
-      "requests": 7565,
-      "promptTokens": 1338302753,
-      "completionTokens": 6838386,
-      "totalTokens": 1345141139,
-      "netSpendUsd": 123.99,
-      "grossSpendUsd": 124.02,
-      "uncachedInputTokens": 1776860,
-      "cacheReadTokens": 1290115543,
-      "cacheWrite5mTokens": 6221056,
-      "cacheWrite1hTokens": 40189294,
-      "webSearchCount": 35,
+      "requests": 1545,
+      "promptTokens": 431021572,
+      "completionTokens": 1152919,
+      "totalTokens": 432174491,
+      "netSpendUsd": 0.0,
+      "grossSpendUsd": 0.0,
+      "uncachedInputTokens": 251239,
+      "cacheReadTokens": 423183173,
+      "cacheWrite5mTokens": 131286,
+      "cacheWrite1hTokens": 7455874,
+      "webSearchCount": 0,
       "products": [
         "Chat",
         "Claude Code",
         "Cowork"
       ],
       "models": [
-        "claude-fable-5",
         "claude-haiku-4-5-20251001",
-        "claude-opus-4-6",
-        "claude-opus-4-7",
-        "claude-opus-4-8",
         "claude-opus-5",
-        "claude-sonnet-4-6",
         "claude-sonnet-5"
       ],
       "productUsage": {
         "Chat": {
-          "requests": 404,
-          "tokens": 80065556,
+          "requests": 27,
+          "tokens": 2740193,
           "netSpendUsd": 0.0
         },
         "Claude Code": {
-          "requests": 6289,
-          "tokens": 1107010891,
-          "netSpendUsd": 102.47
+          "requests": 1395,
+          "tokens": 414381034,
+          "netSpendUsd": 0.0
         },
         "Cowork": {
-          "requests": 872,
-          "tokens": 158064692,
-          "netSpendUsd": 21.52
+          "requests": 123,
+          "tokens": 15053264,
+          "netSpendUsd": 0.0
         }
       },
       "modelUsage": {
-        "claude-fable-5": {
-          "requests": 698,
-          "tokens": 81876035,
-          "netSpendUsd": 49.85
-        },
         "claude-haiku-4-5-20251001": {
-          "requests": 987,
-          "tokens": 27473985,
-          "netSpendUsd": 0.25
-        },
-        "claude-opus-4-6": {
-          "requests": 3,
-          "tokens": 127630,
+          "requests": 139,
+          "tokens": 807366,
           "netSpendUsd": 0.0
-        },
-        "claude-opus-4-7": {
-          "requests": 1317,
-          "tokens": 220325976,
-          "netSpendUsd": 24.05
-        },
-        "claude-opus-4-8": {
-          "requests": 2006,
-          "tokens": 339585327,
-          "netSpendUsd": 49.84
         },
         "claude-opus-5": {
-          "requests": 2360,
-          "tokens": 661959751,
-          "netSpendUsd": 0.0
-        },
-        "claude-sonnet-4-6": {
-          "requests": 150,
-          "tokens": 10571694,
+          "requests": 1405,
+          "tokens": 431298374,
           "netSpendUsd": 0.0
         },
         "claude-sonnet-5": {
-          "requests": 44,
-          "tokens": 3220741,
+          "requests": 1,
+          "tokens": 68751,
           "netSpendUsd": 0.0
         }
       },
@@ -1299,55 +1131,36 @@
     {
       "email": "rkgmf1230@riskzero.kr",
       "displayName": "김가흘 대리",
-      "requests": 8033,
-      "promptTokens": 729915643,
-      "completionTokens": 4112926,
-      "totalTokens": 734028569,
-      "netSpendUsd": 12.94,
-      "grossSpendUsd": 12.95,
-      "uncachedInputTokens": 710714,
-      "cacheReadTokens": 707725239,
-      "cacheWrite5mTokens": 4666791,
-      "cacheWrite1hTokens": 16812899,
-      "webSearchCount": 3,
+      "requests": 1968,
+      "promptTokens": 285101328,
+      "completionTokens": 1089968,
+      "totalTokens": 286191296,
+      "netSpendUsd": 0.0,
+      "grossSpendUsd": 0.0,
+      "uncachedInputTokens": 91474,
+      "cacheReadTokens": 280667881,
+      "cacheWrite5mTokens": 769034,
+      "cacheWrite1hTokens": 3572939,
+      "webSearchCount": 0,
       "products": [
-        "Claude Code",
-        "Cowork"
+        "Claude Code"
       ],
       "models": [
         "claude-haiku-4-5-20251001",
-        "claude-opus-4-7",
-        "claude-opus-4-8",
         "claude-opus-5",
-        "claude-sonnet-4-6",
         "claude-sonnet-5"
       ],
       "productUsage": {
         "Claude Code": {
-          "requests": 7690,
-          "tokens": 675311632,
+          "requests": 1968,
+          "tokens": 286191296,
           "netSpendUsd": 0.0
-        },
-        "Cowork": {
-          "requests": 343,
-          "tokens": 58716937,
-          "netSpendUsd": 12.94
         }
       },
       "modelUsage": {
         "claude-haiku-4-5-20251001": {
-          "requests": 617,
-          "tokens": 12240169,
-          "netSpendUsd": 0.0
-        },
-        "claude-opus-4-7": {
-          "requests": 271,
-          "tokens": 54795813,
-          "netSpendUsd": 12.94
-        },
-        "claude-opus-4-8": {
-          "requests": 51,
-          "tokens": 3352433,
+          "requests": 40,
+          "tokens": 12566,
           "netSpendUsd": 0.0
         },
         "claude-opus-5": {
@@ -1355,14 +1168,9 @@
           "tokens": 2545656,
           "netSpendUsd": 0.0
         },
-        "claude-sonnet-4-6": {
-          "requests": 3065,
-          "tokens": 222471041,
-          "netSpendUsd": 0.0
-        },
         "claude-sonnet-5": {
-          "requests": 4003,
-          "tokens": 438623457,
+          "requests": 1902,
+          "tokens": 283633074,
           "netSpendUsd": 0.0
         }
       },
@@ -1380,58 +1188,34 @@
     {
       "email": "sieghaft@riskzero.kr",
       "displayName": "김성진 부장",
-      "requests": 1868,
-      "promptTokens": 681407832,
-      "completionTokens": 1512823,
-      "totalTokens": 682920655,
+      "requests": 6,
+      "promptTokens": 3200973,
+      "completionTokens": 1559,
+      "totalTokens": 3202532,
       "netSpendUsd": 0.0,
-      "grossSpendUsd": 0.01,
-      "uncachedInputTokens": 364123,
-      "cacheReadTokens": 664721838,
-      "cacheWrite5mTokens": 1571348,
-      "cacheWrite1hTokens": 14750523,
-      "webSearchCount": 15,
+      "grossSpendUsd": 0.0,
+      "uncachedInputTokens": 619,
+      "cacheReadTokens": 2691851,
+      "cacheWrite5mTokens": 0,
+      "cacheWrite1hTokens": 508503,
+      "webSearchCount": 0,
       "products": [
-        "Chat",
         "Claude Code"
       ],
       "models": [
-        "claude-haiku-4-5-20251001",
-        "claude-opus-4-7",
-        "claude-opus-4-8",
-        "claude-sonnet-4-6"
+        "claude-opus-4-7"
       ],
       "productUsage": {
-        "Chat": {
-          "requests": 32,
-          "tokens": 1559130,
-          "netSpendUsd": 0.0
-        },
         "Claude Code": {
-          "requests": 1836,
-          "tokens": 681361525,
+          "requests": 6,
+          "tokens": 3202532,
           "netSpendUsd": 0.0
         }
       },
       "modelUsage": {
-        "claude-haiku-4-5-20251001": {
-          "requests": 198,
-          "tokens": 8514198,
-          "netSpendUsd": 0.0
-        },
         "claude-opus-4-7": {
-          "requests": 1364,
-          "tokens": 619990204,
-          "netSpendUsd": 0.0
-        },
-        "claude-opus-4-8": {
-          "requests": 275,
-          "tokens": 52924811,
-          "netSpendUsd": 0.0
-        },
-        "claude-sonnet-4-6": {
-          "requests": 31,
-          "tokens": 1491442,
+          "requests": 6,
+          "tokens": 3202532,
           "netSpendUsd": 0.0
         }
       },
@@ -1495,88 +1279,46 @@
     {
       "email": "sjlim@riskzero.kr",
       "displayName": "임성진 부장",
-      "requests": 2113,
-      "promptTokens": 182743883,
-      "completionTokens": 1632376,
-      "totalTokens": 184376259,
+      "requests": 735,
+      "promptTokens": 64196724,
+      "completionTokens": 498000,
+      "totalTokens": 64694724,
       "netSpendUsd": 0.0,
-      "grossSpendUsd": 0.01,
-      "uncachedInputTokens": 260400,
-      "cacheReadTokens": 174608759,
-      "cacheWrite5mTokens": 1359333,
-      "cacheWrite1hTokens": 6515391,
-      "webSearchCount": 1,
+      "grossSpendUsd": 0.0,
+      "uncachedInputTokens": 26873,
+      "cacheReadTokens": 61988714,
+      "cacheWrite5mTokens": 58088,
+      "cacheWrite1hTokens": 2123049,
+      "webSearchCount": 0,
       "products": [
-        "Chat",
-        "Claude Code",
-        "Cowork",
-        "Office Agents"
+        "Claude Code"
       ],
       "models": [
-        "claude-fable-5",
         "claude-haiku-4-5-20251001",
-        "claude-opus-4-7",
-        "claude-opus-4-8",
         "claude-opus-5",
-        "claude-sonnet-4-6",
         "claude-sonnet-5"
       ],
       "productUsage": {
-        "Chat": {
-          "requests": 47,
-          "tokens": 6203785,
-          "netSpendUsd": 0.0
-        },
         "Claude Code": {
-          "requests": 1662,
-          "tokens": 134830526,
-          "netSpendUsd": 0.0
-        },
-        "Cowork": {
-          "requests": 327,
-          "tokens": 39185081,
-          "netSpendUsd": 0.0
-        },
-        "Office Agents": {
-          "requests": 77,
-          "tokens": 4156867,
+          "requests": 735,
+          "tokens": 64694724,
           "netSpendUsd": 0.0
         }
       },
       "modelUsage": {
-        "claude-fable-5": {
-          "requests": 31,
-          "tokens": 2309320,
-          "netSpendUsd": 0.0
-        },
         "claude-haiku-4-5-20251001": {
-          "requests": 225,
-          "tokens": 3190746,
-          "netSpendUsd": 0.0
-        },
-        "claude-opus-4-7": {
-          "requests": 266,
-          "tokens": 24322440,
-          "netSpendUsd": 0.0
-        },
-        "claude-opus-4-8": {
-          "requests": 405,
-          "tokens": 38381637,
+          "requests": 93,
+          "tokens": 8799,
           "netSpendUsd": 0.0
         },
         "claude-opus-5": {
-          "requests": 612,
-          "tokens": 63154886,
-          "netSpendUsd": 0.0
-        },
-        "claude-sonnet-4-6": {
-          "requests": 537,
-          "tokens": 51092044,
+          "requests": 606,
+          "tokens": 62808064,
           "netSpendUsd": 0.0
         },
         "claude-sonnet-5": {
-          "requests": 37,
-          "tokens": 1925186,
+          "requests": 36,
+          "tokens": 1877861,
           "netSpendUsd": 0.0
         }
       },
@@ -1730,71 +1472,53 @@
     {
       "email": "staycurious@riskzero.kr",
       "displayName": "김하나 과장",
-      "requests": 17496,
-      "promptTokens": 4707267993,
-      "completionTokens": 11009063,
-      "totalTokens": 4718277056,
-      "netSpendUsd": 42.35,
-      "grossSpendUsd": 42.56,
-      "uncachedInputTokens": 5958778,
-      "cacheReadTokens": 4636106778,
-      "cacheWrite5mTokens": 11041862,
-      "cacheWrite1hTokens": 54160575,
+      "requests": 4398,
+      "promptTokens": 1756147708,
+      "completionTokens": 2621192,
+      "totalTokens": 1758768900,
+      "netSpendUsd": 0.0,
+      "grossSpendUsd": 0.03,
+      "uncachedInputTokens": 245271,
+      "cacheReadTokens": 1743152159,
+      "cacheWrite5mTokens": 175,
+      "cacheWrite1hTokens": 12750103,
       "webSearchCount": 3,
       "products": [
-        "Chat",
         "Claude Code",
         "Cowork"
       ],
       "models": [
         "claude-haiku-4-5-20251001",
         "claude-opus-4-8",
-        "claude-opus-5",
-        "claude-sonnet-4-6",
-        "claude-sonnet-5"
+        "claude-opus-5"
       ],
       "productUsage": {
-        "Chat": {
-          "requests": 12,
-          "tokens": 1061698,
+        "Claude Code": {
+          "requests": 4395,
+          "tokens": 1758654466,
           "netSpendUsd": 0.0
         },
-        "Claude Code": {
-          "requests": 17250,
-          "tokens": 4703739906,
-          "netSpendUsd": 42.35
-        },
         "Cowork": {
-          "requests": 234,
-          "tokens": 13475452,
+          "requests": 3,
+          "tokens": 114434,
           "netSpendUsd": 0.0
         }
       },
       "modelUsage": {
         "claude-haiku-4-5-20251001": {
-          "requests": 812,
-          "tokens": 19238985,
-          "netSpendUsd": 0.52
+          "requests": 38,
+          "tokens": 61547,
+          "netSpendUsd": 0.0
         },
         "claude-opus-4-8": {
-          "requests": 159,
-          "tokens": 21994750,
+          "requests": 95,
+          "tokens": 16832963,
           "netSpendUsd": 0.0
         },
         "claude-opus-5": {
-          "requests": 5815,
-          "tokens": 2227536998,
+          "requests": 4265,
+          "tokens": 1741874390,
           "netSpendUsd": 0.0
-        },
-        "claude-sonnet-4-6": {
-          "requests": 3308,
-          "tokens": 306198015,
-          "netSpendUsd": 21.76
-        },
-        "claude-sonnet-5": {
-          "requests": 7402,
-          "tokens": 2143308308,
-          "netSpendUsd": 20.07
         }
       },
       "monthlyCodeLines": {
@@ -1822,95 +1546,53 @@
     {
       "email": "wody@riskzero.kr",
       "displayName": "정재요 차장",
-      "requests": 60866,
-      "promptTokens": 10354824012,
-      "completionTokens": 54178116,
-      "totalTokens": 10409002128,
-      "netSpendUsd": 227.2,
-      "grossSpendUsd": 228.75,
-      "uncachedInputTokens": 18437093,
-      "cacheReadTokens": 9876309819,
-      "cacheWrite5mTokens": 110806092,
-      "cacheWrite1hTokens": 349271008,
-      "webSearchCount": 311,
+      "requests": 7162,
+      "promptTokens": 1530025427,
+      "completionTokens": 5826680,
+      "totalTokens": 1535852107,
+      "netSpendUsd": 16.68,
+      "grossSpendUsd": 16.69,
+      "uncachedInputTokens": 352562,
+      "cacheReadTokens": 1447317019,
+      "cacheWrite5mTokens": 10698706,
+      "cacheWrite1hTokens": 71657140,
+      "webSearchCount": 1,
       "products": [
-        "Chat",
-        "Claude Code",
-        "Cowork",
-        "Office Agents"
+        "Claude Code"
       ],
       "models": [
         "claude-fable-5",
         "claude-haiku-4-5-20251001",
-        "claude-opus-4-6",
-        "claude-opus-4-7",
-        "claude-opus-4-8",
         "claude-opus-5",
-        "claude-sonnet-4-6",
         "claude-sonnet-5"
       ],
       "productUsage": {
-        "Chat": {
-          "requests": 776,
-          "tokens": 193163922,
-          "netSpendUsd": 0.23
-        },
         "Claude Code": {
-          "requests": 58917,
-          "tokens": 9991864383,
-          "netSpendUsd": 226.91
-        },
-        "Cowork": {
-          "requests": 1159,
-          "tokens": 221747308,
-          "netSpendUsd": 0.06
-        },
-        "Office Agents": {
-          "requests": 14,
-          "tokens": 2226515,
-          "netSpendUsd": 0.0
+          "requests": 7162,
+          "tokens": 1535852107,
+          "netSpendUsd": 16.68
         }
       },
       "modelUsage": {
         "claude-fable-5": {
-          "requests": 4804,
-          "tokens": 952143608,
-          "netSpendUsd": 98.78
+          "requests": 813,
+          "tokens": 215466067,
+          "netSpendUsd": 15.94
         },
         "claude-haiku-4-5-20251001": {
-          "requests": 4526,
-          "tokens": 161304747,
-          "netSpendUsd": 0.28
-        },
-        "claude-opus-4-6": {
-          "requests": 98,
-          "tokens": 3987910,
-          "netSpendUsd": 0.0
-        },
-        "claude-opus-4-7": {
-          "requests": 6882,
-          "tokens": 1391754916,
-          "netSpendUsd": 99.49000000000001
-        },
-        "claude-opus-4-8": {
-          "requests": 24947,
-          "tokens": 4716453784,
-          "netSpendUsd": 10.72
+          "requests": 202,
+          "tokens": 4811581,
+          "netSpendUsd": 0.07
         },
         "claude-opus-5": {
-          "requests": 10995,
-          "tokens": 2322796562,
-          "netSpendUsd": 11.66
-        },
-        "claude-sonnet-4-6": {
-          "requests": 5483,
-          "tokens": 580853097,
-          "netSpendUsd": 3.29
+          "requests": 4964,
+          "tokens": 1171294501,
+          "netSpendUsd": 0.0
         },
         "claude-sonnet-5": {
-          "requests": 3131,
-          "tokens": 279707504,
-          "netSpendUsd": 2.98
+          "requests": 1183,
+          "tokens": 144279958,
+          "netSpendUsd": 0.67
         }
       },
       "monthlyCodeLines": {
@@ -1993,71 +1675,53 @@
     {
       "email": "woosung.jeon@riskzero.kr",
       "displayName": "전우성 부장",
-      "requests": 42895,
-      "promptTokens": 9704088248,
-      "completionTokens": 36381195,
-      "totalTokens": 9740469443,
-      "netSpendUsd": 37.36,
-      "grossSpendUsd": 37.38,
-      "uncachedInputTokens": 7769433,
-      "cacheReadTokens": 9337602452,
-      "cacheWrite5mTokens": 78400354,
-      "cacheWrite1hTokens": 280316009,
-      "webSearchCount": 10,
+      "requests": 10135,
+      "promptTokens": 2888809657,
+      "completionTokens": 10218792,
+      "totalTokens": 2899028449,
+      "netSpendUsd": 0.0,
+      "grossSpendUsd": 0.0,
+      "uncachedInputTokens": 2460909,
+      "cacheReadTokens": 2763651584,
+      "cacheWrite5mTokens": 20698277,
+      "cacheWrite1hTokens": 101998887,
+      "webSearchCount": 0,
       "products": [
-        "Chat",
         "Claude Code"
       ],
       "models": [
         "claude-haiku-4-5-20251001",
-        "claude-opus-4-7",
         "claude-opus-4-8",
         "claude-opus-5",
-        "claude-sonnet-4-6",
         "claude-sonnet-5"
       ],
       "productUsage": {
-        "Chat": {
-          "requests": 46,
-          "tokens": 1526738,
-          "netSpendUsd": 0.0
-        },
         "Claude Code": {
-          "requests": 42849,
-          "tokens": 9738942705,
-          "netSpendUsd": 37.36
+          "requests": 10135,
+          "tokens": 2899028449,
+          "netSpendUsd": 0.0
         }
       },
       "modelUsage": {
         "claude-haiku-4-5-20251001": {
-          "requests": 2558,
-          "tokens": 58974848,
-          "netSpendUsd": 0.57
-        },
-        "claude-opus-4-7": {
-          "requests": 57,
-          "tokens": 13395651,
+          "requests": 489,
+          "tokens": 322281,
           "netSpendUsd": 0.0
         },
         "claude-opus-4-8": {
-          "requests": 581,
-          "tokens": 67210485,
-          "netSpendUsd": 5.27
-        },
-        "claude-opus-5": {
-          "requests": 11122,
-          "tokens": 3091125322,
+          "requests": 2,
+          "tokens": 515694,
           "netSpendUsd": 0.0
         },
-        "claude-sonnet-4-6": {
-          "requests": 15466,
-          "tokens": 1751336205,
-          "netSpendUsd": 26.58
+        "claude-opus-5": {
+          "requests": 9619,
+          "tokens": 2896584858,
+          "netSpendUsd": 0.0
         },
         "claude-sonnet-5": {
-          "requests": 13111,
-          "tokens": 4758426932,
-          "netSpendUsd": 4.94
+          "requests": 25,
+          "tokens": 1605616,
+          "netSpendUsd": 0.0
         }
       },
       "monthlyCodeLines": {
@@ -2128,54 +1792,26 @@
     {
       "email": "ykchj1011@riskzero.kr",
       "displayName": "윤영관 과장",
-      "requests": 1512,
-      "promptTokens": 91305054,
-      "completionTokens": 393006,
-      "totalTokens": 91698060,
+      "requests": 0,
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "totalTokens": 0,
       "netSpendUsd": 0.0,
-      "grossSpendUsd": 0.03,
-      "uncachedInputTokens": 219111,
-      "cacheReadTokens": 87870284,
-      "cacheWrite5mTokens": 263604,
-      "cacheWrite1hTokens": 2952055,
-      "webSearchCount": 3,
+      "grossSpendUsd": 0.0,
+      "uncachedInputTokens": 0,
+      "cacheReadTokens": 0,
+      "cacheWrite5mTokens": 0,
+      "cacheWrite1hTokens": 0,
+      "webSearchCount": 0,
       "products": [
-        "Chat",
-        "Claude Code",
-        "Cowork"
+
       ],
       "models": [
-        "claude-haiku-4-5-20251001",
-        "claude-sonnet-5"
+
       ],
       "productUsage": {
-        "Chat": {
-          "requests": 1,
-          "tokens": 33219,
-          "netSpendUsd": 0.0
-        },
-        "Claude Code": {
-          "requests": 1491,
-          "tokens": 90812635,
-          "netSpendUsd": 0.0
-        },
-        "Cowork": {
-          "requests": 20,
-          "tokens": 852206,
-          "netSpendUsd": 0.0
-        }
       },
       "modelUsage": {
-        "claude-haiku-4-5-20251001": {
-          "requests": 819,
-          "tokens": 95602,
-          "netSpendUsd": 0.0
-        },
-        "claude-sonnet-5": {
-          "requests": 693,
-          "tokens": 91602458,
-          "netSpendUsd": 0.0
-        }
       },
       "monthlyCodeLines": {
         "2026-07": 864
