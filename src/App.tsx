@@ -116,6 +116,12 @@ import {
   buildClaudeProductivitySignals,
   type ClaudeProductivityLevel,
 } from "./lib/claudeProductivity";
+import {
+  buildMonthlyTokenUsageTrend,
+  buildWeeklyTokenUsageTrend,
+  type TokenUsageSample,
+  type TokenUsageTrend,
+} from "./lib/tokenUsageTrend";
 import { buildDriveArtifactDailyTrend } from "./lib/driveArtifactTrend";
 import { buildIntegratedConversationAnalysis } from "./lib/integratedConversationAnalysis";
 import {
@@ -3966,6 +3972,146 @@ function approvalPalette(index: number) {
 
 type IndividualSortKey = "code" | "tokens";
 
+function monthlyTokenSamplesForUser(email: string, selectedMonth: string): TokenUsageSample[] {
+  const selectedIndex = individualUtilizationData.months.indexOf(selectedMonth);
+  if (selectedIndex < 0) return [];
+
+  return individualUtilizationData.months.slice(0, selectedIndex + 1).flatMap((month) => {
+    const period = individualUtilizationData.monthlySpend[month];
+    const usage = period?.users[email];
+    if (!period || !usage) return [];
+    const [startDate, endDate] = period.period.split(/\s*~\s*/);
+    if (!startDate || !endDate) return [];
+    return [{
+      key: month,
+      label: monthLabel(month),
+      totalTokens: usage.totalTokens,
+      startDate,
+      endDate,
+      coverage: period.coverage,
+    }];
+  });
+}
+
+function weeklyTokenSamplesForUser(email: string, selectedWeek: string): TokenUsageSample[] {
+  const selectedIndex = individualUtilizationData.usageWeeks.indexOf(selectedWeek);
+  if (selectedIndex < 0) return [];
+
+  return individualUtilizationData.usageWeeks.slice(0, selectedIndex + 1).flatMap((week) => {
+    const period = individualUtilizationData.weeklyUsage[week];
+    const usage = period?.users[email];
+    if (!period || !usage) return [];
+    return [{
+      key: week,
+      label: period.label,
+      totalTokens: usage.totalTokens,
+      startDate: period.startDate,
+      endDate: period.endDate,
+      coverage: period.coverage,
+    }];
+  });
+}
+
+function TokenUsageSparkline({
+  mode,
+  trend,
+}: {
+  mode: IndividualPeriodMode;
+  trend: TokenUsageTrend;
+}) {
+  const width = 132;
+  const height = 36;
+  const paddingX = 5;
+  const paddingY = 5;
+  const points = trend.points.slice(-4);
+  if (points.length === 0 || trend.forecastTokens == null) return null;
+
+  const values = [...points.map((point) => point.comparableTokens), trend.forecastTokens];
+  const minimum = Math.min(...values);
+  const maximum = Math.max(...values);
+  const range = maximum - minimum;
+  const xAt = (index: number) =>
+    paddingX + (index / Math.max(values.length - 1, 1)) * (width - paddingX * 2);
+  const yAt = (value: number) =>
+    range === 0
+      ? height / 2
+      : paddingY + ((maximum - value) / range) * (height - paddingY * 2);
+  const actualCoordinates = points.map((point, index) => ({
+    x: xAt(index),
+    y: yAt(point.comparableTokens),
+  }));
+  const latestCoordinate = actualCoordinates[actualCoordinates.length - 1];
+  const forecastCoordinate = {
+    x: xAt(values.length - 1),
+    y: yAt(trend.forecastTokens),
+  };
+  const sourceDescription = points.map((point) => {
+    const normalized = point.observedDays !== point.targetDays
+      ? `, ${point.targetDays}일 환산 ${formatTokens(point.comparableTokens)}`
+      : "";
+    return `${point.label} ${formatTokens(point.totalTokens)}${normalized}`;
+  }).join("; ");
+  const chartDescription = `${mode === "week" ? "주차별" : "월별"} 토큰 활동 추이. ${sourceDescription}; ${trend.forecastLabel} ${formatTokens(trend.forecastTokens)}`;
+
+  return (
+    <svg
+      aria-label={chartDescription}
+      className="individual-token-sparkline"
+      role="img"
+      viewBox={`0 0 ${width} ${height}`}
+    >
+      <title>{chartDescription}</title>
+      <line className="individual-token-sparkline-baseline" x1={paddingX} x2={width - paddingX} y1={height - paddingY} y2={height - paddingY} />
+      {actualCoordinates.length > 1 && (
+        <polyline
+          className="individual-token-sparkline-actual"
+          points={actualCoordinates.map((point) => `${point.x},${point.y}`).join(" ")}
+        />
+      )}
+      {actualCoordinates.map((point, index) => (
+        <circle className="individual-token-sparkline-dot" cx={point.x} cy={point.y} key={points[index].key} r="2.5" />
+      ))}
+      <line
+        className="individual-token-sparkline-forecast"
+        x1={latestCoordinate.x}
+        x2={forecastCoordinate.x}
+        y1={latestCoordinate.y}
+        y2={forecastCoordinate.y}
+      />
+      <circle className="individual-token-sparkline-forecast-dot" cx={forecastCoordinate.x} cy={forecastCoordinate.y} r="3" />
+    </svg>
+  );
+}
+
+function IndividualTokenUsageCell({
+  actualTokens,
+  mode,
+  trend,
+}: {
+  actualTokens: number;
+  mode: IndividualPeriodMode;
+  trend: TokenUsageTrend;
+}) {
+  const forecastMethod = mode === "week"
+    ? "기간별 사용량을 7일 기준으로 환산하고 최근 변화의 50%만 반영한 다음 주 활동량 참고치"
+    : trend.forecastKind === "period-end"
+      ? "선택 월의 집계 일수 기준 일평균을 해당 월 전체 일수로 환산한 활동량 참고치"
+      : "최근 두 달의 기간 보정 토큰 변화 중 50%만 반영한 다음 달 활동량 참고치";
+
+  return (
+    <div className="individual-token-cell">
+      <strong className="individual-token-actual">{formatTokens(actualTokens)}</strong>
+      <TokenUsageSparkline mode={mode} trend={trend} />
+      {trend.forecastTokens != null && (
+        <span className={`individual-token-forecast ${trend.direction}`} title={forecastMethod}>
+          <small>{trend.forecastLabel}</small>
+          <b>{formatTokens(trend.forecastTokens)}</b>
+        </span>
+      )}
+    </div>
+  );
+}
+
 function AdoptionView({
   selectedMonth,
   onSelectedMonthChange,
@@ -4008,7 +4154,10 @@ function AdoptionView({
         const evaluation = user.monthEvaluations[selectedMonth];
         const monthlySpend = selectedMonthlySpend?.users[user.email] ?? null;
         const weeklyUsage = selectedWeeklyUsage?.users[user.email] ?? null;
-        return { user, evaluation, monthlySpend, weeklyUsage };
+        const tokenTrend = isWeekly
+          ? buildWeeklyTokenUsageTrend(weeklyTokenSamplesForUser(user.email, selectedWeek))
+          : buildMonthlyTokenUsageTrend(monthlyTokenSamplesForUser(user.email, selectedMonth));
+        return { user, evaluation, monthlySpend, weeklyUsage, tokenTrend };
       })
       .filter(({ user }) =>
         normalizedQuery.length === 0 ||
@@ -4283,7 +4432,7 @@ function AdoptionView({
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ user, evaluation, monthlySpend, weeklyUsage }) => {
+              {rows.map(({ user, evaluation, monthlySpend, weeklyUsage, tokenTrend }) => {
                 const metricsMeasured = user.measurementStatus === "measured";
                 const metricsUncollected = !metricsMeasured;
                 const weeklyRecalculated = isWeekly && weeklyUsage != null && (
@@ -4331,10 +4480,18 @@ function AdoptionView({
                           ? weeklyUsage
                             ? weeklyRecalculated
                               ? <span className="state-pill warning">활동량 산정 제외</span>
-                              : <strong>{formatTokens(weeklyUsage.totalTokens)}</strong>
+                              : <IndividualTokenUsageCell
+                                  actualTokens={weeklyUsage.totalTokens}
+                                  mode="week"
+                                  trend={tokenTrend}
+                                />
                             : <span className="state-pill neutral">주차별 미수집</span>
                           : monthlySpend
-                            ? <strong>{formatTokens(monthlySpend.totalTokens)}</strong>
+                            ? <IndividualTokenUsageCell
+                                actualTokens={monthlySpend.totalTokens}
+                                mode="month"
+                                trend={tokenTrend}
+                              />
                             : <span className="state-pill neutral">월별 Spend 미수집</span>
                       ) : metricsUncollected ? <span className="state-pill neutral">미수집</span> : null}
                     </td>

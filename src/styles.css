@@ -4426,22 +4426,110 @@ td strong {
 }
 
 .individual-utilization-table table {
-  min-width: 1360px;
+  min-width: 1180px;
+}
+
+.individual-utilization-table th:nth-child(1),
+.individual-utilization-table td:nth-child(1) {
+  min-width: 220px;
 }
 
 .individual-utilization-table th:nth-child(2),
 .individual-utilization-table td:nth-child(2) {
-  min-width: 210px;
+  min-width: 150px;
 }
 
-.individual-utilization-table th:nth-child(7),
-.individual-utilization-table td:nth-child(7) {
-  min-width: 170px;
+.individual-utilization-table th:nth-child(3),
+.individual-utilization-table td:nth-child(3) {
+  min-width: 370px;
+  white-space: normal;
 }
 
-.individual-utilization-table th:nth-child(8),
-.individual-utilization-table td:nth-child(8) {
+.individual-utilization-table th:nth-child(4),
+.individual-utilization-table td:nth-child(4) {
   min-width: 430px;
+}
+
+.individual-token-cell {
+  display: grid;
+  grid-template-columns: minmax(58px, auto) 132px minmax(78px, auto);
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+}
+
+.individual-token-actual {
+  color: var(--ink);
+  font-size: 0.94rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.individual-token-sparkline {
+  display: block;
+  width: 132px;
+  height: 36px;
+  overflow: visible;
+}
+
+.individual-token-sparkline-baseline {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.individual-token-sparkline-actual {
+  fill: none;
+  stroke: var(--teal);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
+}
+
+.individual-token-sparkline-dot {
+  fill: var(--surface);
+  stroke: var(--teal);
+  stroke-width: 1.75;
+}
+
+.individual-token-sparkline-forecast {
+  stroke: var(--coral);
+  stroke-dasharray: 4 3;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.individual-token-sparkline-forecast-dot {
+  fill: var(--surface);
+  stroke: var(--coral);
+  stroke-width: 2;
+}
+
+.individual-token-forecast {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.individual-token-forecast small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 750;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.individual-token-forecast b {
+  color: var(--coral);
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.individual-token-forecast.down b {
+  color: var(--amber);
+}
+
+.individual-token-forecast.flat b {
+  color: var(--steel);
 }
 
 .individual-usage-scope {
