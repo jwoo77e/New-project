@@ -3964,7 +3964,7 @@ function approvalPalette(index: number) {
   return colors[index % colors.length];
 }
 
-type IndividualSortKey = "code" | "prompts" | "tokens";
+type IndividualSortKey = "code" | "tokens";
 
 function AdoptionView({
   selectedMonth,
@@ -3974,7 +3974,7 @@ function AdoptionView({
   onSelectedMonthChange: (month: string) => void;
 }) {
   const data = individualUtilizationData;
-  const [sortKey, setSortKey] = useState<IndividualSortKey>("prompts");
+  const [sortKey, setSortKey] = useState<IndividualSortKey>("tokens");
   const [periodMode, setPeriodMode] = useState<IndividualPeriodMode>("week");
   const [selectedWeek, setSelectedWeek] = useState(
     data.usageWeeks[data.usageWeeks.length - 1] ?? "",
@@ -4028,7 +4028,6 @@ function AdoptionView({
         const bEvaluation = b.evaluation;
         const value = (row: typeof a) => {
           if (sortKey === "code") return isWeekly ? row.weeklyUsage?.codeLines ?? 0 : row.evaluation?.codeLines ?? 0;
-          if (sortKey === "prompts") return isWeekly ? row.weeklyUsage?.requests ?? 0 : row.evaluation?.humanPrompts ?? 0;
           return isWeekly ? row.weeklyUsage?.totalTokens ?? 0 : row.monthlySpend?.totalTokens ?? 0;
         };
         return value(b) - value(a) ||
@@ -4116,8 +4115,8 @@ function AdoptionView({
           </div>
           <p>
             {isWeekly
-              ? "요청·토큰은 각 주차 기간 파일을 사용하고, Code Lines는 월 누적 스냅샷 간 차이로 해당 주차 순증을 계산합니다."
-              : "대화 Export의 프롬프트·활성일과 월별 Code Lines를 결합합니다. 활동량은 업무성과가 아니며 누락값은 0점으로 처리하지 않습니다."}
+              ? "토큰은 주차별 Spend 기간값을 사용하고, Code Lines는 월 누적 스냅샷 간 차이로 해당 주차 순증을 계산합니다."
+              : "토큰은 월 누적 Spend를 사용하고, Code Lines는 최신 월 누적 스냅샷을 사용합니다."}
           </p>
         </div>
         <div className="individual-controls">
@@ -4169,9 +4168,8 @@ function AdoptionView({
               value={sortKey}
               onChange={(event) => setSortKey(event.target.value as IndividualSortKey)}
             >
-              <option value="prompts">{isWeekly ? "주간 요청" : "프롬프트"}</option>
+              <option value="tokens">토큰 사용량</option>
               <option value="code">Code Lines</option>
-              <option value="tokens">{isWeekly ? "주간 토큰" : "월 누적 토큰"}</option>
             </select>
           </label>
           <label className="individual-search-control">
@@ -4279,10 +4277,8 @@ function AdoptionView({
             <thead>
               <tr>
                 <th>사용자</th>
-                <th>{isWeekly ? "주간 요청" : "대화 프롬프트"}</th>
-                <th>{isWeekly ? "프롬프트 토큰" : "대화 활성일"}</th>
                 <th>Code Lines</th>
-                <th>{isWeekly ? "주간 사용량" : "월 누적 사용량"}</th>
+                <th>토큰 사용량</th>
                 <th>주요 사용 범위</th>
               </tr>
             </thead>
@@ -4293,6 +4289,12 @@ function AdoptionView({
                 const weeklyRecalculated = isWeekly && weeklyUsage != null && (
                   weeklyUsage.requests < 0 || weeklyUsage.totalTokens < 0
                 );
+                const scopeProducts = isWeekly && weeklyUsage?.products.length
+                  ? weeklyUsage.products
+                  : user.products;
+                const scopeModels = isWeekly && weeklyUsage?.models.length
+                  ? weeklyUsage.models
+                  : user.models;
                 return (
                   <tr key={user.email}>
                     <td>
@@ -4319,32 +4321,6 @@ function AdoptionView({
                     <td>
                       {metricsMeasured ? (
                         isWeekly
-                          ? weeklyRecalculated
-                            ? <span className="state-pill warning">원천 재산정</span>
-                            : `${numberFormat.format(weeklyUsage?.requests ?? 0)}건`
-                          : <IndividualActivityCoverageCell
-                              detailsMissing={evaluation?.codeActivityDetailsMissing ?? false}
-                              unit="건"
-                              value={evaluation?.humanPrompts ?? 0}
-                            />
-                      ) : metricsUncollected ? <span className="state-pill neutral">미수집</span> : null}
-                    </td>
-                    <td>
-                      {metricsMeasured ? (
-                        isWeekly
-                          ? weeklyRecalculated
-                            ? <small>{formatTokens(Math.abs(weeklyUsage?.promptTokens ?? 0))} 감소 보정</small>
-                            : formatTokens(weeklyUsage?.promptTokens ?? 0)
-                          : <IndividualActivityCoverageCell
-                              detailsMissing={evaluation?.codeActivityDetailsMissing ?? false}
-                              unit="일"
-                              value={evaluation?.activeDays ?? 0}
-                            />
-                      ) : metricsUncollected ? <span className="state-pill neutral">미수집</span> : null}
-                    </td>
-                    <td>
-                      {metricsMeasured ? (
-                        isWeekly
                           ? `${numberFormat.format(weeklyUsage?.codeLines ?? 0)}줄`
                           : evaluation?.codeLines == null
                             ? <span className="state-pill neutral">월 단위</span>
@@ -4357,16 +4333,10 @@ function AdoptionView({
                           ? weeklyUsage
                             ? weeklyRecalculated
                               ? <span className="state-pill warning">활동량 산정 제외</span>
-                              : <>
-                                  <strong>{formatTokens(weeklyUsage.totalTokens)}</strong>
-                                  <small>{numberFormat.format(weeklyUsage.requests)}요청 · 기간 비용 {formatPreciseUsd(weeklyUsage.netSpendUsd)}</small>
-                                </>
+                              : <strong>{formatTokens(weeklyUsage.totalTokens)}</strong>
                             : <span className="state-pill neutral">주차별 미수집</span>
                           : monthlySpend
-                            ? <>
-                                <strong>{formatTokens(monthlySpend.totalTokens)}</strong>
-                                <small>{numberFormat.format(monthlySpend.requests)}요청 · {formatPreciseUsd(monthlySpend.netSpendUsd)}</small>
-                              </>
+                            ? <strong>{formatTokens(monthlySpend.totalTokens)}</strong>
                             : <span className="state-pill neutral">월별 Spend 미수집</span>
                       ) : metricsUncollected ? <span className="state-pill neutral">미수집</span> : null}
                     </td>
@@ -4377,11 +4347,11 @@ function AdoptionView({
                         <div className="individual-usage-scope">
                           <div>
                             <span>제품</span>
-                            <p>{(isWeekly ? weeklyUsage?.products : user.products)?.join(" · ") || "-"}</p>
+                            <p>{scopeProducts.join(" · ") || "-"}</p>
                           </div>
                           <div>
                             <span>모델</span>
-                            <p>{(isWeekly ? weeklyUsage?.models : user.models)?.join(" · ") || "-"}</p>
+                            <p>{scopeModels.join(" · ") || "-"}</p>
                           </div>
                         </div>
                       )}
@@ -4705,25 +4675,6 @@ function IndividualProfileView({
           </ul>
         </div>
       </section>
-    </div>
-  );
-}
-
-function IndividualActivityCoverageCell({
-  detailsMissing,
-  unit,
-  value,
-}: {
-  detailsMissing: boolean;
-  unit: "건" | "일";
-  value: number;
-}) {
-  if (!detailsMissing) return <>{numberFormat.format(value)}{unit}</>;
-
-  return (
-    <div className="individual-coverage-cell">
-      <strong>{value > 0 ? `${numberFormat.format(value)}${unit}` : "미수집"}</strong>
-      <small>Claude Code 미포함</small>
     </div>
   );
 }
