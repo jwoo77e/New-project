@@ -9,7 +9,7 @@ describe("individualUtilizationData", () => {
     const data = individualUtilizationData;
 
     expect(data.source.spend.rowCount).toBe(119);
-    expect(data.users).toHaveLength(41);
+    expect(data.users).toHaveLength(40);
     expect(data.users.filter((user) => user.measurementStatus === "measured")).toHaveLength(21);
     expect(data.totals.requests).toBe(50524);
     expect(data.totals.totalTokens).toBe(12554215370);
@@ -126,7 +126,6 @@ describe("individualUtilizationData", () => {
       "고원상 대리",
       "최용호 대리",
       "강재민 사원",
-      "박병민 이사",
     ];
     const users = individualUtilizationData.users.filter((user) =>
       user.email.startsWith("chatgpt-account:"),
@@ -136,7 +135,6 @@ describe("individualUtilizationData", () => {
     const claudeCommonAccountNames = new Set([
       "김도율 차장",
       "최종윤 이사",
-      "박병민 이사",
     ]);
     expect(
       users.every(

@@ -524,10 +524,9 @@ const unmeasuredUserSeeds: Array<{
     ["ko-wonsang", "고원상 대리"],
     ["choi-yongho", "최용호 대리"],
     ["kang-jaemin", "강재민 사원"],
-    ["park-byeongmin", "박병민 이사"],
   ] as const).map(([id, displayName]) => {
     const usesClaudeCommonAccount =
-      id === "kim-doyul" || id === "choi-jongyun" || id === "park-byeongmin";
+      id === "kim-doyul" || id === "choi-jongyun";
     return {
       email: `chatgpt-account:${id}`,
       displayName,

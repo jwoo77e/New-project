@@ -1748,7 +1748,7 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
 
         <aside className="workforce-investment-panel">
           <div className="investment-kicker">Decision</div>
-          <h3>{workforce.conversionSeats}건 전환 + {workforce.pureAdditionalSeats}석 신규로 41명 Team Plan 체계</h3>
+          <h3>{workforce.conversionSeats}건 전환 + {workforce.pureAdditionalSeats}석 신규로 {workforce.eligibleEmployees}명 Team Plan 체계</h3>
           <p>개인·공용 Claude {workforce.conversionSeats}건은 Premium으로 전환하고 순수 신규 {workforce.pureAdditionalSeats}석은 Standard로 추가하는 비교 시나리오입니다.</p>
           <div className="cost-bridge">
             <div><span>현재 최소 비용</span><strong>{formatManWon(model.currentFixedCostKrw)}</strong></div>

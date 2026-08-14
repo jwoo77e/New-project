@@ -109,6 +109,22 @@ describe("initialAiToolApprovalData", () => {
     });
   });
 
+  it("assigns the Smart Service Gemini account to Kim Doyul", () => {
+    expect(
+      initialAiToolApprovalData.records.find(
+        (record) => record.account === "ai.smartservice@riskzero.kr",
+      ),
+    ).toMatchObject({
+      owner: "김도율 차장 / 스마트서비스",
+      department: "스마트서비스",
+      tool: "Gemini(Google Workspace)",
+      linkedAccount: "doyul@riskzero.kr",
+      monthlyUsd: 15.12,
+      monthlyKrw: 22_453.2,
+      paymentMethod: "AI 전용 카드",
+    });
+  });
+
   it("assigns Park Sujin and Song Inna to Claude Team Standard from August 2026", () => {
     expect(
       initialAiToolApprovalData.records.filter((record) =>

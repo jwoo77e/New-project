@@ -16,8 +16,9 @@ type TeamPlanConversionAccount = {
   currentMonthlyKrw: number;
 };
 
-const eligibleEmployees = 41;
+const eligibleEmployees = 40;
 const leaveExcludedEmployees = 2;
+const departedEmployees = 1;
 const tokenReferenceMonth = "2026-07";
 const powerUserThreshold = 1_000_000_000;
 const lowUsageThreshold = 100_000_000;
@@ -126,14 +127,15 @@ const tokenMeasurementTarget = tokenMeasuredUsers + tokenPendingUsers.length;
 
 export const executiveWorkforceInsightData = {
   source: {
-    workforceBasis: `휴직자 ${leaveExcludedEmployees}명 제외 기준`,
+    workforceBasis: `휴직자 ${leaveExcludedEmployees}명·퇴사자 ${departedEmployees}명 제외 기준`,
     tokenPeriod: julySpend.period,
     tokenCoverage: julySpend.coverage,
     teamPlanBasis: `${initialAiToolApprovalData.source.collectedAt} AI 도구 결재 현황`,
-    conversionAssumption: "전환 6석은 Claude Team Plan Premium, 순수 신규 13석은 Standard 기준 시나리오",
+    conversionAssumption: `전환 ${conversionSeats}석은 Claude Team Plan Premium, 순수 신규 ${pureAdditionalSeats}석은 Standard 기준 시나리오`,
   },
   eligibleEmployees,
   leaveExcludedEmployees,
+  departedEmployees,
   teamPlanUsers,
   teamPlanStandardUsers,
   teamPlanPremiumUsers,
