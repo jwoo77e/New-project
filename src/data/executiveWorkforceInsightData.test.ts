@@ -33,14 +33,14 @@ describe("executiveWorkforceInsightData", () => {
     expect(executiveWorkforceInsightData.projectedMonthlyKrw).toBeCloseTo(6_193_476.15, 2);
   });
 
-  it("keeps July token measurement separate from pending source connections", () => {
+  it("measures token coverage against all 41 Team Plan seats", () => {
     expect(executiveWorkforceInsightData.tokenMeasuredUsers).toBe(19);
-    expect(executiveWorkforceInsightData.tokenMeasurementTarget).toBe(22);
-    expect(executiveWorkforceInsightData.tokenPendingUsers.map((user) => user.name)).toEqual([
-      "이동훈 부장",
-      "박수진 과장",
-      "송인나 대리",
-    ]);
+    expect(executiveWorkforceInsightData.tokenMeasurementTarget).toBe(41);
+    expect(executiveWorkforceInsightData.tokenPendingUsers).toHaveLength(22);
+    expect(executiveWorkforceInsightData.tokenPendingUsers.map((user) => user.name)).toEqual(
+      expect.arrayContaining(["대표님", "이동훈 부장", "박수진 과장", "송인나 대리"]),
+    );
+    expect(executiveWorkforceInsightData.tokenMeasurementCoverageRate).toBeCloseTo((19 / 41) * 100, 5);
     expect(executiveWorkforceInsightData.powerUsers).toHaveLength(8);
     expect(executiveWorkforceInsightData.regularUsers).toHaveLength(6);
     expect(executiveWorkforceInsightData.lowUsageUsers).toHaveLength(5);

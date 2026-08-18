@@ -26,12 +26,6 @@ const teamPlanStandardUsd = 25;
 const teamPlanStandardKrw = 37_125;
 const teamPlanPremiumUsd = 125;
 const teamPlanPremiumKrw = 185_625;
-const tokenPendingUsers = [
-  { name: "이동훈 부장", email: "dhlee@riskzero.kr" },
-  { name: "박수진 과장", email: "sjpark@riskzero.kr" },
-  { name: "송인나 대리", email: "songinna@riskzero.kr" },
-] as const;
-
 const julySpend = individualUtilizationData.monthlySpend[tokenReferenceMonth];
 
 if (!julySpend) {
@@ -72,13 +66,27 @@ const julyTokenUsers = Object.entries(julySpend.users)
     totalTokens: usage.totalTokens,
   }))
   .sort((a, b) => b.totalTokens - a.totalTokens || a.displayName.localeCompare(b.displayName, "ko"));
+const measuredTokenEmails = new Set(julyTokenUsers.map((user) => user.email.toLowerCase()));
+const tokenPendingUsers = teamPlanRecords
+  .filter((record) => !measuredTokenEmails.has(record.account.toLowerCase()))
+  .map((record) => ({
+    name: record.owner.split("/")[0]?.trim() || record.owner,
+    email: record.account,
+  }))
+  .sort((a, b) => a.name.localeCompare(b.name, "ko"));
 const powerUsers = julyTokenUsers.filter((user) => user.totalTokens >= powerUserThreshold);
 const lowUsageUsers = julyTokenUsers.filter((user) => user.totalTokens < lowUsageThreshold);
 const regularUsers = julyTokenUsers.filter(
   (user) => user.totalTokens >= lowUsageThreshold && user.totalTokens < powerUserThreshold,
 );
 const tokenMeasuredUsers = julyTokenUsers.length;
-const tokenMeasurementTarget = tokenMeasuredUsers + tokenPendingUsers.length;
+const tokenMeasurementTarget = teamPlanRecords.length;
+
+if (tokenMeasuredUsers + tokenPendingUsers.length !== tokenMeasurementTarget) {
+  throw new Error(
+    `토큰 측정 대상이 측정 ${tokenMeasuredUsers}명 + 대기 ${tokenPendingUsers.length}명과 일치하지 않습니다.`,
+  );
+}
 
 export const executiveWorkforceInsightData = {
   source: {

@@ -1637,7 +1637,6 @@ function ExecutiveDesignOverview({
 
 function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecutiveModel }) {
   const workforce = executiveWorkforceInsightData;
-  const projectedMonthlyKrw = workforce.projectedMonthlyKrw;
   const teamPlanRolloutComplete = workforce.teamPlanUsers === workforce.eligibleEmployees;
 
   return (
@@ -1747,24 +1746,6 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
           </div>
         </section>
 
-        <aside className="workforce-investment-panel">
-          <div className="investment-kicker">Decision</div>
-          <h3>직원 {workforce.eligibleEmployees}명 Team Plan 보급 완료</h3>
-          <p>현재 결재 원장에 직원용 Standard·Premium 40석을 반영했고, 대표님 Premium 1석은 별도 결재 좌석으로 포함했습니다.</p>
-          <div className="cost-bridge">
-            <div><span>현재 최소 비용</span><strong>{formatManWon(model.currentFixedCostKrw)}</strong></div>
-            <ArrowRight size={17} />
-            <div><span>추가 조치 비용</span><strong>{formatManWon(workforce.netMonthlyChangeKrw)}</strong></div>
-            <ArrowRight size={17} />
-            <div><span>반영 후 월 비용</span><strong>{formatManWon(projectedMonthlyKrw)}</strong></div>
-          </div>
-          <ul>
-            <li><CheckCircle2 size={15} /><span><b>직원 Team Plan {workforce.teamPlanUsers}석</b>Standard {workforce.teamPlanStandardUsers}석 · Premium {workforce.teamPlanPremiumUsers}석</span></li>
-            <li><CheckCircle2 size={15} /><span><b>직원 보급률 {formatRate(workforce.teamPlanCoverageRate)}</b>{workforce.eligibleEmployees}명 전원 배정 완료</span></li>
-            <li><CheckCircle2 size={15} /><span><b>대표님 Premium {workforce.executiveTeamPlanSeats}석 별도</b>결재 총액에는 포함하고 직원 보급률 분모에서는 제외</span></li>
-          </ul>
-          <footer>{workforce.source.conversionAssumption} · 현재 결재 원장 기준 추가 전환 및 신규 배정 필요 없음</footer>
-        </aside>
       </div>
     </section>
   );
