@@ -41,10 +41,14 @@ import {
   Line,
   Pie,
   PieChart,
+  ReferenceLine,
   ResponsiveContainer,
+  Scatter,
+  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
+  ZAxis,
 } from "recharts";
 import {
   initialApiUsageData,
@@ -84,6 +88,10 @@ import {
   type IndividualUtilizationUser,
 } from "./data/individualUtilizationData";
 import { executiveWorkforceInsightData } from "./data/executiveWorkforceInsightData";
+import {
+  platformWbsSimulationData,
+  type PlatformWbsStatus,
+} from "./data/platformWbsSimulationData";
 import {
   individualProfileDataByEmail,
   type IndividualProfileData,
@@ -4262,6 +4270,305 @@ function IndividualTokenUsageCell({
   );
 }
 
+type PlatformWbsAiRow = (typeof platformWbsSimulationData.members)[number] & {
+  totalTokens: number | null;
+  codeLines: number | null;
+  tokensForChart: number;
+  codeLinesForChart: number;
+  aiMeasured: boolean;
+  interpretation: string;
+};
+
+type WbsTooltipPayload = {
+  payload: PlatformWbsAiRow;
+};
+
+const platformWbsStatusMeta: Record<
+  PlatformWbsStatus,
+  { label: string; className: string; color: string }
+> = {
+  ahead: { label: "선행", className: "ok", color: "#118c63" },
+  "on-track": { label: "정상", className: "neutral", color: "#16858a" },
+  "at-risk": { label: "주의", className: "warning", color: "#d89519" },
+  delayed: { label: "지연", className: "danger", color: "#d45545" },
+};
+
+function pearsonCorrelation(
+  rows: PlatformWbsAiRow[],
+  selectValue: (row: PlatformWbsAiRow) => number | null,
+) {
+  const pairs = rows
+    .map((row) => ({ x: selectValue(row), y: row.scheduleVariance }))
+    .filter((pair): pair is { x: number; y: number } => pair.x != null && pair.x > 0);
+  if (pairs.length < 3) return null;
+  const averageX = pairs.reduce((sum, pair) => sum + pair.x, 0) / pairs.length;
+  const averageY = pairs.reduce((sum, pair) => sum + pair.y, 0) / pairs.length;
+  const numerator = pairs.reduce(
+    (sum, pair) => sum + (pair.x - averageX) * (pair.y - averageY),
+    0,
+  );
+  const denominatorX = Math.sqrt(
+    pairs.reduce((sum, pair) => sum + (pair.x - averageX) ** 2, 0),
+  );
+  const denominatorY = Math.sqrt(
+    pairs.reduce((sum, pair) => sum + (pair.y - averageY) ** 2, 0),
+  );
+  if (denominatorX === 0 || denominatorY === 0) return null;
+  return numerator / (denominatorX * denominatorY);
+}
+
+function correlationLabel(value: number | null) {
+  if (value == null) return "산출 불가";
+  const absolute = Math.abs(value);
+  const strength = absolute >= 0.7 ? "강한" : absolute >= 0.4 ? "중간" : absolute >= 0.2 ? "약한" : "미미한";
+  const direction = value > 0 ? "양의" : value < 0 ? "음의" : "무";
+  return `${strength} ${direction} 신호`;
+}
+
+function WbsCorrelationTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: WbsTooltipPayload[];
+}) {
+  const row = payload?.[0]?.payload;
+  if (!active || !row) return null;
+  return (
+    <div className="wbs-correlation-tooltip">
+      <strong>{row.displayName}</strong>
+      <span>{row.project} · {row.workPackage}</span>
+      <dl>
+        <div><dt>토큰</dt><dd>{formatTokens(row.totalTokens ?? 0)}</dd></div>
+        <div><dt>Code Lines</dt><dd>{numberFormat.format(row.codeLines ?? 0)}줄</dd></div>
+        <div><dt>일정 편차</dt><dd>{row.scheduleVariance > 0 ? "+" : ""}{row.scheduleVariance}%p</dd></div>
+      </dl>
+    </div>
+  );
+}
+
+function PlatformWbsSimulationPanel() {
+  const source = platformWbsSimulationData;
+  const [projectFilter, setProjectFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<PlatformWbsStatus | "all">("all");
+  const augustSpend = individualUtilizationData.monthlySpend["2026-08"];
+  const projects = [...new Set(source.members.map((member) => member.project))];
+  const allRows = source.members.map((member): PlatformWbsAiRow => {
+    const user = individualUtilizationData.users.find((candidate) => candidate.email === member.email);
+    const spend = augustSpend?.users[member.email] ?? null;
+    const codeLines = user?.monthEvaluations["2026-08"]?.codeLines ?? null;
+    const aiMeasured = spend != null;
+    const highAiActivity = (spend?.totalTokens ?? 0) >= 500_000_000 || (codeLines ?? 0) >= 10_000;
+    const interpretation = !aiMeasured
+      ? "AI 원천 미수집"
+      : member.status === "delayed" && highAiActivity
+        ? "AI 활동 대비 지연 원인 점검"
+        : member.status === "delayed"
+          ? "작업 장애·업무량 점검"
+          : highAiActivity && (member.status === "ahead" || member.status === "on-track")
+            ? "AI 활동과 진척 동행"
+            : member.status === "at-risk"
+              ? "진척 보완 필요"
+              : "업무 특성과 활용 방식 확인";
+    return {
+      ...member,
+      totalTokens: spend?.totalTokens ?? null,
+      codeLines,
+      tokensForChart: spend?.totalTokens ?? 0,
+      codeLinesForChart: codeLines ?? 0,
+      aiMeasured,
+      interpretation,
+    };
+  });
+  const measuredRows = allRows.filter((row) => row.aiMeasured);
+  const tokenCorrelation = pearsonCorrelation(measuredRows, (row) => row.totalTokens);
+  const codeCorrelation = pearsonCorrelation(measuredRows, (row) => row.codeLines);
+  const filteredRows = allRows
+    .filter((row) => projectFilter === "all" || row.project === projectFilter)
+    .filter((row) => statusFilter === "all" || row.status === statusFilter)
+    .sort((a, b) => {
+      const statusRank: Record<PlatformWbsStatus, number> = {
+        delayed: 0,
+        "at-risk": 1,
+        "on-track": 2,
+        ahead: 3,
+      };
+      return statusRank[a.status] - statusRank[b.status] || a.scheduleVariance - b.scheduleVariance;
+    });
+
+  return (
+    <section className="panel panel-wide platform-wbs-panel" aria-label="플랫폼개발 WBS 및 AI 활동 시뮬레이션">
+      <div className="panel-header platform-wbs-header">
+        <div>
+          <span className="eyebrow">WBS × AI Activity</span>
+          <h2>플랫폼개발 개인별 진척과 AI 활동</h2>
+          <p>{source.source.period} · WBS는 가상 데이터, AI 활동은 수집 원천 기준</p>
+        </div>
+        <span className="state-pill warning">시뮬레이션</span>
+      </div>
+
+      <div className="platform-wbs-summary">
+        <article>
+          <span>WBS 대상</span>
+          <strong>{source.summary.memberCount}명</strong>
+          <small>플랫폼개발 구성원</small>
+        </article>
+        <article>
+          <span>계획 대비 실적</span>
+          <strong>{source.summary.averageActualProgress.toFixed(1)}%</strong>
+          <small>계획 {source.summary.averagePlannedProgress.toFixed(1)}% · {source.summary.averageActualProgress - source.summary.averagePlannedProgress > 0 ? "+" : ""}{(source.summary.averageActualProgress - source.summary.averagePlannedProgress).toFixed(1)}%p</small>
+        </article>
+        <article>
+          <span>작업 완료율</span>
+          <strong>{source.summary.taskCompletionRate.toFixed(1)}%</strong>
+          <small>{source.summary.completedTaskCount}/{source.summary.plannedTaskCount}개 완료</small>
+        </article>
+        <article>
+          <span>일정 점검</span>
+          <strong>{source.summary.delayedMemberCount}명 지연</strong>
+          <small>주의 {source.summary.atRiskMemberCount}명 · 기준 -5%p</small>
+        </article>
+      </div>
+
+      <div className="platform-wbs-analysis">
+        <div className="platform-wbs-correlation">
+          <div className="section-heading">
+            <div>
+              <strong>토큰 사용량과 WBS 일정 편차</strong>
+              <span>점 크기는 Code Lines · 8월 1~12일 동일 기간 비교</span>
+            </div>
+          </div>
+          <div className="platform-wbs-correlation-chart">
+            <ResponsiveContainer width="100%" height="100%">
+              <ScatterChart margin={{ top: 14, right: 22, bottom: 8, left: 2 }}>
+                <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" />
+                <XAxis
+                  dataKey="tokensForChart"
+                  name="토큰"
+                  tickFormatter={(value) => formatTokens(Number(value))}
+                  tickLine={false}
+                  type="number"
+                  unit=""
+                />
+                <YAxis
+                  dataKey="scheduleVariance"
+                  name="일정 편차"
+                  tickFormatter={(value) => `${Number(value) > 0 ? "+" : ""}${value}%p`}
+                  tickLine={false}
+                  type="number"
+                  unit=""
+                  width={54}
+                />
+                <ZAxis dataKey="codeLinesForChart" range={[55, 360]} type="number" />
+                <ReferenceLine y={0} stroke="#66736e" strokeDasharray="5 4" />
+                <Tooltip content={<WbsCorrelationTooltip />} />
+                <Scatter data={measuredRows} name="구성원">
+                  {measuredRows.map((row) => (
+                    <Cell fill={platformWbsStatusMeta[row.status].color} key={row.email} />
+                  ))}
+                </Scatter>
+              </ScatterChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <aside className="platform-wbs-readout">
+          <div>
+            <span>토큰 ↔ 일정 편차</span>
+            <strong>{tokenCorrelation == null ? "-" : `r ${tokenCorrelation >= 0 ? "+" : ""}${tokenCorrelation.toFixed(2)}`}</strong>
+            <small>{correlationLabel(tokenCorrelation)} · {measuredRows.length}명</small>
+          </div>
+          <div>
+            <span>Code Lines ↔ 일정 편차</span>
+            <strong>{codeCorrelation == null ? "-" : `r ${codeCorrelation >= 0 ? "+" : ""}${codeCorrelation.toFixed(2)}`}</strong>
+            <small>{correlationLabel(codeCorrelation)} · 양수는 진척 동행</small>
+          </div>
+          <p><AlertTriangle size={16} />{source.methodology.caveat}</p>
+        </aside>
+      </div>
+
+      <div className="platform-wbs-table-heading">
+        <div>
+          <strong>구성원별 WBS 운영 현황</strong>
+          <span>{source.methodology.delayedRule}</span>
+        </div>
+        <div className="platform-wbs-filters">
+          <label>
+            <span>프로젝트</span>
+            <select value={projectFilter} onChange={(event) => setProjectFilter(event.target.value)}>
+              <option value="all">전체</option>
+              {projects.map((project) => <option key={project} value={project}>{project}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>상태</span>
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value as PlatformWbsStatus | "all")}
+            >
+              <option value="all">전체</option>
+              <option value="delayed">지연</option>
+              <option value="at-risk">주의</option>
+              <option value="on-track">정상</option>
+              <option value="ahead">선행</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div className="table-wrap platform-wbs-table">
+        <table>
+          <thead>
+            <tr>
+              <th>담당자</th>
+              <th>프로젝트 · WBS</th>
+              <th>계획 / 실적 진척</th>
+              <th>일정 상태</th>
+              <th>8월 토큰 · Code Lines</th>
+              <th>운영 해석</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredRows.map((row) => {
+              const status = platformWbsStatusMeta[row.status];
+              return (
+                <tr key={row.email}>
+                  <td><strong>{row.displayName}</strong><small>{row.email}</small></td>
+                  <td><strong>{row.project}</strong><small>{row.workPackage}</small></td>
+                  <td>
+                    <div className="platform-wbs-progress-copy">
+                      <span>계획 {row.plannedProgress}%</span>
+                      <b>실적 {row.actualProgress}%</b>
+                    </div>
+                    <div className="platform-wbs-progress-track">
+                      <span className="plan" style={{ width: `${row.plannedProgress}%` }} />
+                      <span className="actual" style={{ width: `${row.actualProgress}%` }} />
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`state-pill ${status.className}`}>{status.label}</span>
+                    <small>{row.scheduleVariance > 0 ? "+" : ""}{row.scheduleVariance}%p · 지연 작업 {row.delayedTaskCount}개</small>
+                  </td>
+                  <td>
+                    {row.aiMeasured ? (
+                      <><strong>{formatTokens(row.totalTokens ?? 0)}</strong><small>{numberFormat.format(row.codeLines ?? 0)}줄</small></>
+                    ) : <span className="state-pill neutral">AI 원천 미수집</span>}
+                  </td>
+                  <td>
+                    <strong>{row.interpretation}</strong>
+                    <small>{row.blocker ?? `예상 완료 ${row.forecastEndDate.slice(5)}`}</small>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <footer className="platform-wbs-footer">
+        실제 전환: {source.source.requiredColumns.join(" · ")} 열을 동일 스키마로 수집하면 화면 변경 없이 원천 데이터만 교체합니다.
+      </footer>
+    </section>
+  );
+}
+
 function AdoptionView({
   selectedMonth,
   onSelectedMonthChange,
@@ -4579,6 +4886,8 @@ function AdoptionView({
           </ResponsiveContainer>
         </div>
       </section>
+
+      <PlatformWbsSimulationPanel />
 
       <section className="panel panel-wide individual-table-panel">
         <div className="panel-header">

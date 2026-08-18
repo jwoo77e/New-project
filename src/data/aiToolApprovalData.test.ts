@@ -169,8 +169,8 @@ describe("initialAiToolApprovalData", () => {
         paymentMethod: "AI 전용 카드",
       }),
       expect.objectContaining({
-        owner: "송인나 대리 / 미기재",
-        department: "미기재",
+        owner: "송인나 대리 / 플랫폼개발",
+        department: "플랫폼개발",
         tool: "Claude Team Plan Standard",
         monthlyUsd: 25,
         monthlyKrw: 37_125,
