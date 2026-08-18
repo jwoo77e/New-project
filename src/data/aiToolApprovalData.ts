@@ -640,7 +640,7 @@ const records: AiToolApprovalRecord[] = [
     monthlyKrw: 1_500_000,
     billingCurrency: "KRW",
     startMonth: "2026-08",
-    paymentMethod: "계약 고정비",
+    paymentMethod: "AI 전용 카드",
     note: "",
   },
 ];

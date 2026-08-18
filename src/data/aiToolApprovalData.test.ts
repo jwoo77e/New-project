@@ -188,15 +188,11 @@ describe("initialAiToolApprovalData", () => {
       monthlyUsd: 2_125,
       monthlyKrw: 3_155_625,
     });
-    expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(52);
-    expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(4_693_476.15);
+    expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(53);
+    expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(6_193_476.15);
     expect(
       initialAiToolApprovalData.paymentSummary.find((item) => item.key === "계약 고정비"),
-    ).toMatchObject({
-      count: 1,
-      monthlyUsd: 0,
-      monthlyKrw: 1_500_000,
-    });
+    ).toBeUndefined();
   });
 
   it("aggregates monthly approval costs by person and excludes shared costs", () => {
@@ -239,7 +235,7 @@ describe("initialAiToolApprovalData", () => {
       monthlyKrw: 1_500_000,
       billingCurrency: "KRW",
       startMonth: "2026-08",
-      paymentMethod: "계약 고정비",
+      paymentMethod: "AI 전용 카드",
     });
 
     expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-07")).toMatchObject({
