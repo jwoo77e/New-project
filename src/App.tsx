@@ -718,6 +718,7 @@ function App() {
   const fixedApiServiceMonthlyKrw = Math.round(
     fixedApiServiceRecords.reduce((sum, record) => sum + record.monthlyKrw, 0),
   );
+  const subscriptionMonthlyKrw = operatingPlanSubscriptionKrw - fixedApiServiceMonthlyKrw;
   const operatingPlanSubscriptionSummary = aiToolApprovalData.toolSummary
     .map((item) => `${item.key} ${item.count}`)
     .join(" · ");
@@ -983,7 +984,7 @@ function App() {
           icon: <CircleDollarSign size={19} />,
           label: "월 구독료",
           value: formatManWon(aiToolApprovalData.totalMonthlyKrw),
-          detail: `${formatPreciseUsd(aiToolApprovalData.totalMonthlyUsd)} USD 항목 + 원화 고정비`,
+          detail: `구독항목 ${formatManWon(subscriptionMonthlyKrw)} + 고정비 ${formatManWon(fixedApiServiceMonthlyKrw)}`,
           tone: "green",
         },
         {
@@ -1213,7 +1214,7 @@ function App() {
             label="월 구독료"
             tone="green"
             value={formatManWon(aiToolApprovalData.totalMonthlyKrw)}
-            footer={`${formatPreciseUsd(aiToolApprovalData.totalMonthlyUsd)} USD 항목 · 원화 고정비 ${formatWon(fixedApiServiceMonthlyKrw)}`}
+            footer={`구독항목 ${formatManWon(subscriptionMonthlyKrw)} + 고정비 ${formatManWon(fixedApiServiceMonthlyKrw)}`}
           />
           <MetricCard
             icon={<ShieldCheck size={21} />}
