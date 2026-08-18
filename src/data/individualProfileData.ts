@@ -405,7 +405,7 @@ function buildStrategySharedProfile({
     accountLabel: "공통 계정 · riskzero.marketing@gmail.com",
     attributionMode: "shared",
     costBasisNote:
-      "요청 기준에 따라 임성범 부장의 Claude Pro Max 20과 Genspark Pro 월 고정비를 두 상세 페이지에 동일하게 표시합니다.",
+      "요청 기준에 따라 임성범 부장의 Claude Team Plan Standard와 Genspark Pro 월 고정비를 두 상세 페이지에 동일하게 표시합니다.",
     sourceLinks: [
       { label: "Claude Drive", url: strategySharedDriveUrl },
       { label: "Genspark Drive", url: strategyGensparkDriveUrl },
@@ -445,7 +445,7 @@ export const leeHyeongbaeProfileData: IndividualProfileData = {
   measurementNote:
     "Drive 활동과 산출물은 이형배 전용 저장소 기준이며 공통 계정의 토큰·코드는 개인별로 분리되지 않습니다.",
   costBasisNote:
-    "AI 도구 결재 현황의 Claude Pro Max 5와 2026년 8월 시작 ChatGPT Pro(5배) 월 고정비를 합산했습니다. API 변동비는 개인에게 배분하지 않았습니다.",
+    "AI 도구 결재 현황의 Claude Team Plan Standard와 2026년 8월 시작 ChatGPT Pro(5배) 월 고정비를 합산했습니다. API 변동비는 개인에게 배분하지 않았습니다.",
   sourceLinks: [{ label: "이형배 Claude Drive", url: leeHyeongbaeDriveUrl }],
   drive: {
     folderName: "이형배 Claude Drive 산출물 저장소",
@@ -600,7 +600,7 @@ export const kimDaeilProfileData: IndividualProfileData = {
   measurementNote:
     "개인 Drive 산출물은 확인되지만 Claude 가입 계정의 토큰·요청·코드 사용량은 개인 단위로 분리되지 않습니다.",
   costBasisNote:
-    "AI 도구 결재 현황의 Claude Pro Max 20과 Gemini Workspace 월 고정비를 합산했습니다. API 변동비는 개인에게 배분하지 않았습니다.",
+    "AI 도구 결재 현황의 Claude Team Plan Premium과 Gemini Workspace 월 고정비를 합산했습니다. API 변동비는 개인에게 배분하지 않았습니다.",
   sourceLinks: [{ label: "김대일 Claude Drive", url: kimDaeilDriveUrl }],
   drive: {
     folderName: "김대일 Claude Drive 산출물 저장소",
@@ -731,7 +731,7 @@ export const parkYeonseokProfileData: IndividualProfileData = {
   measurementNote:
     "개인 Drive 산출물은 확인되지만 Claude 가입 계정의 토큰·요청·코드 사용량은 개인 단위로 분리되지 않습니다.",
   costBasisNote:
-    "AI 도구 결재 현황의 ChatGPT Pro(20배), Claude Pro Max 20과 Gemini Workspace 월 고정비를 합산했습니다. API 변동비는 개인에게 배분하지 않았습니다.",
+    "AI 도구 결재 현황의 ChatGPT Pro(20배), Claude Team Plan Premium과 Gemini Workspace 월 고정비를 합산했습니다. API 변동비는 개인에게 배분하지 않았습니다.",
   sourceLinks: [{ label: "박연석 Claude Drive", url: parkYeonseokDriveUrl }],
   drive: {
     folderName: "박연석 Claude Drive 산출물 저장소",

@@ -10,6 +10,9 @@ export type AiToolApprovalRecord = {
   monthlyKrw: number;
   billingCurrency?: "USD" | "KRW";
   startMonth?: string;
+  pricingEffectiveMonth?: string;
+  previousMonthlyUsd?: number;
+  previousMonthlyKrw?: number;
   paymentMethod: string;
   note: string;
 };
@@ -125,78 +128,96 @@ const records: AiToolApprovalRecord[] = [
   {
     no: 4,
     category: "Claude",
-    tool: "Claude Pro Max 5",
+    tool: "Claude Team Plan Premium",
     account: "조욱상 이사님 전용",
     linkedAccount: "없음",
     owner: "조욱상 이사 / 경영혁신팀",
     department: "경영혁신팀",
-    monthlyUsd: 110,
-    monthlyKrw: 163350,
+    monthlyUsd: 125,
+    monthlyKrw: 185625,
+    pricingEffectiveMonth: "2026-08",
+    previousMonthlyUsd: 110,
+    previousMonthlyKrw: 163350,
     paymentMethod: "AI 전용 카드",
     note: "",
   },
   {
     no: 5,
     category: "Claude",
-    tool: "Claude Pro Max 5",
-    account: "이병헌 이사님 전용",
+    tool: "Claude Team Plan Premium",
+    account: "이병현 이사님 전용",
     linkedAccount: "없음",
-    owner: "이병헌 이사 / 자금회계팀",
+    owner: "이병현 이사 / 자금회계팀",
     department: "자금회계팀",
-    monthlyUsd: 110,
-    monthlyKrw: 163350,
+    monthlyUsd: 125,
+    monthlyKrw: 185625,
+    pricingEffectiveMonth: "2026-08",
+    previousMonthlyUsd: 110,
+    previousMonthlyKrw: 163350,
     paymentMethod: "AI 전용 카드",
     note: "",
   },
   {
     no: 6,
     category: "Claude",
-    tool: "Claude Pro Max 5",
+    tool: "Claude Team Plan Standard",
     account: "infra@riskzero.kr",
     linkedAccount: "riskzero.research@gmail.com",
     owner: "이형배 상무 / 기술연구소",
     department: "기술연구소",
-    monthlyUsd: 110,
-    monthlyKrw: 163350,
+    monthlyUsd: 25,
+    monthlyKrw: 37125,
+    pricingEffectiveMonth: "2026-08",
+    previousMonthlyUsd: 110,
+    previousMonthlyKrw: 163350,
     paymentMethod: "AI 전용 카드",
     note: "",
   },
   {
     no: 7,
     category: "Claude",
-    tool: "Claude Pro Max 20",
+    tool: "Claude Team Plan Standard",
     account: "riskzero.marketing@gmail.com",
     linkedAccount: "riskzero.marketing@gmail.com",
     owner: "임성범 부장 / 전략사업팀",
     department: "전략사업팀",
-    monthlyUsd: 220,
-    monthlyKrw: 326700,
+    monthlyUsd: 25,
+    monthlyKrw: 37125,
+    pricingEffectiveMonth: "2026-08",
+    previousMonthlyUsd: 220,
+    previousMonthlyKrw: 326700,
     paymentMethod: "AI 전용 카드",
     note: "",
   },
   {
     no: 9,
     category: "Claude",
-    tool: "Claude Pro Max 20",
+    tool: "Claude Team Plan Premium",
     account: "전략실장님 전용",
     linkedAccount: "없음",
     owner: "박연석 전무 / 전략실",
     department: "전략실",
-    monthlyUsd: 220,
-    monthlyKrw: 326700,
+    monthlyUsd: 125,
+    monthlyKrw: 185625,
+    pricingEffectiveMonth: "2026-08",
+    previousMonthlyUsd: 220,
+    previousMonthlyKrw: 326700,
     paymentMethod: "AI 전용 카드",
     note: "",
   },
   {
     no: 10,
     category: "Claude",
-    tool: "Claude Pro Max 20",
+    tool: "Claude Team Plan Premium",
     account: "연구소장님 전용",
     linkedAccount: "없음",
     owner: "김대일 상무 / 기술연구소",
     department: "기술연구소",
-    monthlyUsd: 220,
-    monthlyKrw: 326700,
+    monthlyUsd: 125,
+    monthlyKrw: 185625,
+    pricingEffectiveMonth: "2026-08",
+    previousMonthlyUsd: 220,
+    previousMonthlyKrw: 326700,
     paymentMethod: "AI 전용 카드",
     note: "",
   },
@@ -488,6 +509,34 @@ const records: AiToolApprovalRecord[] = [
     paymentMethod: "AI 전용 카드",
     note: "",
   },
+  ...[
+    ["Claude Team Plan Standard", "조주연 부장님 전용", "조주연 부장 / 전략사업팀", "전략사업팀", 25, 37125],
+    ["Claude Team Plan Standard", "doyul@riskzero.kr", "김도율 차장 / 스마트서비스", "스마트서비스", 25, 37125],
+    ["Claude Team Plan Standard", "최종윤 이사님 전용", "최종윤 이사 / 미기재", "미기재", 25, 37125],
+    ["Claude Team Plan Standard", "최용호 대리님 전용", "최용호 대리 / 스마트서비스", "스마트서비스", 25, 37125],
+    ["Claude Team Plan Standard", "강훈 부장님 전용", "강훈 부장 / 스마트서비스", "스마트서비스", 25, 37125],
+    ["Claude Team Plan Standard", "강재민 사원님 전용", "강재민 사원 / 스마트서비스", "스마트서비스", 25, 37125],
+    ["Claude Team Plan Standard", "김진희 과장님 전용", "김진희 과장 / 스마트서비스", "스마트서비스", 25, 37125],
+    ["Claude Team Plan Standard", "고원상 대리님 전용", "고원상 대리 / 스마트서비스", "스마트서비스", 25, 37125],
+    ["Claude Team Plan Standard", "이창섭 부장님 전용", "이창섭 부장 / 플랫폼개발", "플랫폼개발", 25, 37125],
+    ["Claude Team Plan Standard", "이진욱 부장님 전용", "이진욱 부장 / 스마트서비스", "스마트서비스", 25, 37125],
+    ["Claude Team Plan Standard", "박명수 과장님 전용", "박명수 과장 / 스마트서비스", "스마트서비스", 25, 37125],
+    ["Claude Team Plan Standard", "윤종호 부장님 전용", "윤종호 부장 / 플랫폼개발", "플랫폼개발", 25, 37125],
+    ["Claude Team Plan Premium", "james@riskzero.kr", "대표님", "대표님", 125, 185625],
+  ].map(([tool, account, owner, department, monthlyUsd, monthlyKrw], index) => ({
+    no: 33 + index,
+    category: "Claude" as const,
+    tool: tool as string,
+    account: account as string,
+    linkedAccount: "없음",
+    owner: owner as string,
+    department: department as string,
+    monthlyUsd: monthlyUsd as number,
+    monthlyKrw: monthlyKrw as number,
+    startMonth: "2026-08",
+    paymentMethod: "AI 전용 카드",
+    note: "",
+  })),
   {
     no: 33,
     category: "Gemini",
@@ -613,9 +662,9 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     name: "사내 AI도구 결재 현황",
     fileName: "사내 AI도구 현황조사표_V3.0.xlsx",
     sheetName: "전사 AI도구 현황조사표",
-    collectedAt: "2026-08-11",
+    collectedAt: "2026-08-18",
     period: "2026년 8월 월 고정비 기준 · USD 1 = 1,485원",
-    note: "계정 ID, 주사용자/부서, 구독료, 결재수단과 적용 시작월을 반영했으며 2026년 8월부터 플랫폼개발팀 GH AI Agent 개발용 AI API 서비스 고정비 150만원을 포함",
+    note: "계정 ID, 주사용자/부서, 구독료, 결재수단과 적용 시작월을 반영했으며 직원 40명 Team Plan 보급과 대표님 Premium 1석, 플랫폼개발팀 GH AI Agent 개발용 AI API 서비스 고정비 150만원을 포함",
   },
   exchangeRate,
   totalAccounts: records.length,
@@ -637,12 +686,13 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     "기존 공용 법인 카드 2개 항목은 모두 AI 전용 카드로 전환했습니다.",
     `Claude 계열은 ${claudeCategory?.count ?? 0}개 계정, ${formatKrw(claudeCategory?.monthlyKrw ?? 0)}으로 수량과 비용 모두 가장 큰 결재 묶음입니다.`,
     "변경 반영: 김하나 과장과 전우성 부장의 Claude Team Plan을 Standard에서 Premium으로 변경했습니다.",
-    "변경 반영: 임성범 부장의 Claude Pro Max 5를 Claude Pro Max 20으로 변경하고 월 고정비 예산을 조정했습니다.",
     "변경 반영: 구문영 사원의 Claude Team Plan을 Standard에서 Premium으로 변경하고 월 고정비 예산을 조정했습니다.",
     "변경 반영: 이동훈 부장에게 Claude Team Plan Standard를 할당하고 월 고정비 예산을 조정했습니다.",
     "변경 반영: 박수진 과장과 송인나 대리에게 Claude Team Plan Standard를 2026년 8월부터 할당하고 월 고정비 예산을 조정했습니다.",
     "변경 반영: riskzeroriskzero@gmail.com의 chatGPT Pro를 5배에서 20배로 변경하고 월 고정비 예산을 조정했습니다.",
     "변경 반영: 이형배 상무에게 chatGPT Pro(5배)를 2026년 8월부터 추가하고 월 고정비 예산을 조정했습니다.",
+    "변경 반영: 임성범 부장과 이형배 상무는 Claude Team Plan Standard로, 박연석 전무·김대일 상무·이병현 이사·조욱상 이사는 Premium으로 전환했습니다.",
+    "변경 반영: 직원 대상 Claude Team Plan 40석과 대표님 Premium 1석을 반영해 직원 보급률 100% 기준으로 월 고정비를 조정했습니다.",
   ],
 };
 
@@ -654,11 +704,28 @@ export function approvalMonthlyTotalsForMonth(
     (record) => !record.startMonth || record.startMonth <= month,
   );
 
+  const pricedRecords = activeRecords.map((record) => {
+    if (
+      record.pricingEffectiveMonth &&
+      month < record.pricingEffectiveMonth &&
+      record.previousMonthlyUsd !== undefined &&
+      record.previousMonthlyKrw !== undefined
+    ) {
+      return {
+        ...record,
+        monthlyUsd: record.previousMonthlyUsd,
+        monthlyKrw: record.previousMonthlyKrw,
+      };
+    }
+
+    return record;
+  });
+
   return {
-    records: activeRecords,
+    records: pricedRecords,
     count: activeRecords.length,
-    monthlyUsd: sum(activeRecords, "monthlyUsd"),
-    monthlyKrw: sum(activeRecords, "monthlyKrw"),
+    monthlyUsd: sum(pricedRecords, "monthlyUsd"),
+    monthlyKrw: sum(pricedRecords, "monthlyKrw"),
   };
 }
 

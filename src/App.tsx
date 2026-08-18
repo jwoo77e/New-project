@@ -1470,7 +1470,7 @@ function ExecutiveDesignOverview({
         <div className="overview-title-row editorial-title-row">
           <div>
             <span className="eyebrow">Investment to Outcome</span>
-            <h2>현재 비용에서 전사 Team Plan 전환까지, 투자 흐름으로 읽는 운영 보드</h2>
+            <h2>현재 비용과 전사 Team Plan 보급 완료 상태를 함께 읽는 운영 보드</h2>
           </div>
           {rangeControl}
         </div>
@@ -1514,7 +1514,7 @@ function ExecutiveDesignOverview({
               </li>
               <li>
                 <span>02</span>
-                <p>개인 계정 {workforce.personalConversionAccounts.length}건과 공용 계정 {workforce.sharedConversionAccounts.length}건을 Team Plan으로 전환하면 순수 신규 수량은 {workforce.pureAdditionalSeats}석입니다.</p>
+                <p>직원 {workforce.teamPlanUsers}명 전원에게 Team Plan이 배정됐으며, 대표님 Premium {workforce.executiveTeamPlanSeats}석은 별도 결재로 관리합니다.</p>
               </li>
               <li>
                 <span>03</span>
@@ -1610,8 +1610,8 @@ function ExecutiveDesignOverview({
             <li>
               <span>1</span>
               <div>
-                <b>Team Plan 전환안 결정</b>
-                <small>개인 {workforce.personalConversionAccounts.length}건 · 공용 {workforce.sharedConversionAccounts.length}건 · 순수 신규 {workforce.pureAdditionalSeats}석</small>
+                <b>Team Plan 보급 완료 상태 점검</b>
+                <small>직원 {workforce.teamPlanUsers}/{workforce.eligibleEmployees}명 · 대표님 Premium {workforce.executiveTeamPlanSeats}석 별도</small>
               </div>
             </li>
             <li>
@@ -1638,6 +1638,7 @@ function ExecutiveDesignOverview({
 function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecutiveModel }) {
   const workforce = executiveWorkforceInsightData;
   const projectedMonthlyKrw = workforce.projectedMonthlyKrw;
+  const teamPlanRolloutComplete = workforce.teamPlanUsers === workforce.eligibleEmployees;
 
   return (
     <section className="workforce-decision-board" aria-label="Team Plan 보급 및 활용 측정 의사결정">
@@ -1669,9 +1670,9 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
         <article>
           <span className="workforce-kpi-icon green"><Sparkles size={18} /></span>
           <div>
-            <small>순수 신규 Team Plan</small>
-            <strong>{workforce.pureAdditionalSeats}석</strong>
-            <p>기존 {workforce.teamPlanUsers} + 전환 {workforce.conversionSeats} + 신규 {workforce.pureAdditionalSeats} = {workforce.eligibleEmployees}명</p>
+            <small>Team Plan 보급 상태</small>
+            <strong>{teamPlanRolloutComplete ? "완료" : `${workforce.pureAdditionalSeats}석`}</strong>
+            <p>직원 {workforce.teamPlanUsers}/{workforce.eligibleEmployees}명 · 대표님 Premium {workforce.executiveTeamPlanSeats}석 별도</p>
           </div>
         </article>
       </div>
@@ -1694,14 +1695,14 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
             <span style={{ width: `${workforce.teamPlanCoverageRate}%` }} />
           </div>
           <div className="coverage-legend">
-            <span><i className="tracked" />기존 Team Plan {workforce.teamPlanUsers}명</span>
-            <span><i className="convert" />전환 대상 {workforce.conversionSeats}건</span>
-            <span><i className="gap" />순수 신규 {workforce.pureAdditionalSeats}석</span>
+            <span><i className="tracked" />직원 Team Plan {workforce.teamPlanUsers}명</span>
+            <span><i className="convert" />대표님 Premium {workforce.executiveTeamPlanSeats}석 별도</span>
+            <span><i className="gap" />미보급 {workforce.pureAdditionalSeats}석</span>
           </div>
           <div className="tracked-user-groups">
-            <p><b>현재 Team Plan {workforce.teamPlanUsers}명</b>Standard {workforce.teamPlanStandardUsers}명 · Premium {workforce.teamPlanPremiumUsers}명</p>
-            <p><b>개인 계정 전환 {workforce.personalConversionAccounts.length}건</b>{workforce.personalConversionAccounts.map((account) => `${account.name} (${account.currentPlan})`).join(" · ")}</p>
-            <p><b>공용 계정 전환 {workforce.sharedConversionAccounts.length}건</b>{workforce.sharedConversionAccounts.map((account) => `${account.name} (${account.currentPlan})`).join(" · ")}</p>
+            <p><b>직원 Team Plan {workforce.teamPlanUsers}명</b>Standard {workforce.teamPlanStandardUsers}명 · Premium {workforce.teamPlanPremiumUsers}명</p>
+            <p><b>직원 보급률 {formatRate(workforce.teamPlanCoverageRate)}</b>비팀플랜 전환 대상과 신규 배정 잔여 수량이 없습니다.</p>
+            <p><b>별도 결재 {workforce.executiveTeamPlanSeats}석</b>대표님 Claude Team Plan Premium</p>
           </div>
         </section>
 
@@ -1748,21 +1749,21 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
 
         <aside className="workforce-investment-panel">
           <div className="investment-kicker">Decision</div>
-          <h3>{workforce.conversionSeats}건 전환 + {workforce.pureAdditionalSeats}석 신규로 {workforce.eligibleEmployees}명 Team Plan 체계</h3>
-          <p>개인·공용 Claude {workforce.conversionSeats}건은 Premium으로 전환하고 순수 신규 {workforce.pureAdditionalSeats}석은 Standard로 추가하는 비교 시나리오입니다.</p>
+          <h3>직원 {workforce.eligibleEmployees}명 Team Plan 보급 완료</h3>
+          <p>현재 결재 원장에 직원용 Standard·Premium 40석을 반영했고, 대표님 Premium 1석은 별도 결재 좌석으로 포함했습니다.</p>
           <div className="cost-bridge">
             <div><span>현재 최소 비용</span><strong>{formatManWon(model.currentFixedCostKrw)}</strong></div>
             <ArrowRight size={17} />
-            <div><span>월 순변화</span><strong>{workforce.netMonthlyChangeKrw < 0 ? "절감 " : "+"}{formatManWon(Math.abs(workforce.netMonthlyChangeKrw))}</strong></div>
+            <div><span>추가 조치 비용</span><strong>{formatManWon(workforce.netMonthlyChangeKrw)}</strong></div>
             <ArrowRight size={17} />
-            <div><span>시나리오 최소</span><strong>{formatManWon(projectedMonthlyKrw)}</strong></div>
+            <div><span>반영 후 월 비용</span><strong>{formatManWon(projectedMonthlyKrw)}</strong></div>
           </div>
           <ul>
-            <li><CheckCircle2 size={15} /><span><b>기존 비팀플랜 {workforce.conversionSeats}건 Premium 전환</b>개인 {workforce.personalConversionAccounts.length}건 · 공용 {workforce.sharedConversionAccounts.length}건</span></li>
-            <li><CheckCircle2 size={15} /><span><b>순수 신규 Standard {workforce.pureAdditionalSeats}석 추가</b>기존 {workforce.teamPlanUsers}명과 전환 {workforce.conversionSeats}명을 제외한 수량</span></li>
-            <li><CheckCircle2 size={15} /><span><b>총 {workforce.totalTeamPlanActions}건 조치</b>전환 {workforce.conversionSeats}건 + 신규 {workforce.pureAdditionalSeats}석</span></li>
+            <li><CheckCircle2 size={15} /><span><b>직원 Team Plan {workforce.teamPlanUsers}석</b>Standard {workforce.teamPlanStandardUsers}석 · Premium {workforce.teamPlanPremiumUsers}석</span></li>
+            <li><CheckCircle2 size={15} /><span><b>직원 보급률 {formatRate(workforce.teamPlanCoverageRate)}</b>{workforce.eligibleEmployees}명 전원 배정 완료</span></li>
+            <li><CheckCircle2 size={15} /><span><b>대표님 Premium {workforce.executiveTeamPlanSeats}석 별도</b>결재 총액에는 포함하고 직원 보급률 분모에서는 제외</span></li>
           </ul>
-          <footer>현재 비팀플랜 {workforce.conversionSeats}건 {formatManWon(workforce.currentConversionCostKrw)} → Premium {workforce.conversionSeats}석 + Standard {workforce.pureAdditionalSeats}석 {formatManWon(workforce.proposedTeamPlanActionCostKrw)} · {workforce.source.conversionAssumption}</footer>
+          <footer>{workforce.source.conversionAssumption} · 현재 결재 원장 기준 추가 전환 및 신규 배정 필요 없음</footer>
         </aside>
       </div>
     </section>

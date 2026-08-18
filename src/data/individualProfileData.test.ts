@@ -93,11 +93,11 @@ describe("strategy shared-account profiles", () => {
 
       expect(profile.approvalOwner).toBe("임성범 부장");
       expect(records.map((record) => record.tool)).toEqual([
-        "Claude Pro Max 20",
+        "Claude Team Plan Standard",
         "Genspark Pro",
       ]);
-      expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBeCloseTo(494.99, 2);
-      expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBeCloseTo(735_060.15, 2);
+      expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBeCloseTo(299.99, 2);
+      expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBeCloseTo(445_485.15, 2);
     }
   });
 });
@@ -143,10 +143,10 @@ describe("leeHyeongbaeProfileData", () => {
 
     expect(records.map((record) => record.tool)).toEqual([
       "chatGPT Pro(5배)",
-      "Claude Pro Max 5",
+      "Claude Team Plan Standard",
     ]);
-    expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBe(220);
-    expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBe(326_700);
+    expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBe(135);
+    expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBe(200_475);
   });
 });
 
@@ -158,9 +158,9 @@ describe("Claude subscribed-account Drive profiles", () => {
       physicalFiles: 39,
       analyzedFiles: 46,
       archiveInnerFiles: 8,
-      tools: ["Claude Pro Max 20", "Gemini(Google Workspace)"],
-      monthlyUsd: 235.12,
-      monthlyKrw: 349_153.2,
+      tools: ["Claude Team Plan Premium", "Gemini(Google Workspace)"],
+      monthlyUsd: 140.12,
+      monthlyKrw: 208_078.2,
     },
     {
       profile: parkYeonseokProfileData,
@@ -168,9 +168,9 @@ describe("Claude subscribed-account Drive profiles", () => {
       physicalFiles: 10,
       analyzedFiles: 13,
       archiveInnerFiles: 4,
-      tools: ["chatGPT Pro(20배)", "Claude Pro Max 20", "Gemini(Google Workspace)"],
-      monthlyUsd: 455.12,
-      monthlyKrw: 675_853.2,
+      tools: ["chatGPT Pro(20배)", "Claude Team Plan Premium", "Gemini(Google Workspace)"],
+      monthlyUsd: 360.12,
+      monthlyKrw: 534_778.2,
     },
   ];
 

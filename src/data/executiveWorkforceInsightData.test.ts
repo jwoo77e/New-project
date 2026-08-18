@@ -2,30 +2,19 @@ import { describe, expect, it } from "vitest";
 import { executiveWorkforceInsightData } from "./executiveWorkforceInsightData";
 
 describe("executiveWorkforceInsightData", () => {
-  it("reconciles Team Plan coverage, conversions, and pure new seats", () => {
+  it("reconciles complete employee Team Plan coverage and the separate executive seat", () => {
     expect(executiveWorkforceInsightData.eligibleEmployees).toBe(40);
     expect(executiveWorkforceInsightData.departedEmployees).toBe(1);
-    expect(executiveWorkforceInsightData.teamPlanUsers).toBe(22);
-    expect(executiveWorkforceInsightData.teamPlanStandardUsers).toBe(16);
-    expect(executiveWorkforceInsightData.teamPlanPremiumUsers).toBe(6);
-    expect(executiveWorkforceInsightData.teamPlanCoverageRate).toBeCloseTo((22 / 40) * 100, 5);
-    expect(executiveWorkforceInsightData.personalConversionAccounts).toHaveLength(4);
-    expect(executiveWorkforceInsightData.personalConversionAccounts.map((account) => account.name)).toEqual([
-      "박연석 전무",
-      "김대일 상무",
-      "조욱상 이사",
-      "이병현 이사",
-    ]);
-    expect(executiveWorkforceInsightData.personalConversionAccounts.map((account) => account.currentPlan)).toEqual([
-      "Claude Pro Max 20",
-      "Claude Pro Max 20",
-      "Claude Pro Max 5",
-      "Claude Pro Max 5",
-    ]);
-    expect(executiveWorkforceInsightData.sharedConversionAccounts).toHaveLength(2);
-    expect(executiveWorkforceInsightData.conversionSeats).toBe(6);
-    expect(executiveWorkforceInsightData.pureAdditionalSeats).toBe(12);
-    expect(executiveWorkforceInsightData.totalTeamPlanActions).toBe(18);
+    expect(executiveWorkforceInsightData.teamPlanUsers).toBe(40);
+    expect(executiveWorkforceInsightData.teamPlanStandardUsers).toBe(30);
+    expect(executiveWorkforceInsightData.teamPlanPremiumUsers).toBe(10);
+    expect(executiveWorkforceInsightData.executiveTeamPlanSeats).toBe(1);
+    expect(executiveWorkforceInsightData.teamPlanCoverageRate).toBe(100);
+    expect(executiveWorkforceInsightData.personalConversionAccounts).toHaveLength(0);
+    expect(executiveWorkforceInsightData.sharedConversionAccounts).toHaveLength(0);
+    expect(executiveWorkforceInsightData.conversionSeats).toBe(0);
+    expect(executiveWorkforceInsightData.pureAdditionalSeats).toBe(0);
+    expect(executiveWorkforceInsightData.totalTeamPlanActions).toBe(0);
     expect(
       executiveWorkforceInsightData.teamPlanUsers
         + executiveWorkforceInsightData.conversionSeats
@@ -33,15 +22,15 @@ describe("executiveWorkforceInsightData", () => {
     ).toBe(executiveWorkforceInsightData.eligibleEmployees);
   });
 
-  it("calculates Premium conversions and Standard pure-new seats from current approval costs", () => {
-    expect(executiveWorkforceInsightData.currentConversionCostKrw).toBe(1_470_150);
+  it("does not add a second conversion scenario after rollout completion", () => {
+    expect(executiveWorkforceInsightData.currentConversionCostKrw).toBe(0);
     expect(executiveWorkforceInsightData.teamPlanPremiumKrw).toBe(185_625);
     expect(executiveWorkforceInsightData.teamPlanStandardKrw).toBe(37_125);
-    expect(executiveWorkforceInsightData.proposedConversionCostKrw).toBe(1_113_750);
-    expect(executiveWorkforceInsightData.pureAdditionalCostKrw).toBe(445_500);
-    expect(executiveWorkforceInsightData.proposedTeamPlanActionCostKrw).toBe(1_559_250);
-    expect(executiveWorkforceInsightData.netMonthlyChangeKrw).toBe(89_100);
-    expect(executiveWorkforceInsightData.projectedMonthlyKrw).toBeCloseTo(6_304_851.15, 2);
+    expect(executiveWorkforceInsightData.proposedConversionCostKrw).toBe(0);
+    expect(executiveWorkforceInsightData.pureAdditionalCostKrw).toBe(0);
+    expect(executiveWorkforceInsightData.proposedTeamPlanActionCostKrw).toBe(0);
+    expect(executiveWorkforceInsightData.netMonthlyChangeKrw).toBe(0);
+    expect(executiveWorkforceInsightData.projectedMonthlyKrw).toBeCloseTo(6_193_476.15, 2);
   });
 
   it("keeps July token measurement separate from pending source connections", () => {

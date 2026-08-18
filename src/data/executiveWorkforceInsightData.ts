@@ -1,4 +1,4 @@
-import { initialAiToolApprovalData, type AiToolApprovalRecord } from "./aiToolApprovalData";
+import { initialAiToolApprovalData } from "./aiToolApprovalData";
 import { individualUtilizationData } from "./individualUtilizationData";
 
 export type ExecutiveUsageSegment = {
@@ -40,64 +40,15 @@ if (!julySpend) {
 
 const approvalRecords = initialAiToolApprovalData.records;
 const teamPlanRecords = approvalRecords.filter((record) => record.tool.startsWith("Claude Team Plan"));
-const teamPlanStandardUsers = teamPlanRecords.filter((record) => record.tool.endsWith("Standard")).length;
-const teamPlanPremiumUsers = teamPlanRecords.filter((record) => record.tool.endsWith("Premium")).length;
-const teamPlanUsers = teamPlanRecords.length;
-
-function findClaudeRecord(predicate: (record: AiToolApprovalRecord) => boolean, description: string) {
-  const record = approvalRecords.find(
-    (candidate) => candidate.category === "Claude" && predicate(candidate),
-  );
-
-  if (!record) {
-    throw new Error(`경영 인사이트에 필요한 Claude 결재 항목이 없습니다: ${description}`);
-  }
-
-  return record;
-}
-
-function toConversionAccount(record: AiToolApprovalRecord, name: string): TeamPlanConversionAccount {
-  return {
-    name,
-    account: record.account,
-    currentPlan: record.tool,
-    currentMonthlyKrw: record.monthlyKrw,
-  };
-}
-
-const personalConversionAccounts = [
-  toConversionAccount(
-    findClaudeRecord((record) => record.owner.startsWith("박연석 전무"), "박연석 전무 개인 계정"),
-    "박연석 전무",
-  ),
-  toConversionAccount(
-    findClaudeRecord((record) => record.owner.startsWith("김대일 상무"), "김대일 상무 개인 계정"),
-    "김대일 상무",
-  ),
-  toConversionAccount(
-    findClaudeRecord((record) => record.owner.startsWith("조욱상 이사"), "조욱상 이사 개인 계정"),
-    "조욱상 이사",
-  ),
-  toConversionAccount(
-    findClaudeRecord(
-      (record) => record.owner.startsWith("이병현 이사") || record.owner.startsWith("이병헌 이사"),
-      "이병현 이사 개인 계정",
-    ),
-    "이병현 이사",
-  ),
-] as const;
-const sharedConversionAccounts = [
-  toConversionAccount(
-    findClaudeRecord((record) => record.account === "riskzero.marketing@gmail.com", "전략사업팀 공용 계정"),
-    "전략사업팀",
-  ),
-  toConversionAccount(
-    findClaudeRecord((record) => record.account === "infra@riskzero.kr", "기술연구소 공용 계정"),
-    "기술연구소",
-  ),
-] as const;
+const workforceTeamPlanRecords = teamPlanRecords.filter((record) => record.owner !== "대표님");
+const executiveTeamPlanSeats = teamPlanRecords.length - workforceTeamPlanRecords.length;
+const teamPlanStandardUsers = workforceTeamPlanRecords.filter((record) => record.tool.endsWith("Standard")).length;
+const teamPlanPremiumUsers = workforceTeamPlanRecords.filter((record) => record.tool.endsWith("Premium")).length;
+const teamPlanUsers = workforceTeamPlanRecords.length;
+const personalConversionAccounts: TeamPlanConversionAccount[] = [];
+const sharedConversionAccounts: TeamPlanConversionAccount[] = [];
 const conversionSeats = personalConversionAccounts.length + sharedConversionAccounts.length;
-const pureAdditionalSeats = eligibleEmployees - teamPlanUsers - conversionSeats;
+const pureAdditionalSeats = Math.max(eligibleEmployees - teamPlanUsers - conversionSeats, 0);
 const totalTeamPlanActions = conversionSeats + pureAdditionalSeats;
 const currentConversionCostKrw = [...personalConversionAccounts, ...sharedConversionAccounts]
   .reduce((sum, account) => sum + account.currentMonthlyKrw, 0);
@@ -106,6 +57,10 @@ const pureAdditionalCostKrw = pureAdditionalSeats * teamPlanStandardKrw;
 const proposedTeamPlanActionCostKrw = proposedConversionCostKrw + pureAdditionalCostKrw;
 const netMonthlyChangeKrw = proposedTeamPlanActionCostKrw - currentConversionCostKrw;
 const projectedMonthlyKrw = initialAiToolApprovalData.totalMonthlyKrw + netMonthlyChangeKrw;
+
+if (teamPlanUsers !== eligibleEmployees) {
+  throw new Error(`직원 Team Plan 보급 인원이 ${teamPlanUsers}/${eligibleEmployees}명으로 일치하지 않습니다.`);
+}
 
 const userNameByEmail = new Map(
   individualUtilizationData.users.map((user) => [user.email, user.displayName]),
@@ -131,7 +86,7 @@ export const executiveWorkforceInsightData = {
     tokenPeriod: julySpend.period,
     tokenCoverage: julySpend.coverage,
     teamPlanBasis: `${initialAiToolApprovalData.source.collectedAt} AI 도구 결재 현황`,
-    conversionAssumption: `전환 ${conversionSeats}석은 Claude Team Plan Premium, 순수 신규 ${pureAdditionalSeats}석은 Standard 기준 시나리오`,
+    conversionAssumption: `직원 ${eligibleEmployees}명 Team Plan 보급 완료 · 대표님 Premium ${executiveTeamPlanSeats}석 별도`,
   },
   eligibleEmployees,
   leaveExcludedEmployees,
@@ -139,6 +94,7 @@ export const executiveWorkforceInsightData = {
   teamPlanUsers,
   teamPlanStandardUsers,
   teamPlanPremiumUsers,
+  executiveTeamPlanSeats,
   teamPlanCoverageRate: (teamPlanUsers / eligibleEmployees) * 100,
   personalConversionAccounts,
   sharedConversionAccounts,
