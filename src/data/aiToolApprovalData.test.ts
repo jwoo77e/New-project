@@ -155,6 +155,16 @@ describe("initialAiToolApprovalData", () => {
     ]);
   });
 
+  it("assigns Choi Jongyun to the platform development department", () => {
+    expect(
+      initialAiToolApprovalData.records.find((record) => record.owner.startsWith("최종윤 이사")),
+    ).toMatchObject({
+      tool: "Claude Team Plan Standard",
+      owner: "최종윤 이사 / 플랫폼개발",
+      department: "플랫폼개발",
+    });
+  });
+
   it("reconciles the updated plan mix and monthly totals", () => {
     expect(
       initialAiToolApprovalData.toolSummary.find(

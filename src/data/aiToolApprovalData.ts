@@ -512,7 +512,7 @@ const records: AiToolApprovalRecord[] = [
   ...[
     ["Claude Team Plan Standard", "조주연 부장님 전용", "조주연 부장 / 전략사업팀", "전략사업팀", 25, 37125],
     ["Claude Team Plan Standard", "doyul@riskzero.kr", "김도율 차장 / 스마트서비스", "스마트서비스", 25, 37125],
-    ["Claude Team Plan Standard", "최종윤 이사님 전용", "최종윤 이사 / 미기재", "미기재", 25, 37125],
+    ["Claude Team Plan Standard", "최종윤 이사님 전용", "최종윤 이사 / 플랫폼개발", "플랫폼개발", 25, 37125],
     ["Claude Team Plan Standard", "최용호 대리님 전용", "최용호 대리 / 스마트서비스", "스마트서비스", 25, 37125],
     ["Claude Team Plan Standard", "강훈 부장님 전용", "강훈 부장 / 스마트서비스", "스마트서비스", 25, 37125],
     ["Claude Team Plan Standard", "강재민 사원님 전용", "강재민 사원 / 스마트서비스", "스마트서비스", 25, 37125],
