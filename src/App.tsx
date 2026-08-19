@@ -4293,38 +4293,6 @@ const platformWbsStatusMeta: Record<
   delayed: { label: "지연", className: "danger", color: "#d45545" },
 };
 
-function pearsonCorrelation(
-  rows: PlatformWbsAiRow[],
-  selectValue: (row: PlatformWbsAiRow) => number | null,
-) {
-  const pairs = rows
-    .map((row) => ({ x: selectValue(row), y: row.scheduleVariance }))
-    .filter((pair): pair is { x: number; y: number } => pair.x != null && pair.x > 0);
-  if (pairs.length < 3) return null;
-  const averageX = pairs.reduce((sum, pair) => sum + pair.x, 0) / pairs.length;
-  const averageY = pairs.reduce((sum, pair) => sum + pair.y, 0) / pairs.length;
-  const numerator = pairs.reduce(
-    (sum, pair) => sum + (pair.x - averageX) * (pair.y - averageY),
-    0,
-  );
-  const denominatorX = Math.sqrt(
-    pairs.reduce((sum, pair) => sum + (pair.x - averageX) ** 2, 0),
-  );
-  const denominatorY = Math.sqrt(
-    pairs.reduce((sum, pair) => sum + (pair.y - averageY) ** 2, 0),
-  );
-  if (denominatorX === 0 || denominatorY === 0) return null;
-  return numerator / (denominatorX * denominatorY);
-}
-
-function correlationLabel(value: number | null) {
-  if (value == null) return "산출 불가";
-  const absolute = Math.abs(value);
-  const strength = absolute >= 0.7 ? "강한" : absolute >= 0.4 ? "중간" : absolute >= 0.2 ? "약한" : "미미한";
-  const direction = value > 0 ? "양의" : value < 0 ? "음의" : "무";
-  return `${strength} ${direction} 신호`;
-}
-
 function WbsCorrelationTooltip({
   active,
   payload,
@@ -4374,8 +4342,6 @@ function PlatformWbsSimulationPanel() {
     };
   });
   const measuredRows = allRows.filter((row) => row.aiMeasured);
-  const tokenCorrelation = pearsonCorrelation(measuredRows, (row) => row.totalTokens);
-  const codeCorrelation = pearsonCorrelation(measuredRows, (row) => row.codeLines);
   const filteredRows = allRows
     .filter((row) => projectFilter === "all" || row.project === projectFilter)
     .sort((a, b) => a.project.localeCompare(b.project, "ko") || a.displayName.localeCompare(b.displayName, "ko"));
@@ -4454,20 +4420,8 @@ function PlatformWbsSimulationPanel() {
               </ScatterChart>
             </ResponsiveContainer>
           </div>
+          <p className="platform-wbs-caveat"><AlertTriangle size={16} />{source.methodology.caveat}</p>
         </div>
-        <aside className="platform-wbs-readout">
-          <div>
-            <span>토큰 ↔ 일정 편차</span>
-            <strong>{tokenCorrelation == null ? "-" : `r ${tokenCorrelation >= 0 ? "+" : ""}${tokenCorrelation.toFixed(2)}`}</strong>
-            <small>{correlationLabel(tokenCorrelation)} · {measuredRows.length}명</small>
-          </div>
-          <div>
-            <span>Code Lines ↔ 일정 편차</span>
-            <strong>{codeCorrelation == null ? "-" : `r ${codeCorrelation >= 0 ? "+" : ""}${codeCorrelation.toFixed(2)}`}</strong>
-            <small>{correlationLabel(codeCorrelation)} · 양수는 진척 동행</small>
-          </div>
-          <p><AlertTriangle size={16} />{source.methodology.caveat}</p>
-        </aside>
       </div>
 
       <div className="platform-wbs-table-heading">
