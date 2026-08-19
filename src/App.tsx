@@ -5263,10 +5263,19 @@ function IndividualProfileView({
     evaluation?.codeActivityDetailsMissing === true ||
     individualUtilizationData.monthlySpend[selectedMonth]?.coverage === "partial"
   );
+  const selectedMonthPromptCount = profile.monthlyPromptCounts.find(
+    (item) => item.month === selectedMonth,
+  )?.prompts ?? 0;
+  const selectedMonthDailyCounts = profile.dailyPromptCounts.filter((item) =>
+    item.date.startsWith(selectedMonth),
+  );
+  const selectedMonthActiveDays = selectedMonthDailyCounts.length;
+  const hasSelectedMonthDriveActivity = selectedMonthPromptCount > 0 || selectedMonthActiveDays > 0;
   const activityMetricLabel = profile.drive.activityMetricLabel ?? "Drive 프롬프트";
-  const activityMetricDetail = profile.drive.activityMetricDetail ??
-    `응답 연결 ${numberFormat.format(profile.drive.pairedSessions)}건`;
-  const trendTitle = profile.drive.trendTitle ?? "Drive 프롬프트 일별 추이";
+  const activityMetricDetail = hasSelectedMonthDriveActivity
+    ? `${numberFormat.format(selectedMonthActiveDays)}일 활동 · ${profile.drive.activityMetricDetail ?? `응답 연결 ${numberFormat.format(profile.drive.pairedSessions)}건`}`
+    : `${fullMonthLabel(selectedMonth)} 원천 활동 수집 없음`;
+  const trendTitle = `${fullMonthLabel(selectedMonth)} 일별 ${profile.drive.trendSeriesLabel ?? "프롬프트"} 추이`;
   const trendSeriesLabel = profile.drive.trendSeriesLabel ?? "프롬프트";
   const outputMetricLabel = profile.drive.outputMetricLabel ?? "결과·지원 파일";
   const outputMetricValue = profile.drive.outputMetricValue ?? profile.drive.outputAndSupportFiles;
@@ -5277,7 +5286,7 @@ function IndividualProfileView({
   ];
   const maxTopicCount = Math.max(...profile.promptTopics.map((topic) => topic.count), 1);
   const maxFileCount = Math.max(...profile.fileBreakdown.map((item) => item.count), 1);
-  const recentPromptTrend = profile.dailyPromptCounts.map((item) => ({
+  const recentPromptTrend = selectedMonthDailyCounts.map((item) => ({
     ...item,
     label: item.date.slice(5).replace("-", "/"),
   }));
@@ -5323,7 +5332,7 @@ function IndividualProfileView({
         </article>
         <article>
           <span><Bot size={17} />{activityMetricLabel}</span>
-          <strong>{numberFormat.format(profile.drive.promptFiles)}건</strong>
+          <strong>{numberFormat.format(selectedMonthPromptCount)}건</strong>
           <small>{activityMetricDetail}</small>
         </article>
         <article>
@@ -5416,21 +5425,25 @@ function IndividualProfileView({
           </div>
           <div className="panel-header-side">
             {profile.monthlyPromptCounts.map((item) => (
-              <span className="state-pill neutral" key={item.month}>{monthLabel(item.month)} {item.prompts}건</span>
+              <span className={`state-pill ${item.month === selectedMonth ? "ok" : "neutral"}`} key={item.month}>{monthLabel(item.month)} {item.prompts}건</span>
             ))}
           </div>
         </div>
-        <div className="chart-frame individual-profile-trend-chart">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={recentPromptTrend} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
-              <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
-              <XAxis dataKey="label" interval={3} tickLine={false} axisLine={false} />
-              <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={36} />
-              <Tooltip formatter={(value) => [`${numberFormat.format(Number(value))}건`, trendSeriesLabel]} />
-              <Bar dataKey="prompts" name={trendSeriesLabel} fill="#0f8b8d" radius={[4, 4, 0, 0]} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
+        {hasSelectedMonthDriveActivity ? (
+          <div className="chart-frame individual-profile-trend-chart">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={recentPromptTrend} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
+                <XAxis dataKey="label" interval={3} tickLine={false} axisLine={false} />
+                <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={36} />
+                <Tooltip formatter={(value) => [`${numberFormat.format(Number(value))}건`, trendSeriesLabel]} />
+                <Bar dataKey="prompts" name={trendSeriesLabel} fill="#0f8b8d" radius={[4, 4, 0, 0]} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <p className="empty-state">{fullMonthLabel(selectedMonth)}에는 이 Drive 원천에서 수집된 활동이 없습니다.</p>
+        )}
       </section>
 
       <section className="panel panel-wide individual-profile-topic-panel">
