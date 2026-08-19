@@ -4593,6 +4593,35 @@ td strong {
   min-width: 430px;
 }
 
+.individual-utilization-table .individual-team-group-row td {
+  width: auto;
+  min-width: 0;
+  padding: 10px 14px;
+  border-top: 1px solid #9ac9c6;
+  border-bottom: 1px solid #b9dcda;
+  background: #eaf6f4;
+  color: var(--teal-deep);
+  white-space: normal;
+}
+
+.individual-team-group-row td strong {
+  margin-right: 9px;
+  font-size: 0.78rem;
+}
+
+.individual-team-group-row td span {
+  color: var(--muted);
+  font-size: 0.69rem;
+  font-weight: 700;
+}
+
+.individual-utilization-table .individual-team-group-row.non-development td {
+  border-top-color: var(--line-strong);
+  border-bottom-color: var(--line);
+  background: var(--surface-muted);
+  color: var(--ink-soft);
+}
+
 .individual-gitlab-cell {
   display: grid;
   grid-template-columns: minmax(82px, 1fr) auto;
@@ -4934,7 +4963,7 @@ td strong {
 
 .individual-token-cell {
   display: grid;
-  grid-template-columns: minmax(58px, auto) 132px minmax(78px, auto);
+  grid-template-columns: minmax(58px, auto) minmax(78px, auto);
   align-items: center;
   width: 100%;
   gap: 10px;
@@ -4944,45 +4973,6 @@ td strong {
   color: var(--ink);
   font-size: 0.94rem;
   font-variant-numeric: tabular-nums;
-}
-
-.individual-token-sparkline {
-  display: block;
-  width: 132px;
-  height: 36px;
-  overflow: visible;
-}
-
-.individual-token-sparkline-baseline {
-  stroke: var(--line);
-  stroke-width: 1;
-}
-
-.individual-token-sparkline-actual {
-  fill: none;
-  stroke: var(--teal);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2.25;
-}
-
-.individual-token-sparkline-dot {
-  fill: var(--surface);
-  stroke: var(--teal);
-  stroke-width: 1.75;
-}
-
-.individual-token-sparkline-forecast {
-  stroke: var(--coral);
-  stroke-dasharray: 4 3;
-  stroke-linecap: round;
-  stroke-width: 2;
-}
-
-.individual-token-sparkline-forecast-dot {
-  fill: var(--surface);
-  stroke: var(--coral);
-  stroke-width: 2;
 }
 
 .individual-token-forecast {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
   Activity,
@@ -4033,6 +4033,26 @@ function approvalPalette(index: number) {
 }
 
 type IndividualSortKey = "code" | "tokens" | "density" | "gitlab" | "commits";
+type IndividualTeamGroup = "development" | "non-development";
+
+const developmentTeamEmails = new Set(
+  platformWbsSimulationData.members.map((member) => member.email.toLowerCase()),
+);
+
+const individualTeamGroupMeta = {
+  development: {
+    label: "개발팀",
+    detail: "플랫폼개발팀",
+  },
+  "non-development": {
+    label: "비개발팀",
+    detail: "기타 부서",
+  },
+} satisfies Record<IndividualTeamGroup, { label: string; detail: string }>;
+
+function individualTeamGroup(email: string): IndividualTeamGroup {
+  return developmentTeamEmails.has(email.toLowerCase()) ? "development" : "non-development";
+}
 
 function monthlyTokenSamplesForUser(email: string, selectedMonth: string): TokenUsageSample[] {
   const selectedIndex = individualUtilizationData.months.indexOf(selectedMonth);
@@ -4235,77 +4255,6 @@ function IndividualCodeDensityCell({
   );
 }
 
-function TokenUsageSparkline({
-  mode,
-  trend,
-}: {
-  mode: IndividualPeriodMode;
-  trend: TokenUsageTrend;
-}) {
-  const width = 132;
-  const height = 36;
-  const paddingX = 5;
-  const paddingY = 5;
-  const points = trend.points.slice(-4);
-  if (points.length === 0 || trend.forecastTokens == null) return null;
-
-  const values = [...points.map((point) => point.comparableTokens), trend.forecastTokens];
-  const minimum = Math.min(...values);
-  const maximum = Math.max(...values);
-  const range = maximum - minimum;
-  const xAt = (index: number) =>
-    paddingX + (index / Math.max(values.length - 1, 1)) * (width - paddingX * 2);
-  const yAt = (value: number) =>
-    range === 0
-      ? height / 2
-      : paddingY + ((maximum - value) / range) * (height - paddingY * 2);
-  const actualCoordinates = points.map((point, index) => ({
-    x: xAt(index),
-    y: yAt(point.comparableTokens),
-  }));
-  const latestCoordinate = actualCoordinates[actualCoordinates.length - 1];
-  const forecastCoordinate = {
-    x: xAt(values.length - 1),
-    y: yAt(trend.forecastTokens),
-  };
-  const sourceDescription = points.map((point) => {
-    const normalized = point.observedDays !== point.targetDays
-      ? `, ${point.targetDays}일 환산 ${formatTokens(point.comparableTokens)}`
-      : "";
-    return `${point.label} ${formatTokens(point.totalTokens)}${normalized}`;
-  }).join("; ");
-  const chartDescription = `${mode === "week" ? "주차별" : "월별"} 토큰 활동 추이. ${sourceDescription}; ${trend.forecastLabel} ${formatTokens(trend.forecastTokens)}`;
-
-  return (
-    <svg
-      aria-label={chartDescription}
-      className="individual-token-sparkline"
-      role="img"
-      viewBox={`0 0 ${width} ${height}`}
-    >
-      <title>{chartDescription}</title>
-      <line className="individual-token-sparkline-baseline" x1={paddingX} x2={width - paddingX} y1={height - paddingY} y2={height - paddingY} />
-      {actualCoordinates.length > 1 && (
-        <polyline
-          className="individual-token-sparkline-actual"
-          points={actualCoordinates.map((point) => `${point.x},${point.y}`).join(" ")}
-        />
-      )}
-      {actualCoordinates.map((point, index) => (
-        <circle className="individual-token-sparkline-dot" cx={point.x} cy={point.y} key={points[index].key} r="2.5" />
-      ))}
-      <line
-        className="individual-token-sparkline-forecast"
-        x1={latestCoordinate.x}
-        x2={forecastCoordinate.x}
-        y1={latestCoordinate.y}
-        y2={forecastCoordinate.y}
-      />
-      <circle className="individual-token-sparkline-forecast-dot" cx={forecastCoordinate.x} cy={forecastCoordinate.y} r="3" />
-    </svg>
-  );
-}
-
 function IndividualTokenUsageCell({
   actualTokens,
   mode,
@@ -4324,7 +4273,6 @@ function IndividualTokenUsageCell({
   return (
     <div className="individual-token-cell">
       <strong className="individual-token-actual">{formatTokens(actualTokens)}</strong>
-      <TokenUsageSparkline mode={mode} trend={trend} />
       {trend.forecastTokens != null && (
         <span className={`individual-token-forecast ${trend.direction}`} title={forecastMethod}>
           <small>{trend.forecastLabel}</small>
@@ -4758,6 +4706,11 @@ function AdoptionView({
         user.displayName.toLowerCase().includes(normalizedQuery),
       )
       .sort((a, b) => {
+        const teamGroupRank = (group: IndividualTeamGroup) => group === "development" ? 0 : 1;
+        const teamOrder = teamGroupRank(individualTeamGroup(a.user.email)) -
+          teamGroupRank(individualTeamGroup(b.user.email));
+        if (teamOrder !== 0) return teamOrder;
+
         if (sortKey !== "gitlab" && sortKey !== "commits" && a.user.measurementStatus !== b.user.measurementStatus) {
           const statusRank = (user: IndividualUtilizationUser) => {
             if (user.measurementStatus === "measured") return 0;
@@ -4809,6 +4762,10 @@ function AdoptionView({
   const sourceUncollectedRowCount = rows.filter(
     (row) => row.user.measurementStatus === "source-uncollected",
   ).length;
+  const developmentRowCount = rows.filter(
+    (row) => individualTeamGroup(row.user.email) === "development",
+  ).length;
+  const nonDevelopmentRowCount = rows.length - developmentRowCount;
 
   const periodSummary = useMemo(
     () =>
@@ -5095,7 +5052,7 @@ function AdoptionView({
                 codeDensityTrend,
                 selectedDensitySample,
                 gitlab,
-              }) => {
+              }, index) => {
                 const metricsMeasured = user.measurementStatus === "measured";
                 const metricsUncollected = !metricsMeasured;
                 const weeklyRecalculated = isWeekly && weeklyUsage != null && (
@@ -5105,82 +5062,100 @@ function AdoptionView({
                 const periodModels = isWeekly ? weeklyUsage?.models : monthlySpend?.models;
                 const scopeProducts = periodProducts?.length ? periodProducts : user.products;
                 const scopeModels = periodModels?.length ? periodModels : user.models;
+                const teamGroup = individualTeamGroup(user.email);
+                const previousTeamGroup = index > 0
+                  ? individualTeamGroup(rows[index - 1].user.email)
+                  : null;
+                const groupMeta = individualTeamGroupMeta[teamGroup];
+                const groupCount = teamGroup === "development"
+                  ? developmentRowCount
+                  : nonDevelopmentRowCount;
                 return (
-                  <tr key={user.email}>
-                    <td>
-                      <button
-                        aria-label={`${user.displayName} 개인 상세 보기`}
-                        className="individual-user-link"
-                        onClick={() => setSelectedProfileEmail(user.email)}
-                        type="button"
-                      >
-                        <span>
-                          <strong>{user.displayName}</strong>
-                          {user.displayAccount && <small>{user.displayAccount}</small>}
-                        </span>
-                        <ChevronRight size={17} />
-                      </button>
-                    </td>
-                    <td>
-                      {metricsMeasured ? (
-                        isWeekly
-                          ? weeklyUsage
-                            ? <IndividualCodeDensityCell
-                                codeLines={weeklyUsage.codeLines}
-                                selectedSample={selectedDensitySample}
-                                trend={codeDensityTrend}
-                              />
-                            : <span className="state-pill neutral">주차별 수집중</span>
-                          : evaluation?.codeLines == null
-                            ? <span className="state-pill neutral">월 단위</span>
-                            : <IndividualCodeDensityCell
-                                codeLines={evaluation.codeLines}
-                                selectedSample={selectedDensitySample}
-                                trend={codeDensityTrend}
-                              />
-                      ) : metricsUncollected ? <span className="state-pill neutral">수집중</span> : null}
-                    </td>
-                    <td>
-                      {metricsMeasured ? (
-                        isWeekly
-                          ? weeklyUsage
-                            ? weeklyRecalculated
-                              ? <span className="state-pill warning">활동량 산정 제외</span>
-                              : <IndividualTokenUsageCell
-                                  actualTokens={weeklyUsage.totalTokens}
-                                  mode="week"
+                  <Fragment key={user.email}>
+                    {teamGroup !== previousTeamGroup && (
+                      <tr className={`individual-team-group-row ${teamGroup}`}>
+                        <td colSpan={5}>
+                          <strong>{groupMeta.label}</strong>
+                          <span>{groupMeta.detail} · {groupCount}명</span>
+                        </td>
+                      </tr>
+                    )}
+                    <tr>
+                      <td>
+                        <button
+                          aria-label={`${user.displayName} 개인 상세 보기`}
+                          className="individual-user-link"
+                          onClick={() => setSelectedProfileEmail(user.email)}
+                          type="button"
+                        >
+                          <span>
+                            <strong>{user.displayName}</strong>
+                            {user.displayAccount && <small>{user.displayAccount}</small>}
+                          </span>
+                          <ChevronRight size={17} />
+                        </button>
+                      </td>
+                      <td>
+                        {metricsMeasured ? (
+                          isWeekly
+                            ? weeklyUsage
+                              ? <IndividualCodeDensityCell
+                                  codeLines={weeklyUsage.codeLines}
+                                  selectedSample={selectedDensitySample}
+                                  trend={codeDensityTrend}
+                                />
+                              : <span className="state-pill neutral">주차별 수집중</span>
+                            : evaluation?.codeLines == null
+                              ? <span className="state-pill neutral">월 단위</span>
+                              : <IndividualCodeDensityCell
+                                  codeLines={evaluation.codeLines}
+                                  selectedSample={selectedDensitySample}
+                                  trend={codeDensityTrend}
+                                />
+                        ) : metricsUncollected ? <span className="state-pill neutral">수집중</span> : null}
+                      </td>
+                      <td>
+                        {metricsMeasured ? (
+                          isWeekly
+                            ? weeklyUsage
+                              ? weeklyRecalculated
+                                ? <span className="state-pill warning">활동량 산정 제외</span>
+                                : <IndividualTokenUsageCell
+                                    actualTokens={weeklyUsage.totalTokens}
+                                    mode="week"
+                                    trend={tokenTrend}
+                                  />
+                              : <span className="state-pill neutral">주차별 수집중</span>
+                            : monthlySpend
+                              ? <IndividualTokenUsageCell
+                                  actualTokens={monthlySpend.totalTokens}
+                                  mode="month"
                                   trend={tokenTrend}
                                 />
-                            : <span className="state-pill neutral">주차별 수집중</span>
-                          : monthlySpend
-                            ? <IndividualTokenUsageCell
-                                actualTokens={monthlySpend.totalTokens}
-                                mode="month"
-                                trend={tokenTrend}
-                              />
-                            : <span className="state-pill neutral">월별 Spend 수집중</span>
-                      ) : metricsUncollected ? <span className="state-pill neutral">수집중</span> : null}
-                    </td>
-                    <td>
-                      <IndividualGitlabActivityCell metrics={gitlab} />
-                    </td>
-                    <td>
-                      {metricsUncollected ? null : user.usageScopeOverride ? (
-                        <p className="individual-shared-account-scope">{user.usageScopeOverride}</p>
-                      ) : (
-                        <div className="individual-usage-scope">
-                          <div>
-                            <span>제품</span>
-                            <p>{scopeProducts.join(" · ") || "-"}</p>
+                              : <span className="state-pill neutral">월별 Spend 수집중</span>
+                        ) : metricsUncollected ? <span className="state-pill neutral">수집중</span> : null}
+                      </td>
+                      <td>
+                        <IndividualGitlabActivityCell metrics={gitlab} />
+                      </td>
+                      <td>
+                        {metricsUncollected ? null : user.usageScopeOverride ? (
+                          <p className="individual-shared-account-scope">{user.usageScopeOverride}</p>
+                        ) : (
+                          <div className="individual-usage-scope">
+                            <div>
+                              <span>제품</span>
+                              <p>{scopeProducts.join(" · ") || "-"}</p>
+                            </div>
+                            <div>
+                              <span>모델</span>
+                              <p>{scopeModels.join(" · ") || "-"}</p>
+                            </div>
                           </div>
-                          <div>
-                            <span>모델</span>
-                            <p>{scopeModels.join(" · ") || "-"}</p>
-                          </div>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
+                        )}
+                      </td>
+                    </tr>
+                  </Fragment>
                 );
               })}
             </tbody>
