@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { initialAiToolApprovalData } from "./aiToolApprovalData";
 import {
   individualProfileDataByEmail,
+  jeongJaeyoProfileData,
   joJooyeonProfileData,
   kimDaeilProfileData,
   kimJaewooProfileData,
@@ -52,6 +53,7 @@ describe("strategy shared-account profiles", () => {
       "hb777lee@riskzero.kr",
       "bigone@riskzero.kr",
       "yspark@riskzero.kr",
+      "wody@riskzero.kr",
     ]);
 
     for (const profile of profiles) {
@@ -99,6 +101,33 @@ describe("strategy shared-account profiles", () => {
       expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBeCloseTo(299.99, 2);
       expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBeCloseTo(445_485.15, 2);
     }
+  });
+});
+
+describe("jeongJaeyoProfileData", () => {
+  it("exposes the dated AI development-work repository without mixing source units", () => {
+    const data = jeongJaeyoProfileData;
+
+    expect(data.drive.folderUrl).toContain("1nYUQzqS72RGA5d6aXDbVHuxOUYgKbA3p");
+    expect(data.drive.fileCount).toBe(386);
+    expect(data.drive.promptFiles).toBe(6_298);
+    expect(data.drive.outputMetricValue).toBe(4_137);
+    expect(data.monthlyPromptCounts.find((item) => item.month === "2026-07")?.prompts).toBe(966);
+    expect(data.dailyPromptCounts.reduce((sum, item) => sum + item.prompts, 0)).toBe(966);
+    expect(data.fileBreakdown.find((item) => item.label === "AI 하위 작업 지시")?.count).toBe(300);
+  });
+
+  it("links the current individual subscription records", () => {
+    const records = initialAiToolApprovalData.records.filter((record) =>
+      record.owner.startsWith(jeongJaeyoProfileData.approvalOwner),
+    );
+
+    expect(records.map((record) => record.tool)).toEqual([
+      "chatGPT Business Plan",
+      "Claude Team Plan Premium",
+    ]);
+    expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBe(150);
+    expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBe(222_750);
   });
 });
 

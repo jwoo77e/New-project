@@ -11,6 +11,7 @@ export type IndividualProfileFileBreakdown = {
   count: number;
   description: string;
   color: string;
+  unit?: string;
 };
 
 export type IndividualProfileHighlight = {
@@ -61,8 +62,12 @@ export type IndividualProfileData = {
     analyzedFileCount?: number;
     outputMetricLabel?: string;
     outputMetricValue?: number;
+    outputMetricUnit?: string;
     outputMetricDetail?: string;
     topicTitle?: string;
+    inventoryTitle?: string;
+    inventorySummaryLabel?: string;
+    inventoryFootnote?: string;
   };
   monthlyPromptCounts: Array<{ month: string; prompts: number }>;
   dailyPromptCounts: Array<{ date: string; prompts: number }>;
@@ -848,6 +853,176 @@ export const parkYeonseokProfileData: IndividualProfileData = {
   ],
 };
 
+const jeongJaeyoDriveUrl =
+  "https://drive.google.com/drive/folders/1nYUQzqS72RGA5d6aXDbVHuxOUYgKbA3p?usp=drive_link";
+
+export const jeongJaeyoProfileData: IndividualProfileData = {
+  email: "wody@riskzero.kr",
+  displayName: "정재요 차장",
+  title: "차장",
+  department: "플랫폼개발",
+  approvalOwner: "정재요 차장",
+  accountLabel: "Claude Team Plan Premium · ChatGPT Business Plan",
+  measurementNote:
+    "Claude Team 사용량은 개인 계정으로 측정하며, 별도 Drive에는 Claude Code·Codex 작업 지시와 실제 커밋·코드 변경 기록이 날짜별로 보관됩니다.",
+  costBasisNote:
+    "AI 도구 결재 현황의 Claude Team Plan Premium과 ChatGPT Business Plan 현재 월 고정비를 합산했습니다. API 변동비는 개인에게 배분하지 않았습니다.",
+  sourceLinks: [{ label: "정재요 AI 개발 작업 기록 Drive", url: jeongJaeyoDriveUrl }],
+  drive: {
+    folderName: "정재요 AI 개발 작업 기록 저장소",
+    folderUrl: jeongJaeyoDriveUrl,
+    collectedAt: "2026-08-19 KST",
+    period: "2024-07-23 ~ 2026-08-19",
+    fileCount: 386,
+    childFolderCount: 386,
+    scannedFolderCount: 1,
+    scanErrors: 0,
+    promptFiles: 6_298,
+    responseFiles: 0,
+    pairedSessions: 874,
+    responseOnlySessions: 0,
+    outputAndSupportFiles: 4_137,
+    archiveFiles: 300,
+    metadataDateAnomalies: 0,
+    rootFolderCount: 1,
+    activityMetricLabel: "사람 업무 지시",
+    activityMetricDetail: "Claude Code 1,169건 · Codex 5,129건",
+    trendTitle: "2026년 7월 일별 업무 지시 추이",
+    trendSeriesLabel: "업무 지시",
+    topicBasisLabel: "7월 일자별 저장 인덱스의 상위 작업 경로 · 같은 날 복수 경로 포함",
+    topicTitle: "7월 주요 개발 작업 영역",
+    fileTotalLabel: "활동일 폴더",
+    outputMetricLabel: "실제 Git 커밋",
+    outputMetricValue: 4_137,
+    outputMetricUnit: "건",
+    outputMetricDetail: "일자별 commits.csv 기준 · merge 여부는 원천 로그 기준",
+    inventoryTitle: "보관 원천 및 개발 실적 구성",
+    inventorySummaryLabel: "활동일 386일",
+    inventoryFootnote:
+      "항목별 단위가 서로 다르므로 합산하지 않습니다. 날짜별 폴더, 사람 업무 지시, AI 세션, 실제 커밋과 AI 하위 작업 지시를 각각의 원천 신호로 표시합니다.",
+  },
+  monthlyPromptCounts: [
+    { month: "2026-05", prompts: 833 },
+    { month: "2026-06", prompts: 275 },
+    { month: "2026-07", prompts: 966 },
+    { month: "2026-08", prompts: 919 },
+  ],
+  dailyPromptCounts: [
+    { date: "2026-07-01", prompts: 2 },
+    { date: "2026-07-02", prompts: 15 },
+    { date: "2026-07-03", prompts: 5 },
+    { date: "2026-07-06", prompts: 9 },
+    { date: "2026-07-08", prompts: 27 },
+    { date: "2026-07-09", prompts: 13 },
+    { date: "2026-07-10", prompts: 51 },
+    { date: "2026-07-13", prompts: 28 },
+    { date: "2026-07-14", prompts: 18 },
+    { date: "2026-07-15", prompts: 17 },
+    { date: "2026-07-16", prompts: 140 },
+    { date: "2026-07-20", prompts: 88 },
+    { date: "2026-07-21", prompts: 71 },
+    { date: "2026-07-22", prompts: 55 },
+    { date: "2026-07-23", prompts: 74 },
+    { date: "2026-07-24", prompts: 55 },
+    { date: "2026-07-27", prompts: 58 },
+    { date: "2026-07-28", prompts: 76 },
+    { date: "2026-07-29", prompts: 52 },
+    { date: "2026-07-30", prompts: 66 },
+    { date: "2026-07-31", prompts: 46 },
+  ],
+  promptTopics: [
+    {
+      label: "함안 현장 플랫폼",
+      count: 17,
+      description: "근로자·출역·대시보드·웹/백엔드 작업이 7월에 가장 자주 기록된 주 작업 경로입니다.",
+      examples: ["함안 복합발전소", "근로자 출역", "현장 대시보드"],
+      color: "#0f8b8d",
+    },
+    {
+      label: "함안 백엔드",
+      count: 8,
+      description: "출역 처리, 센서 연동, 대용량 업로드, 데이터 기준 검증을 백엔드 경로에서 수행했습니다.",
+      examples: ["출역 배치", "SENSOR_SERVER_URL", "5GB 파일 업로드"],
+      color: "#476a6f",
+    },
+    {
+      label: "GH·RAG 운영",
+      count: 6,
+      description: "RAG Provider API, OCR 도메인 설계, 문서·운영 환경 검토가 연결된 작업 경로입니다.",
+      examples: ["CLOVA OCR", "gh-rag-provider", "API 명세"],
+      color: "#6f7fd8",
+    },
+    {
+      label: "모바일 기능 개발",
+      count: 4,
+      description: "관리자·근로자 모바일 메뉴 분리와 마이페이지, 온보딩 흐름을 worktree에서 진행했습니다.",
+      examples: ["feature/mobile-dev", "관리자 마이페이지", "근로자 모바일"],
+      color: "#2f8f46",
+    },
+    {
+      label: "웹 프론트 개선",
+      count: 3,
+      description: "순찰 경로·대시보드 시각화와 근로자 일괄 처리 UI를 검토하고 반영했습니다.",
+      examples: ["순찰 경로", "작업구역", "필터형 셀렉트"],
+      color: "#e85d4f",
+    },
+    {
+      label: "문서·작업 인계",
+      count: 3,
+      description: "작업 전환을 위한 TODO, README, 재개용 프롬프트와 문서 기록을 남겼습니다.",
+      examples: ["RESUME.md", "README", "작업 인계"],
+      color: "#c58612",
+    },
+  ],
+  fileBreakdown: [
+    { label: "날짜별 활동 폴더", count: 386, unit: "일", description: "지시·세션·커밋·코드 patch를 날짜별 보관", color: "#0f8b8d" },
+    { label: "사람 업무 지시", count: 6_298, unit: "건", description: "Claude Code 1,169 · Codex 5,129", color: "#2f8f46" },
+    { label: "AI 세션", count: 874, unit: "건", description: "사람 업무 지시가 있었던 세션 인덱스", color: "#6f7fd8" },
+    { label: "실제 Git 커밋", count: 4_137, unit: "건", description: "커밋 시각·저장소·제목·변경량을 날짜별 저장", color: "#e85d4f" },
+    { label: "AI 하위 작업 지시", count: 300, unit: "건", description: "agent-tasks 원천 · 사람 업무 지시와 별도 집계", color: "#c58612" },
+  ],
+  highlights: [
+    {
+      title: "함안 복합발전소 현장 플랫폼 고도화",
+      category: "현장 안전 플랫폼",
+      summary: "근로자 출역, 작업구역, 대시보드와 순찰 경로를 실제 현장 데이터 기준으로 분석·수정하고 웹·백엔드 작업을 연결했습니다.",
+      result: "작업 지시·세션·커밋·코드 patch 원천 기록",
+    },
+    {
+      title: "관리자·근로자 모바일 기능 개발",
+      category: "모바일 제품 개발",
+      summary: "관리자와 근로자 메뉴 체계 분리, 마이페이지와 온보딩 요구사항을 worktree 기반으로 구현·검토했습니다.",
+      result: "feature/mobile-dev 작업 흐름 · 모바일 웹/백엔드 커밋 기록",
+    },
+    {
+      title: "IoT 센서·현장 대시보드 연동",
+      category: "현장 운영 자동화",
+      summary: "센서 서버 연결, 위험요소 표시 기준, 순찰 경로와 근로자 위치 표현을 점검하고 운영 환경에서 재현·검증했습니다.",
+      result: "센서 환경 설정 · 대시보드 UI 검토 · 개발 서버 확인 기록",
+    },
+    {
+      title: "대용량 업로드와 운영 환경 안정화",
+      category: "개발 운영",
+      summary: "Nginx 업로드 한도, 파일 등록 오류, 서비스 재기동과 dev 브랜치 병합 절차를 작업 흐름 안에서 관리했습니다.",
+      result: "오류 분석·설정 변경·커밋 및 병합 기록",
+    },
+    {
+      title: "OCR·RAG 서비스 설계 및 문서화",
+      category: "AI 기능 설계",
+      summary: "CLOVA OCR 도메인 설계, RAG Provider API, 한글 API 명세와 재개용 작업 문서를 함께 정리했습니다.",
+      result: "도메인 설계 지시 · API 검토 · README/RESUME 기록",
+    },
+  ],
+  notes: [
+    "Drive README와 index.csv는 2024-07-23~2026-08-19의 활동일 386일, 사람 업무 지시 6,298건, Claude Code 1,169건, Codex 5,129건을 집계합니다.",
+    "날짜 폴더에는 instructions, sessions, commits, code patch가 기본 구성으로 보관되며, 일부 날짜에는 AI 하위 작업 지시(agent-tasks)가 별도 저장됩니다.",
+    "7월에는 21일 동안 사람 업무 지시 966건, AI 세션 255건, 실제 커밋 388건, 추가 57,530줄·삭제 17,766줄이 index.csv에 기록되었습니다.",
+    "AI 하위 작업 지시 300건은 사람이 직접 입력한 업무 지시와 별도 원천이므로 활동량 합계에 중복 반영하지 않습니다.",
+    "GitLab 수정 라인은 개인별 AI 활동 화면의 GitLab 공식 집계가 우선이며, 이 Drive의 commits.csv는 작업 지시와 코드 변경을 연결해 해석하는 보조 근거입니다.",
+    "저장된 지시·세션·커밋·patch는 작업 과정과 산출 신호이며, 최종 승인, 배포, 품질, 실제 업무 효과는 별도 검증이 필요합니다.",
+  ],
+};
+
 export const individualProfileDataByEmail: Readonly<Record<string, IndividualProfileData>> = {
   [kimJaewooProfileData.email]: kimJaewooProfileData,
   [limSeongbeomProfileData.email]: limSeongbeomProfileData,
@@ -855,4 +1030,5 @@ export const individualProfileDataByEmail: Readonly<Record<string, IndividualPro
   [leeHyeongbaeProfileData.email]: leeHyeongbaeProfileData,
   [kimDaeilProfileData.email]: kimDaeilProfileData,
   [parkYeonseokProfileData.email]: parkYeonseokProfileData,
+  [jeongJaeyoProfileData.email]: jeongJaeyoProfileData,
 };

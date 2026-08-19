@@ -5328,7 +5328,7 @@ function IndividualProfileView({
         </article>
         <article>
           <span><FileText size={17} />{outputMetricLabel}</span>
-          <strong>{numberFormat.format(outputMetricValue)}개</strong>
+          <strong>{numberFormat.format(outputMetricValue)}{profile.drive.outputMetricUnit ?? "개"}</strong>
           <small>{outputMetricDetail}</small>
         </article>
         <article>
@@ -5463,12 +5463,12 @@ function IndividualProfileView({
         <div className="panel-header">
           <div>
             <span className="eyebrow">Drive Inventory</span>
-            <h2>저장 파일 구성</h2>
+            <h2>{profile.drive.inventoryTitle ?? "저장 파일 구성"}</h2>
           </div>
           <span className="state-pill neutral">
-            {profile.drive.analyzedFileCount
+            {profile.drive.inventorySummaryLabel ?? (profile.drive.analyzedFileCount
               ? `분석 ${numberFormat.format(profile.drive.analyzedFileCount)}개 · Drive ${numberFormat.format(profile.drive.fileCount)}개`
-              : `전체 ${numberFormat.format(profile.drive.fileCount)}개`}
+              : `전체 ${numberFormat.format(profile.drive.fileCount)}개`)}
           </span>
         </div>
         <div className="approval-meter-list">
@@ -5478,12 +5478,12 @@ function IndividualProfileView({
               key={item.label}
               label={item.label}
               value={(item.count / maxFileCount) * 100}
-              valueLabel={`${numberFormat.format(item.count)}개 · ${item.description}`}
+              valueLabel={`${numberFormat.format(item.count)}${item.unit ?? "개"} · ${item.description}`}
             />
           ))}
         </div>
         <small className="approval-footnote">
-          파일 수는 저장 신호입니다. 승인·실사용·품질·재사용 상태가 확인된 항목만 인사평가 근거 후보로 사용할 수 있습니다.
+          {profile.drive.inventoryFootnote ?? "파일 수는 저장 신호입니다. 승인·실사용·품질·재사용 상태가 확인된 항목만 인사평가 근거 후보로 사용할 수 있습니다."}
         </small>
       </section>
 
