@@ -38,14 +38,15 @@ describe("individualUtilizationData", () => {
       "김대일 상무",
       "박연석 전무",
     ]);
-    expect(sharedAccountUsers.every((user) => user.displayAccount === null)).toBe(true);
-    expect(sharedAccountUsers.map((user) => user.usageScopeOverride)).toEqual([
-      "Claude 및 Genspark 공통 계정 사용",
-      "Claude, Genspark 및 Gamma 공통 계정 사용",
-      "Claude 공통 계정 사용",
-      "Claude 가입 계정 사용",
-      "Claude 가입 계정 사용",
+    expect(sharedAccountUsers.map((user) => user.displayAccount)).toEqual([
+      "sblim0519@riskzero.kr",
+      "jyjo@riskzero.kr",
+      "hb777lee@riskzero.kr",
+      "bigone@riskzero.kr",
+      "yspark@riskzero.kr",
     ]);
+    expect(sharedAccountUsers.every((user) => user.usageScopeOverride === null)).toBe(true);
+    expect(sharedAccountUsers.every((user) => user.products.length === 0)).toBe(true);
     expect(
       sharedAccountUsers.every((user) =>
         Object.values(user.monthEvaluations).every(
@@ -64,7 +65,7 @@ describe("individualUtilizationData", () => {
       displayName: "이동훈 부장",
       measurementStatus: "source-uncollected",
       displayAccount: "dhlee@riskzero.kr",
-      usageScopeOverride: "Claude Team Plan Standard · 사용량 원천 미수집",
+      usageScopeOverride: null,
       requests: 0,
       totalTokens: 0,
       totalCodeLines: 0,
@@ -74,7 +75,7 @@ describe("individualUtilizationData", () => {
         (evaluation) =>
           evaluation.productivityScore === null &&
           evaluation.codeLines === null &&
-          evaluation.evidence.includes("원천 사용량 미수집"),
+          evaluation.evidence.includes("원천 사용량 수집중"),
       ),
     ).toBe(true);
   });
@@ -111,41 +112,41 @@ describe("individualUtilizationData", () => {
     expect(users.every((user) => user.totalCodeLines === 0)).toBe(true);
   });
 
-  it("adds the requested ChatGPT users with uncollected metrics", () => {
-    const expectedNames = [
-      "최종윤 이사",
-      "윤종호 부장",
-      "이창섭 부장",
-      "조욱상 이사",
-      "이병현 이사",
-      "강훈 부장",
-      "이진욱 부장",
-      "박명수 과장",
-      "김도율 차장",
-      "김진희 과장",
-      "고원상 대리",
-      "최용호 대리",
-      "강재민 사원",
-    ];
+  it("maps the requested users to company email addresses while their metrics are collecting", () => {
+    const expectedAccounts = new Map([
+      ["최종윤 이사", "drager72@riskzero.kr"],
+      ["최용호 대리", "use0505@riskzero.kr"],
+      ["조욱상 이사", "airyoubi77@riskzero.kr"],
+      ["강훈 부장", "khoon@riskzero.kr"],
+      ["강재민 사원", "woals1329@riskzero.kr"],
+      ["김도율 차장", "doyul@riskzero.kr"],
+      ["김진희 과장", "kjh17@riskzero.kr"],
+      ["고원상 대리", "day@riskzero.kr"],
+      ["이병현 이사", "lbh0902@riskzero.kr"],
+      ["이창섭 부장", "cslee@riskzero.kr"],
+      ["이진욱 부장", "pentasix@riskzero.kr"],
+      ["박명수 과장", "pms0805@riskzero.kr"],
+      ["윤종호 부장", "jhyun@riskzero.kr"],
+      ["조주연 부장", "jyjo@riskzero.kr"],
+      ["김대일 상무", "bigone@riskzero.kr"],
+      ["이형배 상무", "hb777lee@riskzero.kr"],
+      ["임성범 부장", "sblim0519@riskzero.kr"],
+      ["박연석 전무", "yspark@riskzero.kr"],
+    ]);
     const users = individualUtilizationData.users.filter((user) =>
-      user.email.startsWith("chatgpt-account:"),
+      expectedAccounts.has(user.displayName),
     );
 
-    expect(users.map((user) => user.displayName)).toEqual(expectedNames);
-    const claudeCommonAccountNames = new Set([
-      "김도율 차장",
-      "최종윤 이사",
-    ]);
+    expect(users).toHaveLength(expectedAccounts.size);
     expect(
       users.every(
         (user) =>
-          user.measurementStatus === "source-uncollected" &&
-          user.displayAccount === null &&
-          user.usageScopeOverride === (
-            claudeCommonAccountNames.has(user.displayName)
-              ? "chatGPT 공통 계정 사용 · Claude 공통 계정 사용"
-              : "chatGPT 공통 계정 사용"
-          ) &&
+          user.measurementStatus !== "measured" &&
+          user.email === expectedAccounts.get(user.displayName) &&
+          user.displayAccount === expectedAccounts.get(user.displayName) &&
+          user.usageScopeOverride === null &&
+          user.products.length === 0 &&
+          user.models.length === 0 &&
           user.requests === 0 &&
           user.totalTokens === 0 &&
           user.totalCodeLines === 0 &&
@@ -250,7 +251,7 @@ describe("individualUtilizationData", () => {
     ).toBe(true);
     expect(
       augustCodeUsersWithoutChatPrompts.every(
-        (user) => user.monthEvaluations["2026-08"].evidence.includes("미수집"),
+        (user) => user.monthEvaluations["2026-08"].evidence.includes("수집중"),
       ),
     ).toBe(true);
   });

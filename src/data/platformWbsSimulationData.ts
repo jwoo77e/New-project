@@ -290,7 +290,7 @@ const memberSeeds: PlatformWbsSeed[] = [
     blocker: null,
   },
   {
-    email: "chatgpt-account:choi-jongyun",
+    email: "drager72@riskzero.kr",
     displayName: "최종윤 이사",
     project: "신규 플랫폼",
     workPackage: "Roadmap",
@@ -304,7 +304,7 @@ const memberSeeds: PlatformWbsSeed[] = [
     blocker: null,
   },
   {
-    email: "chatgpt-account:lee-changseop",
+    email: "cslee@riskzero.kr",
     displayName: "이창섭 부장",
     project: "신규 플랫폼",
     workPackage: "서비스 프레임워크",
@@ -318,7 +318,7 @@ const memberSeeds: PlatformWbsSeed[] = [
     blocker: null,
   },
   {
-    email: "chatgpt-account:yoon-jongho",
+    email: "jhyun@riskzero.kr",
     displayName: "윤종호 부장",
     project: "신규 플랫폼",
     workPackage: "통합 API",

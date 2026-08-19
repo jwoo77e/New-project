@@ -47,11 +47,11 @@ describe("strategy shared-account profiles", () => {
   it("exposes separate profile routes backed by the same exhaustive Drive scan", () => {
     expect(Object.keys(individualProfileDataByEmail)).toEqual([
       "jaewoo.kim@riskzero.kr",
-      "shared-account:lim-seongbeom",
-      "shared-account:jo-jooyeon",
-      "shared-account:lee-hyeongbae",
-      "shared-account:kim-daeil",
-      "shared-account:park-yeonseok",
+      "sblim0519@riskzero.kr",
+      "jyjo@riskzero.kr",
+      "hb777lee@riskzero.kr",
+      "bigone@riskzero.kr",
+      "yspark@riskzero.kr",
     ]);
 
     for (const profile of profiles) {

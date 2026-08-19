@@ -4139,7 +4139,7 @@ function IndividualCodeDensityCell({
 }) {
   const currentPoint = trend.currentPoint;
   const unavailableLabel = !selectedSample
-    ? "토큰 미수집"
+    ? "토큰 수집중"
     : !selectedSample.periodAligned
       ? "기간 불일치"
       : selectedSample.totalTokens <= 0
@@ -4360,7 +4360,7 @@ function PlatformWbsSimulationPanel() {
     const aiMeasured = spend != null;
     const highAiActivity = (spend?.totalTokens ?? 0) >= 500_000_000 || (codeLines ?? 0) >= 10_000;
     const interpretation = !aiMeasured
-      ? "AI 원천 미수집"
+      ? "AI 원천 수집중"
       : member.status === "delayed" && highAiActivity
         ? "AI 활동 대비 지연 원인 점검"
         : member.status === "delayed"
@@ -4550,7 +4550,7 @@ function PlatformWbsSimulationPanel() {
                   <td>
                     {row.aiMeasured ? (
                       <><strong>{formatTokens(row.totalTokens ?? 0)}</strong><small>{numberFormat.format(row.codeLines ?? 0)}줄</small></>
-                    ) : <span className="state-pill neutral">AI 원천 미수집</span>}
+                    ) : <span className="state-pill neutral">AI 원천 수집중</span>}
                   </td>
                   <td>
                     <strong>{row.interpretation}</strong>
@@ -4599,10 +4599,10 @@ function AdoptionView({
   const coverageNote = isWeekly
     ? selectedWeeklyUsage
       ? `${selectedWeeklyUsage.startDate} ~ ${selectedWeeklyUsage.endDate} · 주차 사용량`
-      : "주차별 원천 미수집"
+      : "주차별 원천 수집중"
     : selectedMonthlySpend
       ? `${selectedMonthlySpend.period}${selectedMonthlySpend.coverage === "partial" ? " · 부분 집계" : ""}`
-      : "월별 Spend 미수집";
+      : "월별 Spend 수집중";
 
   const rows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -4814,13 +4814,13 @@ function AdoptionView({
           <strong>{periodSummary.activeUsers}명</strong>
           <small>
             {sharedAccountRowCount > 0 || sourceUncollectedRowCount > 0
-              ? `측정 ${measuredRowCount}명 · 공통 계정 ${sharedAccountRowCount}명 · 미수집 ${sourceUncollectedRowCount}명`
+              ? `측정 ${measuredRowCount}명 · 공통 계정 ${sharedAccountRowCount}명 · 수집중 ${sourceUncollectedRowCount}명`
               : `관측 ${measuredRowCount}명 중`}
           </small>
         </article>
         <article>
           <span><Bot size={17} />{isWeekly ? "주간 요청" : "월 누적 요청"}</span>
-          <strong>{usageSummary ? `${numberFormat.format(usageSummary.requests)}건` : "미수집"}</strong>
+          <strong>{usageSummary ? `${numberFormat.format(usageSummary.requests)}건` : "수집중"}</strong>
           <small>{coverageNote}</small>
         </article>
         <article>
@@ -4830,7 +4830,7 @@ function AdoptionView({
         </article>
         <article>
           <span><Activity size={17} />{isWeekly ? "주간 토큰" : "월 누적 토큰"}</span>
-          <strong>{usageSummary ? formatTokens(usageSummary.totalTokens) : "미수집"}</strong>
+          <strong>{usageSummary ? formatTokens(usageSummary.totalTokens) : "수집중"}</strong>
           <small>{coverageNote}</small>
         </article>
       </section>
@@ -4958,7 +4958,7 @@ function AdoptionView({
                                 selectedSample={selectedDensitySample}
                                 trend={codeDensityTrend}
                               />
-                            : <span className="state-pill neutral">주차별 미수집</span>
+                            : <span className="state-pill neutral">주차별 수집중</span>
                           : evaluation?.codeLines == null
                             ? <span className="state-pill neutral">월 단위</span>
                             : <IndividualCodeDensityCell
@@ -4966,7 +4966,7 @@ function AdoptionView({
                                 selectedSample={selectedDensitySample}
                                 trend={codeDensityTrend}
                               />
-                      ) : metricsUncollected ? <span className="state-pill neutral">미수집</span> : null}
+                      ) : metricsUncollected ? <span className="state-pill neutral">수집중</span> : null}
                     </td>
                     <td>
                       {metricsMeasured ? (
@@ -4979,18 +4979,18 @@ function AdoptionView({
                                   mode="week"
                                   trend={tokenTrend}
                                 />
-                            : <span className="state-pill neutral">주차별 미수집</span>
+                            : <span className="state-pill neutral">주차별 수집중</span>
                           : monthlySpend
                             ? <IndividualTokenUsageCell
                                 actualTokens={monthlySpend.totalTokens}
                                 mode="month"
                                 trend={tokenTrend}
                               />
-                            : <span className="state-pill neutral">월별 Spend 미수집</span>
-                      ) : metricsUncollected ? <span className="state-pill neutral">미수집</span> : null}
+                            : <span className="state-pill neutral">월별 Spend 수집중</span>
+                      ) : metricsUncollected ? <span className="state-pill neutral">수집중</span> : null}
                     </td>
                     <td>
-                      {user.usageScopeOverride ? (
+                      {metricsUncollected ? null : user.usageScopeOverride ? (
                         <p className="individual-shared-account-scope">{user.usageScopeOverride}</p>
                       ) : (
                         <div className="individual-usage-scope">
@@ -5139,7 +5139,7 @@ function IndividualProfileView({
             {!metricsMeasured
               ? (profile.measurementNote ?? "공통 계정 자료로 개인별 활동을 분리할 수 없습니다.")
               : evaluation?.codeActivityDetailsMissing
-                ? "Claude Code 프롬프트·활성일 미수집"
+                ? "Claude Code 프롬프트·활성일 수집중"
                 : individualUtilizationData.monthlySpend[selectedMonth]?.coverage === "partial"
                   ? "부분 기간 누적 · 월 마감 전"
                   : "Claude 원천 기준 · 인사평가 직접 사용 금지"}
@@ -5194,8 +5194,8 @@ function IndividualProfileView({
           </div>
         </div>
         <dl className="individual-profile-usage-list">
-          <div><dt>월 누적 요청</dt><dd>{metricsMeasured ? (monthlySpend ? `${numberFormat.format(monthlySpend.requests)}건` : "미수집") : "개인 미측정"}</dd></div>
-          <div><dt>월 누적 토큰</dt><dd>{metricsMeasured ? (monthlySpend ? formatTokens(monthlySpend.totalTokens) : "미수집") : "개인 미측정"}</dd></div>
+          <div><dt>월 누적 요청</dt><dd>{metricsMeasured ? (monthlySpend ? `${numberFormat.format(monthlySpend.requests)}건` : "수집중") : "개인 미측정"}</dd></div>
+          <div><dt>월 누적 토큰</dt><dd>{metricsMeasured ? (monthlySpend ? formatTokens(monthlySpend.totalTokens) : "수집중") : "개인 미측정"}</dd></div>
           <div><dt>대화 프롬프트</dt><dd>{metricsMeasured ? `${numberFormat.format(evaluation?.humanPrompts ?? 0)}건` : "개인 미측정"}</dd></div>
           <div><dt>Code Lines</dt><dd>{metricsMeasured ? `${numberFormat.format(evaluation?.codeLines ?? 0)}줄` : "개인 미측정"}</dd></div>
         </dl>

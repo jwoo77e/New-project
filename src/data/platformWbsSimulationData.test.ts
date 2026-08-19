@@ -11,6 +11,12 @@ describe("platformWbsSimulationData", () => {
       project: "신규 플랫폼",
       workPackage: "QA 시나리오",
     });
+    expect(platformWbsSimulationData.members.find((member) => member.displayName === "최종윤 이사")?.email)
+      .toBe("drager72@riskzero.kr");
+    expect(platformWbsSimulationData.members.find((member) => member.displayName === "이창섭 부장")?.email)
+      .toBe("cslee@riskzero.kr");
+    expect(platformWbsSimulationData.members.find((member) => member.displayName === "윤종호 부장")?.email)
+      .toBe("jhyun@riskzero.kr");
   });
 
   it("reconciles task counts, progress averages, and delay rules", () => {

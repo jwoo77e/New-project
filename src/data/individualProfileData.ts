@@ -421,12 +421,12 @@ function buildStrategySharedProfile({
 }
 
 export const limSeongbeomProfileData = buildStrategySharedProfile({
-  email: "shared-account:lim-seongbeom",
+  email: "sblim0519@riskzero.kr",
   displayName: "임성범 부장",
 });
 
 export const joJooyeonProfileData = buildStrategySharedProfile({
-  email: "shared-account:jo-jooyeon",
+  email: "jyjo@riskzero.kr",
   displayName: "조주연 부장",
 });
 
@@ -434,7 +434,7 @@ const leeHyeongbaeDriveUrl =
   "https://drive.google.com/drive/folders/1OFfN4APAViKNtgURnmn9W51jSvcxy6fg?usp=drive_link";
 
 export const leeHyeongbaeProfileData: IndividualProfileData = {
-  email: "shared-account:lee-hyeongbae",
+  email: "hb777lee@riskzero.kr",
   displayName: "이형배 상무",
   title: "상무",
   department: "기술연구소",
@@ -591,7 +591,7 @@ const kimDaeilDriveUrl =
   "https://drive.google.com/drive/folders/1PV6ISnJ9W86MP1grcOxntHo2eBkCd7NM?usp=drive_link";
 
 export const kimDaeilProfileData: IndividualProfileData = {
-  email: "shared-account:kim-daeil",
+  email: "bigone@riskzero.kr",
   displayName: "김대일 상무",
   title: "상무",
   department: "기술연구소",
@@ -722,7 +722,7 @@ const parkYeonseokDriveUrl =
   "https://drive.google.com/drive/folders/11K6a5HMGcqUkP1CAEDh8TDQ8lD4ixMJs?usp=drive_link";
 
 export const parkYeonseokProfileData: IndividualProfileData = {
-  email: "shared-account:park-yeonseok",
+  email: "yspark@riskzero.kr",
   displayName: "박연석 전무",
   title: "전무",
   department: "전략실",
