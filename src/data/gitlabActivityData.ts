@@ -136,6 +136,14 @@ export function gitlabUserMetricsForMonth(email: string, month: string) {
   return gitlabUserMetricsForRange(email, `${month}-01`, `${month}-31`);
 }
 
+export function gitlabCommittedCodeRatio(
+  generatedCodeLines: number | null | undefined,
+  committedAdditions: number,
+) {
+  if (generatedCodeLines == null || generatedCodeLines <= 0 || committedAdditions < 0) return null;
+  return (committedAdditions / generatedCodeLines) * 100;
+}
+
 export function gitlabSummaryForRange(startDate: string, endDate: string) {
   const metrics = emptyMetrics();
   const activeAuthors = new Set<string>();

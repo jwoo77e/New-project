@@ -90,6 +90,7 @@ import {
   type IndividualUtilizationUser,
 } from "./data/individualUtilizationData";
 import {
+  gitlabCommittedCodeRatio,
   gitlabActivityData,
   gitlabCommitsForRange,
   gitlabSummaryForRange,
@@ -1201,14 +1202,6 @@ function App() {
         >
           <UserCheck size={17} />
           개인별 AI 활동
-        </button>
-        <button
-          className={activeView === "wbs" ? "is-active" : ""}
-          type="button"
-          onClick={() => setActiveView("wbs")}
-        >
-          <ListOrdered size={17} />
-          WBS·AI 활동
         </button>
         <button
           className={activeView === "approval" ? "is-active" : ""}
@@ -4222,12 +4215,33 @@ function IndividualTokenUsageCell({
 }
 
 function IndividualGitlabActivityCell({
+  generatedCodeLines,
   metrics,
 }: {
+  generatedCodeLines: number | null;
   metrics: GitlabActivityMetrics;
 }) {
   const observed = metrics.commitCount > 0 || metrics.mergeCommitCount > 0;
-  if (!observed) return <span className="state-pill neutral">활동 없음</span>;
+  const committedCodeRatio = gitlabCommittedCodeRatio(generatedCodeLines, metrics.additions);
+  const ratioTitle = "GitLab 추가 라인 ÷ Claude Code Lines × 100. 수동 작성과 자동 생성 파일이 함께 집계되어 100%를 초과할 수 있습니다.";
+  const ratioReadout = (
+    <span
+      className={`individual-commit-ratio ${committedCodeRatio == null ? "unavailable" : ""}`}
+      title={ratioTitle}
+    >
+      <small>커밋 반영률</small>
+      <b>{committedCodeRatio == null ? "산정 불가" : formatRate(committedCodeRatio)}</b>
+    </span>
+  );
+
+  if (!observed) {
+    return (
+      <div className="individual-gitlab-empty">
+        <span className="state-pill neutral">활동 없음</span>
+        {ratioReadout}
+      </div>
+    );
+  }
 
   return (
     <div className="individual-gitlab-cell">
@@ -4239,7 +4253,10 @@ function IndividualGitlabActivityCell({
         <b>+{numberFormat.format(metrics.additions)}</b>
         <em>-{numberFormat.format(metrics.deletions)}</em>
       </span>
-      <small>{numberFormat.format(metrics.changedLines)}줄 수정 · {metrics.activeDays}일</small>
+      <div className="individual-gitlab-summary">
+        <small>{numberFormat.format(metrics.changedLines)}줄 수정 · {metrics.activeDays}일</small>
+        {ratioReadout}
+      </div>
     </div>
   );
 }
@@ -4976,7 +4993,7 @@ function AdoptionView({
                 <th>사용자</th>
                 <th>Code Lines · 산출 밀도</th>
                 <th>토큰 사용량</th>
-                <th>GitLab 커밋 · 수정 라인</th>
+                <th>GitLab 커밋 · 수정 라인 · 반영률</th>
                 <th>주요 사용 범위</th>
               </tr>
             </thead>
@@ -4999,6 +5016,9 @@ function AdoptionView({
                 const periodModels = isWeekly ? weeklyUsage?.models : monthlySpend?.models;
                 const scopeProducts = periodProducts?.length ? periodProducts : user.products;
                 const scopeModels = periodModels?.length ? periodModels : user.models;
+                const generatedCodeLines = isWeekly
+                  ? weeklyUsage?.codeLines ?? null
+                  : evaluation?.codeLines ?? null;
                 const teamGroup = individualTeamGroup(user.email);
                 const previousTeamGroup = index > 0
                   ? individualTeamGroup(rows[index - 1].user.email)
@@ -5069,7 +5089,12 @@ function AdoptionView({
                         ) : metricsUncollected ? <span className="state-pill neutral">수집중</span> : null}
                       </td>
                       <td>
-                        {teamGroup === "development" && <IndividualGitlabActivityCell metrics={gitlab} />}
+                        {teamGroup === "development" && (
+                          <IndividualGitlabActivityCell
+                            generatedCodeLines={generatedCodeLines}
+                            metrics={gitlab}
+                          />
+                        )}
                       </td>
                       <td>
                         {metricsUncollected ? null : user.usageScopeOverride ? (

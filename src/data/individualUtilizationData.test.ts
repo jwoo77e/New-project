@@ -21,6 +21,7 @@ describe("individualUtilizationData", () => {
 
   it("keeps activity metrics behind an explicit HR evidence gate", () => {
     expect(individualUtilizationData.methodology.productivity).toContain("Code Lines ÷ 총 토큰 × 1M");
+    expect(individualUtilizationData.methodology.productivity).toContain("GitLab 추가 라인 ÷ Claude Code Lines × 100");
     expect(individualUtilizationData.methodology.productivity).toContain("개인 고과에 직접 사용하지 않음");
     expect(individualUtilizationData.methodology.evaluationGate).toContain("최종 승인");
     expect(individualUtilizationData.methodology.evaluationGate).toContain("재사용");

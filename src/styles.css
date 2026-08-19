@@ -4639,8 +4639,7 @@ td strong {
   text-align: left;
 }
 
-.individual-gitlab-cell > span:first-child,
-.individual-gitlab-cell > small {
+.individual-gitlab-cell > span:first-child {
   display: grid;
   gap: 2px;
 }
@@ -4656,8 +4655,48 @@ td strong {
   line-height: 1.35;
 }
 
-.individual-gitlab-cell > small {
+.individual-gitlab-summary {
+  display: grid;
   grid-column: 1 / -1;
+  align-items: start;
+  gap: 2px;
+}
+
+.individual-gitlab-summary > small {
+  display: block;
+}
+
+.individual-commit-ratio {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.individual-commit-ratio small {
+  font-size: 0.64rem;
+  font-weight: 750;
+}
+
+.individual-commit-ratio b {
+  color: var(--teal-deep);
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.individual-commit-ratio.unavailable b {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.individual-gitlab-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 52px;
+  padding: 7px 8px;
 }
 
 .individual-gitlab-lines {

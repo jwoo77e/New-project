@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  gitlabCommittedCodeRatio,
   gitlabActivityData,
   gitlabCommitsForRange,
   gitlabSummaryForRange,
@@ -46,5 +47,12 @@ describe("gitlabActivityData", () => {
     expect(summary.commitCount).toBe(
       gitlabActivityData.months.find((month) => month.key === "2026-08")?.commitCount,
     );
+  });
+
+  it("calculates committed additions against generated code lines without capping the ratio", () => {
+    expect(gitlabCommittedCodeRatio(1_000, 250)).toBe(25);
+    expect(gitlabCommittedCodeRatio(1_000, 1_500)).toBe(150);
+    expect(gitlabCommittedCodeRatio(0, 250)).toBeNull();
+    expect(gitlabCommittedCodeRatio(null, 250)).toBeNull();
   });
 });
