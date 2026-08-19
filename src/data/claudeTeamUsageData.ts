@@ -215,7 +215,7 @@ export const initialClaudeTeamUsageData: ClaudeTeamUsageData = {
   source: {
     name: "Claude Team Plan 사용 현황",
     period: "1주차 2026-08-01~05 · 2주차 2026-08-06~12",
-    generatedAt: "2026-08-13",
+    generatedAt: "2026-08-20",
     membersFile: "members-e59c75bc-469e-466f-bef9-c311748c1df8-2026-07-20.csv",
     spendFile: snapshot.source.spend.fileName,
     codeLinesFile: currentCodeSource?.fileName ?? "2026-08-13-claude_code.csv",

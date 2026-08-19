@@ -275,7 +275,17 @@ const allActiveDays = snapshot.users.map((user) => sumActivity(user.weeklyActivi
 const allCodeLines = snapshot.users.map((user) =>
   Object.values(user.monthlyCodeLines).reduce((sum, value) => sum + value, 0),
 );
-const measuredUsers: IndividualUtilizationUser[] = snapshot.users.map((user) => {
+const sharedAccountEmails = new Set([
+  "sblim0519@riskzero.kr",
+  "jyjo@riskzero.kr",
+  "hb777lee@riskzero.kr",
+  "bigone@riskzero.kr",
+  "yspark@riskzero.kr",
+]);
+
+const measuredUsers: IndividualUtilizationUser[] = snapshot.users
+  .filter((user) => !sharedAccountEmails.has(user.email))
+  .map((user) => {
   const totalActivity = sumActivity(user.weeklyActivity);
   const totalCodeLines = Object.values(user.monthlyCodeLines).reduce((sum, value) => sum + value, 0);
   const activeCodeMonths = months.filter((month) => (user.monthlyCodeLines[month] ?? 0) > 0).length;
