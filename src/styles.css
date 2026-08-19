@@ -4562,7 +4562,7 @@ td strong {
 }
 
 .individual-utilization-table table {
-  min-width: 1730px;
+  min-width: 1510px;
 }
 
 .individual-utilization-table th:nth-child(1),
@@ -4578,7 +4578,9 @@ td strong {
 
 .individual-utilization-table th:nth-child(3),
 .individual-utilization-table td:nth-child(3) {
-  min-width: 370px;
+  width: 190px;
+  min-width: 190px;
+  max-width: 190px;
   white-space: normal;
 }
 
