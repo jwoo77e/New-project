@@ -4791,6 +4791,15 @@ function AdoptionView({
         label: monthLabel(month),
         ...gitlabSummaryForRange(`${month}-01`, `${month}-31`),
       }));
+  const gitlabTrendByKey = new Map(gitlabTrendData.map((item) => [item.key, item]));
+  const integratedTrendData = trendData.map((item) => {
+    const gitlab = gitlabTrendByKey.get(item.key);
+    return {
+      ...item,
+      commitCount: gitlab?.commitCount ?? 0,
+      changedLines: gitlab?.changedLines ?? 0,
+    };
+  });
 
   const measuredRowCount = rows.filter((row) => row.user.measurementStatus === "measured").length;
   const sharedAccountRowCount = rows.filter(
@@ -4990,18 +4999,20 @@ function AdoptionView({
       <section className="panel panel-wide individual-trend-panel">
         <div className="panel-header">
           <div>
-            <span className="eyebrow">Utilization Trend</span>
-            <h2>{isWeekly ? "주차별 Code Lines와 토큰 사용량 추이" : "월별 Code Lines와 토큰 사용량 추이"}</h2>
+            <span className="eyebrow">AI × GitLab Trend</span>
+            <h2>{isWeekly ? "주차별 AI 사용·GitLab 개발 활동 추이" : "월별 AI 사용·GitLab 개발 활동 추이"}</h2>
           </div>
-          <span className="state-pill neutral">{isWeekly ? `${data.usageWeeks.length}개 주차` : `${data.months.length}개월`}</span>
+          <span className="state-pill neutral">
+            {isWeekly ? `${data.usageWeeks.length}개 주차` : `${data.months.length}개월`} · 활성 프로젝트 {gitlabPeriodSummary.activeProjects}개
+          </span>
         </div>
         <div className="chart-frame individual-trend-chart">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={trendData} margin={{ top: 12, right: 18, left: 0, bottom: 0 }}>
+            <ComposedChart data={integratedTrendData} margin={{ top: 12, right: 18, left: 0, bottom: 0 }}>
               <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
               <XAxis dataKey="label" tickLine={false} axisLine={false} />
               <YAxis
-                yAxisId="code"
+                yAxisId="lines"
                 tickFormatter={(value) => formatTokens(Number(value))}
                 tickLine={false}
                 axisLine={false}
@@ -5016,16 +5027,20 @@ function AdoptionView({
                 axisLine={false}
                 width={62}
               />
+              <YAxis yAxisId="commits" hide allowDecimals={false} />
               <Tooltip
                 formatter={(value, name) => [
-                  name === "Code Lines"
-                    ? `${numberFormat.format(Number(value))}줄`
-                    : `${formatTokens(Number(value))} 토큰`,
+                  name === "커밋"
+                    ? `${numberFormat.format(Number(value))}건`
+                    : name === "주간 토큰" || name === "월 누적 토큰"
+                      ? `${formatTokens(Number(value))} 토큰`
+                      : `${numberFormat.format(Number(value))}줄`,
                   name,
                 ]}
               />
               <Legend />
-              <Bar yAxisId="code" dataKey="codeLines" name="Code Lines" fill="#0f8b8d" radius={[4, 4, 0, 0]} />
+              <Bar yAxisId="lines" dataKey="codeLines" name="Code Lines" fill="#0f8b8d" radius={[4, 4, 0, 0]} />
+              <Bar yAxisId="lines" dataKey="changedLines" name="GitLab 수정 라인" fill="#d9902f" radius={[4, 4, 0, 0]} />
               <Line
                 yAxisId="tokens"
                 dataKey="totalTokens"
@@ -5034,30 +5049,15 @@ function AdoptionView({
                 strokeWidth={3}
                 dot={{ r: 4 }}
               />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-      </section>
-
-      <section className="panel panel-wide gitlab-trend-panel">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">GitLab Activity Trend</span>
-            <h2>{isWeekly ? "주차별 커밋과 코드 수정량" : "월별 커밋과 코드 수정량"}</h2>
-          </div>
-          <span className="state-pill ok">활성 프로젝트 {gitlabPeriodSummary.activeProjects}개</span>
-        </div>
-        <div className="chart-frame gitlab-trend-chart">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={gitlabTrendData} margin={{ top: 12, right: 18, left: 0, bottom: 0 }}>
-              <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
-              <XAxis dataKey="label" tickLine={false} axisLine={false} />
-              <YAxis yAxisId="commits" allowDecimals={false} tickLine={false} axisLine={false} width={48} />
-              <YAxis yAxisId="lines" orientation="right" tickFormatter={(value) => formatTokens(Number(value))} tickLine={false} axisLine={false} width={62} />
-              <Tooltip formatter={(value, name) => [name === "커밋" ? `${numberFormat.format(Number(value))}건` : `${numberFormat.format(Number(value))}줄`, name]} />
-              <Legend />
-              <Bar yAxisId="commits" dataKey="commitCount" name="커밋" fill="#476a6f" radius={[4, 4, 0, 0]} />
-              <Line yAxisId="lines" dataKey="changedLines" name="수정 라인" stroke="#d9902f" strokeWidth={3} dot={{ r: 4 }} />
+              <Line
+                yAxisId="commits"
+                dataKey="commitCount"
+                name="커밋"
+                stroke="#476a6f"
+                strokeDasharray="6 4"
+                strokeWidth={3}
+                dot={{ fill: "#ffffff", r: 4, strokeWidth: 2 }}
+              />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
