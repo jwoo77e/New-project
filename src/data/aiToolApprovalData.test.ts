@@ -160,8 +160,8 @@ describe("initialAiToolApprovalData", () => {
       ),
     ).toEqual([
       expect.objectContaining({
-        owner: "박수진 과장 / 미기재",
-        department: "미기재",
+        owner: "박수진 과장 / 플랫폼개발",
+        department: "플랫폼개발",
         tool: "Claude Team Plan Standard",
         monthlyUsd: 25,
         monthlyKrw: 37_125,

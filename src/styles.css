@@ -4962,46 +4962,14 @@ td strong {
 }
 
 .individual-token-cell {
-  display: grid;
-  grid-template-columns: minmax(58px, auto) minmax(78px, auto);
-  align-items: center;
+  display: block;
   width: 100%;
-  gap: 10px;
 }
 
 .individual-token-actual {
   color: var(--ink);
   font-size: 0.94rem;
   font-variant-numeric: tabular-nums;
-}
-
-.individual-token-forecast {
-  display: grid;
-  min-width: 0;
-  gap: 2px;
-}
-
-.individual-token-forecast small {
-  color: var(--muted);
-  font-size: 0.68rem;
-  font-weight: 750;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
-.individual-token-forecast b {
-  color: var(--coral);
-  font-size: 0.84rem;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
-}
-
-.individual-token-forecast.down b {
-  color: var(--amber);
-}
-
-.individual-token-forecast.flat b {
-  color: var(--steel);
 }
 
 .individual-usage-scope {

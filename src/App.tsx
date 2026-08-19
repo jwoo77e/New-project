@@ -136,12 +136,6 @@ import {
   type ClaudeProductivityLevel,
 } from "./lib/claudeProductivity";
 import {
-  buildMonthlyTokenUsageTrend,
-  buildWeeklyTokenUsageTrend,
-  type TokenUsageSample,
-  type TokenUsageTrend,
-} from "./lib/tokenUsageTrend";
-import {
   buildCodeOutputDensityTrend,
   isMonthlyCodePeriodAligned,
   type CodeOutputDensitySample,
@@ -4054,46 +4048,6 @@ function individualTeamGroup(email: string): IndividualTeamGroup {
   return developmentTeamEmails.has(email.toLowerCase()) ? "development" : "non-development";
 }
 
-function monthlyTokenSamplesForUser(email: string, selectedMonth: string): TokenUsageSample[] {
-  const selectedIndex = individualUtilizationData.months.indexOf(selectedMonth);
-  if (selectedIndex < 0) return [];
-
-  return individualUtilizationData.months.slice(0, selectedIndex + 1).flatMap((month) => {
-    const period = individualUtilizationData.monthlySpend[month];
-    const usage = period?.users[email];
-    if (!period || !usage) return [];
-    const [startDate, endDate] = period.period.split(/\s*~\s*/);
-    if (!startDate || !endDate) return [];
-    return [{
-      key: month,
-      label: monthLabel(month),
-      totalTokens: usage.totalTokens,
-      startDate,
-      endDate,
-      coverage: period.coverage,
-    }];
-  });
-}
-
-function weeklyTokenSamplesForUser(email: string, selectedWeek: string): TokenUsageSample[] {
-  const selectedIndex = individualUtilizationData.usageWeeks.indexOf(selectedWeek);
-  if (selectedIndex < 0) return [];
-
-  return individualUtilizationData.usageWeeks.slice(0, selectedIndex + 1).flatMap((week) => {
-    const period = individualUtilizationData.weeklyUsage[week];
-    const usage = period?.users[email];
-    if (!period || !usage) return [];
-    return [{
-      key: week,
-      label: period.label,
-      totalTokens: usage.totalTokens,
-      startDate: period.startDate,
-      endDate: period.endDate,
-      coverage: period.coverage,
-    }];
-  });
-}
-
 function monthlyCodeDensitySamplesForUser(
   user: IndividualUtilizationUser,
   selectedMonth: string,
@@ -4257,28 +4211,12 @@ function IndividualCodeDensityCell({
 
 function IndividualTokenUsageCell({
   actualTokens,
-  mode,
-  trend,
 }: {
   actualTokens: number;
-  mode: IndividualPeriodMode;
-  trend: TokenUsageTrend;
 }) {
-  const forecastMethod = mode === "week"
-    ? "기간별 사용량을 7일 기준으로 환산하고 최근 변화의 50%만 반영한 다음 주 활동량 참고치"
-    : trend.forecastKind === "period-end"
-      ? "선택 월의 집계 일수 기준 일평균을 해당 월 전체 일수로 환산한 활동량 참고치"
-      : "최근 두 달의 기간 보정 토큰 변화 중 50%만 반영한 다음 달 활동량 참고치";
-
   return (
     <div className="individual-token-cell">
       <strong className="individual-token-actual">{formatTokens(actualTokens)}</strong>
-      {trend.forecastTokens != null && (
-        <span className={`individual-token-forecast ${trend.direction}`} title={forecastMethod}>
-          <small>{trend.forecastLabel}</small>
-          <b>{formatTokens(trend.forecastTokens)}</b>
-        </span>
-      )}
     </div>
   );
 }
@@ -4676,9 +4614,6 @@ function AdoptionView({
         const evaluation = user.monthEvaluations[selectedMonth];
         const monthlySpend = selectedMonthlySpend?.users[user.email] ?? null;
         const weeklyUsage = selectedWeeklyUsage?.users[user.email] ?? null;
-        const tokenTrend = isWeekly
-          ? buildWeeklyTokenUsageTrend(weeklyTokenSamplesForUser(user.email, selectedWeek))
-          : buildMonthlyTokenUsageTrend(monthlyTokenSamplesForUser(user.email, selectedMonth));
         const codeDensitySamples = isWeekly
           ? weeklyCodeDensitySamplesForUser(user.email, selectedWeek)
           : monthlyCodeDensitySamplesForUser(user, selectedMonth);
@@ -4694,7 +4629,6 @@ function AdoptionView({
           evaluation,
           monthlySpend,
           weeklyUsage,
-          tokenTrend,
           codeDensityTrend,
           selectedDensitySample,
           gitlab,
@@ -5048,7 +4982,6 @@ function AdoptionView({
                 evaluation,
                 monthlySpend,
                 weeklyUsage,
-                tokenTrend,
                 codeDensityTrend,
                 selectedDensitySample,
                 gitlab,
@@ -5122,15 +5055,11 @@ function AdoptionView({
                                 ? <span className="state-pill warning">활동량 산정 제외</span>
                                 : <IndividualTokenUsageCell
                                     actualTokens={weeklyUsage.totalTokens}
-                                    mode="week"
-                                    trend={tokenTrend}
                                   />
                               : <span className="state-pill neutral">주차별 수집중</span>
                             : monthlySpend
                               ? <IndividualTokenUsageCell
                                   actualTokens={monthlySpend.totalTokens}
-                                  mode="month"
-                                  trend={tokenTrend}
                                 />
                               : <span className="state-pill neutral">월별 Spend 수집중</span>
                         ) : metricsUncollected ? <span className="state-pill neutral">수집중</span> : null}
