@@ -4032,7 +4032,7 @@ function approvalPalette(index: number) {
   return colors[index % colors.length];
 }
 
-type IndividualSortKey = "code" | "tokens" | "density" | "gitlab";
+type IndividualSortKey = "code" | "tokens" | "density" | "gitlab" | "commits";
 
 function monthlyTokenSamplesForUser(email: string, selectedMonth: string): TokenUsageSample[] {
   const selectedIndex = individualUtilizationData.months.indexOf(selectedMonth);
@@ -4758,7 +4758,7 @@ function AdoptionView({
         user.displayName.toLowerCase().includes(normalizedQuery),
       )
       .sort((a, b) => {
-        if (sortKey !== "gitlab" && a.user.measurementStatus !== b.user.measurementStatus) {
+        if (sortKey !== "gitlab" && sortKey !== "commits" && a.user.measurementStatus !== b.user.measurementStatus) {
           const statusRank = (user: IndividualUtilizationUser) => {
             if (user.measurementStatus === "measured") return 0;
             if (user.measurementStatus === "source-uncollected") return 1;
@@ -4772,6 +4772,7 @@ function AdoptionView({
           if (sortKey === "code") return isWeekly ? row.weeklyUsage?.codeLines ?? 0 : row.evaluation?.codeLines ?? 0;
           if (sortKey === "density") return row.codeDensityTrend.currentPoint?.linesPerMillionTokens ?? -1;
           if (sortKey === "gitlab") return row.gitlab.changedLines;
+          if (sortKey === "commits") return row.gitlab.commitCount;
           return isWeekly ? row.weeklyUsage?.totalTokens ?? 0 : row.monthlySpend?.totalTokens ?? 0;
         };
         return value(b) - value(a) ||
@@ -4948,6 +4949,7 @@ function AdoptionView({
               <option value="tokens">토큰 사용량</option>
               <option value="code">Code Lines</option>
               <option value="density">코드 산출 밀도</option>
+              <option value="commits">GitLab 커밋</option>
               <option value="gitlab">GitLab 수정 라인</option>
             </select>
           </label>
