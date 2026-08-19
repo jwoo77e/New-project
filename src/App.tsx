@@ -160,7 +160,7 @@ import {
   type GensparkDriveSnapshot,
 } from "./lib/gensparkDriveSnapshot";
 
-type ViewKey = "overview" | "monthly" | "adoption" | "approval";
+type ViewKey = "overview" | "monthly" | "adoption" | "wbs" | "approval";
 type LayoutMode = "command" | "editorial" | "signal";
 type ViewHeaderMetric = {
   label: string;
@@ -991,6 +991,46 @@ function App() {
         },
       ],
     };
+  } else if (activeView === "wbs") {
+    const progressVariance =
+      platformWbsSimulationData.summary.averageActualProgress -
+      platformWbsSimulationData.summary.averagePlannedProgress;
+    viewHeader = {
+      eyebrow: "WBS × AI Activity",
+      title: "플랫폼개발 WBS·AI 활동",
+      description: "개인별 WBS 진척과 같은 기간의 토큰·Code Lines를 비교해 일정 흐름과 AI 활동 신호를 확인합니다.",
+      freshness: `${platformWbsSimulationData.source.period} · ${platformWbsSimulationData.source.label}`,
+      metrics: [
+        {
+          icon: <UserCheck size={19} />,
+          label: "WBS 대상",
+          value: `${platformWbsSimulationData.summary.memberCount}명`,
+          detail: platformWbsSimulationData.source.department,
+          tone: "teal",
+        },
+        {
+          icon: <Gauge size={19} />,
+          label: "실적 진척",
+          value: `${platformWbsSimulationData.summary.averageActualProgress.toFixed(1)}%`,
+          detail: `계획 대비 ${progressVariance >= 0 ? "+" : ""}${progressVariance.toFixed(1)}%p`,
+          tone: "steel",
+        },
+        {
+          icon: <CheckCircle2 size={19} />,
+          label: "작업 완료율",
+          value: `${platformWbsSimulationData.summary.taskCompletionRate.toFixed(1)}%`,
+          detail: `${platformWbsSimulationData.summary.completedTaskCount}/${platformWbsSimulationData.summary.plannedTaskCount}개 완료`,
+          tone: "green",
+        },
+        {
+          icon: <Activity size={19} />,
+          label: "일정 상태",
+          value: `${platformWbsSimulationData.summary.normalMemberCount}명 정상`,
+          detail: "전 구성원 정상 진행 시나리오",
+          tone: "amber",
+        },
+      ],
+    };
   } else if (activeView === "approval") {
     const leadingCategory = aiToolApprovalData.categorySummary[0];
     viewHeader = {
@@ -1169,6 +1209,14 @@ function App() {
           개인별 AI 활동
         </button>
         <button
+          className={activeView === "wbs" ? "is-active" : ""}
+          type="button"
+          onClick={() => setActiveView("wbs")}
+        >
+          <ListOrdered size={17} />
+          WBS·AI 활동
+        </button>
+        <button
           className={activeView === "approval" ? "is-active" : ""}
           type="button"
           onClick={() => setActiveView("approval")}
@@ -1250,7 +1298,7 @@ function App() {
             footer="플랫폼개발팀 · 2026년 8월부터"
           />
         </section>
-      ) : activeView === "adoption" ? null : (
+      ) : activeView === "adoption" || activeView === "wbs" ? null : (
         <section className="metric-grid" aria-label="핵심 비용 지표">
           <MetricCard
             icon={<CircleDollarSign size={21} />}
@@ -1317,6 +1365,12 @@ function App() {
           selectedMonth={individualSelectedMonth}
           onSelectedMonthChange={setIndividualSelectedMonth}
         />
+      )}
+
+      {activeView === "wbs" && (
+        <div className="content-grid platform-wbs-view">
+          <PlatformWbsSimulationPanel />
+        </div>
       )}
 
       {activeView === "approval" && <AiToolApprovalView approvalData={aiToolApprovalData} />}
@@ -4509,38 +4563,6 @@ function PlatformWbsSimulationPanel() {
 
   return (
     <section className="panel panel-wide platform-wbs-panel" aria-label="플랫폼개발 WBS 및 AI 활동 시뮬레이션">
-      <div className="panel-header platform-wbs-header">
-        <div>
-          <span className="eyebrow">WBS × AI Activity</span>
-          <h2>플랫폼개발 개인별 진척과 AI 활동</h2>
-          <p>{source.source.period} · WBS는 가상 데이터, AI 활동은 수집 원천 기준</p>
-        </div>
-        <span className="state-pill warning">시뮬레이션</span>
-      </div>
-
-      <div className="platform-wbs-summary">
-        <article>
-          <span>WBS 대상</span>
-          <strong>{source.summary.memberCount}명</strong>
-          <small>플랫폼개발 구성원</small>
-        </article>
-        <article>
-          <span>계획 대비 실적</span>
-          <strong>{source.summary.averageActualProgress.toFixed(1)}%</strong>
-          <small>계획 {source.summary.averagePlannedProgress.toFixed(1)}% · {source.summary.averageActualProgress - source.summary.averagePlannedProgress > 0 ? "+" : ""}{(source.summary.averageActualProgress - source.summary.averagePlannedProgress).toFixed(1)}%p</small>
-        </article>
-        <article>
-          <span>작업 완료율</span>
-          <strong>{source.summary.taskCompletionRate.toFixed(1)}%</strong>
-          <small>{source.summary.completedTaskCount}/{source.summary.plannedTaskCount}개 완료</small>
-        </article>
-        <article>
-          <span>일정 점검</span>
-          <strong>{source.summary.normalMemberCount}명 정상</strong>
-          <small>전 구성원 정상 진행 시나리오</small>
-        </article>
-      </div>
-
       <div className="platform-wbs-analysis">
         <div className="platform-wbs-correlation">
           <div className="section-heading">
@@ -5041,8 +5063,6 @@ function AdoptionView({
         </div>
         <small className="approval-footnote">{gitlabActivityData.source.linePolicy} · 전체 브랜치 · 자동 생성 파일을 포함한 GitLab 공식 통계</small>
       </section>
-
-      <PlatformWbsSimulationPanel />
 
       <section className="panel panel-wide individual-table-panel">
         <div className="panel-header">
