@@ -26,19 +26,21 @@ describe("kimJaewooProfileData", () => {
     );
   });
 
-  it("reconciles prompt topics and daily prompt activity", () => {
+  it("includes the current August daily Drive session backups", () => {
     const data = kimJaewooProfileData;
 
     expect(data.promptTopics.reduce((sum, item) => sum + item.count, 0)).toBe(
       data.drive.promptFiles,
     );
-    expect(data.dailyPromptCounts.reduce((sum, item) => sum + item.prompts, 0)).toBe(
-      data.drive.promptFiles,
-    );
     expect(data.monthlyPromptCounts).toEqual([
       { month: "2026-07", prompts: 298 },
-      { month: "2026-08", prompts: 48 },
+      { month: "2026-08", prompts: 169 },
     ]);
+    expect(data.dailyPromptCounts.filter((item) => item.date.startsWith("2026-08"))).toHaveLength(18);
+    expect(data.dailyPromptCounts.filter((item) => item.date.startsWith("2026-08")).reduce(
+      (sum, item) => sum + item.prompts,
+      0,
+    )).toBe(169);
   });
 });
 
@@ -113,7 +115,14 @@ describe("jeongJaeyoProfileData", () => {
     expect(data.drive.promptFiles).toBe(6_298);
     expect(data.drive.outputMetricValue).toBe(4_137);
     expect(data.monthlyPromptCounts.find((item) => item.month === "2026-07")?.prompts).toBe(966);
-    expect(data.dailyPromptCounts.reduce((sum, item) => sum + item.prompts, 0)).toBe(966);
+    expect(data.dailyPromptCounts.filter((item) => item.date.startsWith("2026-07")).reduce(
+      (sum, item) => sum + item.prompts,
+      0,
+    )).toBe(966);
+    expect(data.dailyPromptCounts.filter((item) => item.date.startsWith("2026-08")).reduce(
+      (sum, item) => sum + item.prompts,
+      0,
+    )).toBe(863);
     expect(data.fileBreakdown.find((item) => item.label === "AI 하위 작업 지시")?.count).toBe(300);
   });
 
@@ -150,19 +159,21 @@ describe("leeHyeongbaeProfileData", () => {
     ).toBe(data.drive.fileCount);
   });
 
-  it("reconciles classified conversation records and snapshot activity", () => {
+  it("includes the current August date-folder records", () => {
     const data = leeHyeongbaeProfileData;
 
     expect(data.promptTopics.reduce((sum, item) => sum + item.count, 0)).toBe(
       data.drive.promptFiles,
     );
-    expect(data.dailyPromptCounts.reduce((sum, item) => sum + item.prompts, 0)).toBe(
-      data.drive.promptFiles,
-    );
     expect(data.monthlyPromptCounts).toEqual([
       { month: "2026-07", prompts: 209 },
-      { month: "2026-08", prompts: 55 },
+      { month: "2026-08", prompts: 33 },
     ]);
+    expect(data.dailyPromptCounts.filter((item) => item.date.startsWith("2026-08"))).toHaveLength(14);
+    expect(data.dailyPromptCounts.filter((item) => item.date.startsWith("2026-08")).reduce(
+      (sum, item) => sum + item.prompts,
+      0,
+    )).toBe(33);
   });
 
   it("uses Lee Hyeongbae's two fixed subscriptions", () => {
