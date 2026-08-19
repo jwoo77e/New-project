@@ -4428,7 +4428,7 @@ function PlatformWbsSimulationPanel() {
     const aiMeasured = spend != null;
     const highAiActivity = (spend?.totalTokens ?? 0) >= 500_000_000 || (codeLines ?? 0) >= 10_000;
     const interpretation = !aiMeasured
-      ? "AI 원천 수집중"
+      ? "데이터 수집중"
       : highAiActivity
         ? "AI 활동과 진척 동행"
         : "정상 진행";
@@ -4445,7 +4445,11 @@ function PlatformWbsSimulationPanel() {
   const measuredRows = allRows.filter((row) => row.aiMeasured);
   const filteredRows = allRows
     .filter((row) => projectFilter === "all" || row.project === projectFilter)
-    .sort((a, b) => a.project.localeCompare(b.project, "ko") || a.displayName.localeCompare(b.displayName, "ko"));
+    .sort((a, b) =>
+      Number(b.aiMeasured) - Number(a.aiMeasured) ||
+      a.project.localeCompare(b.project, "ko") ||
+      a.displayName.localeCompare(b.displayName, "ko"),
+    );
 
   return (
     <section className="panel panel-wide platform-wbs-panel" aria-label="플랫폼개발 WBS 및 AI 활동 시뮬레이션">
@@ -4544,7 +4548,7 @@ function PlatformWbsSimulationPanel() {
                   <td>
                     {row.aiMeasured ? (
                       <><strong>{formatTokens(row.totalTokens ?? 0)}</strong><small>{numberFormat.format(row.codeLines ?? 0)}줄</small></>
-                    ) : <span className="state-pill neutral">AI 원천 수집중</span>}
+                    ) : <span className="state-pill neutral">데이터 수집중</span>}
                   </td>
                   <td>
                     <strong>{row.interpretation}</strong>
