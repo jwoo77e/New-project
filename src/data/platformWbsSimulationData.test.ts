@@ -19,14 +19,19 @@ describe("platformWbsSimulationData", () => {
       .toBe("jhyun@riskzero.kr");
   });
 
-  it("reconciles task counts, progress averages, and delay rules", () => {
+  it("reconciles task counts and keeps every simulated member on track", () => {
     expect(platformWbsSimulationData.summary.completedTaskCount).toBe(
       platformWbsSimulationData.members.reduce((sum, member) => sum + member.completedTaskCount, 0),
     );
-    expect(platformWbsSimulationData.summary.delayedMemberCount).toBe(6);
+    expect(platformWbsSimulationData.summary.normalMemberCount).toBe(23);
     expect(
-      platformWbsSimulationData.members.filter((member) => member.status === "delayed")
-        .every((member) => member.scheduleVariance <= -5),
+      platformWbsSimulationData.members.every(
+        (member) =>
+          member.status === "on-track" &&
+          member.delayedTaskCount === 0 &&
+          member.blocker === null &&
+          member.forecastEndDate <= member.plannedEndDate,
+      ),
     ).toBe(true);
     expect(platformWbsSimulationData.source.requiredColumns).toContain("담당자 이메일");
   });

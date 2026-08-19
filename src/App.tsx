@@ -4350,7 +4350,6 @@ function WbsCorrelationTooltip({
 function PlatformWbsSimulationPanel() {
   const source = platformWbsSimulationData;
   const [projectFilter, setProjectFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState<PlatformWbsStatus | "all">("all");
   const augustSpend = individualUtilizationData.monthlySpend["2026-08"];
   const projects = [...new Set(source.members.map((member) => member.project))];
   const allRows = source.members.map((member): PlatformWbsAiRow => {
@@ -4361,15 +4360,9 @@ function PlatformWbsSimulationPanel() {
     const highAiActivity = (spend?.totalTokens ?? 0) >= 500_000_000 || (codeLines ?? 0) >= 10_000;
     const interpretation = !aiMeasured
       ? "AI 원천 수집중"
-      : member.status === "delayed" && highAiActivity
-        ? "AI 활동 대비 지연 원인 점검"
-        : member.status === "delayed"
-          ? "작업 장애·업무량 점검"
-          : highAiActivity && (member.status === "ahead" || member.status === "on-track")
-            ? "AI 활동과 진척 동행"
-            : member.status === "at-risk"
-              ? "진척 보완 필요"
-              : "업무 특성과 활용 방식 확인";
+      : highAiActivity
+        ? "AI 활동과 진척 동행"
+        : "정상 진행";
     return {
       ...member,
       totalTokens: spend?.totalTokens ?? null,
@@ -4385,16 +4378,7 @@ function PlatformWbsSimulationPanel() {
   const codeCorrelation = pearsonCorrelation(measuredRows, (row) => row.codeLines);
   const filteredRows = allRows
     .filter((row) => projectFilter === "all" || row.project === projectFilter)
-    .filter((row) => statusFilter === "all" || row.status === statusFilter)
-    .sort((a, b) => {
-      const statusRank: Record<PlatformWbsStatus, number> = {
-        delayed: 0,
-        "at-risk": 1,
-        "on-track": 2,
-        ahead: 3,
-      };
-      return statusRank[a.status] - statusRank[b.status] || a.scheduleVariance - b.scheduleVariance;
-    });
+    .sort((a, b) => a.project.localeCompare(b.project, "ko") || a.displayName.localeCompare(b.displayName, "ko"));
 
   return (
     <section className="panel panel-wide platform-wbs-panel" aria-label="플랫폼개발 WBS 및 AI 활동 시뮬레이션">
@@ -4425,8 +4409,8 @@ function PlatformWbsSimulationPanel() {
         </article>
         <article>
           <span>일정 점검</span>
-          <strong>{source.summary.delayedMemberCount}명 지연</strong>
-          <small>주의 {source.summary.atRiskMemberCount}명 · 기준 -5%p</small>
+          <strong>{source.summary.normalMemberCount}명 정상</strong>
+          <small>전 구성원 정상 진행 시나리오</small>
         </article>
       </div>
 
@@ -4489,7 +4473,7 @@ function PlatformWbsSimulationPanel() {
       <div className="platform-wbs-table-heading">
         <div>
           <strong>구성원별 WBS 운영 현황</strong>
-          <span>{source.methodology.delayedRule}</span>
+          <span>{source.methodology.scheduleRule}</span>
         </div>
         <div className="platform-wbs-filters">
           <label>
@@ -4497,19 +4481,6 @@ function PlatformWbsSimulationPanel() {
             <select value={projectFilter} onChange={(event) => setProjectFilter(event.target.value)}>
               <option value="all">전체</option>
               {projects.map((project) => <option key={project} value={project}>{project}</option>)}
-            </select>
-          </label>
-          <label>
-            <span>상태</span>
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value as PlatformWbsStatus | "all")}
-            >
-              <option value="all">전체</option>
-              <option value="delayed">지연</option>
-              <option value="at-risk">주의</option>
-              <option value="on-track">정상</option>
-              <option value="ahead">선행</option>
             </select>
           </label>
         </div>
@@ -4545,7 +4516,7 @@ function PlatformWbsSimulationPanel() {
                   </td>
                   <td>
                     <span className={`state-pill ${status.className}`}>{status.label}</span>
-                    <small>{row.scheduleVariance > 0 ? "+" : ""}{row.scheduleVariance}%p · 지연 작업 {row.delayedTaskCount}개</small>
+                    <small>계획 대비 {row.scheduleVariance > 0 ? "+" : ""}{row.scheduleVariance}%p</small>
                   </td>
                   <td>
                     {row.aiMeasured ? (
