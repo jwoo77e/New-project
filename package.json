@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "collect:api-usage": "node scripts/fetch-api-usage.mjs",
+    "collect:gitlab-activity": "node scripts/collect-gitlab-activity.mjs",
     "collect:drive-artifact-trend": "node scripts/collect-drive-artifact-trend.mjs",
     "collect:drive-zip-artifacts": "node scripts/collect-drive-zip-artifacts.mjs",
     "collect:genspark-drive-artifacts": "node scripts/collect-genspark-drive-artifacts.mjs",

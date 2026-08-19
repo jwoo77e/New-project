@@ -17,7 +17,9 @@ import {
   ExternalLink,
   FileText,
   FileSpreadsheet,
+  FolderGit2,
   Gauge,
+  GitCommitHorizontal,
   KeyRound,
   LayoutDashboard,
   LineChart,
@@ -87,6 +89,15 @@ import {
   type IndividualPeriodMode,
   type IndividualUtilizationUser,
 } from "./data/individualUtilizationData";
+import {
+  gitlabActivityData,
+  gitlabCommitsForRange,
+  gitlabSummaryForRange,
+  gitlabUserMetricsForMonth,
+  gitlabUserMetricsForRange,
+  type GitlabActivityMetrics,
+  type GitlabCommitSummary,
+} from "./data/gitlabActivityData";
 import { executiveWorkforceInsightData } from "./data/executiveWorkforceInsightData";
 import {
   platformWbsSimulationData,
@@ -3967,7 +3978,7 @@ function approvalPalette(index: number) {
   return colors[index % colors.length];
 }
 
-type IndividualSortKey = "code" | "tokens" | "density";
+type IndividualSortKey = "code" | "tokens" | "density" | "gitlab";
 
 function monthlyTokenSamplesForUser(email: string, selectedMonth: string): TokenUsageSample[] {
   const selectedIndex = individualUtilizationData.months.indexOf(selectedMonth);
@@ -4270,6 +4281,156 @@ function IndividualTokenUsageCell({
   );
 }
 
+function IndividualGitlabActivityCell({
+  metrics,
+}: {
+  metrics: GitlabActivityMetrics;
+}) {
+  const observed = metrics.commitCount > 0 || metrics.mergeCommitCount > 0;
+  if (!observed) return <span className="state-pill neutral">활동 없음</span>;
+
+  return (
+    <div className="individual-gitlab-cell">
+      <span>
+        <strong>{numberFormat.format(metrics.commitCount)} 커밋</strong>
+        {metrics.mergeCommitCount > 0 && <small>merge {numberFormat.format(metrics.mergeCommitCount)}건 별도</small>}
+      </span>
+      <span className="individual-gitlab-lines">
+        <b>+{numberFormat.format(metrics.additions)}</b>
+        <em>-{numberFormat.format(metrics.deletions)}</em>
+      </span>
+      <small>{numberFormat.format(metrics.changedLines)}줄 수정 · {metrics.activeDays}일</small>
+    </div>
+  );
+}
+
+function gitlabFileStatusLabel(status: GitlabCommitSummary["diff"]["files"][number]["status"]) {
+  if (status === "added") return "추가";
+  if (status === "deleted") return "삭제";
+  if (status === "renamed") return "이름 변경";
+  return "수정";
+}
+
+function GitlabActivityDetailPanel({
+  displayName,
+  email,
+  endDate,
+  periodLabel,
+  startDate,
+}: {
+  displayName: string;
+  email: string;
+  endDate: string;
+  periodLabel: string;
+  startDate: string;
+}) {
+  const metrics = gitlabUserMetricsForRange(email, startDate, endDate);
+  const commits = gitlabCommitsForRange(email, startDate, endDate);
+  const sourceUser = gitlabActivityData.userByEmail.get(email);
+  const projects = Array.from(
+    commits.reduce((map, commit) => {
+      const row = map.get(commit.projectPath) ?? {
+        path: commit.projectPath,
+        name: commit.projectName,
+        webUrl: commit.projectWebUrl,
+        commits: 0,
+        merges: 0,
+        changedLines: 0,
+      };
+      if (commit.isMerge) row.merges += 1;
+      else {
+        row.commits += 1;
+        row.changedLines += commit.changedLines;
+      }
+      map.set(commit.projectPath, row);
+      return map;
+    }, new Map<string, { path: string; name: string; webUrl: string; commits: number; merges: number; changedLines: number }>()),
+  ).map(([, project]) => project)
+    .sort((a, b) => b.changedLines - a.changedLines || b.commits - a.commits || a.path.localeCompare(b.path));
+  const visibleCommits = commits.slice(0, 30);
+
+  return (
+    <section className="panel panel-wide gitlab-detail-panel" aria-label={`${displayName} GitLab 활동 상세`}>
+      <div className="panel-header gitlab-detail-header">
+        <div>
+          <span className="eyebrow">GitLab Development Evidence</span>
+          <h2>{displayName} · {periodLabel} 커밋 활동</h2>
+          <p>전체 브랜치의 비-merge 커밋 라인 통계입니다. merge commit은 중복 방지를 위해 별도 건수로 표시합니다.</p>
+        </div>
+        <span className="state-pill ok">{formatKstDateTime(gitlabActivityData.source.generatedAt)}</span>
+      </div>
+
+      <div className="gitlab-detail-summary">
+        <article><span>커밋</span><strong>{numberFormat.format(metrics.commitCount)}건</strong><small>merge {numberFormat.format(metrics.mergeCommitCount)}건 별도</small></article>
+        <article><span>코드 변경</span><strong>{numberFormat.format(metrics.changedLines)}줄</strong><small>+{numberFormat.format(metrics.additions)} · -{numberFormat.format(metrics.deletions)}</small></article>
+        <article><span>활동 범위</span><strong>{metrics.activeDays}일 · {projects.length}개</strong><small>활동일 · 프로젝트</small></article>
+        <article><span>작성자 연결</span><strong>{sourceUser ? "매칭" : "미매칭"}</strong><small>{sourceUser?.sourceEmails.join(" · ") ?? email}</small></article>
+      </div>
+
+      {projects.length > 0 && (
+        <div className="gitlab-project-grid" aria-label="프로젝트별 GitLab 활동">
+          {projects.slice(0, 6).map((project) => (
+            <a href={project.webUrl} key={project.path} rel="noreferrer" target="_blank">
+              <span><FolderGit2 size={15} />{project.name}</span>
+              <strong>{numberFormat.format(project.changedLines)}줄</strong>
+              <small>{project.commits} 커밋{project.merges > 0 ? ` · merge ${project.merges}` : ""}</small>
+            </a>
+          ))}
+        </div>
+      )}
+
+      <div className="table-wrap gitlab-commit-table">
+        <table>
+          <thead>
+            <tr>
+              <th>일자</th>
+              <th>프로젝트</th>
+              <th>커밋 내용</th>
+              <th>수정 라인</th>
+              <th>변경 파일</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visibleCommits.length > 0 ? visibleCommits.map((commit) => (
+              <tr key={`${commit.projectId}-${commit.sha}`}>
+                <td>{commit.day.slice(5).replace("-", "/")}</td>
+                <td><a href={commit.projectWebUrl} rel="noreferrer" target="_blank">{commit.projectName}<ExternalLink size={13} /></a></td>
+                <td>
+                  <a href={commit.webUrl} rel="noreferrer" target="_blank"><strong>{commit.title}</strong><ExternalLink size={13} /></a>
+                  <small>{commit.shortId}{commit.isMerge ? " · merge" : ""}</small>
+                </td>
+                <td>
+                  {commit.isMerge ? <span className="state-pill neutral">중복 제외</span> : (
+                    <><strong>{numberFormat.format(commit.changedLines)}줄</strong><small>+{numberFormat.format(commit.additions)} · -{numberFormat.format(commit.deletions)}</small></>
+                  )}
+                </td>
+                <td>
+                  {commit.diff.files.length > 0 ? (
+                    <div className="gitlab-file-list">
+                      {commit.diff.files.slice(0, 3).map((file) => (
+                        <span key={`${file.path}-${file.status}`} title={file.path}>
+                          <b>{gitlabFileStatusLabel(file.status)}</b>{file.path}
+                        </span>
+                      ))}
+                      {(commit.diff.changedFiles ?? 0) > 3 && <small>외 {Number(commit.diff.changedFiles) - 3}개</small>}
+                    </div>
+                  ) : <small>파일 상세 미수집</small>}
+                </td>
+              </tr>
+            )) : (
+              <tr><td className="empty-row" colSpan={5}>선택 기간에 GitLab 커밋 활동이 없습니다.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      <div className="gitlab-detail-footer">
+        <span>최근 {Math.min(visibleCommits.length, 30)}건 표시 · 전체 {numberFormat.format(commits.length)}건</span>
+        <span>{gitlabActivityData.source.period} · {formatKstDateTime(gitlabActivityData.source.generatedAt)}</span>
+      </div>
+    </section>
+  );
+}
+
 type PlatformWbsAiRow = (typeof platformWbsSimulationData.members)[number] & {
   totalTokens: number | null;
   codeLines: number | null;
@@ -4528,6 +4689,15 @@ function AdoptionView({
     : selectedMonthlySpend
       ? `${selectedMonthlySpend.period}${selectedMonthlySpend.coverage === "partial" ? " · 부분 집계" : ""}`
       : "월별 Spend 수집중";
+  const periodStartDate = isWeekly
+    ? selectedWeeklyUsage?.startDate ?? ""
+    : `${selectedMonth}-01`;
+  const periodEndDate = isWeekly
+    ? selectedWeeklyUsage?.endDate ?? ""
+    : `${selectedMonth}-31`;
+  const gitlabPeriodSummary = periodStartDate && periodEndDate
+    ? gitlabSummaryForRange(periodStartDate, periodEndDate)
+    : { commitCount: 0, mergeCommitCount: 0, additions: 0, deletions: 0, changedLines: 0, changedFiles: 0, activeDays: 0, activeAuthors: 0, activeProjects: 0 };
 
   const rows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -4546,6 +4716,9 @@ function AdoptionView({
         const codeDensityTrend = buildCodeOutputDensityTrend(codeDensitySamples, selectedDensityKey);
         const selectedDensitySample =
           codeDensitySamples.find((sample) => sample.key === selectedDensityKey) ?? null;
+        const gitlab = isWeekly && selectedWeeklyUsage
+          ? gitlabUserMetricsForRange(user.email, selectedWeeklyUsage.startDate, selectedWeeklyUsage.endDate)
+          : gitlabUserMetricsForMonth(user.email, selectedMonth);
         return {
           user,
           evaluation,
@@ -4554,6 +4727,7 @@ function AdoptionView({
           tokenTrend,
           codeDensityTrend,
           selectedDensitySample,
+          gitlab,
         };
       })
       .filter(({ user }) =>
@@ -4562,7 +4736,7 @@ function AdoptionView({
         user.displayName.toLowerCase().includes(normalizedQuery),
       )
       .sort((a, b) => {
-        if (a.user.measurementStatus !== b.user.measurementStatus) {
+        if (sortKey !== "gitlab" && a.user.measurementStatus !== b.user.measurementStatus) {
           const statusRank = (user: IndividualUtilizationUser) => {
             if (user.measurementStatus === "measured") return 0;
             if (user.measurementStatus === "source-uncollected") return 1;
@@ -4575,6 +4749,7 @@ function AdoptionView({
         const value = (row: typeof a) => {
           if (sortKey === "code") return isWeekly ? row.weeklyUsage?.codeLines ?? 0 : row.evaluation?.codeLines ?? 0;
           if (sortKey === "density") return row.codeDensityTrend.currentPoint?.linesPerMillionTokens ?? -1;
+          if (sortKey === "gitlab") return row.gitlab.changedLines;
           return isWeekly ? row.weeklyUsage?.totalTokens ?? 0 : row.monthlySpend?.totalTokens ?? 0;
         };
         return value(b) - value(a) ||
@@ -4582,6 +4757,18 @@ function AdoptionView({
           a.user.email.localeCompare(b.user.email);
       });
   }, [data.users, isWeekly, query, selectedMonth, selectedMonthlySpend, selectedWeek, selectedWeeklyUsage, sortKey]);
+
+  const gitlabTrendData = isWeekly
+    ? data.usageWeeks.map((week) => {
+        const period = data.weeklyUsage[week];
+        const summary = gitlabSummaryForRange(period.startDate, period.endDate);
+        return { key: week, label: period.label, ...summary };
+      })
+    : data.months.map((month) => ({
+        key: month,
+        label: monthLabel(month),
+        ...gitlabSummaryForRange(`${month}-01`, `${month}-31`),
+      }));
 
   const measuredRowCount = rows.filter((row) => row.user.measurementStatus === "measured").length;
   const sharedAccountRowCount = rows.filter(
@@ -4633,18 +4820,30 @@ function AdoptionView({
     );
   }, [isWeekly, rows, selectedMonthlySpend, selectedWeeklyUsage]);
 
-  const selectedProfile = selectedProfileEmail
-    ? individualProfileDataByEmail[selectedProfileEmail] ?? null
-    : null;
-
-  if (selectedProfile) {
-    const selectedUser = data.users.find((user) => user.email === selectedProfile.email);
-    if (selectedUser) {
+  if (selectedProfileEmail) {
+    const selectedUser = data.users.find((user) => user.email === selectedProfileEmail);
+    const selectedProfile = individualProfileDataByEmail[selectedProfileEmail] ?? null;
+    if (selectedUser && selectedProfile) {
       return (
         <IndividualProfileView
+          gitlabEndDate={periodEndDate}
+          gitlabPeriodLabel={periodLabel}
+          gitlabStartDate={periodStartDate}
           onBack={() => setSelectedProfileEmail(null)}
           profile={selectedProfile}
           selectedMonth={selectedMonth}
+          user={selectedUser}
+        />
+      );
+    }
+    if (selectedUser) {
+      return (
+        <IndividualGitlabProfileView
+          endDate={periodEndDate}
+          onBack={() => setSelectedProfileEmail(null)}
+          periodLabel={periodLabel}
+          selectedMonth={selectedMonth}
+          startDate={periodStartDate}
           user={selectedUser}
         />
       );
@@ -4718,6 +4917,7 @@ function AdoptionView({
               <option value="tokens">토큰 사용량</option>
               <option value="code">Code Lines</option>
               <option value="density">코드 산출 밀도</option>
+              <option value="gitlab">GitLab 수정 라인</option>
             </select>
           </label>
           <label className="individual-search-control">
@@ -4757,6 +4957,11 @@ function AdoptionView({
           <span><Activity size={17} />{isWeekly ? "주간 토큰" : "월 누적 토큰"}</span>
           <strong>{usageSummary ? formatTokens(usageSummary.totalTokens) : "수집중"}</strong>
           <small>{coverageNote}</small>
+        </article>
+        <article>
+          <span><GitCommitHorizontal size={17} />GitLab 개발 활동</span>
+          <strong>{numberFormat.format(gitlabPeriodSummary.commitCount)}건</strong>
+          <small>{numberFormat.format(gitlabPeriodSummary.changedLines)}줄 수정 · {gitlabPeriodSummary.activeAuthors}명</small>
         </article>
       </section>
 
@@ -4812,6 +5017,31 @@ function AdoptionView({
         </div>
       </section>
 
+      <section className="panel panel-wide gitlab-trend-panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">GitLab Activity Trend</span>
+            <h2>{isWeekly ? "주차별 커밋과 코드 수정량" : "월별 커밋과 코드 수정량"}</h2>
+          </div>
+          <span className="state-pill ok">활성 프로젝트 {gitlabPeriodSummary.activeProjects}개</span>
+        </div>
+        <div className="chart-frame gitlab-trend-chart">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={gitlabTrendData} margin={{ top: 12, right: 18, left: 0, bottom: 0 }}>
+              <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} />
+              <YAxis yAxisId="commits" allowDecimals={false} tickLine={false} axisLine={false} width={48} />
+              <YAxis yAxisId="lines" orientation="right" tickFormatter={(value) => formatTokens(Number(value))} tickLine={false} axisLine={false} width={62} />
+              <Tooltip formatter={(value, name) => [name === "커밋" ? `${numberFormat.format(Number(value))}건` : `${numberFormat.format(Number(value))}줄`, name]} />
+              <Legend />
+              <Bar yAxisId="commits" dataKey="commitCount" name="커밋" fill="#476a6f" radius={[4, 4, 0, 0]} />
+              <Line yAxisId="lines" dataKey="changedLines" name="수정 라인" stroke="#d9902f" strokeWidth={3} dot={{ r: 4 }} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+        <small className="approval-footnote">{gitlabActivityData.source.linePolicy} · 전체 브랜치 · 자동 생성 파일을 포함한 GitLab 공식 통계</small>
+      </section>
+
       <PlatformWbsSimulationPanel />
 
       <section className="panel panel-wide individual-table-panel">
@@ -4829,6 +5059,7 @@ function AdoptionView({
                 <th>사용자</th>
                 <th>Code Lines · 산출 밀도</th>
                 <th>토큰 사용량</th>
+                <th>GitLab 커밋 · 수정 라인</th>
                 <th>주요 사용 범위</th>
               </tr>
             </thead>
@@ -4841,6 +5072,7 @@ function AdoptionView({
                 tokenTrend,
                 codeDensityTrend,
                 selectedDensitySample,
+                gitlab,
               }) => {
                 const metricsMeasured = user.measurementStatus === "measured";
                 const metricsUncollected = !metricsMeasured;
@@ -4854,25 +5086,18 @@ function AdoptionView({
                 return (
                   <tr key={user.email}>
                     <td>
-                      {individualProfileDataByEmail[user.email] ? (
-                        <button
-                          aria-label={`${user.displayName} 개인 상세 보기`}
-                          className="individual-user-link"
-                          onClick={() => setSelectedProfileEmail(user.email)}
-                          type="button"
-                        >
-                          <span>
-                            <strong>{user.displayName}</strong>
-                            {user.displayAccount && <small>{user.displayAccount}</small>}
-                          </span>
-                          <ChevronRight size={17} />
-                        </button>
-                      ) : (
-                        <>
+                      <button
+                        aria-label={`${user.displayName} 개인 상세 보기`}
+                        className="individual-user-link"
+                        onClick={() => setSelectedProfileEmail(user.email)}
+                        type="button"
+                      >
+                        <span>
                           <strong>{user.displayName}</strong>
                           {user.displayAccount && <small>{user.displayAccount}</small>}
-                        </>
-                      )}
+                        </span>
+                        <ChevronRight size={17} />
+                      </button>
                     </td>
                     <td>
                       {metricsMeasured ? (
@@ -4913,6 +5138,9 @@ function AdoptionView({
                               />
                             : <span className="state-pill neutral">월별 Spend 수집중</span>
                       ) : metricsUncollected ? <span className="state-pill neutral">수집중</span> : null}
+                    </td>
+                    <td>
+                      <IndividualGitlabActivityCell metrics={gitlab} />
                     </td>
                     <td>
                       {metricsUncollected ? null : user.usageScopeOverride ? (
@@ -4966,12 +5194,103 @@ function AdoptionView({
   );
 }
 
+function IndividualGitlabProfileView({
+  endDate,
+  onBack,
+  periodLabel,
+  selectedMonth,
+  startDate,
+  user,
+}: {
+  endDate: string;
+  onBack: () => void;
+  periodLabel: string;
+  selectedMonth: string;
+  startDate: string;
+  user: IndividualUtilizationUser;
+}) {
+  const monthlySpend = individualUtilizationData.monthlySpend[selectedMonth]?.users[user.email] ?? null;
+  const evaluation = user.monthEvaluations[selectedMonth];
+  const gitlab = gitlabUserMetricsForRange(user.email, startDate, endDate);
+  const gitlabUser = gitlabActivityData.userByEmail.get(user.email);
+  const metricsMeasured = user.measurementStatus === "measured";
+  const groupUrl = `${gitlabActivityData.source.baseUrl}/${gitlabActivityData.source.group.path}`;
+
+  return (
+    <div className="content-grid individual-profile-view">
+      <section className="individual-profile-header">
+        <button className="individual-profile-back" onClick={onBack} type="button">
+          <ArrowLeft size={18} />
+          개인별 AI 활동 목록
+        </button>
+        <div>
+          <span className="eyebrow">Individual AI & GitLab Activity</span>
+          <h2>{user.displayName}</h2>
+          <p>{user.displayAccount ?? user.email} · {periodLabel}</p>
+        </div>
+        <div className="individual-profile-drive-links">
+          <a className="individual-profile-drive-link" href={groupUrl} rel="noreferrer" target="_blank">
+            GitLab 그룹<ExternalLink size={16} />
+          </a>
+        </div>
+      </section>
+
+      <section className="individual-profile-kpis" aria-label={`${user.displayName} AI 및 GitLab 핵심 지표`}>
+        <article>
+          <span><Activity size={17} />{fullMonthLabel(selectedMonth)} 토큰</span>
+          <strong>{metricsMeasured && monthlySpend ? formatTokens(monthlySpend.totalTokens) : "수집중"}</strong>
+          <small>{metricsMeasured && monthlySpend ? `${numberFormat.format(monthlySpend.requests)}건 요청` : "AI 사용량 원천 연결 대기"}</small>
+        </article>
+        <article>
+          <span><FileText size={17} />Claude Code Lines</span>
+          <strong>{metricsMeasured ? `${numberFormat.format(evaluation?.codeLines ?? 0)}줄` : "수집중"}</strong>
+          <small>Claude Code 원천 기준</small>
+        </article>
+        <article>
+          <span><GitCommitHorizontal size={17} />GitLab 커밋</span>
+          <strong>{numberFormat.format(gitlab.commitCount)}건</strong>
+          <small>merge {numberFormat.format(gitlab.mergeCommitCount)}건 별도</small>
+        </article>
+        <article>
+          <span><FolderGit2 size={17} />GitLab 코드 변경</span>
+          <strong>{numberFormat.format(gitlab.changedLines)}줄</strong>
+          <small>+{numberFormat.format(gitlab.additions)} · -{numberFormat.format(gitlab.deletions)}</small>
+        </article>
+      </section>
+
+      <GitlabActivityDetailPanel
+        displayName={user.displayName}
+        email={user.email}
+        endDate={endDate}
+        periodLabel={periodLabel}
+        startDate={startDate}
+      />
+
+      <section className="individual-methodology-band" aria-label={`${user.displayName} GitLab 수집 기준`}>
+        <div><span className="eyebrow">Source Coverage</span><h2>수집 기준과 상태</h2></div>
+        <dl>
+          <div><dt>작성자 연결</dt><dd>{gitlabUser ? `${gitlabUser.sourceEmails.join(" · ")} → ${user.email}` : "현재 GitLab 작성자 이메일과 매칭되지 않았습니다."}</dd></div>
+          <div><dt>라인 집계</dt><dd>{gitlabActivityData.source.linePolicy}</dd></div>
+          <div><dt>파일 상세</dt><dd>{gitlabActivityData.source.detailPolicy}</dd></div>
+          <div><dt>해석</dt><dd>수정 라인은 작업량 신호이며 코드 품질, 난이도, 리뷰 승인 또는 배포 성과를 직접 의미하지 않습니다.</dd></div>
+        </dl>
+      </section>
+    </div>
+  );
+}
+
 function IndividualProfileView({
+  gitlabEndDate,
+  gitlabPeriodLabel,
+  gitlabStartDate,
   onBack,
   profile,
   selectedMonth,
   user,
 }: {
+  gitlabEndDate: string;
+  gitlabPeriodLabel: string;
+  gitlabStartDate: string;
   onBack: () => void;
   profile: IndividualProfileData;
   selectedMonth: string;
@@ -5125,6 +5444,14 @@ function IndividualProfileView({
           <div><dt>Code Lines</dt><dd>{metricsMeasured ? `${numberFormat.format(evaluation?.codeLines ?? 0)}줄` : "개인 미측정"}</dd></div>
         </dl>
       </section>
+
+      <GitlabActivityDetailPanel
+        displayName={profile.displayName}
+        email={user.email}
+        endDate={gitlabEndDate}
+        periodLabel={gitlabPeriodLabel}
+        startDate={gitlabStartDate}
+      />
 
       <section className="panel panel-wide individual-profile-trend-panel">
         <div className="panel-header">
