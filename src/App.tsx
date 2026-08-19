@@ -5065,7 +5065,7 @@ function AdoptionView({
                         ) : metricsUncollected ? <span className="state-pill neutral">수집중</span> : null}
                       </td>
                       <td>
-                        <IndividualGitlabActivityCell metrics={gitlab} />
+                        {teamGroup === "development" && <IndividualGitlabActivityCell metrics={gitlab} />}
                       </td>
                       <td>
                         {metricsUncollected ? null : user.usageScopeOverride ? (
