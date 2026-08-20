@@ -198,11 +198,11 @@ describe("leeHyeongbaeProfileData", () => {
     );
 
     expect(records.map((record) => record.tool)).toEqual([
-      "chatGPT Pro(5배)",
+      "chatGPT Business Plan",
       "Claude Team Plan Standard",
     ]);
-    expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBe(135);
-    expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBe(200_475);
+    expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBe(50);
+    expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBe(74_250);
   });
 });
 

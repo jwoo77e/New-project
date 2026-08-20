@@ -550,7 +550,7 @@ export const leeHyeongbaeProfileData: IndividualProfileData = {
   measurementNote:
     "Drive 활동과 산출물은 이형배 전용 저장소 기준이며 공통 계정의 토큰·코드는 개인별로 분리되지 않습니다.",
   costBasisNote:
-    "AI 도구 결재 현황의 Claude Team Plan Standard와 2026년 8월 시작 ChatGPT Pro(5배) 월 고정비를 합산했습니다. API 변동비는 개인에게 배분하지 않았습니다.",
+    "AI 도구 결재 현황의 Claude Team Plan Standard와 2026년 8월 시작 ChatGPT Business Plan 월 고정비를 합산했습니다. API 변동비는 개인에게 배분하지 않았습니다.",
   sourceLinks: [{ label: "이형배 Claude Drive", url: leeHyeongbaeDriveUrl }],
   drive: {
     folderName: "이형배 Claude Drive 산출물 저장소",
