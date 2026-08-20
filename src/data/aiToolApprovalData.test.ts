@@ -130,7 +130,6 @@ describe("initialAiToolApprovalData", () => {
     ).toMatchObject({
       owner: "임성범 부장 / 전략사업팀",
       tool: "Claude Team Plan Standard",
-      linkedAccount: "없음",
       monthlyUsd: 25,
       monthlyKrw: 37_125,
       pricingEffectiveMonth: "2026-08",
@@ -139,14 +138,13 @@ describe("initialAiToolApprovalData", () => {
     });
   });
 
-  it("uses Lee Hyeongbae's own account without a linked-account label", () => {
+  it("uses Lee Hyeongbae's own account", () => {
     expect(
       initialAiToolApprovalData.records.find(
         (record) => record.owner === "이형배 상무 / 기술연구소" && record.category === "Claude",
       ),
     ).toMatchObject({
       account: "hb777lee@riskzero.kr",
-      linkedAccount: "없음",
       tool: "Claude Team Plan Standard",
     });
   });
@@ -175,7 +173,6 @@ describe("initialAiToolApprovalData", () => {
       owner: "김도율 차장 / 스마트서비스",
       department: "스마트서비스",
       tool: "Gemini(Google Workspace)",
-      linkedAccount: "doyul@riskzero.kr",
       monthlyUsd: 15.12,
       monthlyKrw: 22_453.2,
       paymentMethod: "AI 전용 카드",
@@ -348,8 +345,7 @@ describe("initialAiToolApprovalData", () => {
     expect(
       initialAiToolApprovalData.records.some(
         (record) =>
-          record.account === "ai.marketing@riskzero.kr" ||
-          record.linkedAccount === "ai.marketing@riskzero.kr",
+          record.account === "ai.marketing@riskzero.kr",
       ),
     ).toBe(false);
     expect(

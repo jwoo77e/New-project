@@ -3989,7 +3989,6 @@ function AiToolApprovalView({ approvalData }: { approvalData: AiToolApprovalData
                   </td>
                   <td>
                     <strong>{record.account}</strong>
-                    {record.linkedAccount !== "없음" && <small>연동 {record.linkedAccount}</small>}
                   </td>
                   <td>
                     <strong>{record.owner}</strong>
