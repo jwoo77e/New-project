@@ -41,6 +41,11 @@ describe("kimJaewooProfileData", () => {
       (sum, item) => sum + item.prompts,
       0,
     )).toBe(169);
+    expect(data.monthlyInsights?.["2026-08"].promptTopics.reduce(
+      (sum, item) => sum + item.count,
+      0,
+    )).toBe(169);
+    expect(data.monthlyInsights?.["2026-08"].highlights).toHaveLength(5);
   });
 });
 
@@ -122,7 +127,13 @@ describe("jeongJaeyoProfileData", () => {
     expect(data.dailyPromptCounts.filter((item) => item.date.startsWith("2026-08")).reduce(
       (sum, item) => sum + item.prompts,
       0,
-    )).toBe(863);
+    )).toBe(934);
+    expect(data.monthlyPromptCounts.find((item) => item.month === "2026-08")?.prompts).toBe(934);
+    expect(data.monthlyInsights?.["2026-08"].promptTopics.reduce(
+      (sum, item) => sum + item.count,
+      0,
+    )).toBe(934);
+    expect(data.monthlyInsights?.["2026-08"].highlights).toHaveLength(5);
     expect(data.fileBreakdown.find((item) => item.label === "AI 하위 작업 지시")?.count).toBe(300);
   });
 
@@ -174,6 +185,11 @@ describe("leeHyeongbaeProfileData", () => {
       (sum, item) => sum + item.prompts,
       0,
     )).toBe(33);
+    expect(data.monthlyInsights?.["2026-08"].promptTopics.reduce(
+      (sum, item) => sum + item.count,
+      0,
+    )).toBe(33);
+    expect(data.monthlyInsights?.["2026-08"].highlights).toHaveLength(5);
   });
 
   it("uses Lee Hyeongbae's two fixed subscriptions", () => {

@@ -21,6 +21,13 @@ export type IndividualProfileHighlight = {
   result: string;
 };
 
+export type IndividualProfileMonthlyInsight = {
+  topicTitle?: string;
+  topicBasisLabel?: string;
+  promptTopics: IndividualProfilePromptTopic[];
+  highlights: IndividualProfileHighlight[];
+};
+
 export type IndividualProfileData = {
   email: string;
   displayName: string;
@@ -72,6 +79,7 @@ export type IndividualProfileData = {
   monthlyPromptCounts: Array<{ month: string; prompts: number }>;
   dailyPromptCounts: Array<{ date: string; prompts: number }>;
   insightMonth?: string;
+  monthlyInsights?: Readonly<Record<string, IndividualProfileMonthlyInsight>>;
   promptTopics: IndividualProfilePromptTopic[];
   fileBreakdown: IndividualProfileFileBreakdown[];
   highlights: IndividualProfileHighlight[];
@@ -155,6 +163,81 @@ export const kimJaewooProfileData: IndividualProfileData = {
     { date: "2026-08-17", prompts: 9 },
     { date: "2026-08-18", prompts: 10 },
   ],
+  monthlyInsights: {
+    "2026-08": {
+      topicTitle: "8월 대화·프롬프트 업무 영역",
+      topicBasisLabel: "8월 Drive 프롬프트 169건 · 결과물 본문·파일명 교차 분석",
+      promptTopics: [
+        {
+          label: "리서치·트렌드 수집",
+          count: 51,
+          description: "AI 산업 동향, Genspark 조사 결과와 IRIS 연구개발 공고를 반복 수집·정리했습니다.",
+          examples: ["Genspark v1", "AI trend v1", "IRIS R&D"],
+          color: "#476a6f",
+        },
+        {
+          label: "AX 대시보드·KPI",
+          count: 47,
+          description: "전사·개인·임원 대시보드와 AX KPI를 갱신하고 배포·수집 상태를 점검했습니다.",
+          examples: ["V3 경영진 대시보드", "KJW dashboard refresh", "AX KPI update"],
+          color: "#0f8b8d",
+        },
+        {
+          label: "메일·지식관리",
+          count: 24,
+          description: "메일 요약과 Claude 세션을 Drive·Wiki·Notion으로 구조화해 업무 지식으로 보관했습니다.",
+          examples: ["Amaranth 메일 요약", "Claude session to wiki", "세션 백업"],
+          color: "#2f8f46",
+        },
+        {
+          label: "보고·콘텐츠 제작",
+          count: 21,
+          description: "경영 보고 자료, 회의록과 AI 활용 콘텐츠를 문서·발표 형식으로 제작했습니다.",
+          examples: ["GPU 서버 CEO 보고", "로봇 솔루션 회의록", "데일리 블로그"],
+          color: "#e85d4f",
+        },
+        {
+          label: "기획·기타 업무",
+          count: 26,
+          description: "로봇 솔루션, 상표 출원과 반복업무 자동화 등 사업·운영 과제를 검토했습니다.",
+          examples: ["4족보행로봇", "상표출원 비용품의", "업무 자동화"],
+          color: "#c58612",
+        },
+      ],
+      highlights: [
+        {
+          title: "4족보행로봇 순찰·CCTV 기술 검토",
+          category: "로봇 솔루션",
+          summary: "순찰 로봇의 영상 전송 구조, 공급사와 임무 소프트웨어를 조사하고 협업 회의 내용을 정리했습니다.",
+          result: "기술검토서 PDF·DOCX · 공급사 조사 문서 · 8월 18일 회의록",
+        },
+        {
+          title: "AI Agent GPU 서버 도입안",
+          category: "경영 의사결정",
+          summary: "AI Agent 개발용 GPU 서버의 모델 운용 조건과 투자 대안을 비교해 경영진 판단 자료로 구성했습니다.",
+          result: "2026년 8월 CEO 보고용 PPTX·PDF",
+        },
+        {
+          title: "상표 출원 비용 품의",
+          category: "법무·브랜드",
+          summary: "상표 출원 대상과 견적·비용 절감 경과를 정리해 결재 가능한 보고 자료로 만들었습니다.",
+          result: "CEO 보고용 PPTX·PDF",
+        },
+        {
+          title: "IRIS 연구과제 공고 자동화",
+          category: "R&D 기회 탐색",
+          summary: "접수 중 연구과제를 일별로 수집하고 마감일과 검토 우선순위를 구조화했습니다.",
+          result: "8월 일별 IRIS R&D XLSX·메일 초안",
+        },
+        {
+          title: "AI 트렌드·활용 콘텐츠",
+          category: "지식 확산",
+          summary: "최신 AI 동향과 내부 활용 사례를 반복 수집해 실무자가 읽을 수 있는 콘텐츠로 정리했습니다.",
+          result: "8월 일별 트렌드 Markdown · 블로그 초안·이미지",
+        },
+      ],
+    },
+  },
   promptTopics: [
     {
       label: "AX 대시보드·KPI",
@@ -527,6 +610,81 @@ export const leeHyeongbaeProfileData: IndividualProfileData = {
     { date: "2026-08-13", prompts: 3 },
     { date: "2026-08-18", prompts: 5 },
   ],
+  monthlyInsights: {
+    "2026-08": {
+      topicTitle: "8월 대화·프롬프트 업무 영역",
+      topicBasisLabel: "8월 Drive 대화 기록 33건 · 결과물 본문·파일명 교차 분석",
+      promptTopics: [
+        {
+          label: "안전보건 일일 브리핑",
+          count: 14,
+          description: "산업재해 동향, 법령과 주요 사고를 조사해 일일 안전보건 브리핑으로 정리했습니다.",
+          examples: ["8월 일일 브리핑", "중대재해 동향", "법령·행사 정보"],
+          color: "#e85d4f",
+        },
+        {
+          label: "현장 점검사진 위험요인 분석",
+          count: 8,
+          description: "건설현장 사진에서 위험요인을 식별하고 관련 법과 단계별 대책을 구조화했습니다.",
+          examples: ["점검사진 분석", "위험요인·법·대책", "사고유형 분류"],
+          color: "#0f8b8d",
+        },
+        {
+          label: "재해현황·분류 데이터",
+          count: 5,
+          description: "철도·건설 재해 원천을 분석 가능한 표 형식으로 변환하고 분류 체계를 점검했습니다.",
+          examples: ["철도 재해현황", "분석완료 데이터본", "CSV·XLSX 변환"],
+          color: "#476a6f",
+        },
+        {
+          label: "일일 업무보고",
+          count: 4,
+          description: "당일 조사·분석·산출물을 요약해 후속 조치가 드러나는 업무보고로 작성했습니다.",
+          examples: ["일일업무보고", "업무 요약", "권고 조치"],
+          color: "#2f8f46",
+        },
+        {
+          label: "세션 아카이브·운영",
+          count: 2,
+          description: "Claude 작업 세션과 산출물을 통합 보관하고 재사용 가능한 기록으로 정리했습니다.",
+          examples: ["Claude backup", "세션 통합 보고서", "Main Agent"],
+          color: "#c58612",
+        },
+      ],
+      highlights: [
+        {
+          title: "건설현장 점검사진 위험요인 분석",
+          category: "안전 진단",
+          summary: "현장 사진의 위험요인을 사고유형, 관련 법규와 공학적·관리적 대책으로 연결했습니다.",
+          result: "위험요인+법+대책+유형 분석완료 XLSX·CSV",
+        },
+        {
+          title: "안전보건 일일 브리핑",
+          category: "동향·법령",
+          summary: "최신 산업재해 사례와 법령·행사 정보를 실무 우선조치와 함께 일별로 정리했습니다.",
+          result: "8월 1~13일 DOCX·Markdown·텍스트 브리핑",
+        },
+        {
+          title: "철도 재해현황 데이터 변환",
+          category: "데이터 정비",
+          summary: "철도 재해현황 원천을 후속 분석에 사용할 수 있도록 구조화하고 분류 기준을 정리했습니다.",
+          result: "분석용 표 데이터 · 변환 대화 기록",
+        },
+        {
+          title: "일일 업무보고 자동화",
+          category: "업무 기록",
+          summary: "조사와 분석 결과를 일일 단위로 요약해 진행 내용과 후속 과제를 지속적으로 남겼습니다.",
+          result: "8월 1~13일 일일 업무보고 저장본",
+        },
+        {
+          title: "Claude 세션 아카이브",
+          category: "지식관리",
+          summary: "작업 세션과 결과물을 통합 정리해 이후 업무에서 검색·재사용할 수 있는 기록으로 만들었습니다.",
+          result: "세션 아카이브 통합 보고서",
+        },
+      ],
+    },
+  },
   promptTopics: [
     {
       label: "초기 프로젝트 대화 백업",
@@ -914,8 +1072,8 @@ export const jeongJaeyoProfileData: IndividualProfileData = {
     activityMetricDetail: "Claude Code 1,169건 · Codex 5,129건",
     trendTitle: "2026년 7월 일별 업무 지시 추이",
     trendSeriesLabel: "업무 지시",
-    topicBasisLabel: "7월 일자별 저장 인덱스의 상위 작업 경로 · 같은 날 복수 경로 포함",
-    topicTitle: "7월 주요 개발 작업 영역",
+    topicBasisLabel: "선택 월 일자별 저장 인덱스의 상위 작업 경로 · 같은 날 복수 경로 포함",
+    topicTitle: "주요 개발 작업 영역",
     fileTotalLabel: "활동일 폴더",
     outputMetricLabel: "실제 Git 커밋",
     outputMetricValue: 4_137,
@@ -930,7 +1088,7 @@ export const jeongJaeyoProfileData: IndividualProfileData = {
     { month: "2026-05", prompts: 833 },
     { month: "2026-06", prompts: 275 },
     { month: "2026-07", prompts: 966 },
-    { month: "2026-08", prompts: 919 },
+    { month: "2026-08", prompts: 934 },
   ],
   insightMonth: "2026-07",
   dailyPromptCounts: [
@@ -965,7 +1123,83 @@ export const jeongJaeyoProfileData: IndividualProfileData = {
     { date: "2026-08-13", prompts: 244 },
     { date: "2026-08-14", prompts: 77 },
     { date: "2026-08-18", prompts: 78 },
+    { date: "2026-08-19", prompts: 71 },
   ],
+  monthlyInsights: {
+    "2026-08": {
+      topicTitle: "8월 주요 개발 작업 영역",
+      topicBasisLabel: "8월 사람 업무 지시 934건 · 일자별 instructions 원천 분석",
+      promptTopics: [
+        {
+          label: "근로자 온보딩·인증",
+          count: 215,
+          description: "근로자 로그인, 약관 동의, 초기 비밀번호 변경과 전체 근로자 온보딩 흐름을 구현·검증했습니다.",
+          examples: ["근로자 로그인", "최초 비밀번호 변경", "약관·온보딩"],
+          color: "#0f8b8d",
+        },
+        {
+          label: "SOS·작업중지·푸시",
+          count: 220,
+          description: "SOS와 작업중지 요청을 실제 데이터에 연결하고 푸시 알림·이동·조회 흐름을 고도화했습니다.",
+          examples: ["작업중지 실데이터", "SOS 접근 기준", "푸시 알림 이동"],
+          color: "#e85d4f",
+        },
+        {
+          label: "모바일 앱·권한 메뉴",
+          count: 188,
+          description: "WEB·MOBILE 동적 메뉴 권한, 프로필 정책과 모바일 화면 동작을 역할별로 정비했습니다.",
+          examples: ["동적 메뉴 권한", "관리자·근로자 모바일", "프로필 정책"],
+          color: "#2f8f46",
+        },
+        {
+          label: "배포·DB·Git 운영",
+          count: 181,
+          description: "개발 DB SQL, worktree와 브랜치 병합, iOS·Android 배포 준비를 작업 흐름 안에서 관리했습니다.",
+          examples: ["개발 DB SQL", "worktree·merge", "App Store 준비"],
+          color: "#476a6f",
+        },
+        {
+          label: "GH·AI 도구·업무 아카이브",
+          count: 130,
+          description: "GH 백엔드·배치 작업, AI 스킬과 회의 기록, 산출물 수집·마스킹 자동화를 정리했습니다.",
+          examples: ["GH backend·batch", "회의 녹음 skill", "산출물 수집·마스킹"],
+          color: "#c58612",
+        },
+      ],
+      highlights: [
+        {
+          title: "근로자 온보딩·인증 흐름 고도화",
+          category: "현장 사용자 경험",
+          summary: "로그인부터 약관 동의와 최초 비밀번호 변경까지 근로자 가입·인증 전 과정을 실제 운영 기준으로 정비했습니다.",
+          result: "근로자 로그인·약관·비밀번호 변경 구현 및 검증 기록",
+        },
+        {
+          title: "SOS·작업중지 실데이터 및 푸시 연동",
+          category: "현장 안전 기능",
+          summary: "SOS와 작업중지 기능을 실데이터에 연결하고 알림 수신 후 상세 화면으로 이어지는 흐름을 구현했습니다.",
+          result: "작업중지·SOS 접근 기준 · 푸시·알림 목록·이동 동작",
+        },
+        {
+          title: "WEB·MOBILE 동적 메뉴 권한",
+          category: "권한 체계",
+          summary: "사용자 역할에 따라 웹과 모바일 메뉴가 동적으로 노출되도록 권한 구조와 화면 동작을 정비했습니다.",
+          result: "역할별 메뉴 권한 · 관리자·근로자 모바일 화면",
+        },
+        {
+          title: "모바일 앱 스토어 배포 준비",
+          category: "제품 배포",
+          summary: "iOS·Android 앱 등록에 필요한 계정과 빌드·심사 준비 항목을 점검하고 운영 이슈를 정리했습니다.",
+          result: "App Store 등록 준비 · 배포 체크리스트·운영 기록",
+        },
+        {
+          title: "얼굴인식 출역·알림 이력 안정화",
+          category: "운영 안정화",
+          summary: "얼굴인식 출역 오류와 알림 이력 문제를 재현하고 데이터·화면 흐름을 수정·검증했습니다.",
+          result: "출역 오류 분석 · 알림 이력 개선 · 실제 커밋·patch 기록",
+        },
+      ],
+    },
+  },
   promptTopics: [
     {
       label: "함안 현장 플랫폼",

@@ -5284,9 +5284,21 @@ function IndividualProfileView({
   const sourceLinks = profile.sourceLinks ?? [
     { label: "Drive 원천", url: profile.drive.folderUrl },
   ];
-  const periodInsightsAvailable = profile.insightMonth === selectedMonth;
-  const periodPromptTopics = periodInsightsAvailable ? profile.promptTopics : [];
-  const periodHighlights = periodInsightsAvailable ? profile.highlights : [];
+  const legacyMonthlyInsight = profile.insightMonth === selectedMonth
+    ? {
+        topicTitle: profile.drive.topicTitle,
+        topicBasisLabel: profile.drive.topicBasisLabel,
+        promptTopics: profile.promptTopics,
+        highlights: profile.highlights,
+      }
+    : null;
+  const selectedMonthlyInsight = profile.monthlyInsights?.[selectedMonth] ?? legacyMonthlyInsight;
+  const periodInsightsAvailable = selectedMonthlyInsight !== null;
+  const periodPromptTopics = selectedMonthlyInsight?.promptTopics ?? [];
+  const periodHighlights = selectedMonthlyInsight?.highlights ?? [];
+  const periodTopicTitle = selectedMonthlyInsight?.topicTitle ?? profile.drive.topicTitle ?? "대화·프롬프트 업무 영역";
+  const periodTopicBasisLabel = selectedMonthlyInsight?.topicBasisLabel ??
+    profile.drive.topicBasisLabel ?? `본문 분석 ${profile.drive.promptFiles}건`;
   const maxTopicCount = Math.max(...periodPromptTopics.map((topic) => topic.count), 1);
   const recentPromptTrend = selectedMonthDailyCounts.map((item) => ({
     ...item,
@@ -5452,11 +5464,11 @@ function IndividualProfileView({
         <div className="panel-header">
           <div>
             <span className="eyebrow">Prompt Mix</span>
-            <h2>{profile.drive.topicTitle ?? "대화·프롬프트 업무 영역"}</h2>
+            <h2>{periodTopicTitle}</h2>
           </div>
           <span className="state-pill neutral">
             {periodInsightsAvailable
-              ? (profile.drive.topicBasisLabel ?? `본문 분석 ${profile.drive.promptFiles}건`)
+              ? periodTopicBasisLabel
               : "기간별 분류 원천 수집중"}
           </span>
         </div>
