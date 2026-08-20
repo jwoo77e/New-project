@@ -5285,7 +5285,6 @@ function IndividualProfileView({
     { label: "Drive 원천", url: profile.drive.folderUrl },
   ];
   const maxTopicCount = Math.max(...profile.promptTopics.map((topic) => topic.count), 1);
-  const maxFileCount = Math.max(...profile.fileBreakdown.map((item) => item.count), 1);
   const recentPromptTrend = selectedMonthDailyCounts.map((item) => ({
     ...item,
     label: item.date.slice(5).replace("-", "/"),
@@ -5470,34 +5469,6 @@ function IndividualProfileView({
             </article>
           ))}
         </div>
-      </section>
-
-      <section className="panel panel-large individual-profile-file-panel">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">Drive Inventory</span>
-            <h2>{profile.drive.inventoryTitle ?? "저장 파일 구성"}</h2>
-          </div>
-          <span className="state-pill neutral">
-            {profile.drive.inventorySummaryLabel ?? (profile.drive.analyzedFileCount
-              ? `분석 ${numberFormat.format(profile.drive.analyzedFileCount)}개 · Drive ${numberFormat.format(profile.drive.fileCount)}개`
-              : `전체 ${numberFormat.format(profile.drive.fileCount)}개`)}
-          </span>
-        </div>
-        <div className="approval-meter-list">
-          {profile.fileBreakdown.map((item) => (
-            <MeterRow
-              color={item.color}
-              key={item.label}
-              label={item.label}
-              value={(item.count / maxFileCount) * 100}
-              valueLabel={`${numberFormat.format(item.count)}${item.unit ?? "개"} · ${item.description}`}
-            />
-          ))}
-        </div>
-        <small className="approval-footnote">
-          {profile.drive.inventoryFootnote ?? "파일 수는 저장 신호입니다. 승인·실사용·품질·재사용 상태가 확인된 항목만 인사평가 근거 후보로 사용할 수 있습니다."}
-        </small>
       </section>
 
       <section className="panel individual-profile-highlight-panel">
