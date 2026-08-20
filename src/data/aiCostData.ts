@@ -65,11 +65,11 @@ export type DashboardData = {
 
 export const initialDashboardData: DashboardData = {
   sourceMeta: {
-    fileName: "AI 관련 비용 분석_부서별_대시보드용.xlsx + 2026년 4-5월 법인카드 AI 사용내역 + 청구내역조회20260720.xlsx + 승인내역조회20260820.xlsx",
-    sourceSheet: "키워드검색결과 + 2026년 전체내역 + 2026년 5월 + 청구내역조회20260720 + 승인내역조회20260820",
+    fileName: "AI 관련 비용 분석_부서별_대시보드용.xlsx + 2026년 4-5월 법인카드 AI 사용내역 + 청구내역조회20260720.xlsx + 하나카드_승인내역_2026-07.xlsx",
+    sourceSheet: "키워드검색결과 + 2026년 전체내역 + 2026년 5월 + 청구내역조회20260720 + 카드승인내역",
     period: "2026년 1월 - 7월",
-    recordCount: 128,
-    totalActual: 32194545,
+    recordCount: 149,
+    totalActual: 36942749,
     expectedMonthlyFixed: 2240000,
     expectedQuarterFixed: 11200000,
     priorYearTotal: 13004940,
@@ -81,7 +81,7 @@ export const initialDashboardData: DashboardData = {
     { month: "2026-04", label: "4월", amount: 3987709, transactions: 22 },
     { month: "2026-05", label: "5월", amount: 9055396, transactions: 23 },
     { month: "2026-06", label: "6월", amount: 3486961, transactions: 19 },
-    { month: "2026-07", label: "7월", amount: 865401, transactions: 10 },
+    { month: "2026-07", label: "7월", amount: 5613605, transactions: 31 },
   ],
   forecastAdjustments: [
     {
@@ -126,8 +126,8 @@ export const initialDashboardData: DashboardData = {
       sourceName: "자금회계팀",
       ownerNote:
         "Gemini, Claude, Genspark, Gamma, ChatGPT, Ollama 정액요금과 공용 API 사용요금",
-      transactions: 81,
-      total: 26880570,
+      transactions: 102,
+      total: 31628774,
       monthly: {
         "2026-01": 2537273,
         "2026-02": 4692975,
@@ -135,7 +135,7 @@ export const initialDashboardData: DashboardData = {
         "2026-04": 3555417,
         "2026-05": 8204483,
         "2026-06": 0,
-        "2026-07": 865401,
+        "2026-07": 5613605,
       },
     },
     {
@@ -197,22 +197,22 @@ export const initialDashboardData: DashboardData = {
   ],
   categoryCosts: [
     { name: "Google/Gemini", amount: 13686142, color: "#0f8b8d" },
-    { name: "Claude/Anthropic", amount: 6330633, color: "#5f6f8c" },
-    { name: "Genspark", amount: 5559585, color: "#e85d4f" },
-    { name: "ChatGPT/OpenAI", amount: 5717655, color: "#c58612" },
+    { name: "Claude/Anthropic", amount: 9432373, color: "#5f6f8c" },
+    { name: "Genspark", amount: 6546468, color: "#e85d4f" },
+    { name: "ChatGPT/OpenAI", amount: 6339854, color: "#c58612" },
     { name: "미분류", amount: 532745, color: "#7a8580" },
-    { name: "Gamma", amount: 302977, color: "#2f8f46" },
+    { name: "Gamma", amount: 340359, color: "#2f8f46" },
     { name: "Perplexity", amount: 33126, color: "#7f5aa2" },
     { name: "Ollama", amount: 31682, color: "#42a6a8" },
   ],
   vendorCosts: [
     { name: "토스페이먼츠", amount: 5577335 },
-    { name: "MAINFUNC PTE. LTD.", amount: 5368531 },
+    { name: "MAINFUNC PTE. LTD.", amount: 6355414 },
     { name: "구글클라우드코리아_TOSS", amount: 5126160 },
-    { name: "Anthropic PBC", amount: 3758425 },
+    { name: "Anthropic PBC", amount: 6860165 },
     { name: "Claude.ai Subscription", amount: 2384708 },
     { name: "구글클라우드코리아", amount: 2240512 },
-    { name: "OpenAI ChatGPT Subscription", amount: 2496187 },
+    { name: "OpenAI ChatGPT Subscription", amount: 3118386 },
     { name: "OPENAI OPCO", amount: 2121333 },
     { name: "OpenAI San Francisco", amount: 1100135 },
     { name: "구글플레이/구글페이먼트코리아", amount: 591500 },
@@ -249,6 +249,14 @@ export const initialDashboardData: DashboardData = {
       vendor: "GENSPARK.AI",
       category: "Genspark",
       amount: 1029461,
+    },
+    {
+      date: "2026-07-17",
+      department: "자금회계팀(공용)",
+      item: "Genspark AI 이용료",
+      vendor: "MAINFUNC PTE. LTD.",
+      category: "Genspark",
+      amount: 986883,
     },
     {
       date: "2026-04-02",

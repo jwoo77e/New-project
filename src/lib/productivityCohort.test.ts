@@ -31,7 +31,7 @@ describe("buildProductivityExecutiveModel", () => {
   it("uses current subscriptions only as the open-month minimum cost", () => {
     const augustApprovalTotals = approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-08");
 
-    expect(model.cohorts[0].costKrw).toBe(865_401);
+    expect(model.cohorts[0].costKrw).toBe(5_613_605);
     expect(model.cohorts[1].costKrw).toBe(augustApprovalTotals.monthlyKrw);
     expect(model.currentFixedCostKrw).toBe(augustApprovalTotals.monthlyKrw);
   });
@@ -46,7 +46,7 @@ describe("buildProductivityExecutiveModel", () => {
       driveOutputSignals: 58,
     });
     expect(model.costUsageSeries.find((item) => item.month === "2026-07")).toMatchObject({
-      costKrw: 865_401,
+      costKrw: 5_613_605,
       costStatus: "확정",
       chatGptConversations: 0,
       claudeDriveConversations: 225,
