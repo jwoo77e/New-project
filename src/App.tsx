@@ -1498,7 +1498,7 @@ function ExecutiveDesignOverview({
       label: "측정",
       value: `${workforce.tokenMeasuredUsers}/${workforce.tokenMeasurementTarget}명`,
       detail: `원천 연결 대기 ${workforce.tokenPendingUsers.length}명`,
-      direction: "3명 대기",
+      direction: `${workforce.tokenPendingUsers.length}명 대기`,
       tone: "blue",
     },
     {
@@ -1635,7 +1635,7 @@ function ExecutiveDesignOverview({
               <AlertTriangle size={16} /> 주의 필요
             </strong>
             <p>당월 비용은 고정 구독비 최소값이며 API·변동비는 확정 대기입니다.</p>
-            <p>대화 분류는 {model.classifiedActivityMonthLabel}까지이며, 개인별 토큰 측정 원천은 3명 연결 대기입니다.</p>
+            <p>대화 분류는 {model.classifiedActivityMonthLabel}까지이며, 개인별 토큰 측정 원천은 {workforce.tokenPendingUsers.length}명 연결 대기입니다.</p>
           </div>
         </section>
       </div>
@@ -1770,11 +1770,12 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
           <div className="section-heading">
             <div>
               <strong>AI 활동 구간 및 직군별 근거</strong>
-              <span>{workforce.source.tokenPeriod} · 현재 {workforce.tokenMeasuredUsers}명 / 목표 {workforce.tokenMeasurementTarget}명</span>
+              <span>{workforce.source.tokenPeriod} · 토큰 수집 {workforce.tokenMeasuredUsers}명 / 목표 {workforce.tokenMeasurementTarget}명 · 활동 구간 분류 {workforce.tokenActivityClassifiedUsers}명</span>
             </div>
           </div>
           <div className="tracked-user-groups">
             <p><b>원천 연결 대기 {workforce.tokenPendingUsers.length}명</b>{workforce.tokenPendingUsers.map((user) => user.name).join(" · ")}</p>
+            <p><b>7월 활동 구간 분류 {workforce.tokenActivityClassifiedUsers}명</b>추가 연결 3명은 토큰 수집은 시작됐으며, 7월 사용 이력 동기화 후 활동 구간에 반영됩니다.</p>
           </div>
           <div className="usage-segment-list">
             {workforce.usageSegments.map((segment) => (

@@ -66,7 +66,16 @@ const julyTokenUsers = Object.entries(julySpend.users)
     totalTokens: usage.totalTokens,
   }))
   .sort((a, b) => b.totalTokens - a.totalTokens || a.displayName.localeCompare(b.displayName, "ko"));
-const measuredTokenEmails = new Set(julyTokenUsers.map((user) => user.email.toLowerCase()));
+// These accounts now have token collection connected; their July usage history is pending sync.
+const supplementalTokenMeasuredAccounts = [
+  "dhlee@riskzero.kr",
+  "sjpark@riskzero.kr",
+  "songinna@riskzero.kr",
+];
+const measuredTokenEmails = new Set([
+  ...julyTokenUsers.map((user) => user.email.toLowerCase()),
+  ...supplementalTokenMeasuredAccounts,
+]);
 const tokenPendingUsers = teamPlanRecords
   .filter((record) => !measuredTokenEmails.has(record.account.toLowerCase()))
   .map((record) => ({
@@ -79,7 +88,8 @@ const lowUsageUsers = julyTokenUsers.filter((user) => user.totalTokens < lowUsag
 const regularUsers = julyTokenUsers.filter(
   (user) => user.totalTokens >= lowUsageThreshold && user.totalTokens < powerUserThreshold,
 );
-const tokenMeasuredUsers = julyTokenUsers.length;
+const tokenMeasuredUsers = measuredTokenEmails.size;
+const tokenActivityClassifiedUsers = julyTokenUsers.length;
 const tokenMeasurementTarget = teamPlanRecords.length;
 
 if (tokenMeasuredUsers + tokenPendingUsers.length !== tokenMeasurementTarget) {
@@ -121,6 +131,7 @@ export const executiveWorkforceInsightData = {
   projectedMonthlyKrw,
   projectedCoverageRate: 100,
   tokenMeasuredUsers,
+  tokenActivityClassifiedUsers,
   tokenMeasurementTarget,
   tokenMeasurementCoverageRate: (tokenMeasuredUsers / tokenMeasurementTarget) * 100,
   tokenPendingUsers,
