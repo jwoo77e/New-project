@@ -124,17 +124,30 @@ describe("initialAiToolApprovalData", () => {
     expect(
       initialAiToolApprovalData.records.find(
         (record) =>
-          record.account === "riskzero.marketing@gmail.com" &&
+          record.account === "sblim0519@riskzero.kr" &&
           record.category === "Claude",
       ),
     ).toMatchObject({
       owner: "임성범 부장 / 전략사업팀",
       tool: "Claude Team Plan Standard",
+      linkedAccount: "없음",
       monthlyUsd: 25,
       monthlyKrw: 37_125,
       pricingEffectiveMonth: "2026-08",
       previousMonthlyUsd: 220,
       previousMonthlyKrw: 326_700,
+    });
+  });
+
+  it("uses Lee Hyeongbae's own account without a linked-account label", () => {
+    expect(
+      initialAiToolApprovalData.records.find(
+        (record) => record.owner === "이형배 상무 / 기술연구소" && record.category === "Claude",
+      ),
+    ).toMatchObject({
+      account: "hb777lee@riskzero.kr",
+      linkedAccount: "없음",
+      tool: "Claude Team Plan Standard",
     });
   });
 
