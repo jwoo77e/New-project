@@ -6,6 +6,29 @@ import {
 } from "./aiToolApprovalData";
 
 describe("initialAiToolApprovalData", () => {
+  it("uses the assigned company email for each named approval account", () => {
+    const accountsByOwner = (owner: string) => initialAiToolApprovalData.records
+      .filter((record) => record.owner === owner)
+      .map((record) => record.account);
+
+    expect(accountsByOwner("이형배 상무 / 기술연구소")).toContain("hb777lee@riskzero.kr");
+    expect(accountsByOwner("조욱상 이사 / 경영혁신팀")).toContain("airyoubi77@riskzero.kr");
+    expect(accountsByOwner("이병현 이사 / 자금회계팀")).toContain("lbh0902@riskzero.kr");
+    expect(accountsByOwner("박연석 전무 / 전략실")).toContain("yspark@riskzero.kr");
+    expect(accountsByOwner("김대일 상무 / 기술연구소")).toContain("bigone@riskzero.kr");
+    expect(accountsByOwner("조주연 부장 / 전략사업팀")).toContain("jyjo@riskzero.kr");
+    expect(accountsByOwner("최종윤 이사 / 플랫폼개발")).toContain("drager72@riskzero.kr");
+    expect(accountsByOwner("최용호 대리 / 스마트서비스")).toContain("use0505@riskzero.kr");
+    expect(accountsByOwner("강훈 부장 / 스마트서비스")).toContain("khoon@riskzero.kr");
+    expect(accountsByOwner("강재민 사원 / 스마트서비스")).toContain("woals1329@riskzero.kr");
+    expect(accountsByOwner("김진희 과장 / 스마트서비스")).toContain("kjh17@riskzero.kr");
+    expect(accountsByOwner("고원상 대리 / 스마트서비스")).toContain("day@riskzero.kr");
+    expect(accountsByOwner("이창섭 부장 / 플랫폼개발")).toContain("cslee@riskzero.kr");
+    expect(accountsByOwner("이진욱 부장 / 스마트서비스")).toContain("pentasix@riskzero.kr");
+    expect(accountsByOwner("박명수 과장 / 스마트서비스")).toContain("pms0805@riskzero.kr");
+    expect(accountsByOwner("윤종호 부장 / 플랫폼개발")).toContain("jhyun@riskzero.kr");
+  });
+
   it("removes the retired company-wide ChatGPT Pro account", () => {
     expect(
       initialAiToolApprovalData.records.find(
@@ -26,7 +49,7 @@ describe("initialAiToolApprovalData", () => {
   it("moves Lee Hyungbae to ChatGPT Business from August 2026", () => {
     expect(
       initialAiToolApprovalData.records.find(
-        (record) => record.account === "hbgptrz260806@gmail.com",
+        (record) => record.account === "hb777lee@riskzero.kr",
       ),
     ).toMatchObject({
       owner: "이형배 상무 / 기술연구소",
@@ -63,7 +86,7 @@ describe("initialAiToolApprovalData", () => {
         startMonth: "2026-08",
       }),
       expect.objectContaining({
-        account: "hbgptrz260806@gmail.com",
+        account: "hb777lee@riskzero.kr",
         owner: "이형배 상무 / 기술연구소",
         monthlyUsd: 25,
         monthlyKrw: 37_125,
