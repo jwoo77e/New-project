@@ -5284,7 +5284,10 @@ function IndividualProfileView({
   const sourceLinks = profile.sourceLinks ?? [
     { label: "Drive 원천", url: profile.drive.folderUrl },
   ];
-  const maxTopicCount = Math.max(...profile.promptTopics.map((topic) => topic.count), 1);
+  const periodInsightsAvailable = profile.insightMonth === selectedMonth;
+  const periodPromptTopics = periodInsightsAvailable ? profile.promptTopics : [];
+  const periodHighlights = periodInsightsAvailable ? profile.highlights : [];
+  const maxTopicCount = Math.max(...periodPromptTopics.map((topic) => topic.count), 1);
   const recentPromptTrend = selectedMonthDailyCounts.map((item) => ({
     ...item,
     label: item.date.slice(5).replace("-", "/"),
@@ -5452,11 +5455,13 @@ function IndividualProfileView({
             <h2>{profile.drive.topicTitle ?? "대화·프롬프트 업무 영역"}</h2>
           </div>
           <span className="state-pill neutral">
-            {profile.drive.topicBasisLabel ?? `본문 분석 ${profile.drive.promptFiles}건`}
+            {periodInsightsAvailable
+              ? (profile.drive.topicBasisLabel ?? `본문 분석 ${profile.drive.promptFiles}건`)
+              : "기간별 분류 원천 수집중"}
           </span>
         </div>
         <div className="individual-profile-topic-grid">
-          {profile.promptTopics.map((topic) => (
+          {periodPromptTopics.map((topic) => (
             <article key={topic.label}>
               <div className="individual-profile-topic-head">
                 <span className="category-dot" style={{ background: topic.color }} />
@@ -5468,6 +5473,9 @@ function IndividualProfileView({
               <small>{topic.examples.join(" · ")}</small>
             </article>
           ))}
+          {!periodInsightsAvailable && (
+            <p className="empty-state">{fullMonthLabel(selectedMonth)} 대화·프롬프트 업무 영역 분류 원천 수집중</p>
+          )}
         </div>
       </section>
 
@@ -5477,10 +5485,12 @@ function IndividualProfileView({
             <span className="eyebrow">Output Highlights</span>
             <h2>대표 결과물</h2>
           </div>
-          <span className="state-pill warning">성과 검증 대기</span>
+          <span className={`state-pill ${periodInsightsAvailable ? "warning" : "neutral"}`}>
+            {periodInsightsAvailable ? "성과 검증 대기" : "기간별 원천 수집중"}
+          </span>
         </div>
         <div className="individual-profile-highlight-list">
-          {profile.highlights.map((item, index) => (
+          {periodHighlights.map((item, index) => (
             <article key={item.title}>
               <span>{index + 1}</span>
               <div>
@@ -5491,6 +5501,9 @@ function IndividualProfileView({
               </div>
             </article>
           ))}
+          {!periodInsightsAvailable && (
+            <p className="empty-state">{fullMonthLabel(selectedMonth)} 대표 결과물 원천 수집중</p>
+          )}
         </div>
       </section>
 

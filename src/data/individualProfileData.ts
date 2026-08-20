@@ -71,6 +71,7 @@ export type IndividualProfileData = {
   };
   monthlyPromptCounts: Array<{ month: string; prompts: number }>;
   dailyPromptCounts: Array<{ date: string; prompts: number }>;
+  insightMonth?: string;
   promptTopics: IndividualProfilePromptTopic[];
   fileBreakdown: IndividualProfileFileBreakdown[];
   highlights: IndividualProfileHighlight[];
@@ -931,6 +932,7 @@ export const jeongJaeyoProfileData: IndividualProfileData = {
     { month: "2026-07", prompts: 966 },
     { month: "2026-08", prompts: 919 },
   ],
+  insightMonth: "2026-07",
   dailyPromptCounts: [
     { date: "2026-07-01", prompts: 2 },
     { date: "2026-07-02", prompts: 15 },
