@@ -204,6 +204,7 @@ async function downloadDriveFolderZipParts({ env, folderUrl, outputDir }) {
   const folderId = extractDriveFolderId(folderUrl);
   const accessToken = await getGoogleAccessToken(env, {
     scopes: ["https://www.googleapis.com/auth/drive.readonly"],
+    subject: env.GOOGLE_DRIVE_IMPERSONATED_USER ?? "",
   });
   const driveFiles = await listDriveFolderFiles({ folderId, accessToken });
   const zipCandidates = driveFiles.filter((file) => isZipCandidate(file.name));
@@ -520,7 +521,7 @@ function run(command, args, { allowFailure = false } = {}) {
   });
 }
 
-export async function getGoogleAccessToken(env, { scopes }) {
+export async function getGoogleAccessToken(env, { scopes, subject = "" }) {
   const serviceAccount = await readGoogleServiceAccount(env);
   const tokenUri = serviceAccount.token_uri ?? "https://oauth2.googleapis.com/token";
   const nowSeconds = Math.floor(Date.now() / 1000);
@@ -531,6 +532,7 @@ export async function getGoogleAccessToken(env, { scopes }) {
     iat: nowSeconds,
     exp: nowSeconds + 3600,
   };
+  if (subject) claims.sub = subject;
   const assertionBody = [
     base64Url(JSON.stringify({ alg: "RS256", typ: "JWT" })),
     base64Url(JSON.stringify(claims)),
@@ -573,8 +575,40 @@ export async function getJson(url, options = {}) {
 }
 
 async function readGoogleServiceAccount(env) {
+  if (env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON) {
+    return parseServiceAccountJson(
+      env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON,
+      "GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON",
+    );
+  }
+
+  if (env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON_BASE64) {
+    try {
+      return parseServiceAccountJson(
+        Buffer.from(env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON_BASE64, "base64").toString("utf8"),
+        "GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON_BASE64",
+      );
+    } catch {
+      return parseServiceAccountJson(
+        env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON_BASE64,
+        "GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON_BASE64",
+      );
+    }
+  }
+
   if (env.GOOGLE_SERVICE_ACCOUNT_JSON) {
     return parseServiceAccountJson(env.GOOGLE_SERVICE_ACCOUNT_JSON, "GOOGLE_SERVICE_ACCOUNT_JSON");
+  }
+
+  if (env.GOOGLE_DRIVE_APPLICATION_CREDENTIALS) {
+    const credentialsPath = path.resolve(rootDir, env.GOOGLE_DRIVE_APPLICATION_CREDENTIALS);
+    if (!existsSync(credentialsPath)) {
+      throw new Error(`GOOGLE_DRIVE_APPLICATION_CREDENTIALS 파일을 찾을 수 없습니다: ${credentialsPath}`);
+    }
+    return parseServiceAccountJson(
+      await readFile(credentialsPath, "utf8"),
+      "GOOGLE_DRIVE_APPLICATION_CREDENTIALS",
+    );
   }
 
   if (env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64) {
@@ -593,7 +627,9 @@ async function readGoogleServiceAccount(env) {
     return parseServiceAccountJson(await readFile(credentialsPath, "utf8"), "GOOGLE_APPLICATION_CREDENTIALS");
   }
 
-  throw new Error("Drive 직접 다운로드에는 GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 또는 GOOGLE_APPLICATION_CREDENTIALS가 필요합니다.");
+  throw new Error(
+    "Drive 직접 다운로드에는 GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON_BASE64, GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 또는 GOOGLE_APPLICATION_CREDENTIALS가 필요합니다.",
+  );
 }
 
 function parseServiceAccountJson(text, sourceName) {

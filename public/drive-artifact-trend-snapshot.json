@@ -3,11 +3,11 @@
   "source": {
     "name": "Claude Drive 날짜별 저장 파일 증감",
     "status": "정상",
-    "collectedAt": "2026-08-08 21:03 KST",
-    "generatedAt": "2026-08-08T12:03:57.000Z",
-    "period": "2026-06-23 ~ 2026-08-08",
+    "collectedAt": "2026-08-20-09:57 KST",
+    "generatedAt": "2026-08-20T00:57:49.551Z",
+    "period": "2026-06-23 ~ 2026-08-20",
     "schedule": "매일 21:00 KST",
-    "note": "김재우·이형배 최신 검증 스냅샷에 2026-08-08 연결 Drive 하위 폴더 조회 결과를 합산했습니다. 세 루트 모두 하위 폴더를 포함하며 파일 생성일을 한국시간 기준으로 집계합니다."
+    "note": "김재우·이형배·전략사업팀 Drive 루트의 모든 하위 폴더를 읽기 전용으로 재귀 조회하고 파일 생성일을 한국시간 기준으로 집계합니다."
   },
   "repositories": [
     {
@@ -16,10 +16,10 @@
       "folderUrl": "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link",
       "artifacts": [],
       "inventory": {
-        "fileCount": 1658,
-        "directFileCount": 207,
-        "nestedFileCount": 1451,
-        "folderCount": 462,
+        "fileCount": 2099,
+        "directFileCount": 246,
+        "nestedFileCount": 1853,
+        "folderCount": 580,
         "maxDepth": 6,
         "metadataDateAnomalyCount": 85,
         "dailyCounts": [
@@ -113,7 +113,7 @@
           },
           {
             "date": "2026-07-15",
-            "count": 50
+            "count": 53
           },
           {
             "date": "2026-07-16",
@@ -169,7 +169,7 @@
           },
           {
             "date": "2026-07-29",
-            "count": 28
+            "count": 34
           },
           {
             "date": "2026-07-30",
@@ -209,7 +209,55 @@
           },
           {
             "date": "2026-08-08",
-            "count": 22
+            "count": 46
+          },
+          {
+            "date": "2026-08-09",
+            "count": 24
+          },
+          {
+            "date": "2026-08-10",
+            "count": 32
+          },
+          {
+            "date": "2026-08-11",
+            "count": 36
+          },
+          {
+            "date": "2026-08-12",
+            "count": 32
+          },
+          {
+            "date": "2026-08-13",
+            "count": 48
+          },
+          {
+            "date": "2026-08-14",
+            "count": 76
+          },
+          {
+            "date": "2026-08-15",
+            "count": 17
+          },
+          {
+            "date": "2026-08-16",
+            "count": 37
+          },
+          {
+            "date": "2026-08-17",
+            "count": 34
+          },
+          {
+            "date": "2026-08-18",
+            "count": 29
+          },
+          {
+            "date": "2026-08-19",
+            "count": 42
+          },
+          {
+            "date": "2026-08-20",
+            "count": 1
           }
         ]
       }
@@ -220,61 +268,13 @@
       "folderUrl": "https://drive.google.com/drive/folders/1OFfN4APAViKNtgURnmn9W51jSvcxy6fg?usp=sharing",
       "artifacts": [],
       "inventory": {
-        "fileCount": 1099,
+        "fileCount": 789,
         "directFileCount": 1,
-        "nestedFileCount": 1098,
-        "folderCount": 209,
+        "nestedFileCount": 788,
+        "folderCount": 253,
         "maxDepth": 4,
         "metadataDateAnomalyCount": 0,
         "dailyCounts": [
-          {
-            "date": "2026-06-25",
-            "count": 29
-          },
-          {
-            "date": "2026-06-26",
-            "count": 28
-          },
-          {
-            "date": "2026-06-27",
-            "count": 27
-          },
-          {
-            "date": "2026-06-28",
-            "count": 32
-          },
-          {
-            "date": "2026-06-29",
-            "count": 33
-          },
-          {
-            "date": "2026-06-30",
-            "count": 35
-          },
-          {
-            "date": "2026-07-01",
-            "count": 38
-          },
-          {
-            "date": "2026-07-02",
-            "count": 40
-          },
-          {
-            "date": "2026-07-03",
-            "count": 42
-          },
-          {
-            "date": "2026-07-04",
-            "count": 43
-          },
-          {
-            "date": "2026-07-05",
-            "count": 44
-          },
-          {
-            "date": "2026-07-06",
-            "count": 45
-          },
           {
             "date": "2026-07-07",
             "count": 47
@@ -328,28 +328,24 @@
             "count": 20
           },
           {
-            "date": "2026-07-29",
-            "count": 39
-          },
-          {
             "date": "2026-07-30",
-            "count": 29
+            "count": 70
           },
           {
             "date": "2026-07-31",
-            "count": 30
+            "count": 31
           },
           {
             "date": "2026-08-01",
-            "count": 39
+            "count": 40
           },
           {
             "date": "2026-08-02",
-            "count": 37
+            "count": 38
           },
           {
             "date": "2026-08-04",
-            "count": 82
+            "count": 87
           },
           {
             "date": "2026-08-05",
@@ -361,11 +357,39 @@
           },
           {
             "date": "2026-08-07",
-            "count": 11
+            "count": 12
           },
           {
             "date": "2026-08-08",
-            "count": 6
+            "count": 7
+          },
+          {
+            "date": "2026-08-09",
+            "count": 8
+          },
+          {
+            "date": "2026-08-10",
+            "count": 11
+          },
+          {
+            "date": "2026-08-11",
+            "count": 14
+          },
+          {
+            "date": "2026-08-12",
+            "count": 39
+          },
+          {
+            "date": "2026-08-13",
+            "count": 37
+          },
+          {
+            "date": "2026-08-18",
+            "count": 4
+          },
+          {
+            "date": "2026-08-19",
+            "count": 1
           }
         ]
       }
@@ -376,26 +400,34 @@
       "folderUrl": "https://drive.google.com/drive/folders/1NK9PNOb_fbByPSSz0AqydMYj5lUK2Q25?usp=drive_link",
       "artifacts": [],
       "inventory": {
-        "fileCount": 3,
-        "directFileCount": 1,
-        "nestedFileCount": 2,
-        "folderCount": 1,
-        "maxDepth": 1,
+        "fileCount": 92,
+        "directFileCount": 5,
+        "nestedFileCount": 87,
+        "folderCount": 82,
+        "maxDepth": 2,
         "metadataDateAnomalyCount": 0,
         "dailyCounts": [
           {
             "date": "2026-07-30",
             "count": 3
+          },
+          {
+            "date": "2026-08-06",
+            "count": 52
+          },
+          {
+            "date": "2026-08-10",
+            "count": 37
           }
         ]
       }
     }
   ],
   "totals": {
-    "files": 2760,
-    "directFiles": 209,
-    "nestedFiles": 2551,
-    "folders": 672,
+    "files": 2980,
+    "directFiles": 252,
+    "nestedFiles": 2728,
+    "folders": 915,
     "metadataDateAnomalies": 85
   }
 }

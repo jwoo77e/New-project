@@ -41,6 +41,7 @@ export async function collectDriveArtifactTrend({
 } = {}) {
   const accessToken = await getGoogleAccessToken(env, {
     scopes: ["https://www.googleapis.com/auth/drive.readonly"],
+    subject: env.GOOGLE_DRIVE_IMPERSONATED_USER ?? "",
   });
   const repositoryScans = [];
 

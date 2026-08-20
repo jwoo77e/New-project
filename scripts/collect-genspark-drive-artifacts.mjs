@@ -50,6 +50,7 @@ export async function collectGensparkDriveArtifacts({
   const folderId = extractDriveFolderId(folderUrl);
   const accessToken = await getGoogleAccessToken(env, {
     scopes: ["https://www.googleapis.com/auth/drive.readonly"],
+    subject: env.GOOGLE_DRIVE_IMPERSONATED_USER ?? "",
   });
   const scan = await scanGensparkDriveFolder({
     folderId,
