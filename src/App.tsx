@@ -4711,12 +4711,6 @@ function AdoptionView({
   const periodLabel = isWeekly
     ? selectedWeeklyUsage?.label ?? "주차 미선택"
     : fullMonthLabel(selectedMonth);
-  const trendData = isWeekly
-    ? data.weeklyUsageTrend
-    : data.monthlyTrend.map((item) => ({
-        ...item,
-        totalTokens: data.monthlySpend[item.key]?.totals.totalTokens ?? null,
-      }));
   const selectedMonthlySpend = data.monthlySpend[selectedMonth] ?? null;
   const coverageNote = isWeekly
     ? selectedWeeklyUsage
@@ -4795,27 +4789,6 @@ function AdoptionView({
           a.user.email.localeCompare(b.user.email);
       });
   }, [data.users, isWeekly, query, selectedMonth, selectedMonthlySpend, selectedWeek, selectedWeeklyUsage, sortKey]);
-
-  const gitlabTrendData = isWeekly
-    ? data.usageWeeks.map((week) => {
-        const period = data.weeklyUsage[week];
-        const summary = gitlabSummaryForRange(period.startDate, period.endDate);
-        return { key: week, label: period.label, ...summary };
-      })
-    : data.months.map((month) => ({
-        key: month,
-        label: monthLabel(month),
-        ...gitlabSummaryForRange(`${month}-01`, `${month}-31`),
-      }));
-  const gitlabTrendByKey = new Map(gitlabTrendData.map((item) => [item.key, item]));
-  const integratedTrendData = trendData.map((item) => {
-    const gitlab = gitlabTrendByKey.get(item.key);
-    return {
-      ...item,
-      commitCount: gitlab?.commitCount ?? 0,
-      changedLines: gitlab?.changedLines ?? 0,
-    };
-  });
 
   const measuredRowCount = rows.filter((row) => row.user.measurementStatus === "measured").length;
   const sharedAccountRowCount = rows.filter(
@@ -5016,74 +4989,6 @@ function AdoptionView({
           <small>{numberFormat.format(gitlabPeriodSummary.changedLines)}줄 수정 · {gitlabPeriodSummary.activeAuthors}명</small>
         </article>
       </section>
-
-      {!isWeekly && <section className="panel panel-wide individual-trend-panel">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">AI × GitLab Trend</span>
-            <h2>{isWeekly ? "주차별 AI 사용·GitLab 개발 활동 추이" : "월별 AI 사용·GitLab 개발 활동 추이"}</h2>
-          </div>
-          <span className="state-pill neutral">
-            {isWeekly ? `${data.usageWeeks.length}개 주차` : `${data.months.length}개월`} · 활성 프로젝트 {gitlabPeriodSummary.activeProjects}개
-          </span>
-        </div>
-        <div className="chart-frame individual-trend-chart">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={integratedTrendData} margin={{ top: 12, right: 18, left: 0, bottom: 0 }}>
-              <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
-              <XAxis dataKey="label" tickLine={false} axisLine={false} />
-              <YAxis
-                yAxisId="lines"
-                tickFormatter={(value) => formatTokens(Number(value))}
-                tickLine={false}
-                axisLine={false}
-                width={62}
-                allowDecimals={false}
-              />
-              <YAxis
-                yAxisId="tokens"
-                orientation="right"
-                tickFormatter={(value) => formatTokens(Number(value))}
-                tickLine={false}
-                axisLine={false}
-                width={62}
-              />
-              <YAxis yAxisId="commits" hide allowDecimals={false} />
-              <Tooltip
-                formatter={(value, name) => [
-                  name === "커밋"
-                    ? `${numberFormat.format(Number(value))}건`
-                    : name === "주간 토큰" || name === "월 누적 토큰"
-                      ? `${formatTokens(Number(value))} 토큰`
-                      : `${numberFormat.format(Number(value))}줄`,
-                  name,
-                ]}
-              />
-              <Legend />
-              <Bar yAxisId="lines" dataKey="codeLines" name="Code Lines" fill="#0f8b8d" radius={[4, 4, 0, 0]} />
-              <Bar yAxisId="lines" dataKey="changedLines" name="GitLab 수정 라인" fill="#d9902f" radius={[4, 4, 0, 0]} />
-              <Line
-                yAxisId="tokens"
-                dataKey="totalTokens"
-                name={isWeekly ? "주간 토큰" : "월 누적 토큰"}
-                stroke="#e85d4f"
-                strokeWidth={3}
-                dot={{ r: 4 }}
-              />
-              <Line
-                yAxisId="commits"
-                dataKey="commitCount"
-                name="커밋"
-                stroke="#476a6f"
-                strokeDasharray="6 4"
-                strokeWidth={3}
-                dot={{ fill: "#ffffff", r: 4, strokeWidth: 2 }}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-        <small className="approval-footnote">{gitlabActivityData.source.linePolicy} · 전체 브랜치 · 자동 생성 파일을 포함한 GitLab 공식 통계</small>
-      </section>}
 
       <section className="panel panel-wide individual-table-panel">
         <div className="panel-header">
