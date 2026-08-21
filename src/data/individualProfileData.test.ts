@@ -160,18 +160,35 @@ describe("jeonWoosungProfileData", () => {
     expect(data.drive.folderUrl).toContain("1Qn2i19lKy_4OlTu-H1UiVfhuGZTevMZL");
     expect(data.drive.scanErrors).toBe(0);
     expect(data.drive.scannedFolderCount).toBe(data.drive.childFolderCount + 1);
-    expect(data.drive.fileCount).toBe(821);
+    expect(data.drive.fileCount).toBe(834);
     expect(data.fileBreakdown.reduce((sum, item) => sum + item.count, 0)).toBe(
       data.drive.fileCount,
     );
     expect(data.drive.promptFiles + data.drive.outputAndSupportFiles + data.drive.archiveFiles).toBe(
       data.drive.fileCount,
     );
-    expect(data.monthlyPromptCounts).toEqual([{ month: "2026-08", prompts: 15 }]);
-    expect(data.dailyPromptCounts).toEqual([
-      { date: "2026-08-19", prompts: 8 },
-      { date: "2026-08-20", prompts: 7 },
+    expect(data.monthlyPromptCounts).toEqual([
+      { month: "2026-05", prompts: 114 },
+      { month: "2026-06", prompts: 97 },
+      { month: "2026-07", prompts: 11 },
+      { month: "2026-08", prompts: 62 },
     ]);
+    expect(data.dailyPromptCounts.filter((item) => item.date.startsWith("2026-05")).reduce(
+      (sum, item) => sum + item.prompts,
+      0,
+    )).toBe(114);
+    expect(data.dailyPromptCounts.filter((item) => item.date.startsWith("2026-06")).reduce(
+      (sum, item) => sum + item.prompts,
+      0,
+    )).toBe(97);
+    expect(data.dailyPromptCounts.filter((item) => item.date.startsWith("2026-07")).reduce(
+      (sum, item) => sum + item.prompts,
+      0,
+    )).toBe(11);
+    expect(data.dailyPromptCounts.filter((item) => item.date.startsWith("2026-08")).reduce(
+      (sum, item) => sum + item.prompts,
+      0,
+    )).toBe(62);
     expect(data.monthlyInsights?.["2026-08"].promptTopics.reduce(
       (sum, item) => sum + item.count,
       0,
