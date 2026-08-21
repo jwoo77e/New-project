@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { initialAiToolApprovalData } from "./aiToolApprovalData";
 import {
   individualProfileDataByEmail,
+  jeonWoosungProfileData,
   jeongJaeyoProfileData,
   joJooyeonProfileData,
   kimDaeilProfileData,
@@ -61,6 +62,7 @@ describe("strategy shared-account profiles", () => {
       "bigone@riskzero.kr",
       "yspark@riskzero.kr",
       "wody@riskzero.kr",
+      "woosung.jeon@riskzero.kr",
     ]);
 
     for (const profile of profiles) {
@@ -148,6 +150,42 @@ describe("jeongJaeyoProfileData", () => {
     ]);
     expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBe(150);
     expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBe(222_750);
+  });
+});
+
+describe("jeonWoosungProfileData", () => {
+  it("reconciles the recursive dated Drive inventory and August prompt source", () => {
+    const data = jeonWoosungProfileData;
+
+    expect(data.drive.folderUrl).toContain("1Qn2i19lKy_4OlTu-H1UiVfhuGZTevMZL");
+    expect(data.drive.scanErrors).toBe(0);
+    expect(data.drive.scannedFolderCount).toBe(data.drive.childFolderCount + 1);
+    expect(data.drive.fileCount).toBe(821);
+    expect(data.fileBreakdown.reduce((sum, item) => sum + item.count, 0)).toBe(
+      data.drive.fileCount,
+    );
+    expect(data.drive.promptFiles + data.drive.outputAndSupportFiles + data.drive.archiveFiles).toBe(
+      data.drive.fileCount,
+    );
+    expect(data.monthlyPromptCounts).toEqual([{ month: "2026-08", prompts: 15 }]);
+    expect(data.dailyPromptCounts).toEqual([
+      { date: "2026-08-19", prompts: 8 },
+      { date: "2026-08-20", prompts: 7 },
+    ]);
+    expect(data.monthlyInsights?.["2026-08"].promptTopics.reduce(
+      (sum, item) => sum + item.count,
+      0,
+    )).toBe(15);
+  });
+
+  it("links Jeon Woosung's current individual Claude subscription", () => {
+    const records = initialAiToolApprovalData.records.filter((record) =>
+      record.owner.startsWith(jeonWoosungProfileData.approvalOwner),
+    );
+
+    expect(records.map((record) => record.tool)).toEqual(["Claude Team Plan Premium"]);
+    expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBe(125);
+    expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBe(185_625);
   });
 });
 

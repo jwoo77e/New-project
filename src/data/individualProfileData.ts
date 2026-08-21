@@ -1293,6 +1293,195 @@ export const jeongJaeyoProfileData: IndividualProfileData = {
   ],
 };
 
+const jeonWoosungDriveUrl =
+  "https://drive.google.com/drive/folders/1Qn2i19lKy_4OlTu-H1UiVfhuGZTevMZL?usp=drive_link";
+
+export const jeonWoosungProfileData: IndividualProfileData = {
+  email: "woosung.jeon@riskzero.kr",
+  displayName: "전우성 부장",
+  title: "부장",
+  department: "플랫폼개발",
+  approvalOwner: "전우성 부장",
+  accountLabel: "Claude Team Plan Premium",
+  measurementNote:
+    "Claude Team 사용량은 개인 계정으로 측정하며, 별도 Drive에는 날짜별 마스킹 프롬프트, 코드 변경 근거와 업무 문서가 보관됩니다.",
+  costBasisNote:
+    "AI 도구 결재 현황의 Claude Team Plan Premium 현재 월 고정비를 반영했습니다. API 변동비는 개인에게 배분하지 않았습니다.",
+  sourceLinks: [{ label: "전우성 AI 작업 기록 Drive", url: jeonWoosungDriveUrl }],
+  drive: {
+    folderName: "전우성 AI 개인 산출물 저장소",
+    folderUrl: jeonWoosungDriveUrl,
+    collectedAt: "2026-08-21 KST",
+    period: "2025-12-19 ~ 2026-08-20",
+    fileCount: 821,
+    childFolderCount: 437,
+    scannedFolderCount: 438,
+    scanErrors: 0,
+    promptFiles: 15,
+    responseFiles: 0,
+    pairedSessions: 0,
+    responseOnlySessions: 0,
+    outputAndSupportFiles: 806,
+    archiveFiles: 0,
+    metadataDateAnomalies: 0,
+    rootFolderCount: 1,
+    activityMetricLabel: "Drive 대화·프롬프트",
+    activityMetricDetail: "8월 19~20일 마스킹 세션 원천 15건",
+    trendTitle: "8월 일별 대화·프롬프트 추이",
+    trendSeriesLabel: "대화·프롬프트",
+    topicBasisLabel: "8월 19~20일 마스킹 프롬프트 15건과 코드·문서 산출물 교차 분석",
+    topicTitle: "대화·프롬프트 업무 영역",
+    fileTotalLabel: "재귀 조회 파일",
+    outputMetricLabel: "저장 산출 신호",
+    outputMetricValue: 806,
+    outputMetricUnit: "개",
+    outputMetricDetail: "코드 변경 근거 664개 · 업무 문서 41개 · 일별 결과 색인 98개 · 기타 3개",
+    inventoryTitle: "보관 원천 및 산출물 구성",
+    inventorySummaryLabel: "활동일 98일",
+    inventoryFootnote:
+      "날짜별 결과 색인, 마스킹 프롬프트, 코드 변경 근거와 업무 문서는 서로 다른 단위이므로 합산 성과로 해석하지 않습니다.",
+  },
+  monthlyPromptCounts: [
+    { month: "2026-08", prompts: 15 },
+  ],
+  insightMonth: "2026-08",
+  dailyPromptCounts: [
+    { date: "2026-08-19", prompts: 8 },
+    { date: "2026-08-20", prompts: 7 },
+  ],
+  monthlyInsights: {
+    "2026-08": {
+      topicTitle: "8월 대화·프롬프트 업무 영역",
+      topicBasisLabel: "8월 19~20일 마스킹 프롬프트 15건 · 코드·문서 산출물 교차 분석",
+      promptTopics: [
+        {
+          label: "배포·운영 검증",
+          count: 5,
+          description: "개발 서버 배포 순서, 스모크 테스트와 화면 확인을 연결해 운영 검증을 진행했습니다.",
+          examples: ["백엔드·프론트·모바일 배포", "Playwright 스모크", "개발 서버 확인"],
+          color: "#0f8b8d",
+        },
+        {
+          label: "안전 업무 기능 개선",
+          count: 4,
+          description: "건설장비 유효성, 작업 전 점검과 TBM 이전 불러오기 기능의 개선 계획을 검토했습니다.",
+          examples: ["PTW 장비 유효성", "작업 전 점검", "TBM 이전 불러오기"],
+          color: "#e85d4f",
+        },
+        {
+          label: "위험성평가 품질 관리",
+          count: 3,
+          description: "공종 콤보 개선을 위해 요구사항, 조사, 구현 계획과 TDD 검토를 함께 기록했습니다.",
+          examples: ["위험성평가 공종 콤보", "TDD 계획", "구현 검토"],
+          color: "#2f8f46",
+        },
+        {
+          label: "코드 정리·변경 관리",
+          count: 3,
+          description: "미사용 메뉴 차단과 웹 취약점 보완을 코드 리뷰·QA·최종 보고까지 연결했습니다.",
+          examples: ["미사용 메뉴 차단", "웹 취약점 보완", "코드 리뷰·QA"],
+          color: "#6f7fd8",
+        },
+      ],
+      highlights: [
+        {
+          title: "개발 서버 배포와 다중 화면 검증",
+          category: "개발 운영",
+          summary: "백엔드·프론트·모바일 배포 순서와 배포 후 스모크·화면 확인 절차를 대화와 코드 변경 근거에 남겼습니다.",
+          result: "3개 저장소 코드 변경 근거 · 일별 커밋 CSV · 배포 검증 기록",
+        },
+        {
+          title: "건설장비 유효성·작업 전 점검 개선",
+          category: "현장 안전 기능",
+          summary: "PTW 장비 유효성 계획과 작업 전 점검 파일 기준을 검토해 기능·문서 기준을 함께 정리했습니다.",
+          result: "유효성 계획 · 적합 파일 기준 검토 · 개선 계획 문서",
+        },
+        {
+          title: "위험성평가 공종 콤보 개선 패키지",
+          category: "위험성평가",
+          summary: "조사, 논의, 구현 계획, 검토와 TDD 계획을 동일 작업 묶음으로 관리했습니다.",
+          result: "연구·논의 · 구현 계획 · 계획 검토 · TDD 문서",
+        },
+        {
+          title: "미사용 메뉴 차단과 웹 보완",
+          category: "품질·보안",
+          summary: "미사용 메뉴의 호출 차단 방안을 코드 리뷰, QA 체크리스트와 최종 보고까지 연결했습니다.",
+          result: "요구사항 · 코드 리뷰 · QA 보고 · 최종 보고",
+        },
+      ],
+    },
+  },
+  promptTopics: [
+    {
+      label: "배포·운영 검증",
+      count: 5,
+      description: "개발 서버 배포와 스모크·화면 확인을 연결한 작업입니다.",
+      examples: ["배포", "스모크 테스트", "화면 확인"],
+      color: "#0f8b8d",
+    },
+    {
+      label: "안전 업무 기능 개선",
+      count: 4,
+      description: "PTW 장비 유효성, 작업 전 점검과 TBM 개선을 검토했습니다.",
+      examples: ["PTW", "작업 전 점검", "TBM"],
+      color: "#e85d4f",
+    },
+    {
+      label: "위험성평가 품질 관리",
+      count: 3,
+      description: "공종 콤보의 조사·구현·TDD 검토를 수행했습니다.",
+      examples: ["위험성평가", "구현 계획", "TDD"],
+      color: "#2f8f46",
+    },
+    {
+      label: "코드 정리·변경 관리",
+      count: 3,
+      description: "미사용 메뉴와 웹 보완 작업의 코드 리뷰·QA를 기록했습니다.",
+      examples: ["미사용 메뉴", "코드 리뷰", "QA"],
+      color: "#6f7fd8",
+    },
+  ],
+  fileBreakdown: [
+    { label: "일별 결과 색인", count: 98, description: "날짜별 수집 범위와 결과 파일 목록", color: "#0f8b8d" },
+    { label: "코드 변경 근거", count: 664, description: "patch·변경 요약·일자별 커밋 CSV", color: "#e85d4f" },
+    { label: "마스킹 프롬프트", count: 15, description: "Claude 14개 · Codex 1개", color: "#2f8f46" },
+    { label: "업무 문서", count: 41, description: "개선 계획·요구사항·검토·QA 문서", color: "#6f7fd8" },
+    { label: "기타 원천", count: 3, description: "초기 소급 수집 및 보조 기록", color: "#c58612" },
+  ],
+  highlights: [
+    {
+      title: "개발 서버 배포와 다중 화면 검증",
+      category: "개발 운영",
+      summary: "백엔드·프론트·모바일 배포 후 스모크·화면 확인을 이어서 수행했습니다.",
+      result: "저장소 3개 · 커밋 CSV · 배포 검증 기록",
+    },
+    {
+      title: "건설장비 유효성·작업 전 점검 개선",
+      category: "현장 안전 기능",
+      summary: "PTW와 작업 전 점검의 기능·문서 기준을 함께 검토했습니다.",
+      result: "유효성 계획 · 파일 기준 검토 · 개선 계획",
+    },
+    {
+      title: "위험성평가 공종 콤보 개선",
+      category: "위험성평가",
+      summary: "조사부터 구현 계획과 TDD 검토까지 작업 맥락을 연결했습니다.",
+      result: "연구·논의 · 구현 계획 · 계획 검토 · TDD",
+    },
+    {
+      title: "미사용 메뉴 차단과 웹 보완",
+      category: "품질·보안",
+      summary: "미사용 기능 차단 방안을 요구사항, 코드 리뷰와 QA로 검증했습니다.",
+      result: "요구사항 · 코드 리뷰 · QA 보고 · 최종 보고",
+    },
+  ],
+  notes: [
+    "지정 Drive 루트와 모든 하위 폴더를 읽기 전용으로 재귀 조회했으며, 활동일 폴더 98개·하위 폴더 437개·파일 821개를 확인했습니다.",
+    "8월 19~20일에는 개인정보 마스킹된 Claude 14개와 Codex 1개의 대화·프롬프트 원천이 저장돼 있습니다.",
+    "7월 1~2일의 초기 소급 수집 색인은 2026년 7월 3일~8월 18일 기간의 집계만 보관하며 원본 세션 로그는 등록하지 않았으므로, 월별 프롬프트 그래프에 배분하지 않았습니다.",
+    "코드 변경 근거와 문서 파일은 작업 과정·산출 신호이며, 최종 승인·배포·품질·실제 업무 효과는 별도 검증이 필요합니다.",
+  ],
+};
+
 export const individualProfileDataByEmail: Readonly<Record<string, IndividualProfileData>> = {
   [kimJaewooProfileData.email]: kimJaewooProfileData,
   [limSeongbeomProfileData.email]: limSeongbeomProfileData,
@@ -1301,4 +1490,5 @@ export const individualProfileDataByEmail: Readonly<Record<string, IndividualPro
   [kimDaeilProfileData.email]: kimDaeilProfileData,
   [parkYeonseokProfileData.email]: parkYeonseokProfileData,
   [jeongJaeyoProfileData.email]: jeongJaeyoProfileData,
+  [jeonWoosungProfileData.email]: jeonWoosungProfileData,
 };
