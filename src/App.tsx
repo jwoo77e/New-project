@@ -5358,6 +5358,14 @@ function IndividualProfileView({
     ...item,
     label: item.date.slice(5).replace("-", "/"),
   }));
+  const recentPromptTrendAxisTicks = recentPromptTrend
+    .filter(
+      (_, index) =>
+        index === 0 ||
+        index === recentPromptTrend.length - 1 ||
+        index % 4 === 0,
+    )
+    .map((item) => item.label);
 
   return (
     <div className="content-grid individual-profile-view">
@@ -5502,7 +5510,13 @@ function IndividualProfileView({
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={recentPromptTrend} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
                 <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
-                <XAxis dataKey="label" interval={3} tickLine={false} axisLine={false} />
+                <XAxis
+                  dataKey="label"
+                  tickLine={false}
+                  axisLine={false}
+                  minTickGap={0}
+                  ticks={recentPromptTrendAxisTicks}
+                />
                 <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={36} />
                 <Tooltip formatter={(value) => [`${numberFormat.format(Number(value))}건`, trendSeriesLabel]} />
                 <Bar dataKey="prompts" name={trendSeriesLabel} fill="#0f8b8d" radius={[4, 4, 0, 0]} />
