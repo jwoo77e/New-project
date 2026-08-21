@@ -277,9 +277,9 @@ describe("Claude subscribed-account Drive profiles", () => {
       physicalFiles: 39,
       analyzedFiles: 46,
       archiveInnerFiles: 8,
-      tools: ["Claude Team Plan Premium", "Gemini(Google Workspace)"],
-      monthlyUsd: 140.12,
-      monthlyKrw: 208_078.2,
+      tools: ["chatGPT Pro(20배)", "Claude Team Plan Premium", "Gemini(Google Workspace)"],
+      monthlyUsd: 360.12,
+      monthlyKrw: 534_778.2,
     },
     {
       profile: parkYeonseokProfileData,
