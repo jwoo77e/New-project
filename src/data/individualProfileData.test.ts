@@ -35,13 +35,17 @@ describe("kimJaewooProfileData", () => {
     );
     expect(data.monthlyPromptCounts).toEqual([
       { month: "2026-07", prompts: 298 },
-      { month: "2026-08", prompts: 169 },
+      { month: "2026-08", prompts: 211 },
     ]);
-    expect(data.dailyPromptCounts.filter((item) => item.date.startsWith("2026-08"))).toHaveLength(18);
+    expect(data.dailyPromptCounts.filter((item) => item.date.startsWith("2026-08"))).toHaveLength(19);
     expect(data.dailyPromptCounts.filter((item) => item.date.startsWith("2026-08")).reduce(
       (sum, item) => sum + item.prompts,
       0,
-    )).toBe(169);
+    )).toBe(211);
+    expect(data.dailyPromptCounts.find((item) => item.date === "2026-08-19")).toEqual({
+      date: "2026-08-19",
+      prompts: 42,
+    });
     expect(data.monthlyInsights?.["2026-08"].promptTopics.reduce(
       (sum, item) => sum + item.count,
       0,
@@ -233,13 +237,17 @@ describe("leeHyeongbaeProfileData", () => {
     );
     expect(data.monthlyPromptCounts).toEqual([
       { month: "2026-07", prompts: 209 },
-      { month: "2026-08", prompts: 33 },
+      { month: "2026-08", prompts: 34 },
     ]);
-    expect(data.dailyPromptCounts.filter((item) => item.date.startsWith("2026-08"))).toHaveLength(14);
+    expect(data.dailyPromptCounts.filter((item) => item.date.startsWith("2026-08"))).toHaveLength(15);
     expect(data.dailyPromptCounts.filter((item) => item.date.startsWith("2026-08")).reduce(
       (sum, item) => sum + item.prompts,
       0,
-    )).toBe(33);
+    )).toBe(34);
+    expect(data.dailyPromptCounts.find((item) => item.date === "2026-08-19")).toEqual({
+      date: "2026-08-19",
+      prompts: 1,
+    });
     expect(data.monthlyInsights?.["2026-08"].promptTopics.reduce(
       (sum, item) => sum + item.count,
       0,

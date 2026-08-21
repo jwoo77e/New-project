@@ -1231,14 +1231,6 @@ function App() {
           개인별 AI 활동
         </button>
         <button
-          className={activeView === "genspark" ? "is-active" : ""}
-          type="button"
-          onClick={() => setActiveView("genspark")}
-        >
-          <Sparkles size={17} />
-          AI 활용 상세 분석
-        </button>
-        <button
           className={activeView === "approval" ? "is-active" : ""}
           type="button"
           onClick={() => setActiveView("approval")}

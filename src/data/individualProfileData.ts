@@ -109,12 +109,12 @@ export const kimJaewooProfileData: IndividualProfileData = {
     archiveFiles: 61,
     metadataDateAnomalies: 85,
     activityMetricLabel: "Drive 저장 세션",
-    activityMetricDetail: "날짜별 세션백업의 저장 세션 수",
+    activityMetricDetail: "날짜별 세션백업 기준 · 8월 19일은 Drive 생성 파일 42개를 포함",
     trendSeriesLabel: "저장 세션",
   },
   monthlyPromptCounts: [
     { month: "2026-07", prompts: 298 },
-    { month: "2026-08", prompts: 169 },
+    { month: "2026-08", prompts: 211 },
   ],
   dailyPromptCounts: [
     { date: "2026-07-05", prompts: 7 },
@@ -162,11 +162,12 @@ export const kimJaewooProfileData: IndividualProfileData = {
     { date: "2026-08-16", prompts: 8 },
     { date: "2026-08-17", prompts: 9 },
     { date: "2026-08-18", prompts: 10 },
+    { date: "2026-08-19", prompts: 42 },
   ],
   monthlyInsights: {
     "2026-08": {
       topicTitle: "8월 대화·프롬프트 업무 영역",
-      topicBasisLabel: "8월 Drive 프롬프트 169건 · 결과물 본문·파일명 교차 분석",
+      topicBasisLabel: "8월 1~18일 Drive 프롬프트 169건 분류 · 8월 19일 생성 파일 42개는 일별 추이에만 반영",
       promptTopics: [
         {
           label: "리서치·트렌드 수집",
@@ -569,7 +570,7 @@ export const leeHyeongbaeProfileData: IndividualProfileData = {
     archiveFiles: 109,
     metadataDateAnomalies: 0,
     activityMetricLabel: "Drive 대화 기록",
-    activityMetricDetail: "날짜별 백업 저장본 · 중복 포함",
+    activityMetricDetail: "날짜별 백업 저장본 · 8월 19일은 Drive 생성 파일 1개를 포함",
     trendTitle: "Drive 대화 기록 저장본 일별 추이",
     trendSeriesLabel: "날짜별 저장본",
     topicBasisLabel: "파일명·대표 본문 분류 264건",
@@ -577,7 +578,7 @@ export const leeHyeongbaeProfileData: IndividualProfileData = {
   },
   monthlyPromptCounts: [
     { month: "2026-07", prompts: 209 },
-    { month: "2026-08", prompts: 33 },
+    { month: "2026-08", prompts: 34 },
   ],
   dailyPromptCounts: [
     { date: "2026-07-07", prompts: 46 },
@@ -609,11 +610,12 @@ export const leeHyeongbaeProfileData: IndividualProfileData = {
     { date: "2026-08-12", prompts: 3 },
     { date: "2026-08-13", prompts: 3 },
     { date: "2026-08-18", prompts: 5 },
+    { date: "2026-08-19", prompts: 1 },
   ],
   monthlyInsights: {
     "2026-08": {
       topicTitle: "8월 대화·프롬프트 업무 영역",
-      topicBasisLabel: "8월 Drive 대화 기록 33건 · 결과물 본문·파일명 교차 분석",
+      topicBasisLabel: "8월 1~18일 Drive 대화 기록 33건 분류 · 8월 19일 생성 파일 1개는 일별 추이에만 반영",
       promptTopics: [
         {
           label: "안전보건 일일 브리핑",
