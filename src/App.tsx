@@ -5017,7 +5017,7 @@ function AdoptionView({
         </article>
       </section>
 
-      <section className="panel panel-wide individual-trend-panel">
+      {!isWeekly && <section className="panel panel-wide individual-trend-panel">
         <div className="panel-header">
           <div>
             <span className="eyebrow">AI × GitLab Trend</span>
@@ -5083,7 +5083,7 @@ function AdoptionView({
           </ResponsiveContainer>
         </div>
         <small className="approval-footnote">{gitlabActivityData.source.linePolicy} · 전체 브랜치 · 자동 생성 파일을 포함한 GitLab 공식 통계</small>
-      </section>
+      </section>}
 
       <section className="panel panel-wide individual-table-panel">
         <div className="panel-header">
