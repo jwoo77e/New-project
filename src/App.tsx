@@ -953,24 +953,9 @@ function App() {
     viewHeader = {
       eyebrow: "Individual Utilization",
       title: "개인별 AI 활동 근거",
-      description: "토큰·프롬프트·Code Lines를 활동 근거로 확인하고 측정 상태를 함께 표시합니다.",
+      description: "개인별 AI 활동의 측정 기준과 기간별 근거를 확인합니다.",
       freshness: `${individualUtilizationData.source.spend.period} · ${formatKstDateTime(individualUtilizationData.source.generatedAt)}`,
-      metrics: [
-        {
-          icon: <Sparkles size={19} />,
-          label: "Code Lines",
-          value: `${numberFormat.format(individualUtilizationData.totals.codeLines)}줄`,
-          detail: `${individualUtilizationData.months.length}개월 합계`,
-          tone: "green",
-        },
-        {
-          icon: <Activity size={19} />,
-          label: "누적 토큰",
-          value: formatTokens(individualUtilizationData.totals.totalTokens),
-          detail: `입력 ${formatTokens(individualUtilizationData.totals.promptTokens)} · 완료 ${formatTokens(individualUtilizationData.totals.completionTokens)}`,
-          tone: "amber",
-        },
-      ],
+      metrics: [],
     };
   } else if (activeView === "wbs") {
     const progressVariance =
@@ -1456,18 +1441,20 @@ function DashboardViewHeader({ model }: { model: ViewHeaderModel }) {
           {model.freshness}
         </span>
       </div>
-      <div className="view-summary-metrics">
-        {model.metrics.map((metric) => (
-          <article className={`view-summary-metric ${metric.tone}`} key={metric.label}>
-            <span className="view-summary-icon">{metric.icon}</span>
-            <div>
-              <span>{metric.label}</span>
-              <strong>{metric.value}</strong>
-              <small>{metric.detail}</small>
-            </div>
-          </article>
-        ))}
-      </div>
+      {model.metrics.length > 0 && (
+        <div className="view-summary-metrics">
+          {model.metrics.map((metric) => (
+            <article className={`view-summary-metric ${metric.tone}`} key={metric.label}>
+              <span className="view-summary-icon">{metric.icon}</span>
+              <div>
+                <span>{metric.label}</span>
+                <strong>{metric.value}</strong>
+                <small>{metric.detail}</small>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
