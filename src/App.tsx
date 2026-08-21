@@ -953,23 +953,9 @@ function App() {
     viewHeader = {
       eyebrow: "Individual Utilization",
       title: "개인별 AI 활동 근거",
-      description: "요청·토큰·프롬프트·Code Lines를 활동 근거로 확인하고 측정 상태를 함께 표시합니다.",
+      description: "토큰·프롬프트·Code Lines를 활동 근거로 확인하고 측정 상태를 함께 표시합니다.",
       freshness: `${individualUtilizationData.source.spend.period} · ${formatKstDateTime(individualUtilizationData.source.generatedAt)}`,
       metrics: [
-        {
-          icon: <UserCheck size={19} />,
-          label: "활동 사용자",
-          value: `${individualUtilizationData.totals.users}명`,
-          detail: "현재까지 관측된 계정",
-          tone: "teal",
-        },
-        {
-          icon: <Bot size={19} />,
-          label: "누적 요청",
-          value: `${numberFormat.format(individualUtilizationData.totals.requests)}건`,
-          detail: individualUtilizationData.source.spend.period,
-          tone: "steel",
-        },
         {
           icon: <Sparkles size={19} />,
           label: "Code Lines",
@@ -4790,13 +4776,6 @@ function AdoptionView({
       });
   }, [data.users, isWeekly, query, selectedMonth, selectedMonthlySpend, selectedWeek, selectedWeeklyUsage, sortKey]);
 
-  const measuredRowCount = rows.filter((row) => row.user.measurementStatus === "measured").length;
-  const sharedAccountRowCount = rows.filter(
-    (row) => row.user.measurementStatus === "shared-account-unmeasured",
-  ).length;
-  const sourceUncollectedRowCount = rows.filter(
-    (row) => row.user.measurementStatus === "source-uncollected",
-  ).length;
   const developmentRowCount = rows.filter(
     (row) => individualTeamGroup(row.user.email) === "development",
   ).length;
@@ -4959,20 +4938,6 @@ function AdoptionView({
       </section>
 
       <section className="individual-period-summary" aria-label={`${periodLabel} 핵심 활용 지표`}>
-        <article>
-          <span><UserCheck size={17} />활동 사용자</span>
-          <strong>{periodSummary.activeUsers}명</strong>
-          <small>
-            {sharedAccountRowCount > 0 || sourceUncollectedRowCount > 0
-              ? `측정 ${measuredRowCount}명 · 공통 계정 ${sharedAccountRowCount}명 · 수집중 ${sourceUncollectedRowCount}명`
-              : `관측 ${measuredRowCount}명 중`}
-          </small>
-        </article>
-        <article>
-          <span><Bot size={17} />{isWeekly ? "주간 요청" : "월 누적 요청"}</span>
-          <strong>{usageSummary ? `${numberFormat.format(usageSummary.requests)}건` : "수집중"}</strong>
-          <small>{coverageNote}</small>
-        </article>
         <article>
           <span><FileText size={17} />Code Lines</span>
           <strong>{numberFormat.format(periodSummary.codeLines)}줄</strong>
