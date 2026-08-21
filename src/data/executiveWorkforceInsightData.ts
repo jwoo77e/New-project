@@ -163,7 +163,7 @@ export const executiveWorkforceInsightData = {
       users: lowUsageUsers.map((user) => user.displayName),
     },
   ] satisfies ExecutiveUsageSegment[],
-  lowUsageReason: "업무량 감소, 질의 및 검색에 사용",
+  lowUsageReason: "질의 및 검색에 사용",
   evaluationFramework: {
     developer: {
       label: "개발자",

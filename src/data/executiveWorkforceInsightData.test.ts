@@ -72,7 +72,7 @@ describe("executiveWorkforceInsightData", () => {
 
   it("defines role-based AI activity estimation signals", () => {
     expect(executiveWorkforceInsightData.lowUsageReason).toBe(
-      "업무량 감소, 질의 및 검색에 사용",
+      "질의 및 검색에 사용",
     );
     expect(executiveWorkforceInsightData.evaluationFramework.developer.measures).toEqual([
       "토큰",
