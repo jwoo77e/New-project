@@ -2606,14 +2606,6 @@ function MonthlyView({
                 fill="#66758f"
                 radius={[5, 5, 0, 0]}
               />
-              <Line
-                dataKey="fixedPlan"
-                name="월별 적용 고정비"
-                stroke="#c58612"
-                strokeDasharray="6 4"
-                strokeWidth={2}
-                dot={false}
-              />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
