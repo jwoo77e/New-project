@@ -155,7 +155,7 @@ import {
   type GensparkDriveSnapshot,
 } from "./lib/gensparkDriveSnapshot";
 
-type ViewKey = "overview" | "monthly" | "adoption" | "wbs" | "genspark" | "approval";
+type ViewKey = "overview" | "monthly" | "adoption" | "wbs" | "genspark" | "approval" | "api";
 type LayoutMode = "command" | "editorial" | "signal";
 type ViewHeaderMetric = {
   label: string;
@@ -1091,6 +1091,44 @@ function App() {
         },
       ],
     };
+  } else if (activeView === "api") {
+    const totalApiTokens = apiUsageData.providers.reduce(
+      (sum, provider) => sum + provider.inputTokens + provider.outputTokens,
+      0,
+    );
+    const totalApiRequests = apiUsageData.providers.reduce(
+      (sum, provider) => sum + provider.requests,
+      0,
+    );
+    viewHeader = {
+      eyebrow: "API Usage",
+      title: "API 사용 현황",
+      description: "공급자별 API 토큰, 요청, 비용과 키 상태를 실측 데이터로 확인합니다.",
+      freshness: `${apiUsageData.source.period} · ${apiUsageData.source.generatedAt}`,
+      metrics: [
+        {
+          icon: <Bot size={19} />,
+          label: "연동 공급자",
+          value: `${apiUsageData.providers.length}개`,
+          detail: "OpenAI · Claude · Gemini · Gamma",
+          tone: "teal",
+        },
+        {
+          icon: <Activity size={19} />,
+          label: "총 요청",
+          value: `${numberFormat.format(totalApiRequests)}건`,
+          detail: apiUsageData.source.period,
+          tone: "steel",
+        },
+        {
+          icon: <Sparkles size={19} />,
+          label: "총 토큰",
+          value: formatTokens(totalApiTokens),
+          detail: "입력·출력 합계",
+          tone: "amber",
+        },
+      ],
+    };
   } else if (activeView === "monthly") {
     viewHeader = {
       eyebrow: "Cost & Forecast",
@@ -1246,6 +1284,14 @@ function App() {
           <LineChart size={17} />
           월별/예측
         </button>
+        <button
+          className={activeView === "api" ? "is-active" : ""}
+          type="button"
+          onClick={() => setActiveView("api")}
+        >
+          <Bot size={17} />
+          API 사용 현황
+        </button>
       </nav>
 
       {viewHeader && <DashboardViewHeader model={viewHeader} />}
@@ -1312,7 +1358,7 @@ function App() {
             footer="플랫폼개발팀 · 2026년 8월부터"
           />
         </section>
-      ) : activeView === "adoption" || activeView === "wbs" || activeView === "genspark" ? null : (
+      ) : activeView === "adoption" || activeView === "wbs" || activeView === "genspark" || activeView === "api" ? null : (
         <section className="metric-grid" aria-label="핵심 비용 지표">
           <MetricCard
             icon={<CircleDollarSign size={21} />}
@@ -1397,6 +1443,13 @@ function App() {
       )}
 
       {activeView === "approval" && <AiToolApprovalView approvalData={aiToolApprovalData} />}
+
+      {activeView === "api" && (
+        <ApiUsageView
+          apiUsageData={apiUsageData}
+          fixedApiServiceRecords={fixedApiServiceRecords}
+        />
+      )}
 
       {toast && <div className="toast">{toast}</div>}
     </main>
