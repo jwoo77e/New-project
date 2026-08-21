@@ -155,7 +155,7 @@ import {
   type GensparkDriveSnapshot,
 } from "./lib/gensparkDriveSnapshot";
 
-type ViewKey = "overview" | "monthly" | "adoption" | "wbs" | "approval";
+type ViewKey = "overview" | "monthly" | "adoption" | "wbs" | "genspark" | "approval";
 type LayoutMode = "command" | "editorial" | "signal";
 type ViewHeaderMetric = {
   label: string;
@@ -1026,6 +1026,33 @@ function App() {
         },
       ],
     };
+  } else if (activeView === "genspark") {
+    const driveFileCount =
+      driveArtifactTrendSnapshot?.totals.files ?? driveArtifactRepositoryData.totals.files;
+    const drivePeriod =
+      driveArtifactTrendSnapshot?.source.period ?? driveArtifactRepositoryData.source.period;
+    viewHeader = {
+      eyebrow: "Work Pattern Analysis",
+      title: "AI 활용 상세 분석",
+      description: "업무 흐름, 통합 대화, Drive 산출물 기준으로 활용 근거를 확인합니다.",
+      freshness: `${drivePeriod} · 날짜 그래프 매일 21:00 갱신`,
+      metrics: [
+        {
+          icon: <FileSpreadsheet size={19} />,
+          label: "Drive 저장 산출물",
+          value: `${numberFormat.format(driveFileCount)}개`,
+          detail: "루트와 하위 폴더 재귀 집계",
+          tone: "teal",
+        },
+        {
+          icon: <Sparkles size={19} />,
+          label: "Claude Team 활성",
+          value: `${claudeTeamUsageData.activeUsers}/${claudeTeamUsageData.licensedUsers}명`,
+          detail: `활성률 ${formatRate((claudeTeamUsageData.activeUsers / claudeTeamUsageData.licensedUsers) * 100)}`,
+          tone: "green",
+        },
+      ],
+    };
   } else if (activeView === "approval") {
     const leadingCategory = aiToolApprovalData.categorySummary[0];
     viewHeader = {
@@ -1204,6 +1231,14 @@ function App() {
           개인별 AI 활동
         </button>
         <button
+          className={activeView === "genspark" ? "is-active" : ""}
+          type="button"
+          onClick={() => setActiveView("genspark")}
+        >
+          <Sparkles size={17} />
+          AI 활용 상세 분석
+        </button>
+        <button
           className={activeView === "approval" ? "is-active" : ""}
           type="button"
           onClick={() => setActiveView("approval")}
@@ -1285,7 +1320,7 @@ function App() {
             footer="플랫폼개발팀 · 2026년 8월부터"
           />
         </section>
-      ) : activeView === "adoption" || activeView === "wbs" ? null : (
+      ) : activeView === "adoption" || activeView === "wbs" || activeView === "genspark" ? null : (
         <section className="metric-grid" aria-label="핵심 비용 지표">
           <MetricCard
             icon={<CircleDollarSign size={21} />}
@@ -1351,6 +1386,15 @@ function App() {
         <AdoptionView
           selectedMonth={individualSelectedMonth}
           onSelectedMonthChange={setIndividualSelectedMonth}
+        />
+      )}
+
+      {activeView === "genspark" && (
+        <GensparkUsageView
+          claudeTeamUsageData={claudeTeamUsageData}
+          driveRepositoryData={driveArtifactRepositoryData}
+          driveTrendSnapshot={driveArtifactTrendSnapshot}
+          usageData={gensparkUsageData}
         />
       )}
 
@@ -3033,6 +3077,18 @@ function GensparkUsageView({
       })),
     [driveArtifactTrend],
   );
+  const driveArtifactTrendAxisTicks = useMemo(() => {
+    const recentStart = Math.max(0, driveArtifactTrend.points.length - 7);
+    return driveArtifactTrend.points
+      .filter(
+        (point, index) =>
+          index === 0 ||
+          index >= recentStart ||
+          point.date.endsWith("-01") ||
+          point.date.endsWith("-15"),
+      )
+      .map((point) => point.label);
+  }, [driveArtifactTrend]);
   const driveOwnerColors = ["#0f8b8d", "#e85d4f", "#5f6f8c", "#c58612"];
   const driveTrendTotalFiles =
     driveTrendSnapshot?.totals.files ?? driveRepositoryData.totals.files;
@@ -3697,7 +3753,13 @@ function GensparkUsageView({
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={driveArtifactTrendData} margin={{ top: 18, right: 16, left: 4, bottom: 2 }}>
                 <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
-                <XAxis dataKey="label" tickLine={false} axisLine={false} minTickGap={18} />
+                <XAxis
+                  dataKey="label"
+                  tickLine={false}
+                  axisLine={false}
+                  minTickGap={0}
+                  ticks={driveArtifactTrendAxisTicks}
+                />
                 <YAxis yAxisId="daily" tickLine={false} axisLine={false} allowDecimals={false} width={36} />
                 <YAxis
                   yAxisId="cumulative"
