@@ -46,6 +46,7 @@ describe("kimJaewooProfileData", () => {
       date: "2026-08-19",
       prompts: 42,
     });
+    expect(data.driveTrendOwner).toBe("김재우");
     expect(data.monthlyInsights?.["2026-08"].promptTopics.reduce(
       (sum, item) => sum + item.count,
       0,
@@ -248,6 +249,7 @@ describe("leeHyeongbaeProfileData", () => {
       date: "2026-08-19",
       prompts: 1,
     });
+    expect(data.driveTrendOwner).toBe("이형배");
     expect(data.monthlyInsights?.["2026-08"].promptTopics.reduce(
       (sum, item) => sum + item.count,
       0,

@@ -1393,6 +1393,7 @@ function App() {
 
       {activeView === "adoption" && (
         <AdoptionView
+          driveTrendSnapshot={driveArtifactTrendSnapshot}
           selectedMonth={individualSelectedMonth}
           onSelectedMonthChange={setIndividualSelectedMonth}
         />
@@ -4657,9 +4658,11 @@ function PlatformWbsSimulationPanel() {
 }
 
 function AdoptionView({
+  driveTrendSnapshot,
   selectedMonth,
   onSelectedMonthChange,
 }: {
+  driveTrendSnapshot: DriveArtifactTrendSnapshot | null;
   selectedMonth: string;
   onSelectedMonthChange: (month: string) => void;
 }) {
@@ -4808,6 +4811,7 @@ function AdoptionView({
     if (selectedUser && selectedProfile) {
       return (
         <IndividualProfileView
+          driveTrendSnapshot={driveTrendSnapshot}
           gitlabEndDate={periodEndDate}
           gitlabPeriodLabel={periodLabel}
           gitlabStartDate={periodStartDate}
@@ -5191,6 +5195,7 @@ function IndividualGitlabProfileView({
 }
 
 function IndividualProfileView({
+  driveTrendSnapshot,
   gitlabEndDate,
   gitlabPeriodLabel,
   gitlabStartDate,
@@ -5199,6 +5204,7 @@ function IndividualProfileView({
   selectedMonth,
   user,
 }: {
+  driveTrendSnapshot: DriveArtifactTrendSnapshot | null;
   gitlabEndDate: string;
   gitlabPeriodLabel: string;
   gitlabStartDate: string;
@@ -5219,20 +5225,35 @@ function IndividualProfileView({
     evaluation?.codeActivityDetailsMissing === true ||
     individualUtilizationData.monthlySpend[selectedMonth]?.coverage === "partial"
   );
-  const selectedMonthPromptCount = profile.monthlyPromptCounts.find(
-    (item) => item.month === selectedMonth,
-  )?.prompts ?? 0;
-  const selectedMonthDailyCounts = profile.dailyPromptCounts.filter((item) =>
-    item.date.startsWith(selectedMonth),
-  );
+  const trendRepository = profile.driveTrendOwner
+    ? driveTrendSnapshot?.repositories.find((repository) => repository.owner === profile.driveTrendOwner)
+    : null;
+  const [trendStart = "", trendEnd = ""] =
+    driveTrendSnapshot?.source.period.match(/\d{4}-\d{2}-\d{2}/g) ?? [];
+  const snapshotCoversSelectedMonth =
+    Boolean(trendStart && trendEnd) &&
+    selectedMonth >= trendStart.slice(0, 7) &&
+    selectedMonth <= trendEnd.slice(0, 7);
+  const liveMonthDailyCounts = (trendRepository?.inventory.dailyCounts ?? [])
+    .filter((item) => item.date.startsWith(selectedMonth))
+    .map((item) => ({ date: item.date, prompts: item.count }));
+  const usesLiveDriveTrend = Boolean(trendRepository) && snapshotCoversSelectedMonth;
+  const selectedMonthDailyCounts = usesLiveDriveTrend
+    ? liveMonthDailyCounts
+    : profile.dailyPromptCounts.filter((item) => item.date.startsWith(selectedMonth));
+  const selectedMonthPromptCount = usesLiveDriveTrend
+    ? selectedMonthDailyCounts.reduce((sum, item) => sum + item.prompts, 0)
+    : profile.monthlyPromptCounts.find((item) => item.month === selectedMonth)?.prompts ?? 0;
   const selectedMonthActiveDays = selectedMonthDailyCounts.length;
   const hasSelectedMonthDriveActivity = selectedMonthPromptCount > 0 || selectedMonthActiveDays > 0;
-  const activityMetricLabel = profile.drive.activityMetricLabel ?? "Drive 프롬프트";
+  const activityMetricLabel = usesLiveDriveTrend
+    ? "Drive 저장 파일"
+    : profile.drive.activityMetricLabel ?? "Drive 프롬프트";
   const activityMetricDetail = hasSelectedMonthDriveActivity
-    ? `${numberFormat.format(selectedMonthActiveDays)}일 활동 · ${profile.drive.activityMetricDetail ?? `응답 연결 ${numberFormat.format(profile.drive.pairedSessions)}건`}`
+    ? `${numberFormat.format(selectedMonthActiveDays)}일 활동 · ${usesLiveDriveTrend ? `${driveTrendSnapshot?.source.collectedAt} 재귀 집계` : profile.drive.activityMetricDetail ?? `응답 연결 ${numberFormat.format(profile.drive.pairedSessions)}건`}`
     : `${fullMonthLabel(selectedMonth)} 원천 활동 수집 없음`;
-  const trendTitle = `${fullMonthLabel(selectedMonth)} 일별 ${profile.drive.trendSeriesLabel ?? "프롬프트"} 추이`;
-  const trendSeriesLabel = profile.drive.trendSeriesLabel ?? "프롬프트";
+  const trendTitle = `${fullMonthLabel(selectedMonth)} 일별 ${usesLiveDriveTrend ? "Drive 저장 파일" : profile.drive.trendSeriesLabel ?? "프롬프트"} 추이`;
+  const trendSeriesLabel = usesLiveDriveTrend ? "저장 파일" : profile.drive.trendSeriesLabel ?? "프롬프트";
   const outputMetricLabel = profile.drive.outputMetricLabel ?? "결과·지원 파일";
   const outputMetricValue = profile.drive.outputMetricValue ?? profile.drive.outputAndSupportFiles;
   const outputMetricDetail = profile.drive.outputMetricDetail ??

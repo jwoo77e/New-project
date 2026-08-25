@@ -43,6 +43,7 @@ export type IndividualProfileData = {
     label: string;
     url: string;
   }>;
+  driveTrendOwner?: string;
   drive: {
     folderName: string;
     folderUrl: string;
@@ -92,6 +93,7 @@ export const kimJaewooProfileData: IndividualProfileData = {
   title: "부장",
   department: "기술연구소",
   approvalOwner: "김재우 부장",
+  driveTrendOwner: "김재우",
   drive: {
     folderName: "김재우 Claude Drive 산출물 저장소",
     folderUrl: "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link",
@@ -516,6 +518,7 @@ function buildStrategySharedProfile({
       { label: "Claude Drive", url: strategySharedDriveUrl },
       { label: "Genspark Drive", url: strategyGensparkDriveUrl },
     ],
+    driveTrendOwner: "전략사업팀",
     drive: strategySharedDrive,
     monthlyPromptCounts: strategySharedMonthlyPromptCounts,
     dailyPromptCounts: strategySharedDailyPromptCounts,
@@ -545,6 +548,7 @@ export const leeHyeongbaeProfileData: IndividualProfileData = {
   title: "상무",
   department: "기술연구소",
   approvalOwner: "이형배 상무",
+  driveTrendOwner: "이형배",
   accountLabel: "Claude 공통 계정 · ChatGPT 개인 계정",
   attributionMode: "shared",
   attributionLabel: "이형배 Drive 기준 · 토큰 미분리",
@@ -1047,6 +1051,7 @@ export const jeongJaeyoProfileData: IndividualProfileData = {
   title: "차장",
   department: "플랫폼개발",
   approvalOwner: "정재요 차장",
+  driveTrendOwner: "정재요",
   accountLabel: "Claude Team Plan Premium · ChatGPT Business Plan",
   measurementNote:
     "Claude Team 사용량은 개인 계정으로 측정하며, 별도 Drive에는 Claude Code·Codex 작업 지시와 실제 커밋·코드 변경 기록이 날짜별로 보관됩니다.",
@@ -1304,6 +1309,7 @@ export const jeonWoosungProfileData: IndividualProfileData = {
   title: "부장",
   department: "플랫폼개발",
   approvalOwner: "전우성 부장",
+  driveTrendOwner: "전우성",
   accountLabel: "Claude Team Plan Premium",
   measurementNote:
     "Claude Team 사용량은 개인 계정으로 측정하며, 별도 Drive에는 날짜별 마스킹 프롬프트, 코드 변경 근거와 업무 문서가 보관됩니다.",
