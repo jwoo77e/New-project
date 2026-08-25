@@ -5244,6 +5244,9 @@ function IndividualProfileView({
   const selectedMonthPromptCount = usesLiveDriveTrend
     ? selectedMonthDailyCounts.reduce((sum, item) => sum + item.prompts, 0)
     : profile.monthlyPromptCounts.find((item) => item.month === selectedMonth)?.prompts ?? 0;
+  const trendMonthSummaries = usesLiveDriveTrend
+    ? [{ month: selectedMonth, prompts: selectedMonthPromptCount }]
+    : profile.monthlyPromptCounts;
   const selectedMonthActiveDays = selectedMonthDailyCounts.length;
   const hasSelectedMonthDriveActivity = selectedMonthPromptCount > 0 || selectedMonthActiveDays > 0;
   const activityMetricLabel = usesLiveDriveTrend
@@ -5423,7 +5426,7 @@ function IndividualProfileView({
             <h2>{trendTitle}</h2>
           </div>
           <div className="panel-header-side">
-            {profile.monthlyPromptCounts.map((item) => (
+            {trendMonthSummaries.map((item) => (
               <span className={`state-pill ${item.month === selectedMonth ? "ok" : "neutral"}`} key={item.month}>{monthLabel(item.month)} {item.prompts}건</span>
             ))}
           </div>
