@@ -32,6 +32,18 @@ export const defaultDriveTrendRepositories = [
     folderUrl:
       "https://drive.google.com/drive/folders/1NK9PNOb_fbByPSSz0AqydMYj5lUK2Q25?usp=drive_link",
   },
+  {
+    owner: "정재요",
+    folderId: "1nYUQzqS72RGA5d6aXDbVHuxOUYgKbA3p",
+    folderUrl:
+      "https://drive.google.com/drive/folders/1nYUQzqS72RGA5d6aXDbVHuxOUYgKbA3p?usp=drive_link",
+  },
+  {
+    owner: "전우성",
+    folderId: "1Qn2i19lKy_4OlTu-H1UiVfhuGZTevMZL",
+    folderUrl:
+      "https://drive.google.com/drive/folders/1Qn2i19lKy_4OlTu-H1UiVfhuGZTevMZL?usp=drive_link",
+  },
 ];
 
 export async function collectDriveArtifactTrend({

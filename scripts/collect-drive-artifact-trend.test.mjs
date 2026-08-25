@@ -15,6 +15,8 @@ describe("collect-drive-artifact-trend", () => {
       "김재우",
       "이형배",
       "전략사업팀",
+      "정재요",
+      "전우성",
     ]);
   });
 
