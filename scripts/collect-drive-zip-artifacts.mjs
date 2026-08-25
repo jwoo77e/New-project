@@ -128,37 +128,58 @@ export async function collectDriveZipArtifacts({
       const extractDir = path.join(archiveTempDir, "extracted");
       await mkdir(extractDir, { recursive: true });
 
-      await combineParts(group.parts, combinedZipPath);
-      const entryNames = await listZipEntries(combinedZipPath);
-      assertSafeZipEntries(entryNames);
-      const testResult = await testZip(combinedZipPath);
-      await extractZip(combinedZipPath, extractDir);
+      try {
+        await combineParts(group.parts, combinedZipPath);
+        const entryNames = await listZipEntries(combinedZipPath);
+        assertSafeZipEntries(entryNames);
+        const testResult = await testZip(combinedZipPath);
+        await extractZip(combinedZipPath, extractDir);
 
-      const extractedFiles = await walkFiles(extractDir);
-      const taskGroups = await buildTaskGroups(extractDir, extractedFiles);
-      const crcWarningFiles = parseCrcWarningFiles(testResult.stderr || testResult.stdout);
+        const extractedFiles = await walkFiles(extractDir);
+        const taskGroups = await buildTaskGroups(extractDir, extractedFiles);
+        const crcWarningFiles = parseCrcWarningFiles(testResult.stderr || testResult.stdout);
 
-      archives.push({
-        owner,
-        archiveName: group.archiveName,
-        folderUrl,
-        sourceParts: group.parts.map((part) => part.name),
-        combinedSizeBytes: group.parts.reduce((sum, part) => sum + Number(part.size ?? 0), 0),
-        extractedEntries: entryNames.length,
-        extractedFiles: extractedFiles.length,
-        extractedDirectories: entryNames.filter((entry) => entry.endsWith("/")).length,
-        promptFiles: extractedFiles.filter((file) => isPromptPath(file.relativePath)).length,
-        responseFiles: extractedFiles.filter((file) => isResponsePath(file.relativePath)).length,
-        skillFiles: extractedFiles.filter((file) => file.relativePath.toLowerCase().endsWith("_skill.md")).length,
-        dataFiles: extractedFiles.filter((file) => dataExtensions.has(path.extname(file.relativePath).toLowerCase())).length,
-        crcWarningFiles,
-        cleanupStatus: "결합 zip과 압축 해제 폴더는 분석 후 삭제됨",
-        verificationStatus:
-          crcWarningFiles.length > 0
-            ? `CRC 경고 ${crcWarningFiles.length}개: ${crcWarningFiles.join(", ")}`
-            : "zip 테스트와 압축 해제 정상",
-        taskGroups,
-      });
+        archives.push({
+          owner,
+          archiveName: group.archiveName,
+          folderUrl,
+          sourceParts: group.parts.map((part) => part.name),
+          combinedSizeBytes: group.parts.reduce((sum, part) => sum + Number(part.size ?? 0), 0),
+          extractedEntries: entryNames.length,
+          extractedFiles: extractedFiles.length,
+          extractedDirectories: entryNames.filter((entry) => entry.endsWith("/")).length,
+          promptFiles: extractedFiles.filter((file) => isPromptPath(file.relativePath)).length,
+          responseFiles: extractedFiles.filter((file) => isResponsePath(file.relativePath)).length,
+          skillFiles: extractedFiles.filter((file) => file.relativePath.toLowerCase().endsWith("_skill.md")).length,
+          dataFiles: extractedFiles.filter((file) => dataExtensions.has(path.extname(file.relativePath).toLowerCase())).length,
+          crcWarningFiles,
+          cleanupStatus: "결합 zip과 압축 해제 폴더는 분석 후 삭제됨",
+          verificationStatus:
+            crcWarningFiles.length > 0
+              ? `CRC 경고 ${crcWarningFiles.length}개: ${crcWarningFiles.join(", ")}`
+              : "zip 테스트와 압축 해제 정상",
+          taskGroups,
+        });
+      } catch (error) {
+        archives.push({
+          owner,
+          archiveName: group.archiveName,
+          folderUrl,
+          sourceParts: group.parts.map((part) => part.name),
+          combinedSizeBytes: group.parts.reduce((sum, part) => sum + Number(part.size ?? 0), 0),
+          extractedEntries: 0,
+          extractedFiles: 0,
+          extractedDirectories: 0,
+          promptFiles: 0,
+          responseFiles: 0,
+          skillFiles: 0,
+          dataFiles: 0,
+          crcWarningFiles: [],
+          cleanupStatus: "검증 실패 후 결합 zip과 압축 해제 폴더는 삭제됨",
+          verificationStatus: error instanceof Error ? error.message : String(error),
+          taskGroups: [],
+        });
+      }
     }
   } finally {
     await rm(tempRoot, { recursive: true, force: true });
@@ -298,7 +319,6 @@ function streamAppend(inputPath, output) {
   return new Promise((resolve, reject) => {
     const input = createReadStream(inputPath);
     input.on("error", reject);
-    output.on("error", reject);
     input.on("end", resolve);
     input.pipe(output, { end: false });
   });
