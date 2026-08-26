@@ -74,6 +74,7 @@ export async function scanDriveRepository({
   folderId,
   folderUrl,
   accessToken,
+  listChildren = listDriveFolderChildren,
 }) {
   const normalizedOwner = normalizeDriveName(owner);
   const queue = [{ id: folderId, depth: 0, path: normalizedOwner }];
@@ -87,7 +88,7 @@ export async function scanDriveRepository({
     if (!folder || seenFolderIds.has(folder.id)) continue;
     seenFolderIds.add(folder.id);
 
-    const children = await listDriveFolderChildren({
+    const children = await listChildren({
       folderId: folder.id,
       accessToken,
       folderPath: folder.path,
@@ -264,6 +265,7 @@ export async function loadDriveArtifactTrendEnv({ targetRootDir = rootDir } = {}
 async function listDriveFolderChildren({ folderId, accessToken, folderPath }) {
   const files = [];
   let pageToken = "";
+  const maxAttempts = 3;
 
   do {
     const url = new URL("https://www.googleapis.com/drive/v3/files");
@@ -277,9 +279,16 @@ async function listDriveFolderChildren({ folderId, accessToken, folderPath }) {
     );
     if (pageToken) url.searchParams.set("pageToken", pageToken);
 
-    const result = await getJson(url, {
-      headers: { authorization: `Bearer ${accessToken}` },
-    });
+    let result;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      result = await getJson(url, {
+        headers: { authorization: `Bearer ${accessToken}` },
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (result.ok || attempt === maxAttempts) break;
+      await sleep(1_000 * attempt);
+    }
+
     if (!result.ok) {
       throw new Error(`Drive 재귀 조회 실패 (${folderPath}): ${result.error}`);
     }
@@ -288,6 +297,10 @@ async function listDriveFolderChildren({ folderId, accessToken, folderPath }) {
   } while (pageToken);
 
   return files;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function isMetadataDateAnomaly(value, collectedAt) {

@@ -6,6 +6,7 @@ import {
   buildDriveArtifactTrendSnapshot,
   defaultDriveTrendRepositories,
   isDriveArtifactTrendSnapshot,
+  scanDriveRepository,
   writeDriveArtifactTrendSnapshot,
 } from "./collect-drive-artifact-trend.mjs";
 
@@ -98,6 +99,47 @@ describe("collect-drive-artifact-trend", () => {
     };
 
     expect(isDriveArtifactTrendSnapshot(invalidSnapshot)).toBe(false);
+  });
+
+  it("allows recursive folder listing to be injected for collector tests", async () => {
+    const listedFolderIds = [];
+    const scan = await scanDriveRepository({
+      owner: "김재우",
+      folderId: "root",
+      folderUrl: "https://drive.google.com/root",
+      accessToken: "test-token",
+      listChildren: async ({ folderId }) => {
+        listedFolderIds.push(folderId);
+        if (folderId === "root") {
+          return [
+            {
+              id: "nested-folder",
+              name: "nested",
+              mimeType: "application/vnd.google-apps.folder",
+            },
+          ];
+        }
+        return [
+          {
+            id: "nested-file",
+            name: "artifact.md",
+            mimeType: "text/markdown",
+            createdTime: "2026-07-27T01:00:00.000Z",
+          },
+        ];
+      },
+    });
+
+    expect(listedFolderIds).toEqual(["root", "nested-folder"]);
+    expect(scan.folderCount).toBe(1);
+    expect(scan.files).toEqual([
+      {
+        id: "nested-file",
+        name: "artifact.md",
+        createdTime: "2026-07-27T01:00:00.000Z",
+        depth: 1,
+      },
+    ]);
   });
 
   it("writes a deployable public snapshot", async () => {
