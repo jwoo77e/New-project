@@ -10,6 +10,7 @@ options = {
   output: "src/data/individualWeeklyUsageSnapshot.json",
   spend_mode: "cumulative-delta",
   code_mode: "cumulative-delta",
+  current_spend: [],
 }
 
 OptionParser.new do |parser|
@@ -26,7 +27,9 @@ OptionParser.new do |parser|
   parser.on("--start DATE", "Inclusive period start") { |value| options[:start_date] = value }
   parser.on("--end DATE", "Inclusive period end") { |value| options[:end_date] = value }
   parser.on("--previous-spend PATH", "Previous cumulative Spend report") { |value| options[:previous_spend] = value }
-  parser.on("--current-spend PATH", "Current cumulative Spend report") { |value| options[:current_spend] = value }
+  parser.on("--current-spend PATH", "Current cumulative Spend report (repeatable)") do |value|
+    options[:current_spend] << value
+  end
   parser.on("--spend-mode MODE", %w[period cumulative-delta], "Spend source mode") { |value| options[:spend_mode] = value }
   parser.on("--previous-code PATH", "Previous cumulative Code Lines report") { |value| options[:previous_code] = value }
   parser.on("--current-code PATH", "Current cumulative Code Lines report") { |value| options[:current_code] = value }
@@ -34,10 +37,11 @@ OptionParser.new do |parser|
   parser.on("--output PATH", "Output JSON path") { |value| options[:output] = value }
 end.parse!
 
-required = %i[key label start_date end_date current_spend current_code]
+required = %i[key label start_date end_date current_code]
 required << :previous_spend if options[:spend_mode] == "cumulative-delta"
 required << :previous_code if options[:code_mode] == "cumulative-delta"
 missing = required.select { |key| options[key].to_s.empty? }
+missing << :current_spend if options[:current_spend].empty?
 abort "missing options: #{missing.join(', ')}" unless missing.empty?
 
 start_date = Date.iso8601(options[:start_date])
@@ -56,7 +60,7 @@ def number(row, column)
   row[column].to_s.delete(",$").to_f
 end
 
-def read_spend(path)
+def read_spend(paths)
   users = Hash.new do |hash, email|
     hash[email] = {
       "requests" => 0,
@@ -69,19 +73,21 @@ def read_spend(path)
   end
   row_count = 0
 
-  CSV.foreach(path, headers: true) do |row|
-    email = row["user_email"].to_s.strip.downcase
-    next if email.empty?
+  Array(paths).each do |path|
+    CSV.foreach(path, headers: true) do |row|
+      email = row["user_email"].to_s.strip.downcase
+      next if email.empty?
 
-    row_count += 1
-    user = users[email]
-    METRICS.each do |target, source|
-      user[target] += number(row, source)
+      row_count += 1
+      user = users[email]
+      METRICS.each do |target, source|
+        user[target] += number(row, source)
+      end
+      product = row["product"].to_s.strip
+      model = row["model"].to_s.strip
+      user["products"][product] = true unless product.empty?
+      user["models"][model] = true unless model.empty?
     end
-    product = row["product"].to_s.strip
-    model = row["model"].to_s.strip
-    user["products"][product] = true unless product.empty?
-    user["models"][model] = true unless model.empty?
   end
 
   [users, row_count]
@@ -142,7 +148,7 @@ period = {
   "coverage" => "complete",
   "source" => {
     "previousSpendFile" => options[:previous_spend] && File.basename(options[:previous_spend]),
-    "currentSpendFile" => File.basename(options[:current_spend]),
+    "currentSpendFile" => options[:current_spend].map { |path| File.basename(path) }.join(" + "),
     "previousSpendRows" => previous_spend_rows,
     "currentSpendRows" => current_spend_rows,
     "previousCodeFile" => options[:previous_code] && File.basename(options[:previous_code]),

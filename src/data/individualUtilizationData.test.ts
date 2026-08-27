@@ -8,11 +8,11 @@ describe("individualUtilizationData", () => {
   it("reconciles the August fourth-week source update", () => {
     const data = individualUtilizationData;
 
-    expect(data.source.spend.rowCount).toBe(271);
+    expect(data.source.spend.rowCount).toBe(281);
     expect(data.users).toHaveLength(40);
     expect(data.users.filter((user) => user.measurementStatus === "measured")).toHaveLength(30);
-    expect(data.totals.requests).toBe(119252);
-    expect(data.totals.totalTokens).toBe(26963059606);
+    expect(data.totals.requests).toBe(120022);
+    expect(data.totals.totalTokens).toBe(27095037353);
     expect(data.totals.netSpendUsd).toBeCloseTo(333.61, 2);
     expect(data.source.codeLines).toHaveLength(4);
     expect(sumBy(data.source.codeLines, (item) => item.totalLines)).toBe(1228730);
@@ -222,10 +222,10 @@ describe("individualUtilizationData", () => {
       endDate: "2026-08-26",
       totals: {
         activeUsers: 27,
-        requests: 47752,
-        promptTokens: 9979137747,
-        completionTokens: 38462521,
-        totalTokens: 10017600268,
+        requests: 48522,
+        promptTokens: 10109922417,
+        completionTokens: 39655598,
+        totalTokens: 10149578015,
         netSpendUsd: 226.32,
         codeLines: 143511,
       },
@@ -234,6 +234,16 @@ describe("individualUtilizationData", () => {
       requests: 8786,
       totalTokens: 1436716785,
       codeLines: 46515,
+    });
+    expect(fourthWeek.users["airyoubi77@riskzero.kr"]).toMatchObject({
+      requests: 456,
+      totalTokens: 49106500,
+      products: ["Chat", "Office Agents"],
+    });
+    expect(fourthWeek.users["yspark@riskzero.kr"]).toMatchObject({
+      requests: 689,
+      totalTokens: 151448571,
+      models: ["claude-fable-5", "claude-haiku-4-5-20251001", "claude-opus-5", "claude-sonnet-5"],
     });
     expect(
       Object.values(fourthWeek.users).every(
@@ -318,10 +328,10 @@ describe("individualUtilizationData", () => {
       models: ["claude-haiku-4-5-20251001", "claude-sonnet-5"],
     });
     expect(data.monthlySpend["2026-08"]?.totals).toMatchObject({
-      requests: 119252,
-      promptTokens: 26860578185,
-      completionTokens: 102481421,
-      totalTokens: 26963059606,
+      requests: 120022,
+      promptTokens: 26991362855,
+      completionTokens: 103674498,
+      totalTokens: 27095037353,
     });
     expect(data.monthlySpend["2026-08"]?.coverage).toBe("partial");
     expect(data.monthlySpend["2026-08"]?.period).toBe("2026-08-01 ~ 2026-08-26");
@@ -332,6 +342,16 @@ describe("individualUtilizationData", () => {
     expect(data.monthlySpend["2026-08"]?.users["jungyr98@riskzero.kr"]).toMatchObject({
       requests: 3999,
       totalTokens: 464496016,
+    });
+    expect(data.monthlySpend["2026-08"]?.users["airyoubi77@riskzero.kr"]).toMatchObject({
+      requests: 486,
+      totalTokens: 50618515,
+      products: ["Chat", "Cowork", "Office Agents"],
+    });
+    expect(data.monthlySpend["2026-08"]?.users["yspark@riskzero.kr"]).toMatchObject({
+      requests: 1055,
+      totalTokens: 191771994,
+      models: ["claude-fable-5", "claude-haiku-4-5-20251001", "claude-opus-5", "claude-sonnet-5"],
     });
     expect(
       Object.values(data.monthlySpend["2026-08"]?.users ?? {}).every(

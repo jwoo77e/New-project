@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-27T14:38:38+09:00",
+  "generatedAt": "2026-08-27T15:34:15+09:00",
   "periods": [
     {
       "key": "2026-08-W1",
@@ -1019,9 +1019,9 @@
       "coverage": "complete",
       "source": {
         "previousSpendFile": null,
-        "currentSpendFile": "2026-08-27-spend-report.csv",
+        "currentSpendFile": "2026-08-27-spend-report.csv + 0827-spend-report-조욱상.csv + 0827-spend-report-박연석.csv",
         "previousSpendRows": 0,
-        "currentSpendRows": 88,
+        "currentSpendRows": 98,
         "previousCodeFile": "2026-08-20-claude_code.csv",
         "currentCodeFile": "2026-08-27-claude_code.csv",
         "spendMethod": "period_total",
@@ -1029,26 +1029,28 @@
       },
       "totals": {
         "activeUsers": 27,
-        "requests": 47752,
-        "promptTokens": 9979137747,
-        "completionTokens": 38462521,
-        "totalTokens": 10017600268,
+        "requests": 48522,
+        "promptTokens": 10109922417,
+        "completionTokens": 39655598,
+        "totalTokens": 10149578015,
         "netSpendUsd": 226.32,
         "codeLines": 143511
       },
       "users": {
         "airyoubi77@riskzero.kr": {
-          "requests": 157,
-          "promptTokens": 21533482,
-          "completionTokens": 164741,
+          "requests": 456,
+          "promptTokens": 48628232,
+          "completionTokens": 478268,
           "netSpendUsd": 26.91,
-          "totalTokens": 21698223,
+          "totalTokens": 49106500,
           "codeLines": 0,
           "products": [
-            "Chat"
+            "Chat",
+            "Office Agents"
           ],
           "models": [
             "claude-fable-5",
+            "claude-haiku-4-5-20251001",
             "claude-opus-5"
           ]
         },
@@ -1449,11 +1451,11 @@
           ]
         },
         "yspark@riskzero.kr": {
-          "requests": 218,
-          "promptTokens": 46598934,
-          "completionTokens": 280167,
+          "requests": 689,
+          "promptTokens": 150288854,
+          "completionTokens": 1159717,
           "netSpendUsd": 0.0,
-          "totalTokens": 46879101,
+          "totalTokens": 151448571,
           "codeLines": 0,
           "products": [
             "Chat",
@@ -1464,7 +1466,8 @@
           "models": [
             "claude-fable-5",
             "claude-haiku-4-5-20251001",
-            "claude-opus-5"
+            "claude-opus-5",
+            "claude-sonnet-5"
           ]
         }
       },

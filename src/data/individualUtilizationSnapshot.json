@@ -1,10 +1,10 @@
 {
   "source": {
-    "generatedAt": "2026-08-27T14:38:38+09:00",
+    "generatedAt": "2026-08-27T15:34:59+09:00",
     "spend": {
-      "fileName": "2026-08-06-spend-report.csv + 2026-08-13-spend-report.csv + 2026-08-20-spend-report.csv + 2026-08-27-spend-report.csv",
+      "fileName": "2026-08-06-spend-report.csv + 2026-08-13-spend-report.csv + 2026-08-20-spend-report.csv + 2026-08-27-spend-report.csv + 0827-spend-report-조욱상.csv + 0827-spend-report-박연석.csv",
       "period": "2026-08-01 ~ 2026-08-26",
-      "rowCount": 271,
+      "rowCount": 281,
       "grain": "user_product_model_period_sum"
     },
     "codeLines": [
@@ -49,10 +49,10 @@
   },
   "totals": {
     "users": 30,
-    "requests": 119252,
-    "promptTokens": 26860578185,
-    "completionTokens": 102481421,
-    "totalTokens": 26963059606,
+    "requests": 120022,
+    "promptTokens": 26991362855,
+    "completionTokens": 103674498,
+    "totalTokens": 27095037353,
     "netSpendUsd": 333.61,
     "grossSpendUsd": 334.0,
     "codeLines": 1228730,
@@ -64,20 +64,21 @@
     {
       "email": "airyoubi77@riskzero.kr",
       "displayName": "조욱상 이사",
-      "requests": 187,
-      "promptTokens": 23028969,
-      "completionTokens": 181269,
-      "totalTokens": 23210238,
+      "requests": 486,
+      "promptTokens": 50123719,
+      "completionTokens": 494796,
+      "totalTokens": 50618515,
       "netSpendUsd": 29.83,
       "grossSpendUsd": 29.83,
-      "uncachedInputTokens": 10320,
-      "cacheReadTokens": 21614090,
-      "cacheWrite5mTokens": 723607,
-      "cacheWrite1hTokens": 680952,
+      "uncachedInputTokens": 14566,
+      "cacheReadTokens": 47421751,
+      "cacheWrite5mTokens": 753085,
+      "cacheWrite1hTokens": 1934317,
       "webSearchCount": 0,
       "products": [
         "Chat",
-        "Cowork"
+        "Cowork",
+        "Office Agents"
       ],
       "models": [
         "claude-fable-5",
@@ -87,14 +88,19 @@
       ],
       "productUsage": {
         "Chat": {
-          "requests": 161,
-          "tokens": 21923110,
+          "requests": 441,
+          "tokens": 48706649,
           "netSpendUsd": 26.91
         },
         "Cowork": {
           "requests": 26,
           "tokens": 1287128,
           "netSpendUsd": 2.92
+        },
+        "Office Agents": {
+          "requests": 19,
+          "tokens": 624738,
+          "netSpendUsd": 0.0
         }
       },
       "modelUsage": {
@@ -104,13 +110,13 @@
           "netSpendUsd": 29.83
         },
         "claude-haiku-4-5-20251001": {
-          "requests": 5,
-          "tokens": 25137,
+          "requests": 13,
+          "tokens": 27179,
           "netSpendUsd": 0.0
         },
         "claude-opus-5": {
-          "requests": 36,
-          "tokens": 6368371,
+          "requests": 327,
+          "tokens": 33774606,
           "netSpendUsd": 0.0
         },
         "claude-sonnet-5": {
@@ -2323,16 +2329,16 @@
     {
       "email": "yspark@riskzero.kr",
       "displayName": "박연석 전무",
-      "requests": 584,
-      "promptTokens": 86479447,
-      "completionTokens": 723077,
-      "totalTokens": 87202524,
+      "requests": 1055,
+      "promptTokens": 190169367,
+      "completionTokens": 1602627,
+      "totalTokens": 191771994,
       "netSpendUsd": 0.0,
       "grossSpendUsd": 0.0,
-      "uncachedInputTokens": 619500,
-      "cacheReadTokens": 81126936,
+      "uncachedInputTokens": 935161,
+      "cacheReadTokens": 180448501,
       "cacheWrite5mTokens": 43393,
-      "cacheWrite1hTokens": 4689618,
+      "cacheWrite1hTokens": 8742312,
       "webSearchCount": 0,
       "products": [
         "Chat",
@@ -2343,22 +2349,23 @@
       "models": [
         "claude-fable-5",
         "claude-haiku-4-5-20251001",
-        "claude-opus-5"
+        "claude-opus-5",
+        "claude-sonnet-5"
       ],
       "productUsage": {
         "Chat": {
-          "requests": 150,
-          "tokens": 32227103,
+          "requests": 486,
+          "tokens": 124722050,
           "netSpendUsd": 0.0
         },
         "Claude Design": {
-          "requests": 70,
-          "tokens": 10828123,
+          "requests": 149,
+          "tokens": 19414721,
           "netSpendUsd": 0.0
         },
         "Cowork": {
-          "requests": 323,
-          "tokens": 42504472,
+          "requests": 379,
+          "tokens": 45992397,
           "netSpendUsd": 0.0
         },
         "Office Agents": {
@@ -2369,18 +2376,23 @@
       },
       "modelUsage": {
         "claude-fable-5": {
-          "requests": 341,
-          "tokens": 63187409,
+          "requests": 627,
+          "tokens": 141642410,
           "netSpendUsd": 0.0
         },
         "claude-haiku-4-5-20251001": {
-          "requests": 109,
-          "tokens": 830790,
+          "requests": 139,
+          "tokens": 1185476,
           "netSpendUsd": 0.0
         },
         "claude-opus-5": {
-          "requests": 134,
-          "tokens": 23184325,
+          "requests": 282,
+          "tokens": 48517288,
+          "netSpendUsd": 0.0
+        },
+        "claude-sonnet-5": {
+          "requests": 7,
+          "tokens": 426820,
           "netSpendUsd": 0.0
         }
       },

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-27T14:38:38+09:00",
+  "generatedAt": "2026-08-27T15:34:30+09:00",
   "months": [
     {
       "month": "2026-05",
@@ -802,27 +802,28 @@
     },
     {
       "month": "2026-08",
-      "fileName": "2026-08-06-spend-report.csv + 2026-08-13-spend-report.csv + 2026-08-20-spend-report.csv + 2026-08-27-spend-report.csv",
+      "fileName": "2026-08-06-spend-report.csv + 2026-08-13-spend-report.csv + 2026-08-20-spend-report.csv + 2026-08-27-spend-report.csv + 0827-spend-report-박연석.csv + 0827-spend-report-조욱상.csv",
       "period": "2026-08-01 ~ 2026-08-26",
-      "rowCount": 271,
+      "rowCount": 281,
       "coverage": "partial",
       "totals": {
-        "requests": 119252,
-        "promptTokens": 26860578185,
-        "completionTokens": 102481421,
-        "totalTokens": 26963059606,
+        "requests": 120022,
+        "promptTokens": 26991362855,
+        "completionTokens": 103674498,
+        "totalTokens": 27095037353,
         "netSpendUsd": 333.61
       },
       "users": {
         "airyoubi77@riskzero.kr": {
-          "requests": 187,
-          "promptTokens": 23028969,
-          "completionTokens": 181269,
-          "totalTokens": 23210238,
+          "requests": 486,
+          "promptTokens": 50123719,
+          "completionTokens": 494796,
+          "totalTokens": 50618515,
           "netSpendUsd": 29.83,
           "products": [
             "Chat",
-            "Cowork"
+            "Cowork",
+            "Office Agents"
           ],
           "models": [
             "claude-fable-5",
@@ -1264,10 +1265,10 @@
           ]
         },
         "yspark@riskzero.kr": {
-          "requests": 584,
-          "promptTokens": 86479447,
-          "completionTokens": 723077,
-          "totalTokens": 87202524,
+          "requests": 1055,
+          "promptTokens": 190169367,
+          "completionTokens": 1602627,
+          "totalTokens": 191771994,
           "netSpendUsd": 0.0,
           "products": [
             "Chat",
@@ -1278,7 +1279,8 @@
           "models": [
             "claude-fable-5",
             "claude-haiku-4-5-20251001",
-            "claude-opus-5"
+            "claude-opus-5",
+            "claude-sonnet-5"
           ]
         }
       }
