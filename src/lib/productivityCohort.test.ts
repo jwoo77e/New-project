@@ -57,7 +57,7 @@ describe("buildProductivityExecutiveModel", () => {
       driveStoredFiles: null,
     });
     expect(model.costUsageSeries.find((item) => item.month === "2026-08")).toMatchObject({
-      costKrw: 5_978_151.15,
+      costKrw: 6_126_651.15,
       costStatus: "최소",
       claudeDriveConversations: 69,
       claudeExportConversations: 6,
@@ -194,7 +194,7 @@ describe("buildProductivityExecutiveModel", () => {
     expect(augustModel.classifiedActivityMonth).toBe("2026-08");
     expect(augustModel.currentMonthDriveStoredFiles).toBe(292);
     expect(augustModel.costUsageSeries.find((item) => item.month === "2026-08")).toMatchObject({
-      costKrw: 5_978_151.15,
+      costKrw: 6_126_651.15,
       costStatus: "최소",
       claudeDriveConversations: 69,
       claudeExportConversations: 6,
