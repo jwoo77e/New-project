@@ -32,9 +32,26 @@ describe("gitlabActivityData", () => {
       "hchbae1001@gmail.com",
     );
     expect(gitlabActivityData.userByEmail.has("seighaft@gmail.com")).toBe(false);
+    expect(gitlabActivityData.userByEmail.has("sieghaft@gmail.com")).toBe(false);
     expect(gitlabActivityData.userByEmail.get("sieghaft@riskzero.kr")?.sourceEmails).toContain(
       "seighaft@gmail.com",
     );
+    expect(gitlabActivityData.userByEmail.get("sieghaft@riskzero.kr")?.sourceEmails).toContain(
+      "sieghaft@gmail.com",
+    );
+  });
+
+  it("reconciles the August fourth-week GitLab activity", () => {
+    const summary = gitlabSummaryForRange("2026-08-20", "2026-08-26");
+
+    expect(summary).toMatchObject({
+      commitCount: 436,
+      mergeCommitCount: 134,
+      additions: 632350,
+      deletions: 9269,
+      changedLines: 641619,
+      activeAuthors: 14,
+    });
   });
 
   it("supports month and arbitrary date-range filters", () => {
