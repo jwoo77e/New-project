@@ -4548,7 +4548,7 @@ function PlatformWbsSimulationPanel() {
           <div className="section-heading">
             <div>
               <strong>토큰 사용량과 WBS 일정 편차</strong>
-              <span>점 크기는 Code Lines · 8월 1~12일 동일 기간 비교</span>
+              <span>점 크기는 Code Lines · 8월 1~26일 동일 기간 비교</span>
             </div>
           </div>
           <div className="platform-wbs-correlation-chart">

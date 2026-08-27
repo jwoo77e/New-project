@@ -9,17 +9,17 @@ const sumBy = <T>(items: T[], select: (item: T) => number) =>
 describe("Claude usage snapshots", () => {
   it("captures the provided August source windows", () => {
     expect(initialClaudeTeamUsageData.source).toMatchObject({
-      generatedAt: "2026-08-20",
-      spendFile: "2026-08-06-spend-report.csv + 2026-08-13-spend-report.csv + 2026-08-20-spend-report.csv",
-      codeLinesFile: "2026-08-20-claude_code.csv",
+      generatedAt: "2026-08-27",
+      spendFile: "2026-08-06-spend-report.csv + 2026-08-13-spend-report.csv + 2026-08-20-spend-report.csv + 2026-08-27-spend-report.csv",
+      codeLinesFile: "2026-08-27-claude_code.csv",
     });
-    expect(initialClaudeTeamUsageData.source.verification.spendRecords).toBe(183);
-    expect(initialClaudeTeamUsageData.licensedUsers).toBe(27);
-    expect(initialClaudeTeamUsageData.activeUsers).toBe(27);
-    expect(initialClaudeTeamUsageData.totalRequests).toBe(71500);
-    expect(initialClaudeTeamUsageData.totalTokens).toBe(16945459338);
-    expect(initialClaudeTeamUsageData.totalGrossSpendUsd).toBeCloseTo(107.68, 2);
-    expect(initialClaudeTeamUsageData.totalCodeLines).toBe(237672);
+    expect(initialClaudeTeamUsageData.source.verification.spendRecords).toBe(271);
+    expect(initialClaudeTeamUsageData.licensedUsers).toBe(31);
+    expect(initialClaudeTeamUsageData.activeUsers).toBe(31);
+    expect(initialClaudeTeamUsageData.totalRequests).toBe(119252);
+    expect(initialClaudeTeamUsageData.totalTokens).toBe(26963059606);
+    expect(initialClaudeTeamUsageData.totalGrossSpendUsd).toBeCloseTo(334, 2);
+    expect(initialClaudeTeamUsageData.totalCodeLines).toBe(381183);
 
     expect(claudeExportUsageData.source).toMatchObject({
       collectedAt: "2026-08-05",

@@ -5,18 +5,18 @@ const sumBy = <T,>(items: T[], selector: (item: T) => number) =>
   items.reduce((sum, item) => sum + selector(item), 0);
 
 describe("individualUtilizationData", () => {
-  it("reconciles the August third-week source update", () => {
+  it("reconciles the August fourth-week source update", () => {
     const data = individualUtilizationData;
 
-    expect(data.source.spend.rowCount).toBe(183);
+    expect(data.source.spend.rowCount).toBe(271);
     expect(data.users).toHaveLength(40);
-    expect(data.users.filter((user) => user.measurementStatus === "measured")).toHaveLength(24);
-    expect(data.totals.requests).toBe(71500);
-    expect(data.totals.totalTokens).toBe(16945459338);
-    expect(data.totals.netSpendUsd).toBeCloseTo(107.29, 2);
+    expect(data.users.filter((user) => user.measurementStatus === "measured")).toHaveLength(30);
+    expect(data.totals.requests).toBe(119252);
+    expect(data.totals.totalTokens).toBe(26963059606);
+    expect(data.totals.netSpendUsd).toBeCloseTo(333.61, 2);
     expect(data.source.codeLines).toHaveLength(4);
-    expect(sumBy(data.source.codeLines, (item) => item.totalLines)).toBe(1085219);
-    expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(1084227);
+    expect(sumBy(data.source.codeLines, (item) => item.totalLines)).toBe(1228730);
+    expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(1228730);
   });
 
   it("keeps activity metrics behind an explicit HR evidence gate", () => {
@@ -27,7 +27,7 @@ describe("individualUtilizationData", () => {
     expect(individualUtilizationData.methodology.evaluationGate).toContain("재사용");
   });
 
-  it("adds shared-account users without fabricating individual metrics", () => {
+  it("keeps only accounts without individual source data unmeasured", () => {
     const sharedAccountUsers = individualUtilizationData.users.filter(
       (user) => user.measurementStatus === "shared-account-unmeasured",
     );
@@ -35,16 +35,12 @@ describe("individualUtilizationData", () => {
     expect(sharedAccountUsers.map((user) => user.displayName)).toEqual([
       "임성범 부장",
       "조주연 부장",
-      "이형배 상무",
       "김대일 상무",
-      "박연석 전무",
     ]);
     expect(sharedAccountUsers.map((user) => user.displayAccount)).toEqual([
       "sblim0519@riskzero.kr",
       "jyjo@riskzero.kr",
-      "hb777lee@riskzero.kr",
       "bigone@riskzero.kr",
-      "yspark@riskzero.kr",
     ]);
     expect(sharedAccountUsers.every((user) => user.usageScopeOverride === null)).toBe(true);
     expect(sharedAccountUsers.every((user) => user.products.length === 0)).toBe(true);
@@ -164,13 +160,14 @@ describe("individualUtilizationData", () => {
     ).toBe(true);
   });
 
-  it("publishes all three August period files as filterable weekly totals", () => {
+  it("publishes all four August period files as filterable weekly totals", () => {
     const data = individualUtilizationData;
     const firstWeek = data.weeklyUsage["2026-08-W1"];
     const secondWeek = data.weeklyUsage["2026-08-W2"];
     const thirdWeek = data.weeklyUsage["2026-08-W3"];
+    const fourthWeek = data.weeklyUsage["2026-08-W4"];
 
-    expect(data.usageWeeks).toEqual(["2026-08-W1", "2026-08-W2", "2026-08-W3"]);
+    expect(data.usageWeeks).toEqual(["2026-08-W1", "2026-08-W2", "2026-08-W3", "2026-08-W4"]);
     expect(firstWeek).toMatchObject({
       label: "8월 1주차",
       startDate: "2026-08-01",
@@ -219,8 +216,41 @@ describe("individualUtilizationData", () => {
       totalTokens: 677485181,
       codeLines: 17990,
     });
-    expect(Object.values(secondWeek.users).every((usage) => usage.totalTokens >= 0)).toBe(true);
-    expect(data.weeklyUsageTrend).toHaveLength(3);
+    expect(fourthWeek).toMatchObject({
+      label: "8월 4주차",
+      startDate: "2026-08-20",
+      endDate: "2026-08-26",
+      totals: {
+        activeUsers: 27,
+        requests: 47752,
+        promptTokens: 9979137747,
+        completionTokens: 38462521,
+        totalTokens: 10017600268,
+        netSpendUsd: 226.32,
+        codeLines: 143511,
+      },
+    });
+    expect(fourthWeek.users["wody@riskzero.kr"]).toMatchObject({
+      requests: 8786,
+      totalTokens: 1436716785,
+      codeLines: 46515,
+    });
+    expect(
+      Object.values(fourthWeek.users).every(
+        (usage) => usage.requests >= 0 && usage.totalTokens >= 0 && usage.codeLines >= 0,
+      ),
+    ).toBe(true);
+    const augustWeeks = data.usageWeeks.map((week) => data.weeklyUsage[week]);
+    expect(sumBy(augustWeeks, (week) => week.totals.requests)).toBe(
+      data.monthlySpend["2026-08"]?.totals.requests,
+    );
+    expect(sumBy(augustWeeks, (week) => week.totals.totalTokens)).toBe(
+      data.monthlySpend["2026-08"]?.totals.totalTokens,
+    );
+    expect(sumBy(augustWeeks, (week) => week.totals.codeLines)).toBe(
+      data.source.codeLines.find((item) => item.month === "2026-08")?.totalLines,
+    );
+    expect(data.weeklyUsageTrend).toHaveLength(4);
   });
 
   it("produces bounded peer-comparison scores for every user and period", () => {
@@ -249,7 +279,7 @@ describe("individualUtilizationData", () => {
       return (evaluation.codeLines ?? 0) > 0 && evaluation.humanPrompts === 0;
     });
 
-    expect(augustCodeUsersWithoutChatPrompts).toHaveLength(13);
+    expect(augustCodeUsersWithoutChatPrompts).toHaveLength(15);
     expect(
       augustCodeUsersWithoutChatPrompts.every(
         (user) => user.monthEvaluations["2026-08"].codeActivityDetailsMissing,
@@ -288,20 +318,20 @@ describe("individualUtilizationData", () => {
       models: ["claude-haiku-4-5-20251001", "claude-sonnet-5"],
     });
     expect(data.monthlySpend["2026-08"]?.totals).toMatchObject({
-      requests: 71500,
-      promptTokens: 16881440438,
-      completionTokens: 64018900,
-      totalTokens: 16945459338,
+      requests: 119252,
+      promptTokens: 26860578185,
+      completionTokens: 102481421,
+      totalTokens: 26963059606,
     });
     expect(data.monthlySpend["2026-08"]?.coverage).toBe("partial");
-    expect(data.monthlySpend["2026-08"]?.period).toBe("2026-08-01 ~ 2026-08-19");
+    expect(data.monthlySpend["2026-08"]?.period).toBe("2026-08-01 ~ 2026-08-26");
     expect(data.monthlySpend["2026-08"]?.users["woosung.jeon@riskzero.kr"]).toMatchObject({
-      requests: 13650,
-      totalTokens: 3747267298,
+      requests: 23794,
+      totalTokens: 6608651358,
     });
     expect(data.monthlySpend["2026-08"]?.users["jungyr98@riskzero.kr"]).toMatchObject({
-      requests: 1736,
-      totalTokens: 178585983,
+      requests: 3999,
+      totalTokens: 464496016,
     });
     expect(
       Object.values(data.monthlySpend["2026-08"]?.users ?? {}).every(

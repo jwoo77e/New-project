@@ -214,12 +214,12 @@ const codeUsers = measuredUsers.filter((user) => user.codeLines > 0).length;
 export const initialClaudeTeamUsageData: ClaudeTeamUsageData = {
   source: {
     name: "Claude Team Plan 사용 현황",
-    period: "1주차 2026-08-01~05 · 2주차 2026-08-06~12",
-    generatedAt: "2026-08-20",
+    period: snapshot.source.spend.period,
+    generatedAt: snapshot.source.generatedAt.slice(0, 10),
     membersFile: "members-e59c75bc-469e-466f-bef9-c311748c1df8-2026-07-20.csv",
     spendFile: snapshot.source.spend.fileName,
     codeLinesFile: currentCodeSource?.fileName ?? "2026-08-13-claude_code.csv",
-    note: "8월 Spend는 1주차와 2주차 기간값을 합산하고, Claude Code Lines는 최신 월 누적 스냅샷을 사용해 Team Plan 등록 22개 계정과 대조했습니다.",
+    note: "8월 Spend는 1~4주차 기간값을 합산하고, Claude Code Lines는 최신 월 누적 스냅샷을 사용했습니다.",
     verification: {
       spendRecords: snapshot.source.spend.rowCount,
       codeLineAccounts: currentCodeSource?.rowCount ?? 0,
@@ -229,7 +229,7 @@ export const initialClaudeTeamUsageData: ClaudeTeamUsageData = {
       activeMemberAccounts: licensedUsers,
       rawOnlyAccounts: 0,
       approvedButNoUsage: unmeasuredUsers.length,
-      note: `Team Plan 등록 ${licensedUsers}개 계정은 활성 상태이며, 8월 1~12일 원천에서 ${spendUsers}개 계정의 Spend와 ${codeUsers}개 계정의 Code Lines가 확인됩니다.`,
+      note: `8월 1~26일 원천에서 ${spendUsers}개 계정의 Spend와 ${codeUsers}개 계정의 Code Lines가 확인됩니다.`,
     },
   },
   licensedUsers,
@@ -247,10 +247,10 @@ export const initialClaudeTeamUsageData: ClaudeTeamUsageData = {
   modelUsage,
   users: claudeTeamUsers,
   insights: [
-    `Team Plan ${licensedUsers}개 계정은 활성 상태이며, 8월 1~12일 원천에서 ${spendUsers}개 계정의 사용 신호가 확인됩니다.`,
-    `8월 1~12일 누적 요청은 ${snapshot.totals.requests.toLocaleString("ko-KR")}건, 토큰은 ${(snapshot.totals.totalTokens / 1_000_000_000).toFixed(2)}B입니다.`,
+    `Team Plan ${licensedUsers}개 계정은 활성 상태이며, 8월 1~26일 원천에서 ${spendUsers}개 계정의 사용 신호가 확인됩니다.`,
+    `8월 1~26일 누적 요청은 ${snapshot.totals.requests.toLocaleString("ko-KR")}건, 토큰은 ${(snapshot.totals.totalTokens / 1_000_000_000).toFixed(2)}B입니다.`,
     `8월 누적 Claude Code Lines는 ${currentCodeSource?.totalLines.toLocaleString("ko-KR") ?? "0"}줄이며 ${codeUsers}개 계정에서 확인됩니다.`,
     `토큰 사용량은 ${topTokenUser.displayName} ${(topTokenUser.totalTokens / 1_000_000_000).toFixed(2)}B, Code Lines는 ${topCodeUser.displayName} ${topCodeUser.codeLines.toLocaleString("ko-KR")}줄이 가장 많습니다.`,
-    "월별 Spend는 1주차와 2주차 기간값을 합산하고, Code Lines는 최신 월 누적값과 스냅샷 간 주차 순증을 사용합니다.",
+    "월별 Spend는 1~4주차 기간값을 합산하고, Code Lines는 최신 월 누적값과 스냅샷 간 주차 순증을 사용합니다.",
   ],
 };

@@ -278,9 +278,7 @@ const allCodeLines = snapshot.users.map((user) =>
 const sharedAccountEmails = new Set([
   "sblim0519@riskzero.kr",
   "jyjo@riskzero.kr",
-  "hb777lee@riskzero.kr",
   "bigone@riskzero.kr",
-  "yspark@riskzero.kr",
 ]);
 
 const measuredUsers: IndividualUtilizationUser[] = snapshot.users
