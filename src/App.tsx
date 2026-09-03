@@ -496,7 +496,7 @@ function apiForecastActualCostUsd(forecast: ApiUsageRunRateForecast) {
 
 function App() {
   const [initialState] = useState(loadInitialDashboardState);
-  const [activeView, setActiveView] = useState<ViewKey>("overview");
+  const [activeView, setActiveView] = useState<ViewKey>("adoption");
   const [layoutMode, setLayoutMode] = useState<LayoutMode>(loadInitialLayoutMode);
   const [query, setQuery] = useState("");
   const [toast, setToast] = useState("");
@@ -1223,14 +1223,6 @@ function App() {
       </header>
 
       <nav className="view-tabs" aria-label="대시보드 보기">
-        <button
-          className={activeView === "overview" ? "is-active" : ""}
-          type="button"
-          onClick={() => setActiveView("overview")}
-        >
-          <Activity size={17} />
-          경영 인사이트
-        </button>
         <button
           className={activeView === "adoption" ? "is-active" : ""}
           type="button"
