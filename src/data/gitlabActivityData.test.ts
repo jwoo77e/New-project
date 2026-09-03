@@ -41,15 +41,38 @@ describe("gitlabActivityData", () => {
     );
   });
 
-  it("reconciles the August fourth-week GitLab activity", () => {
+  it("reconciles the refreshed August fourth-week GitLab activity", () => {
     const summary = gitlabSummaryForRange("2026-08-20", "2026-08-26");
 
     expect(summary).toMatchObject({
-      commitCount: 436,
-      mergeCommitCount: 134,
-      additions: 632350,
-      deletions: 9269,
-      changedLines: 641619,
+      commitCount: 394,
+      mergeCommitCount: 127,
+      additions: 630264,
+      deletions: 8510,
+      changedLines: 638774,
+      activeAuthors: 13,
+    });
+  });
+
+  it("publishes the complete August month and August 27 to September 2 range", () => {
+    expect(gitlabActivityData.source).toMatchObject({
+      period: "2026-05-01 ~ 2026-09-03",
+      projectErrors: [],
+    });
+    expect(gitlabSummaryForRange("2026-08-01", "2026-08-31")).toMatchObject({
+      commitCount: 911,
+      mergeCommitCount: 305,
+      additions: 838264,
+      deletions: 106116,
+      changedLines: 944380,
+      activeAuthors: 15,
+    });
+    expect(gitlabSummaryForRange("2026-08-27", "2026-09-02")).toMatchObject({
+      commitCount: 295,
+      mergeCommitCount: 139,
+      additions: 573926,
+      deletions: 55167,
+      changedLines: 629093,
       activeAuthors: 14,
     });
   });

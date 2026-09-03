@@ -7,19 +7,19 @@ const sumBy = <T>(items: T[], select: (item: T) => number) =>
   items.reduce((sum, item) => sum + select(item), 0);
 
 describe("Claude usage snapshots", () => {
-  it("captures the provided August source windows", () => {
+  it("captures the complete August source files", () => {
     expect(initialClaudeTeamUsageData.source).toMatchObject({
-      generatedAt: "2026-08-27",
-      spendFile: "2026-08-06-spend-report.csv + 2026-08-13-spend-report.csv + 2026-08-20-spend-report.csv + 2026-08-27-spend-report.csv + 0827-spend-report-조욱상.csv + 0827-spend-report-박연석.csv",
-      codeLinesFile: "2026-08-27-claude_code.csv",
+      generatedAt: "2026-09-03",
+      spendFile: "spend-report-e59c75bc-469e-466f-bef9-c311748c1df8-2026-08-01-to-2026-08-31.csv + spend-report-f5ff68f8-ab8f-4101-aa65-a766ac49a78e-2026-08-01-to-2026-08-31.csv + spend-report-17711e80-a5e7-427c-b20e-230325bbae9f-2026-08-01-to-2026-08-31.csv (yspark@riskzero.kr overlay)",
+      codeLinesFile: "claude_code_team_2026_08_01_to_2026_08_31.csv",
     });
-    expect(initialClaudeTeamUsageData.source.verification.spendRecords).toBe(281);
-    expect(initialClaudeTeamUsageData.licensedUsers).toBe(31);
-    expect(initialClaudeTeamUsageData.activeUsers).toBe(31);
-    expect(initialClaudeTeamUsageData.totalRequests).toBe(120022);
-    expect(initialClaudeTeamUsageData.totalTokens).toBe(27095037353);
-    expect(initialClaudeTeamUsageData.totalGrossSpendUsd).toBeCloseTo(334, 2);
-    expect(initialClaudeTeamUsageData.totalCodeLines).toBe(381183);
+    expect(initialClaudeTeamUsageData.source.verification.spendRecords).toBe(138);
+    expect(initialClaudeTeamUsageData.licensedUsers).toBe(33);
+    expect(initialClaudeTeamUsageData.activeUsers).toBe(33);
+    expect(initialClaudeTeamUsageData.totalRequests).toBe(161582);
+    expect(initialClaudeTeamUsageData.totalTokens).toBe(37099774050);
+    expect(initialClaudeTeamUsageData.totalGrossSpendUsd).toBeCloseTo(414.44, 2);
+    expect(initialClaudeTeamUsageData.totalCodeLines).toBe(442131);
 
     expect(claudeExportUsageData.source).toMatchObject({
       collectedAt: "2026-08-05",

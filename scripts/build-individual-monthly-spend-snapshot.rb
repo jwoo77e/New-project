@@ -11,6 +11,7 @@ options = {
   months: [],
   git_snapshots: [],
   missing: [],
+  user_overlays: [],
   output: "src/data/individualMonthlySpendSnapshot.json",
 }
 
@@ -38,6 +39,14 @@ OptionParser.new do |parser|
     options[:git_snapshots] << [month, start_date, end_date, revision, repo_path]
   end
   parser.on("--missing MONTH", "Month without a monthly Spend report") { |value| options[:missing] << value }
+  parser.on("--user-overlay MONTH:EMAIL:PATH", "Replace one user's monthly Spend rows") do |value|
+    month, email, path = value.split(":", 3)
+    unless month&.match?(/\A\d{4}-\d{2}\z/) && email&.include?("@") && path
+      raise OptionParser::InvalidArgument, "--user-overlay requires MONTH:EMAIL:PATH"
+    end
+
+    options[:user_overlays] << [month, email.downcase, path]
+  end
   parser.on("--output PATH", "Output JSON path") { |value| options[:output] = value }
 end.parse!
 
@@ -228,12 +237,65 @@ months = (months + git_months).group_by { |item| item.fetch("month") }.map do |m
   }
 end.sort_by { |item| item.fetch("month") }
 
+options[:user_overlays].each do |month, email, path|
+  target = months.find { |item| item.fetch("month") == month }
+  abort "monthly source missing for user overlay: #{month}" unless target
+
+  usage = {
+    "requests" => 0,
+    "promptTokens" => 0,
+    "completionTokens" => 0,
+    "totalTokens" => 0,
+    "netSpendUsd" => 0.0,
+    "products" => Set.new,
+    "models" => Set.new,
+  }
+  overlay_rows = 0
+  CSV.foreach(path, headers: true) do |row|
+    next unless row["user_email"].to_s.strip.downcase == email
+
+    overlay_rows += 1
+    prompt_tokens = integer(row, "total_prompt_tokens")
+    completion_tokens = integer(row, "total_completion_tokens")
+    usage["requests"] += integer(row, "total_requests")
+    usage["promptTokens"] += prompt_tokens
+    usage["completionTokens"] += completion_tokens
+    usage["totalTokens"] += prompt_tokens + completion_tokens
+    usage["netSpendUsd"] += decimal(row, "total_net_spend_usd")
+    usage["products"] << row["product"].to_s.strip unless row["product"].to_s.strip.empty?
+    usage["models"] << row["model"].to_s.strip unless row["model"].to_s.strip.empty?
+  end
+  abort "user overlay has no matching rows: #{month} #{email}" if overlay_rows.zero?
+
+  usage["netSpendUsd"] = usage["netSpendUsd"].round(6)
+  target.fetch("users")[email] = usage.merge(
+    "products" => usage["products"].to_a.sort,
+    "models" => usage["models"].to_a.sort,
+  )
+  target["users"] = target.fetch("users").sort.to_h
+  target["totals"] = target.fetch("users").values.each_with_object({
+    "requests" => 0,
+    "promptTokens" => 0,
+    "completionTokens" => 0,
+    "totalTokens" => 0,
+    "netSpendUsd" => 0.0,
+  }) do |user, memo|
+    %w[requests promptTokens completionTokens totalTokens].each { |key| memo[key] += user.fetch(key) }
+    memo["netSpendUsd"] += user.fetch("netSpendUsd")
+  end
+  target["totals"]["netSpendUsd"] = target["totals"]["netSpendUsd"].round(6)
+  target["fileName"] = "#{target.fetch('fileName')} + #{File.basename(path)} (#{email} overlay)"
+  target["rowCount"] = nil
+  target["userOverlays"] ||= []
+  target["userOverlays"] << { "email" => email, "fileName" => File.basename(path), "rowCount" => overlay_rows }
+end
+
 snapshot = {
   "generatedAt" => Time.now.getlocal("+09:00").iso8601,
   "months" => months,
   "missingMonths" => options[:missing].uniq.sort,
   "notes" => [
-    "월별 요청·토큰은 해당 월의 주차별 Spend report를 합산한 값입니다.",
+    "월별 요청·토큰은 해당 월 입력 Spend report의 기간 합계이며 월 전체 파일을 우선 사용합니다.",
     "월초 이후에 시작하거나 월말 이전에 종료되거나 기간 사이에 공백이 있는 report는 부분 누적으로 표시합니다.",
     "원본 CSV가 현재 없고 검증된 과거 커밋에 개인별 합계가 남은 달은 해당 스냅샷을 합산합니다.",
     "월별 Spend report가 없는 달은 다른 기간 자료로 추정하지 않습니다.",

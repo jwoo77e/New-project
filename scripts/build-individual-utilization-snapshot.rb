@@ -9,7 +9,9 @@ require "time"
 
 options = {
   code: [],
+  code_periods: {},
   spend: [],
+  spend_user_overlays: [],
   output: "src/data/individualUtilizationSnapshot.json",
 }
 
@@ -23,12 +25,26 @@ OptionParser.new do |parser|
   USAGE
 
   parser.on("--spend PATH", "Claude Team spend report CSV (repeatable)") { |value| options[:spend] << value }
+  parser.on("--spend-user-overlay EMAIL:PATH", "Replace one user's Spend rows with another report") do |value|
+    email, path = value.split(":", 2)
+    raise OptionParser::InvalidArgument, "--spend-user-overlay requires EMAIL:PATH" unless email&.include?("@") && path
+
+    options[:spend_user_overlays] << [email.downcase, path]
+  end
   parser.on("--spend-period PERIOD", "Spend report coverage label") { |value| options[:spend_period] = value }
   parser.on("--code MONTH:PATH", "Monthly Claude Code lines CSV (repeatable)") do |value|
     month, path = value.split(":", 2)
     raise OptionParser::InvalidArgument, "--code requires MONTH:PATH" unless month&.match?(/\A\d{4}-\d{2}\z/) && path
 
     options[:code] << [month, path]
+  end
+  parser.on("--code-period MONTH:START:END", "Actual coverage for a monthly Code Lines file") do |value|
+    month, start_date, end_date = value.split(":", 3)
+    unless month&.match?(/\A\d{4}-\d{2}\z/) && start_date && end_date
+      raise OptionParser::InvalidArgument, "--code-period requires MONTH:START:END"
+    end
+
+    options[:code_periods][month] = "#{start_date} ~ #{end_date}"
   end
   parser.on("--conversations PATH", "Claude export conversations.json") { |value| options[:conversations] = value }
   parser.on("--users PATH", "Claude export users.json") { |value| options[:users] = value }
@@ -127,16 +143,7 @@ def kst_time(value)
   Time.parse(value).getlocal("+09:00")
 end
 
-users = Hash.new { |hash, email| hash[email] = blank_user }
-spend_rows = 0
-
-options[:spend].each do |spend_path|
-CSV.foreach(spend_path, headers: true) do |row|
-  email = row["user_email"].to_s.strip.downcase
-  next if email.empty?
-
-  spend_rows += 1
-  user = users[email]
+def add_spend_row(user, row)
   requests = integer(row, "total_requests")
   prompt_tokens = integer(row, "total_prompt_tokens")
   completion_tokens = integer(row, "total_completion_tokens")
@@ -159,27 +166,46 @@ CSV.foreach(spend_path, headers: true) do |row|
   user["models"] << model unless model.empty?
 
   unless product.empty?
-    product_usage = user["productUsage"][product] ||= {
-      "requests" => 0,
-      "tokens" => 0,
-      "netSpendUsd" => 0.0,
-    }
+    product_usage = user["productUsage"][product] ||= { "requests" => 0, "tokens" => 0, "netSpendUsd" => 0.0 }
     product_usage["requests"] += requests
     product_usage["tokens"] += prompt_tokens + completion_tokens
     product_usage["netSpendUsd"] += net_spend
   end
 
   unless model.empty?
-    model_usage = user["modelUsage"][model] ||= {
-      "requests" => 0,
-      "tokens" => 0,
-      "netSpendUsd" => 0.0,
-    }
+    model_usage = user["modelUsage"][model] ||= { "requests" => 0, "tokens" => 0, "netSpendUsd" => 0.0 }
     model_usage["requests"] += requests
     model_usage["tokens"] += prompt_tokens + completion_tokens
     model_usage["netSpendUsd"] += net_spend
   end
 end
+
+users = Hash.new { |hash, email| hash[email] = blank_user }
+spend_rows = 0
+spend_rows_by_email = Hash.new(0)
+
+options[:spend].each do |spend_path|
+CSV.foreach(spend_path, headers: true) do |row|
+  email = row["user_email"].to_s.strip.downcase
+  next if email.empty?
+
+  spend_rows += 1
+  spend_rows_by_email[email] += 1
+  add_spend_row(users[email], row)
+end
+end
+
+options[:spend_user_overlays].each do |email, path|
+  spend_rows -= spend_rows_by_email[email]
+  spend_rows_by_email[email] = 0
+  users[email] = blank_user
+  CSV.foreach(path, headers: true) do |row|
+    next unless row["user_email"].to_s.strip.downcase == email
+
+    spend_rows += 1
+    spend_rows_by_email[email] += 1
+    add_spend_row(users[email], row)
+  end
 end
 
 latest_code_inputs = options[:code].each_with_object({}) do |(month, path), inputs|
@@ -203,6 +229,7 @@ code_sources = latest_code_inputs.sort.map do |month, path|
   {
     "month" => month,
     "fileName" => File.basename(path),
+    "period" => options[:code_periods][month],
     "rowCount" => row_count,
     "totalLines" => total_lines,
   }
@@ -339,7 +366,8 @@ snapshot = {
   "source" => {
     "generatedAt" => Time.now.getlocal("+09:00").iso8601,
     "spend" => {
-      "fileName" => options[:spend].map { |path| File.basename(path) }.join(" + "),
+      "fileName" => (options[:spend].map { |path| File.basename(path) } +
+        options[:spend_user_overlays].map { |email, path| "#{File.basename(path)} (#{email} overlay)" }).join(" + "),
       "period" => options[:spend_period] || "조회 기간 미지정",
       "rowCount" => spend_rows,
       "grain" => "user_product_model_period_sum",
@@ -347,7 +375,7 @@ snapshot = {
     "codeLines" => code_sources,
     "conversations" => conversation_source,
     "notes" => [
-      "Spend report는 주차별 사용자·제품·모델 기간 합계이며 월 누적은 주차 파일을 더해 계산합니다.",
+      "Spend report는 입력된 사용자·제품·모델 기간 합계이며 월 전체 파일이 있으면 해당 파일을 월 확정값으로 사용합니다.",
       "Code Lines는 월 누적 스냅샷의 최신 파일을 월 누적값으로 사용하고 주차 값은 스냅샷 간 순증으로 계산합니다.",
       "주간 활동은 Claude 대화 원천의 대화·메시지 타임스탬프만 사용합니다.",
     ],

@@ -10,7 +10,10 @@ options = {
   output: "src/data/individualWeeklyUsageSnapshot.json",
   spend_mode: "cumulative-delta",
   code_mode: "cumulative-delta",
+  coverage: "complete",
   current_spend: [],
+  current_code: [],
+  spend_user_overlays: [],
 }
 
 OptionParser.new do |parser|
@@ -26,21 +29,37 @@ OptionParser.new do |parser|
   parser.on("--label LABEL", "Dashboard label") { |value| options[:label] = value }
   parser.on("--start DATE", "Inclusive period start") { |value| options[:start_date] = value }
   parser.on("--end DATE", "Inclusive period end") { |value| options[:end_date] = value }
+  parser.on("--coverage VALUE", %w[complete partial], "Overall source coverage") { |value| options[:coverage] = value }
   parser.on("--previous-spend PATH", "Previous cumulative Spend report") { |value| options[:previous_spend] = value }
   parser.on("--current-spend PATH", "Current cumulative Spend report (repeatable)") do |value|
     options[:current_spend] << value
   end
   parser.on("--spend-mode MODE", %w[period cumulative-delta], "Spend source mode") { |value| options[:spend_mode] = value }
+  parser.on("--spend-user-overlay EMAIL:PATH", "Replace one user's current Spend rows") do |value|
+    email, path = value.split(":", 2)
+    raise OptionParser::InvalidArgument, "--spend-user-overlay requires EMAIL:PATH" unless email&.include?("@") && path
+
+    options[:spend_user_overlays] << [email.downcase, path]
+  end
   parser.on("--previous-code PATH", "Previous cumulative Code Lines report") { |value| options[:previous_code] = value }
-  parser.on("--current-code PATH", "Current cumulative Code Lines report") { |value| options[:current_code] = value }
-  parser.on("--code-mode MODE", %w[period cumulative-delta], "Code Lines source mode") { |value| options[:code_mode] = value }
+  parser.on("--current-code PATH", "Current cumulative or period Code Lines report (repeatable)") do |value|
+    options[:current_code] << value
+  end
+  parser.on("--code-mode MODE", %w[period cumulative-delta not-collected], "Code Lines source mode") { |value| options[:code_mode] = value }
+  parser.on("--code-period PERIOD", "Code Lines coverage label") { |value| options[:code_period] = value }
   parser.on("--output PATH", "Output JSON path") { |value| options[:output] = value }
 end.parse!
 
-required = %i[key label start_date end_date current_code]
+required = %i[key label start_date end_date]
 required << :previous_spend if options[:spend_mode] == "cumulative-delta"
-required << :previous_code if options[:code_mode] == "cumulative-delta"
-missing = required.select { |key| options[key].to_s.empty? }
+unless options[:code_mode] == "not-collected"
+  required << :current_code if options[:current_code].empty?
+  required << :previous_code if options[:code_mode] == "cumulative-delta"
+end
+missing = required.select do |key|
+  value = options[key]
+  value.respond_to?(:empty?) ? value.empty? : value.to_s.empty?
+end
 missing << :current_spend if options[:current_spend].empty?
 abort "missing options: #{missing.join(', ')}" unless missing.empty?
 
@@ -93,21 +112,30 @@ def read_spend(paths)
   [users, row_count]
 end
 
-def read_code(path)
-  rows = {}
-  CSV.foreach(path, headers: true) do |row|
-    email = row["User"].to_s.strip.downcase
-    next if email.empty?
+def read_code(paths)
+  rows = Hash.new(0)
+  Array(paths).each do |path|
+    CSV.foreach(path, headers: true) do |row|
+      email = row["User"].to_s.strip.downcase
+      next if email.empty?
 
-    rows[email] = row["Lines this Month"].to_s.delete(",").to_i
+      rows[email] += row["Lines this Month"].to_s.delete(",").to_i
+    end
   end
   rows
 end
 
 previous_spend, previous_spend_rows = options[:spend_mode] == "cumulative-delta" ? read_spend(options[:previous_spend]) : [{}, 0]
 current_spend, current_spend_rows = read_spend(options[:current_spend])
+options[:spend_user_overlays].each do |email, path|
+  overlay, overlay_rows = read_spend(path)
+  abort "spend user overlay has no matching rows: #{email}" unless overlay.key?(email)
+
+  current_spend[email] = overlay.fetch(email)
+  current_spend_rows += overlay_rows
+end
 previous_code = options[:code_mode] == "cumulative-delta" ? read_code(options[:previous_code]) : {}
-current_code = read_code(options[:current_code])
+current_code = options[:code_mode] == "not-collected" ? {} : read_code(options[:current_code])
 
 emails = (previous_spend.keys | current_spend.keys | previous_code.keys | current_code.keys).sort
 users = emails.to_h do |email|
@@ -118,7 +146,7 @@ users = emails.to_h do |email|
     [metric, metric == "netSpendUsd" ? delta.round(6) : delta.to_i]
   end
   values["totalTokens"] = values["promptTokens"] + values["completionTokens"]
-  values["codeLines"] = current_code.fetch(email, 0) - previous_code.fetch(email, 0)
+  values["codeLines"] = options[:code_mode] == "not-collected" ? 0 : current_code.fetch(email, 0) - previous_code.fetch(email, 0)
   values["products"] = current.fetch("products", {}).keys.sort
   values["models"] = current.fetch("models", {}).keys.sort
   [email, values]
@@ -145,24 +173,36 @@ period = {
   "label" => options[:label],
   "startDate" => start_date.iso8601,
   "endDate" => end_date.iso8601,
-  "coverage" => "complete",
+  "coverage" => options[:coverage],
   "source" => {
     "previousSpendFile" => options[:previous_spend] && File.basename(options[:previous_spend]),
-    "currentSpendFile" => options[:current_spend].map { |path| File.basename(path) }.join(" + "),
+    "currentSpendFile" => (options[:current_spend].map { |path| File.basename(path) } +
+      options[:spend_user_overlays].map { |email, path| "#{File.basename(path)} (#{email} overlay)" }).join(" + "),
     "previousSpendRows" => previous_spend_rows,
     "currentSpendRows" => current_spend_rows,
     "previousCodeFile" => options[:previous_code] && File.basename(options[:previous_code]),
-    "currentCodeFile" => File.basename(options[:current_code]),
+    "currentCodeFile" => options[:current_code].empty? ? nil : options[:current_code].map { |path| File.basename(path) }.join(" + "),
+    "codePeriod" => options[:code_period],
     "spendMethod" => options[:spend_mode] == "period" ? "period_total" : "current_cumulative_minus_previous_cumulative",
-    "codeMethod" => options[:code_mode] == "period" ? "period_total" : "current_cumulative_minus_previous_cumulative",
+    "codeMethod" => case options[:code_mode]
+                    when "period" then "period_total"
+                    when "not-collected" then "not_collected"
+                    else "current_cumulative_minus_previous_cumulative"
+                    end,
   },
   "totals" => totals,
   "users" => users,
   "notes" => [
     "Spend는 해당 주차 조회 기간 합계를 사용합니다.",
-    options[:code_mode] == "period" ?
-      "Code Lines는 해당 주차 파일의 기간 합계를 사용합니다." :
-      "Code Lines는 최신 월 누적 스냅샷에서 직전 스냅샷을 뺀 주차 순증입니다.",
+    if options[:code_mode] == "not-collected"
+      "Code Lines 원천 파일이 없어 해당 주차는 수집중으로 표시합니다."
+    elsif options[:code_mode] == "period"
+      "Code Lines는 해당 주차 파일의 기간 합계를 사용합니다."
+    elsif options[:code_period]
+      "Code Lines는 #{options[:code_period]} 누적 순증입니다."
+    else
+      "Code Lines는 최신 월 누적 스냅샷에서 직전 스냅샷을 뺀 주차 순증입니다."
+    end,
   ],
 }
 

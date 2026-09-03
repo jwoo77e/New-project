@@ -4134,12 +4134,14 @@ function monthlyCodeDensitySamplesForUser(
       label: monthLabel(month),
       codeLines: user.monthlyCodeLines[month] ?? 0,
       totalTokens: usage.totalTokens,
-      periodAligned: isMonthlyCodePeriodAligned({
-        codeFileName: codeSource.fileName,
-        month,
-        spendStartDate,
-        spendEndDate,
-      }),
+      periodAligned: codeSource.period
+        ? codeSource.period === spendPeriod.period
+        : isMonthlyCodePeriodAligned({
+            codeFileName: codeSource.fileName,
+            month,
+            spendStartDate,
+            spendEndDate,
+          }),
     }];
   });
 }
@@ -4154,7 +4156,7 @@ function weeklyCodeDensitySamplesForUser(
   return individualUtilizationData.usageWeeks.slice(0, selectedIndex + 1).flatMap((week) => {
     const period = individualUtilizationData.weeklyUsage[week];
     const usage = period?.users[email];
-    if (!period || !usage) return [];
+    if (!period || !usage || period.source.codeMethod === "not_collected") return [];
     return [{
       key: week,
       label: period.label,
@@ -4680,6 +4682,8 @@ function AdoptionView({
     ? selectedWeeklyUsage?.label ?? "주차 미선택"
     : fullMonthLabel(selectedMonth);
   const selectedMonthlySpend = data.monthlySpend[selectedMonth] ?? null;
+  const weeklyCodeCollected = !isWeekly || selectedWeeklyUsage?.source.codeMethod !== "not_collected";
+  const weeklyCodePeriod = isWeekly ? selectedWeeklyUsage?.source.codePeriod : null;
   const coverageNote = isWeekly
     ? selectedWeeklyUsage
       ? `${selectedWeeklyUsage.startDate} ~ ${selectedWeeklyUsage.endDate} · 주차 사용량`
@@ -4774,7 +4778,11 @@ function AdoptionView({
           if (active) {
             summary.activeUsers += 1;
           }
-          summary.codeLines += isWeekly ? row.weeklyUsage?.codeLines ?? 0 : evaluation?.codeLines ?? 0;
+          summary.codeLines += isWeekly && !weeklyCodeCollected
+            ? 0
+            : isWeekly
+              ? row.weeklyUsage?.codeLines ?? 0
+              : evaluation?.codeLines ?? 0;
           return summary;
         },
         {
@@ -4782,7 +4790,7 @@ function AdoptionView({
           codeLines: 0,
         },
       ),
-    [isWeekly, rows],
+    [isWeekly, rows, weeklyCodeCollected],
   );
 
   const usageSummary = useMemo(() => {
@@ -4847,7 +4855,13 @@ function AdoptionView({
           </div>
           <p>
             {isWeekly
-              ? "토큰은 주차별 Spend 기간값을 사용하고, Code Lines는 월 누적 스냅샷 간 차이로 해당 주차 순증을 계산합니다. 코드 산출 밀도는 1M 토큰당 Code Lines입니다."
+              ? weeklyCodeCollected
+                ? weeklyCodePeriod
+                  ? selectedWeeklyUsage?.coverage === "complete"
+                    ? `토큰과 Code Lines는 ${weeklyCodePeriod} 전체 기간값을 사용합니다.`
+                    : `토큰은 주차 전체 Spend 기간값을 사용합니다. Code Lines는 ${weeklyCodePeriod} 누적 순증으로, 주차보다 짧은 부분 집계입니다.`
+                  : "토큰은 주차별 Spend 기간값을 사용하고, Code Lines는 월 누적 스냅샷 간 차이로 해당 주차 순증을 계산합니다. 코드 산출 밀도는 1M 토큰당 Code Lines입니다."
+                : "토큰은 주차별 Spend 기간값을 사용합니다. 선택한 주차는 Code Lines 원천 파일이 없어 코드 산출량과 밀도를 수집중으로 표시합니다."
               : "토큰은 월 누적 Spend를 사용하고, Code Lines는 최신 월 누적 스냅샷을 사용합니다. 코드 산출 밀도는 집계 기간이 일치할 때만 계산합니다."}
           </p>
         </div>
@@ -4923,8 +4937,8 @@ function AdoptionView({
       <section className="individual-period-summary" aria-label={`${periodLabel} 핵심 활용 지표`}>
         <article>
           <span><FileText size={17} />Code Lines</span>
-          <strong>{numberFormat.format(periodSummary.codeLines)}줄</strong>
-          <small>{isWeekly ? "해당 주차 순증" : "최신 월 누적"}</small>
+          <strong>{weeklyCodeCollected ? `${numberFormat.format(periodSummary.codeLines)}줄` : "수집중"}</strong>
+          <small>{isWeekly ? weeklyCodeCollected ? weeklyCodePeriod && selectedWeeklyUsage?.coverage !== "complete" ? `${weeklyCodePeriod} 부분 집계` : "해당 주차 순증" : "Code Lines 원천 미제공" : "최신 월 누적"}</small>
         </article>
         <article>
           <span><Activity size={17} />{isWeekly ? "주간 토큰" : "월 누적 토큰"}</span>
@@ -4977,7 +4991,7 @@ function AdoptionView({
                 const scopeProducts = periodProducts?.length ? periodProducts : user.products;
                 const scopeModels = periodModels?.length ? periodModels : user.models;
                 const generatedCodeLines = isWeekly
-                  ? weeklyUsage?.codeLines ?? null
+                  ? weeklyCodeCollected ? weeklyUsage?.codeLines ?? null : null
                   : evaluation?.codeLines ?? null;
                 const teamGroup = individualTeamGroup(user.email);
                 const previousTeamGroup = index > 0
@@ -5015,7 +5029,7 @@ function AdoptionView({
                       <td>
                         {metricsMeasured ? (
                           isWeekly
-                            ? weeklyUsage
+                            ? weeklyUsage && weeklyCodeCollected
                               ? <IndividualCodeDensityCell
                                   codeLines={weeklyUsage.codeLines}
                                   selectedSample={selectedDensitySample}

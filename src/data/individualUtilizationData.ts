@@ -60,6 +60,7 @@ type RawIndividualSnapshot = {
     codeLines: Array<{
       month: string;
       fileName: string;
+      period?: string | null;
       rowCount: number;
       totalLines: number;
     }>;
@@ -180,7 +181,8 @@ export type IndividualWeeklyUsagePeriod = {
     previousSpendRows: number;
     currentSpendRows: number;
     previousCodeFile: string | null;
-    currentCodeFile: string;
+    currentCodeFile: string | null;
+    codePeriod?: string | null;
     spendMethod: string;
     codeMethod: string;
   };
@@ -278,7 +280,6 @@ const allCodeLines = snapshot.users.map((user) =>
 const sharedAccountEmails = new Set([
   "sblim0519@riskzero.kr",
   "jyjo@riskzero.kr",
-  "bigone@riskzero.kr",
 ]);
 
 const measuredUsers: IndividualUtilizationUser[] = snapshot.users

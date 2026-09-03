@@ -214,7 +214,7 @@ export function buildProductivityExecutiveModel({
 
   const gensparkDrive = gensparkData.driveAnalysis;
   const usageDates = [
-    latestDate(claudeTeamData.source.generatedAt),
+    latestDate(claudeTeamData.source.period),
     latestDate(driveData.source.period),
     latestDate(driveTrendData?.source.period ?? ""),
     latestDate(gensparkDrive?.latestOutputDate ?? ""),
