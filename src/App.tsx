@@ -4670,7 +4670,7 @@ function AdoptionView({
 }) {
   const data = individualUtilizationData;
   const [sortKey, setSortKey] = useState<IndividualSortKey>("tokens");
-  const [periodMode, setPeriodMode] = useState<IndividualPeriodMode>("week");
+  const [periodMode, setPeriodMode] = useState<IndividualPeriodMode>("month");
   const [selectedWeek, setSelectedWeek] = useState(
     data.usageWeeks[data.usageWeeks.length - 1] ?? "",
   );
