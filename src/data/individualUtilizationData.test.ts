@@ -15,8 +15,8 @@ describe("individualUtilizationData", () => {
     expect(data.totals.totalTokens).toBe(37099774050);
     expect(data.totals.netSpendUsd).toBeCloseTo(414.44, 2);
     expect(data.source.codeLines).toHaveLength(5);
-    expect(sumBy(data.source.codeLines, (item) => item.totalLines)).toBe(1295216);
-    expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(1295216);
+    expect(sumBy(data.source.codeLines, (item) => item.totalLines)).toBe(1355279);
+    expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(1355279);
   });
 
   it("keeps activity metrics behind an explicit HR evidence gate", () => {
@@ -412,12 +412,19 @@ describe("individualUtilizationData", () => {
     ).toBe(true);
     expect(data.monthlySpendSource.missingMonths).toHaveLength(0);
     expect(data.monthlySpend["2026-09"]).toMatchObject({
+      fileName: "spend-report-17711e80-a5e7-427c-b20e-230325bbae9f-2026-09-01-to-2026-09-02.csv + spend-report-e59c75bc-469e-466f-bef9-c311748c1df8-2026-09-01-to-2026-09-02.csv + spend-report-f5ff68f8-ab8f-4101-aa65-a766ac49a78e-2026-09-01-to-2026-09-02.csv",
       period: "2026-09-01 ~ 2026-09-02",
       coverage: "partial",
+      rowCount: 84,
       totals: {
-        requests: 1543,
-        totalTokens: 359219033,
+        requests: 23560,
+        totalTokens: 5230992572,
+        netSpendUsd: 70.5,
       },
+    });
+    expect(data.monthlySpend["2026-09"]?.users["woosung.jeon@riskzero.kr"]).toMatchObject({
+      requests: 4140,
+      totalTokens: 1303710798,
     });
     expect(data.monthlySpend["2026-09"]?.users["yspark@riskzero.kr"]).toMatchObject({
       requests: 745,
@@ -434,10 +441,10 @@ describe("individualUtilizationData", () => {
       models: ["claude-opus-5"],
     });
     expect(data.source.codeLines.find((item) => item.month === "2026-09")).toMatchObject({
-      fileName: "claude_code_team_2026_09_01_to_2026_09_30.csv",
+      fileName: "2026-09-03-claude_code.csv + claude_code_team_2026_09_01_to_2026_09_30.csv",
       period: "2026-09-01 ~ 2026-09-02",
-      rowCount: 1,
-      totalLines: 5538,
+      rowCount: 19,
+      totalLines: 65601,
     });
   });
 

@@ -32,7 +32,7 @@ OptionParser.new do |parser|
     options[:spend_user_overlays] << [email.downcase, path]
   end
   parser.on("--spend-period PERIOD", "Spend report coverage label") { |value| options[:spend_period] = value }
-  parser.on("--code MONTH:PATH", "Monthly Claude Code lines CSV (repeatable)") do |value|
+  parser.on("--code MONTH:PATH", "Monthly Claude Code lines CSV; repeat a month for separate workspaces") do |value|
     month, path = value.split(":", 2)
     raise OptionParser::InvalidArgument, "--code requires MONTH:PATH" unless month&.match?(/\A\d{4}-\d{2}\z/) && path
 
@@ -208,27 +208,31 @@ options[:spend_user_overlays].each do |email, path|
   end
 end
 
-latest_code_inputs = options[:code].each_with_object({}) do |(month, path), inputs|
-  inputs[month] = path
+code_inputs_by_month = options[:code].group_by(&:first).transform_values do |entries|
+  entries.map(&:last).uniq
 end
 
-code_sources = latest_code_inputs.sort.map do |month, path|
+code_sources = code_inputs_by_month.sort.map do |month, paths|
   row_count = 0
   total_lines = 0
 
-  CSV.foreach(path, headers: true) do |row|
-    email = row["User"].to_s.strip.downcase
-    next if email.empty?
+  paths.each do |path|
+    CSV.foreach(path, headers: true) do |row|
+      email = row["User"].to_s.strip.downcase
+      next if email.empty?
 
-    lines = row["Lines this Month"].to_s.delete(",").to_i
-    users[email]["monthlyCodeLines"][month] = lines
-    row_count += 1
-    total_lines += lines
+      lines = row["Lines this Month"].to_s.delete(",").to_i
+      row_count += 1
+      total_lines += lines
+      next if lines.zero? && !users.key?(email)
+
+      users[email]["monthlyCodeLines"][month] = users[email]["monthlyCodeLines"].fetch(month, 0) + lines
+    end
   end
 
   {
     "month" => month,
-    "fileName" => File.basename(path),
+    "fileName" => paths.map { |path| File.basename(path) }.join(" + "),
     "period" => options[:code_periods][month],
     "rowCount" => row_count,
     "totalLines" => total_lines,
