@@ -21,18 +21,17 @@ describe("buildProductivityExecutiveModel", () => {
     gensparkData: initialGensparkUsageData,
   });
 
-  it("keeps the last confirmed cost month separate from the latest usage month", () => {
-    expect(model.lastClosedMonth).toBe("2026-07");
+  it("uses August as the latest confirmed cost month", () => {
+    expect(model.lastClosedMonth).toBe("2026-08");
     expect(model.currentMonth).toBe("2026-08");
-    expect(model.lagMonths).toBe(1);
-    expect(model.cohorts.map((item) => item.status)).toEqual(["확정", "잠정"]);
+    expect(model.lagMonths).toBe(0);
+    expect(model.cohorts.map((item) => item.status)).toEqual(["확정"]);
   });
 
-  it("uses current subscriptions only as the open-month minimum cost", () => {
+  it("uses the confirmed August actual while retaining the current fixed-cost baseline", () => {
     const augustApprovalTotals = approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-08");
 
-    expect(model.cohorts[0].costKrw).toBe(5_613_605);
-    expect(model.cohorts[1].costKrw).toBe(augustApprovalTotals.monthlyKrw);
+    expect(model.cohorts[0].costKrw).toBe(7_349_650);
     expect(model.currentFixedCostKrw).toBe(augustApprovalTotals.monthlyKrw);
   });
 
@@ -57,8 +56,8 @@ describe("buildProductivityExecutiveModel", () => {
       driveStoredFiles: null,
     });
     expect(model.costUsageSeries.find((item) => item.month === "2026-08")).toMatchObject({
-      costKrw: 6_126_651.15,
-      costStatus: "최소",
+      costKrw: 7_349_650,
+      costStatus: "확정",
       claudeDriveConversations: 69,
       claudeExportConversations: 6,
       claudeConversations: 75,
@@ -194,8 +193,8 @@ describe("buildProductivityExecutiveModel", () => {
     expect(augustModel.classifiedActivityMonth).toBe("2026-08");
     expect(augustModel.currentMonthDriveStoredFiles).toBe(292);
     expect(augustModel.costUsageSeries.find((item) => item.month === "2026-08")).toMatchObject({
-      costKrw: 6_126_651.15,
-      costStatus: "최소",
+      costKrw: 7_349_650,
+      costStatus: "확정",
       claudeDriveConversations: 69,
       claudeExportConversations: 6,
       claudeConversations: 75,
