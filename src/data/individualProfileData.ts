@@ -240,6 +240,86 @@ export const kimJaewooProfileData: IndividualProfileData = {
         },
       ],
     },
+    "2026-09": {
+      topicTitle: "9월 대화·프롬프트 업무 영역",
+      topicBasisLabel: "9월 1~4일 Drive 저장 파일 133건 분류",
+      promptTopics: [
+        {
+          label: "메일·특허 보고",
+          count: 31,
+          description: "업무 메일을 수집·요약하고 우선심사결정서, 우선심사신청서, VLM 위험성평가 특허출원 보고 자료로 정리했습니다.",
+          examples: ["AX메일수집", "우선심사결정서", "VLM위험성평가 특허출원"],
+          color: "#2f8f46",
+        },
+        {
+          label: "위키·지식관리",
+          count: 29,
+          description: "RiskZero 위키 설치 패키지와 회의록 자산, GitHub 계정·아키텍처 검토, 세션 적재 체계를 정리했습니다.",
+          examples: ["riskzero-wiki", "위키 설치안내", "세션기록 3중적재"],
+          color: "#476a6f",
+        },
+        {
+          label: "GitLab·Obsidian 동기화",
+          count: 23,
+          description: "GitLab 프로젝트와 Obsidian 노트 동기화 상태를 점검하고 신규 노트·프로젝트 반영 여부를 확인했습니다.",
+          examples: ["GitLab동기화", "노트 212건", "knoc 프로젝트"],
+          color: "#6f7fd8",
+        },
+        {
+          label: "IRIS R&D 자동화",
+          count: 21,
+          description: "IRIS 연구과제 공고를 일별로 크롤링하고 D-7/D-9 대상, 메일 본문, XLSX 산출물을 생성했습니다.",
+          examples: ["IRIS 일일크롤링", "build_iris.py", "IRIS_R_and_D_20260904.xlsx"],
+          color: "#c58612",
+        },
+        {
+          label: "AI 트렌드·보고 콘텐츠",
+          count: 17,
+          description: "AI 기술 트렌드와 산업안전 적용 인사이트를 수집하고 대형 Markdown 리포트와 종합 인사이트 문서로 정리했습니다.",
+          examples: ["AI 기술 트렌드", "AI 트렌드 종합 인사이트", "일일 리포트"],
+          color: "#0f8b8d",
+        },
+        {
+          label: "출장·행사 보고",
+          count: 12,
+          description: "안전산업박람회 관람 내용을 Word 출장보고서와 생성 스크립트로 구성했습니다.",
+          examples: ["안전산업박람회", "출장보고서 Word 40p", "build.js"],
+          color: "#e85d4f",
+        },
+      ],
+      highlights: [
+        {
+          title: "BEXCO 안전산업박람회 출장보고서",
+          category: "보고·문서화",
+          summary: "안전산업박람회 관람 내용을 장문 Word 보고서로 구성하고 생성 스크립트와 함께 저장했습니다.",
+          result: "2026_안전산업박람회_출장보고서.docx · build.js",
+        },
+        {
+          title: "AI 트렌드 산업안전 인사이트",
+          category: "리서치·트렌드",
+          summary: "AI 기술 트렌드와 산업안전 적용 가능성을 수집·교정해 종합 Markdown 리포트로 정리했습니다.",
+          result: "AI 트렌드 종합 인사이트.md · 2026-09-03 AI 기술 트렌드와 산업안전 적용 인사이트.md",
+        },
+        {
+          title: "IRIS 연구과제 일일 크롤링",
+          category: "R&D 기회 탐색",
+          summary: "9월 초 IRIS 공고를 반복 수집하고 D-day 기준 검토 대상, 메일 본문, 엑셀 산출물을 생성했습니다.",
+          result: "IRIS_R_and_D_20260902~20260904.xlsx · iris_email_body HTML",
+        },
+        {
+          title: "메일 기반 특허·우선심사 보고",
+          category: "IP·업무 메일",
+          summary: "우선심사결정서와 VLM 위험성평가 특허출원 관련 메일·첨부를 요약해 보고 문서로 전환했습니다.",
+          result: "일일메일요약 DOCX · 우선심사결정서·특허출원 보고 DOCX/PDF",
+        },
+        {
+          title: "RiskZero 위키 설치·동기화 체계",
+          category: "지식관리 인프라",
+          summary: "사내 지식 재사용을 위한 위키 패키지, 설치 안내, CLI·서버 스크립트와 세션 적재 템플릿을 정리했습니다.",
+          result: "RiskZero위키-설치안내-v2.md · SKILL.md · wiki-cli.py · wiki-server/server.js",
+        },
+      ],
+    },
   },
   promptTopics: [
     {

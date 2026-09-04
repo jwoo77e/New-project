@@ -52,6 +52,11 @@ describe("kimJaewooProfileData", () => {
       0,
     )).toBe(169);
     expect(data.monthlyInsights?.["2026-08"].highlights).toHaveLength(5);
+    expect(data.monthlyInsights?.["2026-09"].promptTopics.reduce(
+      (sum, item) => sum + item.count,
+      0,
+    )).toBe(133);
+    expect(data.monthlyInsights?.["2026-09"].highlights).toHaveLength(5);
   });
 });
 

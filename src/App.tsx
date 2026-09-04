@@ -5278,26 +5278,18 @@ function IndividualProfileView({
         highlights: profile.highlights,
       }
     : null;
-  const fallbackMonthlyInsight = Object.entries(profile.monthlyInsights ?? {})
-    .filter(([, insight]) => insight.promptTopics.length > 0 || insight.highlights.length > 0)
-    .filter(([month]) => month <= selectedMonth)
-    .sort(([left], [right]) => right.localeCompare(left))[0] ?? null;
   const selectedMonthlyInsight =
     profile.monthlyInsights?.[selectedMonth] ??
-    legacyMonthlyInsight ??
-    fallbackMonthlyInsight?.[1] ??
-    null;
-  const selectedMonthlyInsightMonth =
-    profile.monthlyInsights?.[selectedMonth] || legacyMonthlyInsight
-      ? selectedMonth
-      : fallbackMonthlyInsight?.[0] ?? selectedMonth;
-  const periodInsightUsesFallback = selectedMonthlyInsightMonth !== selectedMonth;
+    legacyMonthlyInsight;
   const periodInsightsAvailable = selectedMonthlyInsight !== null;
   const periodPromptTopics = selectedMonthlyInsight?.promptTopics ?? [];
   const periodHighlights = selectedMonthlyInsight?.highlights ?? [];
-  const periodTopicTitle = selectedMonthlyInsight?.topicTitle ?? profile.drive.topicTitle ?? "대화·프롬프트 업무 영역";
+  const periodTopicTitle = selectedMonthlyInsight?.topicTitle ?? `${fullMonthLabel(selectedMonth)} 대화·프롬프트 업무 영역`;
   const periodTopicBasisLabel = selectedMonthlyInsight?.topicBasisLabel ??
-    profile.drive.topicBasisLabel ?? `본문 분석 ${profile.drive.promptFiles}건`;
+    (usesLiveDriveTrend
+      ? `${fullMonthLabel(selectedMonth)} Drive 저장 파일 ${numberFormat.format(selectedMonthPromptCount)}건 기준`
+      : legacyMonthlyInsight?.topicBasisLabel ??
+        profile.drive.topicBasisLabel ?? `본문 분석 ${profile.drive.promptFiles}건`);
   const maxTopicCount = Math.max(...periodPromptTopics.map((topic) => topic.count), 1);
   const recentPromptTrend = selectedMonthDailyCounts.map((item) => ({
     ...item,
@@ -5481,9 +5473,7 @@ function IndividualProfileView({
           </div>
           <span className="state-pill neutral">
             {periodInsightsAvailable
-              ? periodInsightUsesFallback
-                ? `${fullMonthLabel(selectedMonthlyInsightMonth)} 분류 기준 · ${periodTopicBasisLabel}`
-                : periodTopicBasisLabel
+              ? periodTopicBasisLabel
               : "기간별 분류 원천 수집중"}
           </span>
         </div>
@@ -5513,11 +5503,7 @@ function IndividualProfileView({
             <h2>대표 결과물</h2>
           </div>
           <span className={`state-pill ${periodInsightsAvailable ? "warning" : "neutral"}`}>
-            {periodInsightsAvailable
-              ? periodInsightUsesFallback
-                ? `${monthLabel(selectedMonthlyInsightMonth)} 분류 기준`
-                : "성과 검증 대기"
-              : "기간별 원천 수집중"}
+            {periodInsightsAvailable ? "성과 검증 대기" : "기간별 원천 수집중"}
           </span>
         </div>
         <div className="individual-profile-highlight-list">
