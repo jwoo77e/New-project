@@ -5278,7 +5278,20 @@ function IndividualProfileView({
         highlights: profile.highlights,
       }
     : null;
-  const selectedMonthlyInsight = profile.monthlyInsights?.[selectedMonth] ?? legacyMonthlyInsight;
+  const fallbackMonthlyInsight = Object.entries(profile.monthlyInsights ?? {})
+    .filter(([, insight]) => insight.promptTopics.length > 0 || insight.highlights.length > 0)
+    .filter(([month]) => month <= selectedMonth)
+    .sort(([left], [right]) => right.localeCompare(left))[0] ?? null;
+  const selectedMonthlyInsight =
+    profile.monthlyInsights?.[selectedMonth] ??
+    legacyMonthlyInsight ??
+    fallbackMonthlyInsight?.[1] ??
+    null;
+  const selectedMonthlyInsightMonth =
+    profile.monthlyInsights?.[selectedMonth] || legacyMonthlyInsight
+      ? selectedMonth
+      : fallbackMonthlyInsight?.[0] ?? selectedMonth;
+  const periodInsightUsesFallback = selectedMonthlyInsightMonth !== selectedMonth;
   const periodInsightsAvailable = selectedMonthlyInsight !== null;
   const periodPromptTopics = selectedMonthlyInsight?.promptTopics ?? [];
   const periodHighlights = selectedMonthlyInsight?.highlights ?? [];
@@ -5468,7 +5481,9 @@ function IndividualProfileView({
           </div>
           <span className="state-pill neutral">
             {periodInsightsAvailable
-              ? periodTopicBasisLabel
+              ? periodInsightUsesFallback
+                ? `${fullMonthLabel(selectedMonthlyInsightMonth)} 분류 기준 · ${periodTopicBasisLabel}`
+                : periodTopicBasisLabel
               : "기간별 분류 원천 수집중"}
           </span>
         </div>
@@ -5498,7 +5513,11 @@ function IndividualProfileView({
             <h2>대표 결과물</h2>
           </div>
           <span className={`state-pill ${periodInsightsAvailable ? "warning" : "neutral"}`}>
-            {periodInsightsAvailable ? "성과 검증 대기" : "기간별 원천 수집중"}
+            {periodInsightsAvailable
+              ? periodInsightUsesFallback
+                ? `${monthLabel(selectedMonthlyInsightMonth)} 분류 기준`
+                : "성과 검증 대기"
+              : "기간별 원천 수집중"}
           </span>
         </div>
         <div className="individual-profile-highlight-list">
