@@ -5940,6 +5940,7 @@ function ApiUsageView({
   const providerTokens = new Map(
     apiUsageData.providers.map((provider) => [provider.provider, provider.inputTokens + provider.outputTokens]),
   );
+  const providerCosts = [...apiUsageData.providers].sort((a, b) => b.costUsd - a.costUsd);
 
   return (
     <div className="content-grid api-view">
@@ -5973,7 +5974,7 @@ function ApiUsageView({
               />
               <Tooltip
                 formatter={(value, name) =>
-                  name === "비용"
+                  String(name).includes("비용")
                     ? [formatUsd(Number(value)), name]
                     : [`${formatTokens(Number(value))} 토큰`, name]
                 }
@@ -5982,14 +5983,9 @@ function ApiUsageView({
               <Bar yAxisId="tokens" dataKey="openaiTokens" name="OpenAI 토큰" fill="#0f8b8d" radius={[4, 4, 0, 0]} />
               <Bar yAxisId="tokens" dataKey="geminiTokens" name="Gemini 토큰" fill="#c58612" radius={[4, 4, 0, 0]} />
               <Bar yAxisId="tokens" dataKey="claudeTokens" name="Claude 토큰" fill="#5f6f8c" radius={[4, 4, 0, 0]} />
-              <Line
-                yAxisId="cost"
-                dataKey="costUsd"
-                name="비용"
-                stroke="#e85d4f"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-              />
+              <Line yAxisId="cost" dataKey="openaiCostUsd" name="OpenAI 비용" stroke="#0f8b8d" strokeWidth={2} dot={{ r: 3 }} />
+              <Line yAxisId="cost" dataKey="geminiCostUsd" name="Gemini 비용" stroke="#c58612" strokeWidth={2} dot={{ r: 3 }} />
+              <Line yAxisId="cost" dataKey="claudeCostUsd" name="Claude 비용" stroke="#5f6f8c" strokeWidth={2} dot={{ r: 3 }} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -6034,6 +6030,33 @@ function ApiUsageView({
             </div>
           </div>
         )}
+      </section>
+
+      <section className="panel panel-wide api-provider-cost-panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Provider Cost</span>
+            <h2>공급자별 API 비용</h2>
+          </div>
+          <span className="state-pill neutral">실측 변동비</span>
+        </div>
+        <div className="api-provider-cost-grid">
+          {providerCosts.map((provider) => {
+            const share = totalCost > 0 ? (provider.costUsd / totalCost) * 100 : 0;
+            const costKrw = Math.round(provider.costUsd * API_FORECAST_USD_TO_KRW);
+
+            return (
+              <article className="api-provider-cost-card" key={provider.provider}>
+                <div>
+                  <span className="category-dot" style={{ background: provider.color }} />
+                  <span>{provider.label}</span>
+                </div>
+                <strong>{formatUsd(provider.costUsd)}</strong>
+                <small>{formatWon(costKrw)} · 전체 {formatRate(share)}</small>
+              </article>
+            );
+          })}
+        </div>
       </section>
 
       <section className="panel panel-wide api-summary-panel">

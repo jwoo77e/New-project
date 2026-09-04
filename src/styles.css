@@ -2155,6 +2155,46 @@ h2 {
   gap: 14px;
 }
 
+.api-provider-cost-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.api-provider-cost-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.api-provider-cost-card {
+  display: grid;
+  gap: 9px;
+  min-height: 112px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.api-provider-cost-card div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.api-provider-cost-card strong {
+  font-size: 1.45rem;
+  line-height: 1.1;
+}
+
+.api-provider-cost-card small {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .api-summary-item {
   display: grid;
   gap: 6px;
@@ -3668,6 +3708,7 @@ td strong {
   }
 
   .api-provider-stats,
+  .api-provider-cost-grid,
   .api-summary-panel,
   .key-health-grid,
   .chatgpt-export-grid,
