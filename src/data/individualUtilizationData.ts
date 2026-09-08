@@ -107,6 +107,7 @@ export type IndividualPeriodEvaluation = {
 
 export type IndividualUtilizationUser = RawIndividualUser & {
   measurementStatus: IndividualMeasurementStatus;
+  allocationStatus?: "unpaid";
   displayAccount: string | null;
   usageScopeOverride: string | null;
   totalCodeLines: number;
@@ -424,6 +425,7 @@ const unmeasuredUserSeeds: Array<{
   email: string;
   displayName: string;
   measurementStatus: Exclude<IndividualMeasurementStatus, "measured">;
+  allocationStatus?: "unpaid";
   displayAccount: string | null;
   usageScopeOverride: string | null;
   products: string[];
@@ -534,16 +536,18 @@ const unmeasuredUserSeeds: Array<{
     ["use0505@riskzero.kr", "최용호 대리"],
     ["woals1329@riskzero.kr", "강재민 사원"],
   ] as const).map(([email, displayName]) => {
+    const isUnpaid = email === "khoon@riskzero.kr";
     return {
       email,
       displayName,
       measurementStatus: "source-uncollected" as const,
+      allocationStatus: isUnpaid ? "unpaid" as const : undefined,
       displayAccount: email,
       usageScopeOverride: null,
       products: [],
       topProduct: "",
       topModel: "",
-      evidence: "세부 사용량 수집중",
+      evidence: isUnpaid ? "AI 도구 미지급" : "세부 사용량 수집중",
     };
   }),
 ];

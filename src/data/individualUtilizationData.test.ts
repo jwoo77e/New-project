@@ -141,6 +141,18 @@ describe("individualUtilizationData", () => {
     expect(users.find((user) => user.email === "doyul@riskzero.kr")?.measurementStatus).toBe("measured");
   });
 
+  it("keeps Kang Hoon in the activity roster as unpaid", () => {
+    expect(
+      individualUtilizationData.users.find((user) => user.email === "khoon@riskzero.kr"),
+    ).toMatchObject({
+      displayName: "강훈 부장",
+      allocationStatus: "unpaid",
+      measurementStatus: "source-uncollected",
+      totalTokens: 0,
+      totalCodeLines: 0,
+    });
+  });
+
   it("keeps timestamp-backed weekly activity separate from monthly Code Lines", () => {
     const data = individualUtilizationData;
 

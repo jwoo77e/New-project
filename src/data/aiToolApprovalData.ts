@@ -12,6 +12,11 @@ export type AiToolApprovalRecord = {
   pricingEffectiveMonth?: string;
   previousMonthlyUsd?: number;
   previousMonthlyKrw?: number;
+  priceHistory?: Array<{
+    effectiveMonth: string;
+    monthlyUsd: number;
+    monthlyKrw: number;
+  }>;
   paymentMethod: string;
   note: string;
 };
@@ -99,35 +104,41 @@ const records: AiToolApprovalRecord[] = [
   {
     no: 3,
     category: "ChatGPT",
-    tool: "chatGPT Business Plan",
+    tool: "chatGPT Business Plan Premium",
     account: "jaewoo.kim@riskzero.kr",
     owner: "김재우 부장 / 기술연구소",
     department: "기술연구소",
-    monthlyUsd: 25,
-    monthlyKrw: 37125,
-    pricingEffectiveMonth: "2026-08",
-    previousMonthlyUsd: 110,
-    previousMonthlyKrw: 163350,
+    monthlyUsd: 125,
+    monthlyKrw: 185625,
+    priceHistory: [
+      { effectiveMonth: "2026-01", monthlyUsd: 110, monthlyKrw: 163350 },
+      { effectiveMonth: "2026-08", monthlyUsd: 25, monthlyKrw: 37125 },
+      { effectiveMonth: "2026-09", monthlyUsd: 125, monthlyKrw: 185625 },
+    ],
     paymentMethod: "AI 전용 카드",
     note: "",
   },
   {
     no: 4,
     category: "ChatGPT",
-    tool: "chatGPT Business Plan",
+    tool: "chatGPT Business Plan Premium",
     account: "wody@riskzero.kr",
     owner: "정재요 차장 / 플랫폼개발",
     department: "플랫폼개발",
-    monthlyUsd: 25,
-    monthlyKrw: 37125,
+    monthlyUsd: 125,
+    monthlyKrw: 185625,
     startMonth: "2026-08",
+    priceHistory: [
+      { effectiveMonth: "2026-08", monthlyUsd: 25, monthlyKrw: 37125 },
+      { effectiveMonth: "2026-09", monthlyUsd: 125, monthlyKrw: 185625 },
+    ],
     paymentMethod: "AI 전용 카드",
     note: "",
   },
   {
     no: 4,
     category: "ChatGPT",
-    tool: "chatGPT Business Plan",
+    tool: "chatGPT Business Plan Standard",
     account: "hb777lee@riskzero.kr",
     owner: "이형배 상무 / 기술연구소",
     department: "기술연구소",
@@ -137,6 +148,28 @@ const records: AiToolApprovalRecord[] = [
     paymentMethod: "AI 전용 카드",
     note: "",
   },
+  ...([
+    ["chatGPT Business Plan Premium", "kys0392@riskzero.kr", "김영산 과장 / 플랫폼개발", "플랫폼개발", 125, 185625],
+    ["chatGPT Business Plan Premium", "woosung.jeon@riskzero.kr", "전우성 부장 / 플랫폼개발", "플랫폼개발", 125, 185625],
+    ["chatGPT Business Plan Standard", "hhlee0227@riskzero.kr", "이한호 대리 / 플랫폼개발", "플랫폼개발", 25, 37125],
+    ["chatGPT Business Plan Standard", "huizhen0227@riskzero.kr", "김혜진 과장 / 플랫폼개발", "플랫폼개발", 25, 37125],
+    ["chatGPT Business Plan Standard", "mjkim1122@riskzero.kr", "김민정 차장 / 플랫폼개발", "플랫폼개발", 25, 37125],
+    ["chatGPT Business Plan Standard", "mygu@riskzero.kr", "구문영 사원 / 플랫폼개발", "플랫폼개발", 25, 37125],
+    ["chatGPT Business Plan Standard", "staycurious@riskzero.kr", "김하나 과장 / 플랫폼개발", "플랫폼개발", 25, 37125],
+    ["chatGPT Business Plan Standard", "ykchj1011@riskzero.kr", "윤영관 과장 / 플랫폼개발", "플랫폼개발", 25, 37125],
+  ] as const).map(([tool, account, owner, department, monthlyUsd, monthlyKrw]) => ({
+    no: 4,
+    category: "ChatGPT" as const,
+    tool,
+    account,
+    owner,
+    department,
+    monthlyUsd,
+    monthlyKrw,
+    startMonth: "2026-09",
+    paymentMethod: "AI 전용 카드",
+    note: "",
+  })),
   {
     no: 4,
     category: "Claude",
@@ -501,7 +534,6 @@ const records: AiToolApprovalRecord[] = [
     ["Claude Team Plan Standard", "doyul@riskzero.kr", "김도율 차장 / 스마트서비스", "스마트서비스", 25, 37125],
     ["Claude Team Plan Standard", "drager72@riskzero.kr", "최종윤 이사 / 플랫폼개발", "플랫폼개발", 25, 37125],
     ["Claude Team Plan Standard", "use0505@riskzero.kr", "최용호 대리 / 스마트서비스", "스마트서비스", 25, 37125],
-    ["Claude Team Plan Standard", "khoon@riskzero.kr", "강훈 부장 / 스마트서비스", "스마트서비스", 25, 37125],
     ["Claude Team Plan Standard", "woals1329@riskzero.kr", "강재민 사원 / 스마트서비스", "스마트서비스", 25, 37125],
     ["Claude Team Plan Standard", "kjh17@riskzero.kr", "김진희 과장 / 스마트서비스", "스마트서비스", 25, 37125],
     ["Claude Team Plan Standard", "day@riskzero.kr", "고원상 대리 / 스마트서비스", "스마트서비스", 25, 37125],
@@ -509,7 +541,6 @@ const records: AiToolApprovalRecord[] = [
     ["Claude Team Plan Standard", "pentasix@riskzero.kr", "이진욱 부장 / 스마트서비스", "스마트서비스", 25, 37125],
     ["Claude Team Plan Standard", "pms0805@riskzero.kr", "박명수 과장 / 스마트서비스", "스마트서비스", 25, 37125],
     ["Claude Team Plan Standard", "jhyun@riskzero.kr", "윤종호 부장 / 플랫폼개발", "플랫폼개발", 25, 37125],
-    ["Claude Team Plan Premium", "james@riskzero.kr", "대표님", "대표님", 125, 185625],
   ].map(([tool, account, owner, department, monthlyUsd, monthlyKrw], index) => ({
     no: 33 + index,
     category: "Claude" as const,
@@ -640,9 +671,9 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     name: "사내 AI도구 결재 현황",
     fileName: "사내 AI도구 현황조사표_V3.0.xlsx",
     sheetName: "전사 AI도구 현황조사표",
-    collectedAt: "2026-08-18",
-    period: "2026년 8월 월 고정비 기준 · USD 1 = 1,485원",
-    note: "계정 ID, 주사용자/부서, 구독료, 결재수단과 적용 시작월을 반영했으며 직원 40명 Team Plan 보급과 대표님 Premium 1석, 플랫폼개발팀 GH AI Agent 개발용 AI API 서비스 고정비 150만원을 포함",
+    collectedAt: "2026-09-09",
+    period: "2026년 9월 월 고정비 기준 · USD 1 = 1,485원",
+    note: "계정 ID, 주사용자/부서, 구독료, 결재수단과 적용 시작월을 반영했으며 AI 도구 사용 직원 39명 Team Plan, ChatGPT Business Premium·Standard와 플랫폼개발팀 GH AI Agent 개발용 AI API 서비스 고정비 150만원을 포함",
   },
   exchangeRate,
   totalAccounts: records.length,
@@ -658,7 +689,7 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
   departmentSummary,
   records: normalizedRecords,
   insights: [
-    `등록된 AI 도구 결재 항목은 ${records.length}개이며 8월 월 고정비 합계는 ${formatKrw(totalMonthlyKrw)}입니다. USD 결재 항목 합계는 ${formatUsd(totalMonthlyUsd)}입니다.`,
+    `등록된 AI 도구 결재 항목은 ${records.length}개이며 9월 월 고정비 합계는 ${formatKrw(totalMonthlyKrw)}입니다. USD 결재 항목 합계는 ${formatUsd(totalMonthlyUsd)}입니다.`,
     `AI 전용 카드 결재가 ${aiDedicatedCard?.count ?? 0}개 항목, ${formatKrw(aiDedicatedCard?.monthlyKrw ?? 0)}으로 전체 월액의 ${(aiDedicatedCard?.share ?? 0).toFixed(1)}%를 차지합니다.`,
     `2026년 8월부터 플랫폼개발팀 GH AI Agent 개발용 AI API 서비스 고정비 ${formatKrw(apiFixedCategory?.monthlyKrw ?? 0)}을 매월 반영합니다.`,
     "기존 공용 법인 카드 2개 항목은 모두 AI 전용 카드로 전환했습니다.",
@@ -670,10 +701,11 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     "변경 반영: 박수진 과장과 송인나 대리에게 Claude Team Plan Standard를 2026년 8월부터 할당하고 월 고정비 예산을 조정했습니다.",
     "변경 반영: 전사 chatGPT Pro(20배) 계정은 사용 종료로 결재 원장에서 제거했습니다.",
     "변경 반영: 김대일 상무에게 chatGPT Pro(20배)를 2026년 8월부터 추가했습니다.",
-    "변경 반영: 이형배 상무의 chatGPT Pro(5배)를 Business Plan으로 전환하고 월 고정비 예산을 조정했습니다.",
-    "변경 반영: 김재우 부장의 chatGPT Pro(5배)를 Business Plan으로 전환하고 정재요 차장에게 Business Plan을 추가했습니다.",
+    "변경 반영: 이형배 상무의 ChatGPT 좌석을 Business Plan Standard로 표기했습니다.",
+    "변경 반영: 김재우 부장·정재요 차장·김영산 과장·전우성 부장에게 ChatGPT Business Plan Premium을 반영했습니다.",
+    "변경 반영: 이한호 대리·김혜진 과장·김민정 차장·구문영 사원·김하나 과장·윤영관 과장·이형배 상무에게 ChatGPT Business Plan Standard를 반영했습니다.",
     "변경 반영: 임성범 부장과 이형배 상무는 Claude Team Plan Standard로, 박연석 전무·김대일 상무·이병현 이사·조욱상 이사는 Premium으로 전환했습니다.",
-    "변경 반영: 직원 대상 Claude Team Plan 40석과 대표님 Premium 1석을 반영해 직원 보급률 100% 기준으로 월 고정비를 조정했습니다.",
+    "변경 반영: 대표님의 Claude Team Plan Premium과 AI 도구를 사용하지 않는 강훈 부장의 Claude Team Plan Standard를 결재 원장에서 제거했습니다.",
   ],
 };
 
@@ -686,6 +718,21 @@ export function approvalMonthlyTotalsForMonth(
   );
 
   const pricedRecords = activeRecords.map((record) => {
+    if (record.priceHistory?.length) {
+      const applicablePrices = [...record.priceHistory]
+        .sort((a, b) => a.effectiveMonth.localeCompare(b.effectiveMonth))
+        .filter((item) => item.effectiveMonth <= month);
+      const price = applicablePrices[applicablePrices.length - 1];
+
+      if (price) {
+        return {
+          ...record,
+          monthlyUsd: price.monthlyUsd,
+          monthlyKrw: price.monthlyKrw,
+        };
+      }
+    }
+
     if (
       record.pricingEffectiveMonth &&
       month < record.pricingEffectiveMonth &&

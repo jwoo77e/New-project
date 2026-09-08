@@ -17,6 +17,7 @@ type TeamPlanConversionAccount = {
 };
 
 const eligibleEmployees = 40;
+const nonToolUsers = 1;
 const leaveExcludedEmployees = 2;
 const departedEmployees = 1;
 const tokenReferenceMonth = "2026-07";
@@ -42,7 +43,8 @@ const teamPlanUsers = workforceTeamPlanRecords.length;
 const personalConversionAccounts: TeamPlanConversionAccount[] = [];
 const sharedConversionAccounts: TeamPlanConversionAccount[] = [];
 const conversionSeats = personalConversionAccounts.length + sharedConversionAccounts.length;
-const pureAdditionalSeats = Math.max(eligibleEmployees - teamPlanUsers - conversionSeats, 0);
+const teamPlanTargetUsers = eligibleEmployees - nonToolUsers;
+const pureAdditionalSeats = Math.max(teamPlanTargetUsers - teamPlanUsers - conversionSeats, 0);
 const totalTeamPlanActions = conversionSeats + pureAdditionalSeats;
 const currentConversionCostKrw = [...personalConversionAccounts, ...sharedConversionAccounts]
   .reduce((sum, account) => sum + account.currentMonthlyKrw, 0);
@@ -52,8 +54,8 @@ const proposedTeamPlanActionCostKrw = proposedConversionCostKrw + pureAdditional
 const netMonthlyChangeKrw = proposedTeamPlanActionCostKrw - currentConversionCostKrw;
 const projectedMonthlyKrw = initialAiToolApprovalData.totalMonthlyKrw + netMonthlyChangeKrw;
 
-if (teamPlanUsers !== eligibleEmployees) {
-  throw new Error(`직원 Team Plan 보급 인원이 ${teamPlanUsers}/${eligibleEmployees}명으로 일치하지 않습니다.`);
+if (teamPlanUsers !== teamPlanTargetUsers) {
+  throw new Error(`AI 도구 사용 직원 Team Plan 보급 인원이 ${teamPlanUsers}/${teamPlanTargetUsers}명으로 일치하지 않습니다.`);
 }
 
 const userNameByEmail = new Map(
@@ -104,9 +106,10 @@ export const executiveWorkforceInsightData = {
     tokenPeriod: julySpend.period,
     tokenCoverage: julySpend.coverage,
     teamPlanBasis: `${initialAiToolApprovalData.source.collectedAt} AI 도구 결재 현황`,
-    conversionAssumption: `직원 ${eligibleEmployees}명 Team Plan 보급 완료 · 대표님 Premium ${executiveTeamPlanSeats}석 별도`,
+    conversionAssumption: `AI 도구 사용 직원 ${teamPlanTargetUsers}명 Team Plan 보급 · 비사용 ${nonToolUsers}명 · 대표님 Claude 미사용`,
   },
   eligibleEmployees,
+  nonToolUsers,
   leaveExcludedEmployees,
   departedEmployees,
   teamPlanUsers,

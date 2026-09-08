@@ -182,11 +182,11 @@ describe("jeongJaeyoProfileData", () => {
     );
 
     expect(records.map((record) => record.tool)).toEqual([
-      "chatGPT Business Plan",
+      "chatGPT Business Plan Premium",
       "Claude Team Plan Premium",
     ]);
-    expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBe(150);
-    expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBe(222_750);
+    expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBe(250);
+    expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBe(371_250);
   });
 });
 
@@ -232,14 +232,17 @@ describe("jeonWoosungProfileData", () => {
     )).toBe(15);
   });
 
-  it("links Jeon Woosung's current individual Claude subscription", () => {
+  it("links Jeon Woosung's current individual subscriptions", () => {
     const records = initialAiToolApprovalData.records.filter((record) =>
       record.owner.startsWith(jeonWoosungProfileData.approvalOwner),
     );
 
-    expect(records.map((record) => record.tool)).toEqual(["Claude Team Plan Premium"]);
-    expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBe(125);
-    expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBe(185_625);
+    expect(records.map((record) => record.tool)).toEqual([
+      "chatGPT Business Plan Premium",
+      "Claude Team Plan Premium",
+    ]);
+    expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBe(250);
+    expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBe(371_250);
   });
 });
 
@@ -295,7 +298,7 @@ describe("leeHyeongbaeProfileData", () => {
     );
 
     expect(records.map((record) => record.tool)).toEqual([
-      "chatGPT Business Plan",
+      "chatGPT Business Plan Standard",
       "Claude Team Plan Standard",
     ]);
     expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBe(50);

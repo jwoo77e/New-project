@@ -1631,7 +1631,7 @@ function ExecutiveDesignOverview({
               </li>
               <li>
                 <span>02</span>
-                <p>직원 {workforce.teamPlanUsers}명 전원에게 Team Plan이 배정됐으며, 대표님 Premium {workforce.executiveTeamPlanSeats}석은 별도 결재로 관리합니다.</p>
+                <p>AI 도구 사용 직원 {workforce.teamPlanUsers}명에게 Team Plan이 배정됐으며, 비사용 직원 {workforce.nonToolUsers}명과 대표님 Claude 좌석은 결재 대상에서 제외했습니다.</p>
               </li>
               <li>
                 <span>03</span>
@@ -1728,7 +1728,7 @@ function ExecutiveDesignOverview({
               <span>1</span>
               <div>
                 <b>Team Plan 보급 완료 상태 점검</b>
-                <small>직원 {workforce.teamPlanUsers}/{workforce.eligibleEmployees}명 · 대표님 Premium {workforce.executiveTeamPlanSeats}석 별도</small>
+                <small>직원 {workforce.teamPlanUsers}/{workforce.eligibleEmployees}명 · 비사용 {workforce.nonToolUsers}명</small>
               </div>
             </li>
             <li>
@@ -1754,7 +1754,7 @@ function ExecutiveDesignOverview({
 
 function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecutiveModel }) {
   const workforce = executiveWorkforceInsightData;
-  const teamPlanRolloutComplete = workforce.teamPlanUsers === workforce.eligibleEmployees;
+  const teamPlanRolloutComplete = workforce.teamPlanUsers + workforce.nonToolUsers === workforce.eligibleEmployees;
 
   return (
     <section className="workforce-decision-board" aria-label="Team Plan 보급 및 활용 측정 의사결정">
@@ -1788,7 +1788,7 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
           <div>
             <small>Team Plan 보급 상태</small>
             <strong>{teamPlanRolloutComplete ? "완료" : `${workforce.pureAdditionalSeats}석`}</strong>
-            <p>직원 {workforce.teamPlanUsers}/{workforce.eligibleEmployees}명 · 대표님 Premium {workforce.executiveTeamPlanSeats}석 별도</p>
+            <p>직원 {workforce.teamPlanUsers}/{workforce.eligibleEmployees}명 · 비사용 {workforce.nonToolUsers}명</p>
           </div>
         </article>
       </div>
@@ -1812,13 +1812,13 @@ function ExecutiveWorkforceDecisionBoard({ model }: { model: ProductivityExecuti
           </div>
           <div className="coverage-legend">
             <span><i className="tracked" />직원 Team Plan {workforce.teamPlanUsers}명</span>
-            <span><i className="convert" />대표님 Premium {workforce.executiveTeamPlanSeats}석 별도</span>
+            <span><i className="convert" />AI 도구 비사용 {workforce.nonToolUsers}명</span>
             <span><i className="gap" />미보급 {workforce.pureAdditionalSeats}석</span>
           </div>
           <div className="tracked-user-groups">
             <p><b>직원 Team Plan {workforce.teamPlanUsers}명</b>Standard {workforce.teamPlanStandardUsers}명 · Premium {workforce.teamPlanPremiumUsers}명</p>
-            <p><b>직원 보급률 {formatRate(workforce.teamPlanCoverageRate)}</b>비팀플랜 전환 대상과 신규 배정 잔여 수량이 없습니다.</p>
-            <p><b>별도 결재 {workforce.executiveTeamPlanSeats}석</b>대표님 Claude Team Plan Premium</p>
+            <p><b>직원 보급률 {formatRate(workforce.teamPlanCoverageRate)}</b>AI 도구 사용 직원 기준 Team Plan 배정이 완료됐습니다.</p>
+            <p><b>미지급 {workforce.nonToolUsers}명</b>AI 도구를 사용하지 않는 직원과 대표님 Claude 좌석은 결재 대상에서 제외했습니다.</p>
           </div>
         </section>
 
@@ -5079,6 +5079,7 @@ function AdoptionView({
               }, index) => {
                 const metricsMeasured = user.measurementStatus === "measured";
                 const metricsUncollected = !metricsMeasured;
+                const toolUnpaid = user.allocationStatus === "unpaid";
                 const weeklyRecalculated = isWeekly && weeklyUsage != null && (
                   weeklyUsage.requests < 0 || weeklyUsage.totalTokens < 0
                 );
@@ -5118,6 +5119,7 @@ function AdoptionView({
                           <span>
                             <strong>{user.displayName}</strong>
                             {user.displayAccount && <small>{user.displayAccount}</small>}
+                            {toolUnpaid && <small className="state-pill warning">미지급</small>}
                           </span>
                           <ChevronRight size={17} />
                         </button>
@@ -5139,7 +5141,7 @@ function AdoptionView({
                                   selectedSample={selectedDensitySample}
                                   trend={codeDensityTrend}
                                 />
-                        ) : metricsUncollected ? <span className="state-pill neutral">수집중</span> : null}
+                        ) : metricsUncollected ? <span className={`state-pill ${toolUnpaid ? "warning" : "neutral"}`}>{toolUnpaid ? "미지급" : "수집중"}</span> : null}
                       </td>
                       <td>
                         {metricsMeasured ? (
@@ -5156,7 +5158,7 @@ function AdoptionView({
                                   actualTokens={monthlySpend.totalTokens}
                                 />
                               : <span className="state-pill neutral">월별 Spend 수집중</span>
-                        ) : metricsUncollected ? <span className="state-pill neutral">수집중</span> : null}
+                        ) : metricsUncollected ? <span className={`state-pill ${toolUnpaid ? "warning" : "neutral"}`}>{toolUnpaid ? "미지급" : "수집중"}</span> : null}
                       </td>
                       <td>
                         {teamGroup === "development" && (
