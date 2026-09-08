@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import type { FormEvent, ReactNode } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -52,6 +52,7 @@ import {
   YAxis,
   ZAxis,
 } from "recharts";
+import { isIndividualProfileAccessCode } from "./lib/individualProfileAccess";
 import {
   initialApiUsageData,
   isApiUsageData,
@@ -4651,6 +4652,103 @@ function PlatformWbsSimulationPanel() {
   );
 }
 
+function IndividualProfileAccessDialog({
+  profileName,
+  onCancel,
+  onConfirm,
+}: {
+  profileName: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const [accessCode, setAccessCode] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onCancel();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onCancel]);
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!isIndividualProfileAccessCode(accessCode)) {
+      setError("암호가 올바르지 않습니다.");
+      setAccessCode("");
+      return;
+    }
+    onConfirm();
+  };
+
+  return (
+    <div
+      className="individual-profile-access-backdrop"
+      onMouseDown={onCancel}
+      role="presentation"
+    >
+      <section
+        aria-describedby="individual-profile-access-description"
+        aria-labelledby="individual-profile-access-title"
+        aria-modal="true"
+        className="individual-profile-access-dialog"
+        onMouseDown={(event) => event.stopPropagation()}
+        role="dialog"
+      >
+        <div className="individual-profile-access-heading">
+          <span className="individual-profile-access-icon" aria-hidden="true">
+            <ShieldCheck size={22} />
+          </span>
+          <div>
+            <span className="eyebrow">Protected Profile</span>
+            <h2 id="individual-profile-access-title">개인 상세 접근</h2>
+          </div>
+        </div>
+        <p id="individual-profile-access-description">
+          {profileName} 상세 정보를 보려면 암호를 입력하세요.
+        </p>
+        <form onSubmit={handleSubmit}>
+          <label className="individual-profile-access-field">
+            <span>암호</span>
+            <input
+              aria-invalid={error ? "true" : "false"}
+              autoComplete="off"
+              autoFocus
+              inputMode="numeric"
+              maxLength={4}
+              onChange={(event) => {
+                setAccessCode(event.target.value.replace(/\D/g, ""));
+                if (error) setError("");
+              }}
+              pattern="[0-9]*"
+              placeholder="4자리 암호"
+              type="password"
+              value={accessCode}
+            />
+          </label>
+          <div className="individual-profile-access-message" aria-live="polite">
+            {error && <span role="alert">{error}</span>}
+          </div>
+          <div className="individual-profile-access-actions">
+            <button className="individual-profile-access-cancel" onClick={onCancel} type="button">
+              취소
+            </button>
+            <button
+              className="individual-profile-access-confirm"
+              disabled={accessCode.length !== 4}
+              type="submit"
+            >
+              <KeyRound size={16} />
+              확인
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  );
+}
+
 function AdoptionView({
   driveTrendSnapshot,
   selectedMonth,
@@ -4668,6 +4766,7 @@ function AdoptionView({
   );
   const [query, setQuery] = useState("");
   const [selectedProfileEmail, setSelectedProfileEmail] = useState<string | null>(null);
+  const [pendingProfileEmail, setPendingProfileEmail] = useState<string | null>(null);
   const selectedWeeklyUsage = data.weeklyUsage[selectedWeek] ?? null;
   const isWeekly = periodMode === "week";
   const periodLabel = isWeekly
@@ -4805,6 +4904,10 @@ function AdoptionView({
     );
   }, [isWeekly, rows, selectedMonthlySpend, selectedWeeklyUsage]);
 
+  const pendingProfileUser = pendingProfileEmail
+    ? data.users.find((user) => user.email === pendingProfileEmail) ?? null
+    : null;
+
   if (selectedProfileEmail) {
     const selectedUser = data.users.find((user) => user.email === selectedProfileEmail);
     const selectedProfile = individualProfileDataByEmail[selectedProfileEmail] ?? null;
@@ -4837,7 +4940,8 @@ function AdoptionView({
   }
 
   return (
-    <div className="content-grid individual-utilization-view">
+    <>
+      <div className="content-grid individual-utilization-view">
       <section className="panel panel-wide individual-control-panel">
         <div className="individual-period-copy">
           <span className="eyebrow">Period Analysis</span>
@@ -5008,7 +5112,7 @@ function AdoptionView({
                         <button
                           aria-label={`${user.displayName} 개인 상세 보기`}
                           className="individual-user-link"
-                          onClick={() => setSelectedProfileEmail(user.email)}
+                          onClick={() => setPendingProfileEmail(user.email)}
                           type="button"
                         >
                           <span>
@@ -5111,7 +5215,18 @@ function AdoptionView({
           </div>
         </dl>
       </section>
-    </div>
+      </div>
+      {pendingProfileUser && (
+        <IndividualProfileAccessDialog
+          onCancel={() => setPendingProfileEmail(null)}
+          onConfirm={() => {
+            setSelectedProfileEmail(pendingProfileUser.email);
+            setPendingProfileEmail(null);
+          }}
+          profileName={pendingProfileUser.displayName}
+        />
+      )}
+    </>
   );
 }
 
