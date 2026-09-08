@@ -5264,7 +5264,9 @@ function IndividualProfileView({
   const trendTitle = `${fullMonthLabel(selectedMonth)} 일별 ${usesLiveDriveTrend ? "Drive 저장 파일" : profile.drive.trendSeriesLabel ?? "프롬프트"} 추이`;
   const trendSeriesLabel = usesLiveDriveTrend ? "저장 파일" : profile.drive.trendSeriesLabel ?? "프롬프트";
   const outputMetricLabel = profile.drive.outputMetricLabel ?? "결과·지원 파일";
-  const outputMetricValue = profile.drive.outputMetricValue ?? profile.drive.outputAndSupportFiles;
+  const outputMetricValue = profile.drive.useSelectedMonthActivityAsOutput
+    ? selectedMonthPromptCount
+    : profile.drive.outputMetricValue ?? profile.drive.outputAndSupportFiles;
   const outputMetricDetail = profile.drive.outputMetricDetail ??
     `${profile.drive.fileTotalLabel ?? (profile.attributionMode === "shared" ? "통합 분석 대상" : "전체 저장")} ${numberFormat.format(profile.drive.fileCount)}개 중`;
   const sourceLinks = profile.sourceLinks ?? [

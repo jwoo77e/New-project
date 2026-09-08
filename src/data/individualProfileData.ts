@@ -70,6 +70,7 @@ export type IndividualProfileData = {
     analyzedFileCount?: number;
     outputMetricLabel?: string;
     outputMetricValue?: number;
+    useSelectedMonthActivityAsOutput?: boolean;
     outputMetricUnit?: string;
     outputMetricDetail?: string;
     topicTitle?: string;
@@ -1623,6 +1624,155 @@ export const jeonWoosungProfileData: IndividualProfileData = {
   ],
 };
 
+const baeHyeoncheolDriveUrl =
+  "https://drive.google.com/drive/folders/1RDHm2MJnmIUWCEPwSIlLEw2kVsx5leUW?usp=drive_link";
+
+const baeHyeoncheolTopics: IndividualProfilePromptTopic[] = [
+  {
+    label: "업무 문서·지식 정리",
+    count: 225,
+    description: "운영 지식, 인수인계, 회의록과 업무 절차를 재사용 가능한 문서로 정리했습니다.",
+    examples: ["인수인계서", "운영 가이드", "회의록·작업 정리"],
+    color: "#0f8b8d",
+  },
+  {
+    label: "인프라·운영·장애 대응",
+    count: 104,
+    description: "클라우드·서버·네트워크 운영과 장애 원인, 이관 및 비용 최적화 자료를 축적했습니다.",
+    examples: ["클라우드 인프라 이관", "장애 원인 분석", "로그 표준화"],
+    color: "#e85d4f",
+  },
+  {
+    label: "CCTV·IoT·스마트안전",
+    count: 71,
+    description: "CCTV 스트리밍, 센서 이벤트, 비콘 SOS와 스마트안전 기능의 설계·검증 자료입니다.",
+    examples: ["CCTV 관리·스트리밍", "IoT 이벤트", "위험도·유해요인 API"],
+    color: "#2f8f46",
+  },
+  {
+    label: "아키텍처·API·데이터",
+    count: 26,
+    description: "시스템 구조, 데이터베이스와 API 인터페이스를 구현 가능한 명세로 구체화했습니다.",
+    examples: ["시스템 아키텍처", "API 인터페이스", "MQTT 연계 규격"],
+    color: "#6f7fd8",
+  },
+  {
+    label: "품질·보안·검증",
+    count: 15,
+    description: "코드 품질, 보안 적용, 성능과 기능 점검 결과를 검증 자료로 남겼습니다.",
+    examples: ["코드 품질 보고서", "보안성 검토", "성능·기능 점검"],
+    color: "#c58612",
+  },
+];
+
+const baeHyeoncheolHighlights: IndividualProfileHighlight[] = [
+  {
+    title: "CCTV·IoT 이벤트 설계 패키지",
+    category: "제품 개발",
+    summary: "이벤트 발행·종료 로직, 장비·센서 필드와 API 흐름을 설계 및 검증 문서로 연결했습니다.",
+    result: "이벤트 API 명세 · 시퀀스 다이어그램 · 로직 검증서",
+  },
+  {
+    title: "CCTV 관리·스트리밍 운영 개선",
+    category: "서비스 운영",
+    summary: "관리 페이지 개편과 스트리밍 서버 부하 분석, 현장 카메라 운영 지식을 함께 정리했습니다.",
+    result: "관리 페이지 리뉴얼 보고서 · 서버 분리 방안 · 운영 위키",
+  },
+  {
+    title: "클라우드·서버 운영 표준화",
+    category: "인프라",
+    summary: "개발 서버 이관, 공공 클라우드·GPU 인프라, 로그 중앙관제와 비용 최적화 방안을 문서화했습니다.",
+    result: "이관 보고서 · 인프라 검토안 · 로그 표준화 개정안",
+  },
+  {
+    title: "스마트안전 API·성능 검증",
+    category: "안전 기술",
+    summary: "근로자 위험도와 유해위험요인 API, 스마트안전 성능 측정 결과를 분석했습니다.",
+    result: "API 분석 보고서 · 성능 측정 보고서 · 추론 엔진 비교",
+  },
+  {
+    title: "품질·보안·장애 대응 자료",
+    category: "품질 관리",
+    summary: "코드 유지보수성, 권한 연계, 암호화 적용과 장애 원인·조치 내용을 재사용 가능한 근거로 남겼습니다.",
+    result: "코드 품질 보고서 · 보안 점검 · 장애 조치 보고서",
+  },
+];
+
+export const baeHyeoncheolProfileData: IndividualProfileData = {
+  email: "hchbae1001@riskzero.kr",
+  displayName: "배현철 사원",
+  title: "사원",
+  department: "플랫폼개발",
+  approvalOwner: "배현철 사원",
+  driveTrendOwner: "배현철",
+  accountLabel: "Claude Team Plan Premium",
+  measurementNote:
+    "Claude Team 사용량은 개인 계정으로 측정하며, 별도 Drive 산출물 저장소를 함께 연결해 업무 결과 신호를 확인합니다.",
+  costBasisNote:
+    "AI 도구 결재 현황의 Claude Team Plan Premium 현재 월 고정비를 반영했습니다. API 변동비는 개인에게 배분하지 않았습니다.",
+  sourceLinks: [{ label: "배현철 AI 산출물 Drive", url: baeHyeoncheolDriveUrl }],
+  drive: {
+    folderName: "배현철 AI 개인 산출물 저장소",
+    folderUrl: baeHyeoncheolDriveUrl,
+    collectedAt: "2026-09-08 15:59 KST",
+    period: "2026-09-08",
+    fileCount: 446,
+    childFolderCount: 173,
+    scannedFolderCount: 174,
+    scanErrors: 0,
+    promptFiles: 10,
+    responseFiles: 0,
+    pairedSessions: 0,
+    responseOnlySessions: 0,
+    outputAndSupportFiles: 436,
+    archiveFiles: 0,
+    metadataDateAnomalies: 0,
+    rootFolderCount: 1,
+    activityMetricLabel: "Drive 저장 파일",
+    activityMetricDetail: "모든 하위 폴더 재귀 집계 · 저장소 메타데이터 제외",
+    trendTitle: "일별 Drive 산출물 유입 추이",
+    trendSeriesLabel: "저장 파일",
+    topicBasisLabel: "산출 문서 441건의 파일명·하위 경로 업무 분류",
+    topicTitle: "산출물 업무 영역",
+    fileTotalLabel: "업무 산출물",
+    analyzedFileCount: 441,
+    outputMetricLabel: "분석 가능 산출 문서",
+    outputMetricValue: 441,
+    useSelectedMonthActivityAsOutput: true,
+    outputMetricUnit: "개",
+    outputMetricDetail: "선택 월 Drive 저장 파일 · 저장소 메타데이터 제외 · 매일 자동 갱신",
+    inventoryTitle: "산출물 구성",
+    inventorySummaryLabel: "하위 폴더 173개",
+    inventoryFootnote:
+      "Git 객체와 Obsidian·Claude 설정 파일은 산출물 통계에서 제외했습니다. 동일 업무의 초안·개정본은 각각 별도 파일로 집계됩니다.",
+  },
+  monthlyPromptCounts: [{ month: "2026-09", prompts: 446 }],
+  insightMonth: "2026-09",
+  dailyPromptCounts: [{ date: "2026-09-08", prompts: 446 }],
+  monthlyInsights: {
+    "2026-09": {
+      topicTitle: "9월 산출물 업무 영역",
+      topicBasisLabel: "Drive 산출 문서 441건의 파일명·하위 경로 분류",
+      promptTopics: baeHyeoncheolTopics,
+      highlights: baeHyeoncheolHighlights,
+    },
+  },
+  promptTopics: baeHyeoncheolTopics,
+  fileBreakdown: [
+    { label: "Markdown 문서", count: 412, description: "설계·운영·분석·검증 지식 문서", color: "#0f8b8d" },
+    { label: "Word 보고서", count: 27, description: "보고·회의·규격·조치 결과 문서", color: "#e85d4f" },
+    { label: "텍스트·CSV", count: 2, description: "이슈 요약과 구조화된 업무 자료", color: "#2f8f46" },
+    { label: "기타 지원 파일", count: 5, description: "증빙과 산출물 지원 자료", color: "#6f7fd8" },
+  ],
+  highlights: baeHyeoncheolHighlights,
+  notes: [
+    "지정 Drive 루트와 최대 7단계의 모든 하위 폴더를 읽기 전용으로 재귀 조회했으며, 최초 내용 분석 시점에는 업무 산출물 446개와 하위 폴더 173개를 확인했습니다. 상단 산출물 수와 그래프는 최신 스냅샷으로 갱신됩니다.",
+    "동기화 중 계속 증가하던 .git 객체와 .obsidian·.claude 설정 저장소, 시스템 파일은 산출물 통계와 자동 그래프에서 제외했습니다.",
+    "Drive 생성 시각은 2026년 9월 8일 일괄 업로드 시점으로 기록되어 일별 그래프도 해당 날짜에 집중됩니다.",
+    "산출물 수와 업무 영역은 활동 신호이며, 최종 승인·배포·품질·실제 업무 효과는 별도 검증이 필요합니다.",
+  ],
+};
+
 export const individualProfileDataByEmail: Readonly<Record<string, IndividualProfileData>> = {
   [kimJaewooProfileData.email]: kimJaewooProfileData,
   [limSeongbeomProfileData.email]: limSeongbeomProfileData,
@@ -1632,4 +1782,5 @@ export const individualProfileDataByEmail: Readonly<Record<string, IndividualPro
   [parkYeonseokProfileData.email]: parkYeonseokProfileData,
   [jeongJaeyoProfileData.email]: jeongJaeyoProfileData,
   [jeonWoosungProfileData.email]: jeonWoosungProfileData,
+  [baeHyeoncheolProfileData.email]: baeHyeoncheolProfileData,
 };

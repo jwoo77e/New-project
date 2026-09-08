@@ -44,6 +44,14 @@ export const defaultDriveTrendRepositories = [
     folderUrl:
       "https://drive.google.com/drive/folders/1Qn2i19lKy_4OlTu-H1UiVfhuGZTevMZL?usp=drive_link",
   },
+  {
+    owner: "배현철",
+    folderId: "1RDHm2MJnmIUWCEPwSIlLEw2kVsx5leUW",
+    folderUrl:
+      "https://drive.google.com/drive/folders/1RDHm2MJnmIUWCEPwSIlLEw2kVsx5leUW?usp=drive_link",
+    excludedFolderNames: [".git", ".obsidian", ".claude"],
+    excludedFileNames: [".DS_Store", ".gitignore"],
+  },
 ];
 
 export async function collectDriveArtifactTrend({
@@ -75,8 +83,12 @@ export async function scanDriveRepository({
   folderUrl,
   accessToken,
   listChildren = listDriveFolderChildren,
+  excludedFolderNames = [],
+  excludedFileNames = [],
 }) {
   const normalizedOwner = normalizeDriveName(owner);
+  const excludedFolders = new Set(excludedFolderNames.map(normalizeDriveName));
+  const excludedFiles = new Set(excludedFileNames.map(normalizeDriveName));
   const queue = [{ id: folderId, depth: 0, path: normalizedOwner }];
   const seenFolderIds = new Set();
   const files = [];
@@ -97,6 +109,7 @@ export async function scanDriveRepository({
     for (const child of children) {
       const childName = normalizeDriveName(child.name);
       if (child.mimeType === folderMimeType) {
+        if (excludedFolders.has(childName)) continue;
         folderCount += 1;
         maxDepth = Math.max(maxDepth, folder.depth + 1);
         queue.push({
@@ -106,6 +119,8 @@ export async function scanDriveRepository({
         });
         continue;
       }
+
+      if (excludedFiles.has(childName)) continue;
 
       files.push({
         id: child.id,

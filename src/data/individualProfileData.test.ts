@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { initialAiToolApprovalData } from "./aiToolApprovalData";
 import {
+  baeHyeoncheolProfileData,
   individualProfileDataByEmail,
   jeonWoosungProfileData,
   jeongJaeyoProfileData,
@@ -73,6 +74,7 @@ describe("strategy shared-account profiles", () => {
       "yspark@riskzero.kr",
       "wody@riskzero.kr",
       "woosung.jeon@riskzero.kr",
+      "hchbae1001@riskzero.kr",
     ]);
 
     for (const profile of profiles) {
@@ -120,6 +122,31 @@ describe("strategy shared-account profiles", () => {
       expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBeCloseTo(299.99, 2);
       expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBeCloseTo(445_485.15, 2);
     }
+  });
+});
+
+describe("baeHyeoncheolProfileData", () => {
+  it("connects the filtered recursive Drive inventory to the personal profile", () => {
+    const data = baeHyeoncheolProfileData;
+
+    expect(data.driveTrendOwner).toBe("배현철");
+    expect(data.drive.folderUrl).toContain("1RDHm2MJnmIUWCEPwSIlLEw2kVsx5leUW");
+    expect(data.drive.scanErrors).toBe(0);
+    expect(data.drive.scannedFolderCount).toBe(data.drive.childFolderCount + 1);
+    expect(data.drive.fileCount).toBe(446);
+    expect(data.fileBreakdown.reduce((sum, item) => sum + item.count, 0)).toBe(446);
+    expect(data.promptTopics.reduce((sum, item) => sum + item.count, 0)).toBe(441);
+    expect(data.monthlyPromptCounts).toEqual([{ month: "2026-09", prompts: 446 }]);
+  });
+
+  it("uses Bae Hyeoncheol's current premium subscription cost", () => {
+    const records = initialAiToolApprovalData.records.filter((record) =>
+      record.owner.startsWith(baeHyeoncheolProfileData.approvalOwner),
+    );
+
+    expect(records.map((record) => record.tool)).toEqual(["Claude Team Plan Premium"]);
+    expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBe(125);
+    expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBe(185_625);
   });
 });
 

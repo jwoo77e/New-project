@@ -18,7 +18,32 @@ describe("collect-drive-artifact-trend", () => {
       "전략사업팀",
       "정재요",
       "전우성",
+      "배현철",
     ]);
+  });
+
+  it("excludes repository metadata folders and system files when configured", async () => {
+    const scan = await scanDriveRepository({
+      owner: "배현철",
+      folderId: "bae",
+      folderUrl: "https://drive.google.com/bae",
+      accessToken: "token",
+      excludedFolderNames: [".git"],
+      excludedFileNames: [".DS_Store"],
+      listChildren: async ({ folderId }) => {
+        if (folderId === "bae") {
+          return [
+            { id: "git", name: ".git", mimeType: "application/vnd.google-apps.folder" },
+            { id: "docs", name: "docs", mimeType: "application/vnd.google-apps.folder" },
+            { id: "system", name: ".DS_Store", mimeType: "application/octet-stream" },
+          ];
+        }
+        return [{ id: "output", name: "report.md", mimeType: "text/markdown", createdTime: "2026-09-08T00:00:00.000Z" }];
+      },
+    });
+
+    expect(scan.folderCount).toBe(1);
+    expect(scan.files.map((file) => file.name)).toEqual(["report.md"]);
   });
 
   it("groups recursively discovered files by KST creation date", () => {
