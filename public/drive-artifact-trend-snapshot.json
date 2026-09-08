@@ -3,11 +3,11 @@
   "source": {
     "name": "Claude Drive 날짜별 저장 파일 증감",
     "status": "정상",
-    "collectedAt": "2026-09-08-16:17 KST",
-    "generatedAt": "2026-09-08T07:17:49.935Z",
+    "collectedAt": "2026-09-08-17:51 KST",
+    "generatedAt": "2026-09-08T08:51:48.639Z",
     "period": "2026-06-23 ~ 2026-09-08",
     "schedule": "매일 21:00 KST",
-    "note": "김재우·이형배·전략사업팀·정재요·전우성·배현철 Drive 루트의 모든 하위 폴더를 읽기 전용으로 재귀 조회하고 파일 생성일을 한국시간 기준으로 집계합니다. 배현철 저장소는 저장소 메타데이터를 제외합니다."
+    "note": "김재우·이형배·전략사업팀·정재요·전우성 Drive 루트의 모든 하위 폴더를 읽기 전용으로 재귀 조회하고 파일 생성일을 한국시간 기준으로 집계합니다."
   },
   "repositories": [
     {
@@ -16,10 +16,10 @@
       "folderUrl": "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link",
       "artifacts": [],
       "inventory": {
-        "fileCount": 2825,
+        "fileCount": 2967,
         "directFileCount": 282,
-        "nestedFileCount": 2543,
-        "folderCount": 832,
+        "nestedFileCount": 2685,
+        "folderCount": 870,
         "maxDepth": 7,
         "metadataDateAnomalyCount": 85,
         "dailyCounts": [
@@ -305,7 +305,7 @@
           },
           {
             "date": "2026-09-01",
-            "count": 46
+            "count": 55
           },
           {
             "date": "2026-09-02",
@@ -317,7 +317,23 @@
           },
           {
             "date": "2026-09-04",
-            "count": 78
+            "count": 99
+          },
+          {
+            "date": "2026-09-05",
+            "count": 5
+          },
+          {
+            "date": "2026-09-06",
+            "count": 4
+          },
+          {
+            "date": "2026-09-07",
+            "count": 94
+          },
+          {
+            "date": "2026-09-08",
+            "count": 9
           }
         ]
       }
@@ -516,10 +532,10 @@
       "folderUrl": "https://drive.google.com/drive/folders/1Qn2i19lKy_4OlTu-H1UiVfhuGZTevMZL?usp=drive_link",
       "artifacts": [],
       "inventory": {
-        "fileCount": 2025,
+        "fileCount": 2030,
         "directFileCount": 1,
-        "nestedFileCount": 2024,
-        "folderCount": 1279,
+        "nestedFileCount": 2029,
+        "folderCount": 1287,
         "maxDepth": 11,
         "metadataDateAnomalyCount": 0,
         "dailyCounts": [
@@ -570,36 +586,20 @@
           {
             "date": "2026-09-03",
             "count": 52
-          }
-        ]
-      }
-    },
-    {
-      "owner": "배현철",
-      "folderId": "1RDHm2MJnmIUWCEPwSIlLEw2kVsx5leUW",
-      "folderUrl": "https://drive.google.com/drive/folders/1RDHm2MJnmIUWCEPwSIlLEw2kVsx5leUW?usp=drive_link",
-      "artifacts": [],
-      "inventory": {
-        "fileCount": 2017,
-        "directFileCount": 55,
-        "nestedFileCount": 1962,
-        "folderCount": 173,
-        "maxDepth": 7,
-        "metadataDateAnomalyCount": 0,
-        "dailyCounts": [
+          },
           {
             "date": "2026-09-08",
-            "count": 2017
+            "count": 5
           }
         ]
       }
     }
   ],
   "totals": {
-    "files": 9740,
-    "directFiles": 346,
-    "nestedFiles": 9394,
-    "folders": 3008,
+    "files": 7870,
+    "directFiles": 291,
+    "nestedFiles": 7579,
+    "folders": 2881,
     "metadataDateAnomalies": 85
   }
 }
