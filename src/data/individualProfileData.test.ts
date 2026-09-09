@@ -136,6 +136,10 @@ describe("baeHyeoncheolProfileData", () => {
     expect(data.drive.fileCount).toBe(446);
     expect(data.fileBreakdown.reduce((sum, item) => sum + item.count, 0)).toBe(446);
     expect(data.promptTopics.reduce((sum, item) => sum + item.count, 0)).toBe(441);
+    expect(data.drive.useSelectedMonthActivityAsOutput).toBe(false);
+    expect(data.drive.outputMetricValue).toBe(
+      data.promptTopics.reduce((sum, item) => sum + item.count, 0),
+    );
     expect(data.monthlyPromptCounts).toEqual([{ month: "2026-09", prompts: 446 }]);
   });
 

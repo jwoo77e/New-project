@@ -1738,9 +1738,9 @@ export const baeHyeoncheolProfileData: IndividualProfileData = {
     analyzedFileCount: 441,
     outputMetricLabel: "분석 가능 산출 문서",
     outputMetricValue: 441,
-    useSelectedMonthActivityAsOutput: true,
+    useSelectedMonthActivityAsOutput: false,
     outputMetricUnit: "개",
-    outputMetricDetail: "선택 월 Drive 저장 파일 · 저장소 메타데이터 제외 · 매일 자동 갱신",
+    outputMetricDetail: "파일명·하위 경로로 분류한 업무 산출 문서 · 지원 파일 5건 제외",
     inventoryTitle: "산출물 구성",
     inventorySummaryLabel: "하위 폴더 173개",
     inventoryFootnote:
@@ -1766,7 +1766,7 @@ export const baeHyeoncheolProfileData: IndividualProfileData = {
   ],
   highlights: baeHyeoncheolHighlights,
   notes: [
-    "지정 Drive 루트와 최대 7단계의 모든 하위 폴더를 읽기 전용으로 재귀 조회했으며, 최초 내용 분석 시점에는 업무 산출물 446개와 하위 폴더 173개를 확인했습니다. 상단 산출물 수와 그래프는 최신 스냅샷으로 갱신됩니다.",
+    "지정 Drive 루트와 최대 7단계의 모든 하위 폴더를 읽기 전용으로 재귀 조회했습니다. Drive 저장 파일 수와 그래프는 최신 스냅샷으로 갱신하며, 분석 가능 산출 문서는 최초 내용 분석에서 선별한 441건으로 분리해 표시합니다.",
     "동기화 중 계속 증가하던 .git 객체와 .obsidian·.claude 설정 저장소, 시스템 파일은 산출물 통계와 자동 그래프에서 제외했습니다.",
     "Drive 생성 시각은 2026년 9월 8일 일괄 업로드 시점으로 기록되어 일별 그래프도 해당 날짜에 집중됩니다.",
     "산출물 수와 업무 영역은 활동 신호이며, 최종 승인·배포·품질·실제 업무 효과는 별도 검증이 필요합니다.",
