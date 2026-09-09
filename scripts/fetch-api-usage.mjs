@@ -64,8 +64,8 @@ export async function collectApiUsage({
   configureRuntime({ targetRootDir, requestedDays, collectedAt });
 
   const [openai, gemini, claude, workspaceUsage, gammaUsage] = await Promise.all([
-    collectOpenAI(env.OPENAI_ADMIN_KEY),
-    collectGemini(env.GEMINI_API_KEY, env),
+    collectOpenAI(resolveOpenAIAdminKeys(env)),
+    collectGemini(resolveGeminiApiKeys(env), env),
     collectClaude(resolveAnthropicAdminKeys(env)),
     collectGeminiWorkspaceUsage(env),
     collectGamma(env.GAMMA_API_KEY, env),
@@ -104,7 +104,7 @@ export async function collectApiUsage({
     providers,
     dailyUsage,
     models: [...openai.models, ...gemini.models, ...claude.models].sort((a, b) => b.costUsd - a.costUsd),
-    keyHealth: [openai.keyHealth, gemini.keyHealth, ...keyHealthRows(claude)],
+    keyHealth: [...keyHealthRows(openai), ...keyHealthRows(gemini), ...keyHealthRows(claude)],
     workspaceUsage,
     gammaUsage,
   };
@@ -165,9 +165,24 @@ function configureRuntime({ targetRootDir = process.cwd(), requestedDays = 7, co
   dayBuckets = makeDayBuckets(startingAt, days);
 }
 
-async function collectOpenAI(apiKey) {
+async function collectOpenAI(adminKeys) {
   const providerName = "OpenAI";
-  if (!apiKey) return missingProvider(providerName, "OPENAI_ADMIN_KEY가 없습니다.");
+  const keys = Array.isArray(adminKeys) ? adminKeys : [];
+  if (keys.length === 0) return missingProvider(providerName, "OPENAI_ADMIN_KEY가 없습니다.");
+
+  const results = await Promise.all(keys.map((adminKey, index) => collectOpenAIAdminKey(adminKey, index + 1)));
+  if (results.length === 1) {
+    return {
+      ...results[0],
+      keyHealth: [results[0].keyHealth],
+    };
+  }
+
+  return aggregateOpenAIAdminResults(results, keys.length);
+}
+
+async function collectOpenAIAdminKey(adminKey, index) {
+  const providerName = "OpenAI";
 
   const usageUrl = new URL("https://api.openai.com/v1/organization/usage/completions");
   usageUrl.searchParams.set("start_time", String(Math.floor(startingAt.getTime() / 1000)));
@@ -180,12 +195,35 @@ async function collectOpenAI(apiKey) {
   costsUrl.searchParams.set("end_time", String(Math.floor(endingAt.getTime() / 1000)));
   costsUrl.searchParams.set("bucket_width", "1d");
 
-  const headers = { Authorization: `Bearer ${apiKey}` };
+  const headers = { Authorization: `Bearer ${adminKey.key}` };
   const usageResult = await getPaginatedJson(usageUrl, { headers });
   const costsResult = await getPaginatedJson(costsUrl, { headers });
+  const keyName = `openai-admin-${index}: ${adminKey.label}`;
 
   if (!usageResult.ok && !costsResult.ok) {
-    return errorProvider(providerName, "OpenAI 조회 실패", usageResult.error ?? costsResult.error);
+    const error = usageResult.error ?? costsResult.error;
+    return {
+      provider: makeProvider({
+        provider: providerName,
+        label: "OpenAI API",
+        requests: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        costUsd: 0,
+        activeKeys: 1,
+        status: "주의",
+        note: `${adminKey.label} OpenAI 조회 실패: ${shortenError(error)}`,
+      }),
+      daily: new Map(dayBuckets.map((bucket) => [bucket.date, emptyDaily()])),
+      models: [],
+      keyHealth: makeKeyHealth(providerName, {
+        name: keyName,
+        scope: "organization usage, costs",
+        requests: 0,
+        status: "확인필요",
+        note: `${adminKey.sourceEnvName}: ${shortenError(error)}`,
+      }),
+    };
   }
 
   const usage = usageResult.ok ? parseOpenAIUsage(usageResult.data) : emptyUsage();
@@ -221,29 +259,96 @@ async function collectOpenAI(apiKey) {
     daily,
     models,
     keyHealth: makeKeyHealth(providerName, {
-      name: "openai-admin",
+      name: keyName,
       scope: "organization usage, costs",
       requests: usage.totalRequests,
       status: "정상",
-      note: "환경변수에서만 읽음",
+      note: `${adminKey.sourceEnvName}에서만 읽음`,
     }),
   };
 }
 
-async function collectGemini(apiKey, env) {
+function aggregateOpenAIAdminResults(results, activeKeys) {
+  const providerName = "OpenAI";
+  const totals = results.reduce(
+    (sum, result) => ({
+      requests: sum.requests + result.provider.requests,
+      inputTokens: sum.inputTokens + result.provider.inputTokens,
+      outputTokens: sum.outputTokens + result.provider.outputTokens,
+      costUsd: sum.costUsd + result.provider.costUsd,
+      ok: sum.ok + (result.provider.status === "정상" ? 1 : 0),
+    }),
+    { requests: 0, inputTokens: 0, outputTokens: 0, costUsd: 0, ok: 0 },
+  );
+  const daily = aggregateDailyResults(results);
+  const status = totals.ok === results.length ? "정상" : "주의";
+  const note =
+    totals.ok === results.length
+      ? `${results.length}개 OpenAI Admin 키 수집 완료`
+      : `${results.length}개 OpenAI Admin 키 중 ${totals.ok}개 수집 완료`;
+
+  return {
+    provider: makeProvider({
+      provider: providerName,
+      label: "OpenAI API",
+      requests: totals.requests,
+      inputTokens: totals.inputTokens,
+      outputTokens: totals.outputTokens,
+      costUsd: totals.costUsd,
+      activeKeys,
+      status,
+      note,
+    }),
+    daily,
+    models: combineModelRows(results.flatMap((result) => result.models)),
+    keyHealth: results.map((result) => result.keyHealth),
+  };
+}
+
+async function collectGemini(apiKeys, env) {
   const providerName = "Gemini";
-  if (!apiKey) return missingProvider(providerName, "GEMINI_API_KEY가 없습니다.");
+  const keys = Array.isArray(apiKeys) ? apiKeys : [];
+  if (keys.length === 0) return missingProvider(providerName, "GEMINI_API_KEY가 없습니다.");
 
-  const modelsUrl = new URL("https://generativelanguage.googleapis.com/v1beta/models");
-  modelsUrl.searchParams.set("key", apiKey);
-  const modelsResult = await getJson(modelsUrl);
+  const keyResults = await Promise.all(
+    keys.map(async (apiKey, index) => {
+      const modelsUrl = new URL("https://generativelanguage.googleapis.com/v1beta/models");
+      modelsUrl.searchParams.set("key", apiKey.key);
+      const result = await getJson(modelsUrl);
+      return { apiKey, index: index + 1, result };
+    }),
+  );
+  const validKeyResults = keyResults.filter(({ result }) => result.ok);
 
-  if (!modelsResult.ok) {
-    return errorProvider(providerName, "Gemini 키 확인 실패", modelsResult.error);
+  if (validKeyResults.length === 0) {
+    const error = keyResults[0]?.result.error ?? "Gemini 키 확인 실패";
+    return {
+      ...errorProvider(providerName, "Gemini 키 확인 실패", error),
+      keyHealth: keyResults.map(({ apiKey, index, result }) =>
+        makeKeyHealth(providerName, {
+          name: `gemini-api-${index}: ${apiKey.label}`,
+          scope: "generative language",
+          requests: 0,
+          status: "확인필요",
+          note: `${apiKey.sourceEnvName}: ${shortenError(result.error)}`,
+        }),
+      ),
+    };
   }
 
-  const catalogModels = parseGeminiModels(modelsResult.data);
+  const catalogModels = combineModelRows(validKeyResults.flatMap(({ result }) => parseGeminiModels(result.data)));
   const monitoring = await collectGeminiMonitoring(env);
+  const keyHealth = keyResults.map(({ apiKey, index, result }) =>
+    makeKeyHealth(providerName, {
+      name: `gemini-api-${index}: ${apiKey.label}`,
+      scope: "generative language; usage is aggregated by monitoring project",
+      requests: 0,
+      status: result.ok ? "정상" : "확인필요",
+      note: result.ok
+        ? `${apiKey.sourceEnvName} 키 확인 완료; 사용량은 프로젝트 단위 집계`
+        : `${apiKey.sourceEnvName}: ${shortenError(result.error)}`,
+    }),
+  );
 
   if (!monitoring.ok) {
     return {
@@ -254,19 +359,13 @@ async function collectGemini(apiKey, env) {
         inputTokens: 0,
         outputTokens: 0,
         costUsd: 0,
-        activeKeys: 1,
+        activeKeys: keys.length,
         status: "주의",
-        note: `API 키 확인됨. Cloud Monitoring 미수집: ${shortenError(monitoring.error)}`,
+        note: `${validKeyResults.length}/${keys.length}개 API 키 확인됨. Cloud Monitoring 미수집: ${shortenError(monitoring.error)}`,
       }),
       daily: new Map(dayBuckets.map((bucket) => [bucket.date, emptyDaily()])),
       models: catalogModels,
-      keyHealth: makeKeyHealth(providerName, {
-        name: "gemini-prod",
-        scope: "generative language, monitoring",
-        requests: 0,
-        status: "확인필요",
-        note: shortenError(monitoring.error),
-      }),
+      keyHealth,
     };
   }
 
@@ -304,76 +403,104 @@ async function collectGemini(apiKey, env) {
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
       costUsd: billingCosts.ok ? billingCosts.totalCostUsd : 0,
-      activeKeys: 1,
-      status: hasUsage ? "정상" : "주의",
-      note,
+      activeKeys: keys.length,
+      status: hasUsage && validKeyResults.length === keys.length ? "정상" : "주의",
+      note: `${validKeyResults.length}/${keys.length}개 API 키 확인. ${note}`,
     }),
     daily: mergeDaily(usage.daily, billingCosts.ok ? billingCosts.dailyCosts : new Map()),
     models: usageModels.length > 0 ? usageModels : catalogModels,
-    keyHealth: makeKeyHealth(providerName, {
-      name: "gemini-prod",
-      scope: `generative language, monitoring (${monitoring.projectLabel})`,
-      requests: usage.totalRequests,
-      status: "정상",
-      note: billingCosts.ok
-        ? "Cloud Monitoring 및 BigQuery Billing 인증 성공"
-        : `Cloud Monitoring 인증 성공. ${shortenError(billingCosts.error)}`,
-    }),
+    keyHealth,
   };
 }
 
-export function resolveAnthropicAdminKeys(env = {}) {
+function resolveNumberedKeys(
+  env,
+  { baseName, bulkName, labelBase, defaultLabel, ghFromIndex = Number.POSITIVE_INFINITY },
+) {
   const entries = [];
   const seen = new Set();
 
-  const addEntry = ({ apiKey, label, sourceEnvName }) => {
+  const addEntry = ({ apiKey, label, sourceEnvName, markGh = false }) => {
     const key = String(apiKey ?? "").trim();
     if (!key || seen.has(key)) return;
     seen.add(key);
+    const baseLabel = String(label ?? "").trim() || `${defaultLabel} ${entries.length + 1}`;
     entries.push({
       key,
-      label: String(label ?? "").trim() || `Claude Admin ${entries.length + 1}`,
+      label: markGh && !/(^|\s)GH($|\s)/i.test(baseLabel) ? `${baseLabel} GH` : baseLabel,
       sourceEnvName,
     });
   };
 
   addEntry({
-    apiKey: env.ANTHROPIC_ADMIN_API_KEY,
-    label: env.ANTHROPIC_ADMIN_API_KEY_LABEL ?? "Claude Admin 1",
-    sourceEnvName: "ANTHROPIC_ADMIN_API_KEY",
+    apiKey: env[baseName],
+    label: env[`${baseName}_LABEL`] ?? `${defaultLabel} 1`,
+    sourceEnvName: baseName,
   });
 
   addEntry({
-    apiKey: env.ANTHROPIC_ADMIN_API_KEY_1,
-    label: env.ANTHROPIC_ADMIN_API_KEY_1_LABEL ?? env.ANTHROPIC_ADMIN_API_KEY_LABEL ?? "Claude Admin 1",
-    sourceEnvName: "ANTHROPIC_ADMIN_API_KEY_1",
+    apiKey: env[`${baseName}_1`],
+    label: env[`${baseName}_1_LABEL`] ?? env[`${baseName}_LABEL`] ?? `${defaultLabel} 1`,
+    sourceEnvName: `${baseName}_1`,
   });
 
   Object.keys(env)
-    .map((key) => key.match(/^ANTHROPIC_ADMIN_API_KEY_(\d+)$/)?.[1])
+    .map((key) => key.match(new RegExp(`^${baseName}_(\\d+)$`))?.[1])
     .filter(Boolean)
     .map(Number)
     .filter((index) => index > 1)
     .sort((a, b) => a - b)
     .forEach((index) => {
       addEntry({
-        apiKey: env[`ANTHROPIC_ADMIN_API_KEY_${index}`],
-        label: env[`ANTHROPIC_ADMIN_API_KEY_${index}_LABEL`] ?? `Claude Admin ${index}`,
-        sourceEnvName: `ANTHROPIC_ADMIN_API_KEY_${index}`,
+        apiKey: env[`${baseName}_${index}`],
+        label: env[`${baseName}_${index}_LABEL`] ?? `${defaultLabel} ${index}`,
+        sourceEnvName: `${baseName}_${index}`,
+        markGh: index >= ghFromIndex,
       });
     });
 
-  const bulkKeys = splitEnvList(env.ANTHROPIC_ADMIN_API_KEYS);
-  const bulkLabels = splitLabelList(env.ANTHROPIC_ADMIN_API_KEY_LABELS);
+  const bulkKeys = splitEnvList(env[bulkName]);
+  const bulkLabels = splitLabelList(env[labelBase]);
   bulkKeys.forEach((apiKey, index) => {
     addEntry({
       apiKey,
-      label: bulkLabels[index] ?? `Claude Admin ${entries.length + 1}`,
-      sourceEnvName: "ANTHROPIC_ADMIN_API_KEYS",
+      label: bulkLabels[index] ?? `${defaultLabel} ${entries.length + 1}`,
+      sourceEnvName: bulkName,
+      markGh: entries.length + 1 >= ghFromIndex,
     });
   });
 
   return entries;
+}
+
+export function resolveOpenAIAdminKeys(env = {}) {
+  return resolveNumberedKeys(env, {
+    baseName: "OPENAI_ADMIN_KEY",
+    bulkName: "OPENAI_ADMIN_KEYS",
+    labelBase: "OPENAI_ADMIN_KEY_LABELS",
+    defaultLabel: "OpenAI Admin",
+    ghFromIndex: 2,
+  });
+}
+
+export function resolveGeminiApiKeys(env = {}) {
+  return resolveNumberedKeys(env, {
+    baseName: "GEMINI_API_KEY",
+    bulkName: "GEMINI_API_KEYS",
+    labelBase: "GEMINI_API_KEY_LABELS",
+    defaultLabel: "Gemini API",
+    ghFromIndex: 2,
+  });
+}
+
+export function resolveAnthropicAdminKeys(env = {}) {
+  return resolveNumberedKeys(env, {
+    baseName: "ANTHROPIC_ADMIN_API_KEY",
+    bulkName: "ANTHROPIC_ADMIN_API_KEYS",
+    labelBase: "ANTHROPIC_ADMIN_API_KEY_LABELS",
+    defaultLabel: "Claude Admin",
+    ghFromIndex: 3,
+  });
 }
 
 async function collectClaude(adminKeys) {
@@ -497,21 +624,7 @@ function aggregateClaudeAdminResults(results, activeKeys) {
     { requests: 0, inputTokens: 0, outputTokens: 0, costUsd: 0, ok: 0 },
   );
 
-  const daily = new Map();
-  for (const bucket of dayBuckets) {
-    const mergedDay = results.reduce((sum, result) => {
-      const day = result.daily.get(bucket.date) ?? emptyDaily();
-      return {
-        requests: sum.requests + day.requests,
-        tokens: sum.tokens + day.tokens,
-        costUsd: sum.costUsd + day.costUsd,
-      };
-    }, emptyDaily());
-    daily.set(bucket.date, {
-      ...mergedDay,
-      costUsd: roundMoney(mergedDay.costUsd),
-    });
-  }
+  const daily = aggregateDailyResults(results);
 
   const status = totals.ok === results.length ? "정상" : totals.ok > 0 ? "주의" : "주의";
   const note =
@@ -1576,6 +1689,25 @@ function makeKeyHealth(provider, { name, scope, requests, status, note }) {
 
 function keyHealthRows(result) {
   return Array.isArray(result.keyHealth) ? result.keyHealth : [result.keyHealth];
+}
+
+function aggregateDailyResults(results) {
+  const daily = new Map();
+  for (const bucket of dayBuckets) {
+    const mergedDay = results.reduce((sum, result) => {
+      const day = result.daily.get(bucket.date) ?? emptyDaily();
+      return {
+        requests: sum.requests + day.requests,
+        tokens: sum.tokens + day.tokens,
+        costUsd: sum.costUsd + day.costUsd,
+      };
+    }, emptyDaily());
+    daily.set(bucket.date, {
+      ...mergedDay,
+      costUsd: roundMoney(mergedDay.costUsd),
+    });
+  }
+  return daily;
 }
 
 function combineModelRows(models) {

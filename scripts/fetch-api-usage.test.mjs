@@ -7,8 +7,10 @@ import {
   parseGammaGenerationIds,
   parseClaudeCosts,
   resolveAnthropicAdminKeys,
+  resolveGeminiApiKeys,
   resolveGeminiMonitoringProjectIds,
   resolveGeminiBillingUsageProjectIds,
+  resolveOpenAIAdminKeys,
 } from "./fetch-api-usage.mjs";
 
 describe("provider API pagination", () => {
@@ -120,6 +122,47 @@ describe("Gemini billing project filters", () => {
 });
 
 describe("Claude cost parsing", () => {
+  it("resolves and deduplicates multiple OpenAI and Gemini keys", () => {
+    expect(
+      resolveOpenAIAdminKeys({
+        OPENAI_ADMIN_KEY: "openai-a",
+        OPENAI_ADMIN_KEY_LABEL: "본사",
+        OPENAI_ADMIN_KEY_2: "openai-b",
+        OPENAI_ADMIN_KEY_2_LABEL: "연구소",
+        OPENAI_ADMIN_KEYS: "openai-a,openai-c",
+        OPENAI_ADMIN_KEY_LABELS: "중복,플랫폼",
+      }),
+    ).toEqual([
+      { key: "openai-a", label: "본사", sourceEnvName: "OPENAI_ADMIN_KEY" },
+      { key: "openai-b", label: "연구소 GH", sourceEnvName: "OPENAI_ADMIN_KEY_2" },
+      { key: "openai-c", label: "플랫폼 GH", sourceEnvName: "OPENAI_ADMIN_KEYS" },
+    ]);
+
+    expect(
+      resolveGeminiApiKeys({
+        GEMINI_API_KEY: "gemini-a",
+        GEMINI_API_KEY_2: "gemini-b",
+        GEMINI_API_KEY_2_LABEL: "두번째 프로젝트",
+      }),
+    ).toEqual([
+      { key: "gemini-a", label: "Gemini API 1", sourceEnvName: "GEMINI_API_KEY" },
+      { key: "gemini-b", label: "두번째 프로젝트 GH", sourceEnvName: "GEMINI_API_KEY_2" },
+    ]);
+  });
+
+  it("marks the newly added third Claude account with GH without changing the existing two", () => {
+    expect(
+      resolveAnthropicAdminKeys({
+        ANTHROPIC_ADMIN_API_KEY: "claude-a",
+        ANTHROPIC_ADMIN_API_KEY_LABEL: "infra",
+        ANTHROPIC_ADMIN_API_KEY_2: "claude-b",
+        ANTHROPIC_ADMIN_API_KEY_2_LABEL: "bigone",
+        ANTHROPIC_ADMIN_API_KEY_3: "claude-c",
+        ANTHROPIC_ADMIN_API_KEY_3_LABEL: "신규 조직",
+      }).map(({ label }) => label),
+    ).toEqual(["infra", "bigone", "신규 조직 GH"]);
+  });
+
   it("resolves multiple Anthropic admin keys with dashboard labels", () => {
     const keys = resolveAnthropicAdminKeys({
       ANTHROPIC_ADMIN_API_KEY: "admin-key-a",
