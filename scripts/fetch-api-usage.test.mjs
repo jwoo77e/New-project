@@ -3,12 +3,48 @@ import {
   buildGeminiWorkspaceUsageFromActivities,
   buildGammaUsageFromGenerationStatuses,
   buildGeminiBillingProjectFilter,
+  getPaginatedJson,
   parseGammaGenerationIds,
   parseClaudeCosts,
   resolveAnthropicAdminKeys,
   resolveGeminiMonitoringProjectIds,
   resolveGeminiBillingUsageProjectIds,
 } from "./fetch-api-usage.mjs";
+
+describe("provider API pagination", () => {
+  it("collects every OpenAI and Claude page using the next_page cursor", async () => {
+    const requestedPages = [];
+    const fetchImpl = async (url) => {
+      const page = url.searchParams.get("page");
+      requestedPages.push(page);
+      const payload = page
+        ? { data: [{ starting_at: "2026-09-02T00:00:00Z" }], has_more: false, next_page: null }
+        : { data: [{ starting_at: "2026-09-01T00:00:00Z" }], has_more: true, next_page: "page-2" };
+      return new Response(JSON.stringify(payload), { status: 200 });
+    };
+
+    const result = await getPaginatedJson(
+      new URL("https://example.com/usage?bucket_width=1d"),
+      {},
+      { fetchImpl },
+    );
+
+    expect(result.ok).toBe(true);
+    expect(requestedPages).toEqual([null, "page-2"]);
+    expect(result.data.data).toHaveLength(2);
+    expect(result.data.has_more).toBe(false);
+  });
+
+  it("rejects an incomplete paginated response instead of publishing partial data", async () => {
+    const fetchImpl = async () =>
+      new Response(JSON.stringify({ data: [{ value: 1 }], has_more: true, next_page: null }), { status: 200 });
+
+    const result = await getPaginatedJson(new URL("https://example.com/usage"), {}, { fetchImpl });
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("next_page");
+  });
+});
 
 describe("Gemini billing project filters", () => {
   it("keeps the existing single GOOGLE_CLOUD_PROJECT_ID behavior by default", () => {

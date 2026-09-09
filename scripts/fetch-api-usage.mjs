@@ -181,8 +181,8 @@ async function collectOpenAI(apiKey) {
   costsUrl.searchParams.set("bucket_width", "1d");
 
   const headers = { Authorization: `Bearer ${apiKey}` };
-  const usageResult = await getJson(usageUrl, { headers });
-  const costsResult = await getJson(costsUrl, { headers });
+  const usageResult = await getPaginatedJson(usageUrl, { headers });
+  const costsResult = await getPaginatedJson(costsUrl, { headers });
 
   if (!usageResult.ok && !costsResult.ok) {
     return errorProvider(providerName, "OpenAI 조회 실패", usageResult.error ?? costsResult.error);
@@ -410,8 +410,8 @@ async function collectClaudeAdminKey(adminKey, index) {
     "anthropic-version": "2023-06-01",
     "x-api-key": adminKey.key,
   };
-  const usageResult = await getJson(usageUrl, { headers });
-  const costResult = await getJson(costUrl, { headers });
+  const usageResult = await getPaginatedJson(usageUrl, { headers });
+  const costResult = await getPaginatedJson(costUrl, { headers });
   const keyName = `claude-admin-${index}: ${adminKey.label}`;
 
   if (!usageResult.ok && !costResult.ok) {
@@ -1669,6 +1669,62 @@ async function getJson(url, options = {}) {
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
+}
+
+export async function getPaginatedJson(
+  url,
+  options = {},
+  { fetchImpl = fetch, maxPages = 100 } = {},
+) {
+  const items = [];
+  const seenCursors = new Set();
+  let firstPayload = null;
+  let cursor = null;
+
+  for (let pageIndex = 0; pageIndex < maxPages; pageIndex += 1) {
+    const pageUrl = new URL(url);
+    if (cursor) pageUrl.searchParams.set("page", cursor);
+
+    let response;
+    let data;
+    try {
+      response = await fetchImpl(pageUrl, options);
+      const text = await response.text();
+      data = text ? JSON.parse(text) : {};
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : String(error) };
+    }
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        error: data?.error?.message ?? data?.message ?? `${response.status} ${response.statusText}`,
+      };
+    }
+
+    firstPayload ??= data;
+    if (Array.isArray(data?.data)) items.push(...data.data);
+
+    if (!data?.has_more) {
+      return {
+        ok: true,
+        data: {
+          ...firstPayload,
+          data: items,
+          has_more: false,
+          next_page: null,
+        },
+      };
+    }
+
+    cursor = typeof data?.next_page === "string" ? data.next_page : "";
+    if (!cursor || seenCursors.has(cursor)) {
+      return { ok: false, error: "페이지네이션 응답의 next_page가 없거나 반복되었습니다." };
+    }
+    seenCursors.add(cursor);
+  }
+
+  return { ok: false, error: `페이지네이션 최대 ${maxPages}페이지를 초과했습니다.` };
 }
 
 async function readLocalEnv(filePath) {
