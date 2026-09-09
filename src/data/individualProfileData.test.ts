@@ -234,6 +234,16 @@ describe("jeonWoosungProfileData", () => {
       (sum, item) => sum + item.count,
       0,
     )).toBe(15);
+    expect(data.monthlyInsights?.["2026-09"].promptTopics.reduce(
+      (sum, item) => sum + item.count,
+      0,
+    )).toBe(22);
+    expect(data.monthlyInsights?.["2026-09"].highlights).toHaveLength(5);
+    expect(data.monthlyInsights?.["2026-09"]).toMatchObject({
+      outputMetricLabel: "분석 반영 커밋",
+      outputMetricValue: 22,
+      outputMetricUnit: "건",
+    });
   });
 
   it("links Jeon Woosung's current individual subscriptions", () => {

@@ -24,6 +24,10 @@ export type IndividualProfileHighlight = {
 export type IndividualProfileMonthlyInsight = {
   topicTitle?: string;
   topicBasisLabel?: string;
+  outputMetricLabel?: string;
+  outputMetricValue?: number;
+  outputMetricUnit?: string;
+  outputMetricDetail?: string;
   promptTopics: IndividualProfilePromptTopic[];
   highlights: IndividualProfileHighlight[];
 };
@@ -1552,6 +1556,76 @@ export const jeonWoosungProfileData: IndividualProfileData = {
         },
       ],
     },
+    "2026-09": {
+      topicTitle: "9월 AI 개발 업무 영역",
+      topicBasisLabel: "9월 1~2일 GitLab 비-merge 커밋 22건 · 9월 1~9일 Drive 저장 파일 628건 교차 분석",
+      outputMetricLabel: "분석 반영 커밋",
+      outputMetricValue: 22,
+      outputMetricUnit: "건",
+      outputMetricDetail: "비-merge 22건 · 3개 프로젝트 · 5,125줄 수정",
+      promptTopics: [
+        {
+          label: "세션·토큰 안정화",
+          count: 11,
+          description: "세션 만료 안내, 토큰 재발급·정리, 경로별 부수효과와 heartbeat 추적을 프론트·백엔드·모바일에서 정비했습니다.",
+          examples: ["access 토큰 재발급", "세션 만료 안내", "heartbeat 추적"],
+          color: "#0f8b8d",
+        },
+        {
+          label: "인증·비밀번호 보안",
+          count: 8,
+          description: "비밀번호 서버 대조와 로그인 잠금 원자화, 인증 우회 제거, 탭별 로그인 분리와 클라이언트 IP 신뢰 기준을 강화했습니다.",
+          examples: ["비밀번호 서버 대조", "인증 우회 제거", "탭별 로그인 분리"],
+          color: "#e85d4f",
+        },
+        {
+          label: "실시간 경보·IoT",
+          count: 2,
+          description: "경보 채널 생성과 heartbeat 소유권을 공통화하고 비콘 시리얼 매칭의 공백 오차를 보정했습니다.",
+          examples: ["경보 채널 공통화", "heartbeat 소유권", "비콘 시리얼 매칭"],
+          color: "#2f8f46",
+        },
+        {
+          label: "회귀검증·변경관리",
+          count: 1,
+          description: "병합 이후 비밀번호 검증 회귀 테스트를 보완하고 Drive에 계획·리뷰·TDD·변경요약 근거를 함께 보관했습니다.",
+          examples: ["비밀번호 검증 테스트", "코드 리뷰", "TDD 문서"],
+          color: "#6f7fd8",
+        },
+      ],
+      highlights: [
+        {
+          title: "상태 기반 세션 정책 전면 정비",
+          category: "세션 안정화",
+          summary: "세션 조회 경로의 부수효과를 분리하고 토큰 재발급, 만료 안내와 heartbeat 추적을 프론트·백엔드·모바일에 연결했습니다.",
+          result: "3개 프로젝트 · 비-merge 커밋 11건 · 세션 정책 테스트·로그",
+        },
+        {
+          title: "로그인·비밀번호 검증 강화",
+          category: "인증 보안",
+          summary: "비밀번호 변경 시 서버 대조와 로그인 잠금 원자화를 도입하고 인증 우회 경로와 탭 간 로그인 정보 혼선을 제거했습니다.",
+          result: "비-merge 커밋 8건 · 서버·웹·모바일 인증 흐름 개선",
+        },
+        {
+          title: "웹 취약점 개선 계획 패키지",
+          category: "보안 설계",
+          summary: "불충분한 인증, 비밀번호 복구, 정보 노출, XSS, 파일 업로드, 프로세스·권한 검증 항목을 계획·검토·TDD 문서로 구조화했습니다.",
+          result: "7개 취약점 항목 · 분석보고서 · 계획·리뷰·TDD 근거",
+        },
+        {
+          title: "실시간 경보와 비콘 정합성 보완",
+          category: "현장 IoT",
+          summary: "경보 채널 생성과 heartbeat 소유권을 공통화하고 비콘 시리얼 앞뒤 공백으로 발생할 수 있는 매칭 오류를 흡수했습니다.",
+          result: "웹 경보 훅 정비 · 백엔드 비콘·대시보드 매퍼 보완",
+        },
+        {
+          title: "계획-구현-검증 근거 통합",
+          category: "개발 품질",
+          summary: "Drive에 코드 patch, 변경요약, 커밋 CSV와 계획·코드리뷰·QA·최종보고 문서를 함께 보관해 변경 추적성을 확보했습니다.",
+          result: "9월 Drive 628개 · 4개 활동일 · 대량 worktree 복제본 포함",
+        },
+      ],
+    },
   },
   promptTopics: [
     {
@@ -1617,10 +1691,10 @@ export const jeonWoosungProfileData: IndividualProfileData = {
     },
   ],
   notes: [
-    "지정 Drive 루트와 모든 하위 폴더를 읽기 전용으로 재귀 조회했으며, 기본 날짜 폴더 98일과 재수집 보관소의 누락 날짜 13일을 병합해 활동일 111일·중복 제거 후 파일 834개를 집계했습니다.",
-    "8월 19~20일에는 개인정보 마스킹된 Claude 14개와 Codex 1개의 대화·프롬프트 원천이 저장돼 있습니다.",
-    "재수집 보관소는 동일 날짜의 사본이 섞여 있어 기본 날짜 폴더를 우선하고, 기본 폴더가 없는 날짜만 보완했습니다. 5~8월 그래프는 대화 건수가 아닌 날짜별 Drive 작업 기록 수입니다.",
-    "코드 변경 근거와 문서 파일은 작업 과정·산출 신호이며, 최종 승인·배포·품질·실제 업무 효과는 별도 검증이 필요합니다.",
+    "최신 Drive 추이 스냅샷은 지정 루트의 모든 하위 폴더를 읽기 전용으로 재귀 조회하며, 2026-09-09 기준 파일 2,537개·하위 폴더 1,452개·메타데이터 날짜 이상 0건을 집계했습니다.",
+    "9월에는 4개 활동일에 Drive 저장 파일 628개가 생성됐으며, 9월 9일의 512개에는 9월 4일·8일 작업 폴더 아래 rail-worktrees 문서 복제본이 대량 포함돼 있습니다.",
+    "업무 영역 22건은 9월 1~2일 GitLab 비-merge 커밋을 기준으로 분류하고, Drive의 계획·리뷰·TDD·patch·변경요약 문서를 교차 근거로 사용했습니다.",
+    "Drive 파일 수와 커밋 수는 작업 과정·보관 신호이며, 최종 승인·배포·품질·실제 업무 효과는 별도 검증이 필요합니다.",
   ],
 };
 

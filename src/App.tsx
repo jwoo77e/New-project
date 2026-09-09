@@ -108,6 +108,7 @@ import {
 import {
   individualProfileDataByEmail,
   type IndividualProfileData,
+  type IndividualProfileMonthlyInsight,
 } from "./data/individualProfileData";
 import {
   approvalMonthlyTotalsForMonth,
@@ -5384,16 +5385,11 @@ function IndividualProfileView({
     : `${fullMonthLabel(selectedMonth)} 원천 활동 수집 없음`;
   const trendTitle = `${fullMonthLabel(selectedMonth)} 일별 ${usesLiveDriveTrend ? "Drive 저장 파일" : profile.drive.trendSeriesLabel ?? "프롬프트"} 추이`;
   const trendSeriesLabel = usesLiveDriveTrend ? "저장 파일" : profile.drive.trendSeriesLabel ?? "프롬프트";
-  const outputMetricLabel = profile.drive.outputMetricLabel ?? "결과·지원 파일";
-  const outputMetricValue = profile.drive.useSelectedMonthActivityAsOutput
-    ? selectedMonthPromptCount
-    : profile.drive.outputMetricValue ?? profile.drive.outputAndSupportFiles;
-  const outputMetricDetail = profile.drive.outputMetricDetail ??
-    `${profile.drive.fileTotalLabel ?? (profile.attributionMode === "shared" ? "통합 분석 대상" : "전체 저장")} ${numberFormat.format(profile.drive.fileCount)}개 중`;
   const sourceLinks = profile.sourceLinks ?? [
     { label: "Drive 원천", url: profile.drive.folderUrl },
   ];
-  const legacyMonthlyInsight = profile.insightMonth === selectedMonth
+  const legacyMonthlyInsight: IndividualProfileMonthlyInsight | null =
+    profile.insightMonth === selectedMonth
     ? {
         topicTitle: profile.drive.topicTitle,
         topicBasisLabel: profile.drive.topicBasisLabel,
@@ -5404,6 +5400,33 @@ function IndividualProfileView({
   const selectedMonthlyInsight =
     profile.monthlyInsights?.[selectedMonth] ??
     legacyMonthlyInsight;
+  const outputMetricLabel =
+    selectedMonthlyInsight?.outputMetricLabel ??
+    profile.drive.outputMetricLabel ??
+    "결과·지원 파일";
+  const outputMetricValue =
+    selectedMonthlyInsight?.outputMetricValue ??
+    (profile.drive.useSelectedMonthActivityAsOutput
+      ? selectedMonthPromptCount
+      : profile.drive.outputMetricValue ?? profile.drive.outputAndSupportFiles);
+  const outputMetricUnit =
+    selectedMonthlyInsight?.outputMetricUnit ??
+    profile.drive.outputMetricUnit ??
+    "개";
+  const outputMetricDetail =
+    selectedMonthlyInsight?.outputMetricDetail ??
+    profile.drive.outputMetricDetail ??
+    `${profile.drive.fileTotalLabel ?? (profile.attributionMode === "shared" ? "통합 분석 대상" : "전체 저장")} ${numberFormat.format(profile.drive.fileCount)}개 중`;
+  const sourcePeriod = trendRepository
+    ? driveTrendSnapshot?.source.period ?? profile.drive.period
+    : profile.drive.period;
+  const sourceCollectedAt = trendRepository
+    ? driveTrendSnapshot?.source.collectedAt ?? profile.drive.collectedAt
+    : profile.drive.collectedAt;
+  const sourceChildFolderCount =
+    trendRepository?.inventory.folderCount ?? profile.drive.childFolderCount;
+  const sourceScannedFolderCount =
+    sourceChildFolderCount + (profile.drive.rootFolderCount ?? 1);
   const periodInsightsAvailable = selectedMonthlyInsight !== null;
   const periodPromptTopics = selectedMonthlyInsight?.promptTopics ?? [];
   const periodHighlights = selectedMonthlyInsight?.highlights ?? [];
@@ -5473,7 +5496,7 @@ function IndividualProfileView({
         </article>
         <article>
           <span><FileText size={17} />{outputMetricLabel}</span>
-          <strong>{numberFormat.format(outputMetricValue)}{profile.drive.outputMetricUnit ?? "개"}</strong>
+          <strong>{numberFormat.format(outputMetricValue)}{outputMetricUnit}</strong>
           <small>{outputMetricDetail}</small>
         </article>
         <article>
@@ -5658,9 +5681,9 @@ function IndividualProfileView({
         <div className="individual-profile-source-grid">
           <div>
             <strong>{profile.drive.folderName}</strong>
-            <span>{profile.drive.period} · {profile.drive.collectedAt}</span>
+            <span>{sourcePeriod} · {sourceCollectedAt}</span>
             <span>
-              원천 폴더 {numberFormat.format(profile.drive.rootFolderCount ?? 1)}개 · 하위 폴더 {numberFormat.format(profile.drive.childFolderCount)}개 · 조회 폴더 {numberFormat.format(profile.drive.scannedFolderCount)}개
+              원천 폴더 {numberFormat.format(profile.drive.rootFolderCount ?? 1)}개 · 하위 폴더 {numberFormat.format(sourceChildFolderCount)}개 · 조회 폴더 {numberFormat.format(sourceScannedFolderCount)}개
             </span>
           </div>
           <ul>
