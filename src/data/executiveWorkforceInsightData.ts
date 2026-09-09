@@ -18,6 +18,7 @@ type TeamPlanConversionAccount = {
 
 const eligibleEmployees = 40;
 const nonToolUsers = 1;
+const chatGptOnlyUsers = 1;
 const leaveExcludedEmployees = 2;
 const departedEmployees = 1;
 const tokenReferenceMonth = "2026-07";
@@ -43,7 +44,7 @@ const teamPlanUsers = workforceTeamPlanRecords.length;
 const personalConversionAccounts: TeamPlanConversionAccount[] = [];
 const sharedConversionAccounts: TeamPlanConversionAccount[] = [];
 const conversionSeats = personalConversionAccounts.length + sharedConversionAccounts.length;
-const teamPlanTargetUsers = eligibleEmployees - nonToolUsers;
+const teamPlanTargetUsers = eligibleEmployees - nonToolUsers - chatGptOnlyUsers;
 const pureAdditionalSeats = Math.max(teamPlanTargetUsers - teamPlanUsers - conversionSeats, 0);
 const totalTeamPlanActions = conversionSeats + pureAdditionalSeats;
 const currentConversionCostKrw = [...personalConversionAccounts, ...sharedConversionAccounts]
@@ -71,7 +72,6 @@ const julyTokenUsers = Object.entries(julySpend.users)
 // These accounts now have token collection connected; their July usage history is pending sync.
 const supplementalTokenMeasuredAccounts = [
   "dhlee@riskzero.kr",
-  "sjpark@riskzero.kr",
   "songinna@riskzero.kr",
 ];
 const measuredTokenEmails = new Set([
@@ -106,10 +106,11 @@ export const executiveWorkforceInsightData = {
     tokenPeriod: julySpend.period,
     tokenCoverage: julySpend.coverage,
     teamPlanBasis: `${initialAiToolApprovalData.source.collectedAt} AI 도구 결재 현황`,
-    conversionAssumption: `AI 도구 사용 직원 ${teamPlanTargetUsers}명 Team Plan 보급 · 비사용 ${nonToolUsers}명 · 대표님 Claude 미사용`,
+    conversionAssumption: `Claude 사용 직원 ${teamPlanTargetUsers}명 Team Plan 보급 · ChatGPT 전용 ${chatGptOnlyUsers}명 · 비사용 ${nonToolUsers}명 · 대표님 Claude 미사용`,
   },
   eligibleEmployees,
   nonToolUsers,
+  chatGptOnlyUsers,
   leaveExcludedEmployees,
   departedEmployees,
   teamPlanUsers,
