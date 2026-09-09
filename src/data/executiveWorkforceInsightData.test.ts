@@ -7,8 +7,8 @@ describe("executiveWorkforceInsightData", () => {
     expect(executiveWorkforceInsightData.nonToolUsers).toBe(1);
     expect(executiveWorkforceInsightData.departedEmployees).toBe(1);
     expect(executiveWorkforceInsightData.teamPlanUsers).toBe(38);
-    expect(executiveWorkforceInsightData.teamPlanStandardUsers).toBe(27);
-    expect(executiveWorkforceInsightData.teamPlanPremiumUsers).toBe(11);
+    expect(executiveWorkforceInsightData.teamPlanStandardUsers).toBe(26);
+    expect(executiveWorkforceInsightData.teamPlanPremiumUsers).toBe(12);
     expect(executiveWorkforceInsightData.executiveTeamPlanSeats).toBe(0);
     expect(executiveWorkforceInsightData.teamPlanCoverageRate).toBe(95);
     expect(executiveWorkforceInsightData.chatGptOnlyUsers).toBe(1);
@@ -34,7 +34,7 @@ describe("executiveWorkforceInsightData", () => {
     expect(executiveWorkforceInsightData.pureAdditionalCostKrw).toBe(0);
     expect(executiveWorkforceInsightData.proposedTeamPlanActionCostKrw).toBe(0);
     expect(executiveWorkforceInsightData.netMonthlyChangeKrw).toBe(0);
-    expect(executiveWorkforceInsightData.projectedMonthlyKrw).toBeCloseTo(6_980_526.15, 2);
+    expect(executiveWorkforceInsightData.projectedMonthlyKrw).toBeCloseTo(7_129_026.15, 2);
   });
 
   it("measures token coverage against the 38 assigned Team Plan seats", () => {
