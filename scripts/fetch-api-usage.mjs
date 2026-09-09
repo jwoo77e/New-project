@@ -1246,7 +1246,7 @@ async function collectGeminiBillingCosts(env) {
     }
 
     const accessToken = await getGoogleAccessToken(env);
-    const tableRef = `${bigQueryIdentifier(billingProjectId)}.${bigQueryIdentifier(datasetId)}.${bigQueryIdentifier(tableId)}`;
+    const tableRef = buildBigQueryBillingTableRef(billingProjectId, datasetId, tableId);
     const projectFilter = buildGeminiBillingProjectFilter(env);
     const query = `
       SELECT
@@ -1418,7 +1418,7 @@ export async function collectBillingCostBreakdown(
   }
 
   const accessToken = await getGoogleAccessToken(env);
-  const tableRef = `${bigQueryIdentifier(billingProjectId)}.${bigQueryIdentifier(datasetId)}.${bigQueryIdentifier(tableId)}`;
+  const tableRef = buildBigQueryBillingTableRef(billingProjectId, datasetId, tableId);
   const projectFilter = buildGeminiBillingProjectFilter(env);
   const query = `
     SELECT
@@ -1620,6 +1620,18 @@ function bigQueryIdentifier(value) {
     throw new Error(`BigQuery 식별자 형식이 올바르지 않습니다: ${value}`);
   }
   return value.replace(/`/g, "");
+}
+
+export function buildBigQueryBillingTableRef(projectId, datasetId, tableId) {
+  const safeProjectId = bigQueryIdentifier(projectId);
+  const safeDatasetId = bigQueryIdentifier(datasetId);
+  const safeTableId = String(tableId ?? "");
+
+  if (!/^[A-Za-z0-9_-]+(?:\*)?$/.test(safeTableId) || safeTableId === "*") {
+    throw new Error(`BigQuery 결제 테이블 형식이 올바르지 않습니다: ${tableId}`);
+  }
+
+  return `${safeProjectId}.${safeDatasetId}.${safeTableId}`;
 }
 
 function addUsage(usage, date, model, requests, inputTokens, outputTokens) {

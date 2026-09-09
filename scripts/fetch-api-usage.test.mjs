@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildGeminiWorkspaceUsageFromActivities,
   buildGammaUsageFromGenerationStatuses,
+  buildBigQueryBillingTableRef,
   buildGeminiBillingProjectFilter,
   getPaginatedJson,
   parseGammaGenerationIds,
@@ -49,6 +50,22 @@ describe("provider API pagination", () => {
 });
 
 describe("Gemini billing project filters", () => {
+  it("supports a trailing wildcard for billing-account export tables", () => {
+    expect(
+      buildBigQueryBillingTableRef("zeroby-two", "initialdataset", "gcp_billing_export_v1_*"),
+    ).toBe("zeroby-two.initialdataset.gcp_billing_export_v1_*");
+  });
+
+  it("rejects unsafe or unbounded billing table wildcards", () => {
+    expect(() => buildBigQueryBillingTableRef("zeroby-two", "initialdataset", "*")).toThrow();
+    expect(() =>
+      buildBigQueryBillingTableRef("zeroby-two", "initialdataset", "gcp_billing_*_export"),
+    ).toThrow();
+    expect(() =>
+      buildBigQueryBillingTableRef("zeroby-two", "initialdataset", "billing`; DROP TABLE x; --"),
+    ).toThrow();
+  });
+
   it("keeps the existing single GOOGLE_CLOUD_PROJECT_ID behavior by default", () => {
     const filter = buildGeminiBillingProjectFilter({
       GOOGLE_CLOUD_PROJECT_ID: "zeroby-two",
