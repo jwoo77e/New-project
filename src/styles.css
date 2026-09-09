@@ -2155,6 +2155,69 @@ h2 {
   gap: 14px;
 }
 
+.api-period-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.api-period-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.api-period-grid button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 16px;
+  min-height: 96px;
+  padding: 14px 15px;
+  color: var(--text);
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  cursor: pointer;
+}
+
+.api-period-grid button:hover {
+  border-color: rgba(37, 99, 235, 0.45);
+  background: #f7faff;
+}
+
+.api-period-grid button.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.16);
+}
+
+.api-period-grid button > span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.api-period-grid button b {
+  font-size: 0.9rem;
+}
+
+.api-period-grid button strong {
+  font-size: 1.35rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.api-period-grid button small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.api-period-grid button > small {
+  grid-column: 1 / -1;
+}
+
 .api-provider-cost-panel {
   display: grid;
   gap: 16px;
@@ -3708,6 +3771,7 @@ td strong {
   }
 
   .api-provider-stats,
+  .api-period-grid,
   .api-provider-cost-grid,
   .api-summary-panel,
   .key-health-grid,

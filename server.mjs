@@ -30,11 +30,7 @@ const notionPromptRefreshHourKst = Number(process.env.NOTION_PROMPT_USAGE_REFRES
 const driveTrendRefreshHourKst = Number(process.env.DRIVE_ARTIFACT_TREND_REFRESH_HOUR_KST ?? 21);
 const gensparkDriveRefreshHourKst = Number(process.env.GENSPARK_DRIVE_REFRESH_HOUR_KST ?? 22);
 
-let apiUsageCache = {
-  expiresAt: 0,
-  promise: null,
-  snapshot: null,
-};
+const apiUsageCaches = new Map();
 
 let notionPromptUsageCache = {
   expiresAt: 0,
@@ -116,26 +112,29 @@ async function handleApiUsage(url, response) {
   const requestedDays = Number(url.searchParams.get("days") ?? 7);
   const refresh = url.searchParams.get("refresh") === "1";
   const now = Date.now();
+  const cache = apiUsageCaches.get(requestedDays) ?? {
+    expiresAt: 0,
+    promise: null,
+    snapshot: null,
+  };
+  apiUsageCaches.set(requestedDays, cache);
 
   response.setHeader("cache-control", "no-store");
 
-  if (!refresh && apiUsageCache.snapshot && apiUsageCache.expiresAt > now) {
-    sendJson(response, 200, apiUsageCache.snapshot);
+  if (!refresh && cache.snapshot && cache.expiresAt > now) {
+    sendJson(response, 200, cache.snapshot);
     return;
   }
 
-  if (!apiUsageCache.promise) {
-    apiUsageCache.promise = collectRuntimeApiUsage(requestedDays).finally(() => {
-      apiUsageCache.promise = null;
+  if (!cache.promise) {
+    cache.promise = collectRuntimeApiUsage(requestedDays).finally(() => {
+      cache.promise = null;
     });
   }
 
-  const snapshot = await apiUsageCache.promise;
-  apiUsageCache = {
-    expiresAt: Date.now() + apiUsageCacheMs,
-    promise: null,
-    snapshot,
-  };
+  const snapshot = await cache.promise;
+  cache.expiresAt = Date.now() + apiUsageCacheMs;
+  cache.snapshot = snapshot;
   sendJson(response, 200, snapshot);
 }
 

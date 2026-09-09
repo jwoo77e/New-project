@@ -127,6 +127,10 @@ import {
   emptyApiUsageRunRateForecast,
   type ApiUsageRunRateForecast,
 } from "./lib/apiForecast";
+import {
+  buildApiUsagePeriodSummaries,
+  type ApiUsagePeriodKey,
+} from "./lib/apiUsagePeriods";
 import { dashboardDataFromExcel } from "./lib/excelDashboard";
 import {
   buildProductivityExecutiveModel,
@@ -515,7 +519,7 @@ function App() {
 
   useEffect(() => {
     let isMounted = true;
-    const snapshotUrls = [`${import.meta.env.BASE_URL}api-usage-snapshot.local.json`, "/api/api-usage"];
+    const snapshotUrls = [`${import.meta.env.BASE_URL}api-usage-snapshot.local.json`, "/api/api-usage?days=31"];
 
     async function loadApiUsageData() {
       let preferredSnapshot = initialApiUsageData;
@@ -6051,31 +6055,88 @@ function ApiUsageView({
   apiUsageData: ApiUsageData;
   fixedApiServiceRecords: AiToolApprovalRecord[];
 }) {
-  const totalCost = apiUsageData.providers.reduce((sum, item) => sum + item.costUsd, 0);
-  const totalTokens = apiUsageData.providers.reduce((sum, item) => sum + item.inputTokens + item.outputTokens, 0);
+  const [periodKey, setPeriodKey] = useState<ApiUsagePeriodKey>("recent7");
+  const periodSummaries = useMemo(
+    () => buildApiUsagePeriodSummaries(apiUsageData.dailyUsage),
+    [apiUsageData.dailyUsage],
+  );
+  const selectedPeriod = periodSummaries.find((period) => period.key === periodKey) ?? periodSummaries[0];
+  const selectedProviderMetrics = new Map(
+    apiUsageData.providers.map((provider) => {
+      const prefix = provider.provider.toLowerCase() as "openai" | "gemini" | "claude";
+      const requestsKey = `${prefix}Requests` as const;
+      const tokensKey = `${prefix}Tokens` as const;
+      const costKey = `${prefix}CostUsd` as const;
+      return [
+        provider.provider,
+        {
+          requests: selectedPeriod.dailyUsage.reduce((sum, day) => sum + day[requestsKey], 0),
+          tokens: selectedPeriod.dailyUsage.reduce((sum, day) => sum + day[tokensKey], 0),
+          costUsd: selectedPeriod.dailyUsage.reduce((sum, day) => sum + day[costKey], 0),
+        },
+      ] as const;
+    }),
+  );
+  const totalCost = selectedPeriod.costUsd;
+  const totalTokens = selectedPeriod.totalTokens;
   const fixedApiMonthlyKrw = fixedApiServiceRecords.reduce((sum, item) => sum + item.monthlyKrw, 0);
-  const highestCostProvider = [...apiUsageData.providers].sort((a, b) => b.costUsd - a.costUsd)[0];
-  const highestTokenDay = [...apiUsageData.dailyUsage].sort((a, b) => b.totalTokens - a.totalTokens)[0];
+  const highestCostProvider = [...apiUsageData.providers].sort(
+    (a, b) =>
+      (selectedProviderMetrics.get(b.provider)?.costUsd ?? 0) -
+      (selectedProviderMetrics.get(a.provider)?.costUsd ?? 0),
+  )[0];
+  const highestTokenDay = [...selectedPeriod.dailyUsage].sort((a, b) => b.totalTokens - a.totalTokens)[0];
   const providerTokens = new Map(
     apiUsageData.providers.map((provider) => [provider.provider, provider.inputTokens + provider.outputTokens]),
   );
-  const providerCosts = [...apiUsageData.providers].sort((a, b) => b.costUsd - a.costUsd);
+  const providerCosts = [...apiUsageData.providers].sort(
+    (a, b) =>
+      (selectedProviderMetrics.get(b.provider)?.costUsd ?? 0) -
+      (selectedProviderMetrics.get(a.provider)?.costUsd ?? 0),
+  );
 
   return (
     <div className="content-grid api-view">
+      <section className="panel panel-wide api-period-panel">
+        <div className="panel-header">
+          <div>
+            <span className="eyebrow">Period Summary</span>
+            <h2>API 사용 기간별 통계</h2>
+          </div>
+          <span className="state-pill neutral">{apiUsageData.source.period} 원천</span>
+        </div>
+        <div className="api-period-grid" role="group" aria-label="API 사용 통계 기간">
+          {periodSummaries.map((period) => (
+            <button
+              className={period.key === selectedPeriod.key ? "active" : ""}
+              key={period.key}
+              onClick={() => setPeriodKey(period.key)}
+              type="button"
+            >
+              <span>
+                <b>{period.label}</b>
+                <small>{period.rangeLabel}{period.isPartial ? " · 부분 집계" : ""}</small>
+              </span>
+              <strong>{formatTokens(period.totalTokens)}</strong>
+              <small>{formatRequestCount(period.requests, period.totalTokens)} · {formatUsd(period.costUsd)}</small>
+            </button>
+          ))}
+        </div>
+      </section>
+
       <section className="panel panel-large">
         <div className="panel-header">
           <div>
             <span className="eyebrow">API Usage</span>
-            <h2>{apiUsageData.source.period} 토큰 사용량과 비용</h2>
+            <h2>{selectedPeriod.label} 토큰 사용량과 비용</h2>
           </div>
-          <span className="state-pill neutral">{apiUsageData.source.generatedAt}</span>
+          <span className="state-pill neutral">{selectedPeriod.rangeLabel}{selectedPeriod.isPartial ? " · 부분" : ""}</span>
         </div>
         <div className="chart-frame">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={apiUsageData.dailyUsage} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
+            <ComposedChart data={selectedPeriod.dailyUsage} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
               <CartesianGrid stroke="#dde5df" strokeDasharray="4 4" vertical={false} />
-              <XAxis dataKey="label" tickLine={false} axisLine={false} />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} minTickGap={18} />
               <YAxis
                 yAxisId="tokens"
                 tickFormatter={formatTokenAxis}
@@ -6126,9 +6187,12 @@ function ApiUsageView({
                 <span className={`state-pill ${apiStatusTone(provider.status)}`}>{provider.status}</span>
               </div>
               <div className="api-provider-stats">
-                <span>{formatTokens(provider.inputTokens + provider.outputTokens)} 토큰</span>
-                <span>{formatRequestCount(provider.requests, provider.inputTokens + provider.outputTokens)}</span>
-                <span>{formatUsd(provider.costUsd)}</span>
+                <span>{formatTokens(selectedProviderMetrics.get(provider.provider)?.tokens ?? 0)} 토큰</span>
+                <span>{formatRequestCount(
+                  selectedProviderMetrics.get(provider.provider)?.requests ?? 0,
+                  selectedProviderMetrics.get(provider.provider)?.tokens ?? 0,
+                )}</span>
+                <span>{formatUsd(selectedProviderMetrics.get(provider.provider)?.costUsd ?? 0)}</span>
               </div>
               <MeterRow
                 color={provider.color}
@@ -6161,8 +6225,9 @@ function ApiUsageView({
         </div>
         <div className="api-provider-cost-grid">
           {providerCosts.map((provider) => {
-            const share = totalCost > 0 ? (provider.costUsd / totalCost) * 100 : 0;
-            const costKrw = Math.round(provider.costUsd * API_FORECAST_USD_TO_KRW);
+            const providerCostUsd = selectedProviderMetrics.get(provider.provider)?.costUsd ?? 0;
+            const share = totalCost > 0 ? (providerCostUsd / totalCost) * 100 : 0;
+            const costKrw = Math.round(providerCostUsd * API_FORECAST_USD_TO_KRW);
 
             return (
               <article className="api-provider-cost-card" key={provider.provider}>
@@ -6170,7 +6235,7 @@ function ApiUsageView({
                   <span className="category-dot" style={{ background: provider.color }} />
                   <span>{provider.label}</span>
                 </div>
-                <strong>{formatUsd(provider.costUsd)}</strong>
+                <strong>{formatUsd(providerCostUsd)}</strong>
                 <small>{formatWon(costKrw)} · 전체 {formatRate(share)}</small>
               </article>
             );
@@ -6180,11 +6245,11 @@ function ApiUsageView({
 
       <section className="panel panel-wide api-summary-panel">
         <div className="api-summary-item">
-          <span>총 토큰</span>
+          <span>{selectedPeriod.label} 총 토큰</span>
           <strong>{formatTokens(totalTokens)}</strong>
         </div>
         <div className="api-summary-item">
-          <span>실측 변동비</span>
+          <span>{selectedPeriod.label} 실측 변동비</span>
           <strong>{formatUsd(totalCost)}</strong>
         </div>
         <div className="api-summary-item">
@@ -6193,11 +6258,11 @@ function ApiUsageView({
         </div>
         <div className="api-summary-item">
           <span>최대 비용 공급자</span>
-          <strong>{highestCostProvider.provider}</strong>
+          <strong>{highestCostProvider?.provider ?? "-"}</strong>
         </div>
         <div className="api-summary-item">
           <span>최대 사용일</span>
-          <strong>{highestTokenDay.label}</strong>
+          <strong>{highestTokenDay?.label ?? "-"}</strong>
         </div>
       </section>
 
@@ -6207,7 +6272,7 @@ function ApiUsageView({
             <span className="eyebrow">Models</span>
             <h2>모델별 사용량</h2>
           </div>
-          <span className="state-pill neutral">비용 추정</span>
+          <span className="state-pill neutral">{apiUsageData.source.period} 누적 · 비용 추정</span>
         </div>
         <div className="table-wrap">
           <table>

@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "collect:api-usage": "node scripts/fetch-api-usage.mjs",
+    "collect:api-usage": "node scripts/fetch-api-usage.mjs --days=31",
     "collect:gitlab-activity": "node scripts/collect-gitlab-activity.mjs",
     "collect:drive-artifact-trend": "node scripts/collect-drive-artifact-trend.mjs",
     "collect:drive-zip-artifacts": "node scripts/collect-drive-zip-artifacts.mjs",
