@@ -4810,6 +4810,14 @@ function AdoptionView({
         const evaluation = user.monthEvaluations[selectedMonth];
         const monthlySpend = selectedMonthlySpend?.users[user.email] ?? null;
         const weeklyUsage = selectedWeeklyUsage?.users[user.email] ?? null;
+        const codex = codexUsageForRange(user.email, periodStartDate, periodEndDate);
+        const combined = combinedAiUsage(
+          (isWeekly ? weeklyUsage?.totalTokens : monthlySpend?.totalTokens) ?? null,
+          user.measurementStatus === "measured"
+            ? (isWeekly ? weeklyCodeCollected ? weeklyUsage?.codeLines ?? null : null : evaluation?.codeLines ?? null)
+            : null,
+          codex,
+        );
         const codeDensitySamples = isWeekly
           ? weeklyCodeDensitySamplesForUser(user.email, selectedWeek)
           : monthlyCodeDensitySamplesForUser(user, selectedMonth);
@@ -4825,6 +4833,8 @@ function AdoptionView({
           evaluation,
           monthlySpend,
           weeklyUsage,
+          codex,
+          combined,
           codeDensityTrend,
           selectedDensitySample,
           gitlab,
@@ -4841,28 +4851,20 @@ function AdoptionView({
           teamGroupRank(individualTeamGroup(b.user.email));
         if (teamOrder !== 0) return teamOrder;
 
-        if (sortKey !== "gitlab" && sortKey !== "commits" && a.user.measurementStatus !== b.user.measurementStatus) {
-          const statusRank = (user: IndividualUtilizationUser) => {
-            if (user.measurementStatus === "measured") return 0;
-            if (user.measurementStatus === "source-uncollected") return 1;
-            return 2;
-          };
-          return statusRank(a.user) - statusRank(b.user);
-        }
         const aEvaluation = a.evaluation;
         const bEvaluation = b.evaluation;
         const value = (row: typeof a) => {
-          if (sortKey === "code") return isWeekly ? row.weeklyUsage?.codeLines ?? 0 : row.evaluation?.codeLines ?? 0;
+          if (sortKey === "code") return row.combined.codeLines ?? -1;
           if (sortKey === "density") return row.codeDensityTrend.currentPoint?.linesPerMillionTokens ?? -1;
           if (sortKey === "gitlab") return row.gitlab.changedLines;
           if (sortKey === "commits") return row.gitlab.commitCount;
-          return isWeekly ? row.weeklyUsage?.totalTokens ?? 0 : row.monthlySpend?.totalTokens ?? 0;
+          return row.combined.tokens ?? -1;
         };
         return value(b) - value(a) ||
           (bEvaluation?.humanPrompts ?? 0) - (aEvaluation?.humanPrompts ?? 0) ||
           a.user.email.localeCompare(b.user.email);
       });
-  }, [data.users, isWeekly, query, selectedMonth, selectedMonthlySpend, selectedWeek, selectedWeeklyUsage, sortKey]);
+  }, [data.users, isWeekly, query, selectedMonth, selectedMonthlySpend, selectedWeek, selectedWeeklyUsage, sortKey, periodStartDate, periodEndDate, weeklyCodeCollected]);
 
   const developmentRowCount = rows.filter(
     (row) => individualTeamGroup(row.user.email) === "development",
@@ -5022,9 +5024,9 @@ function AdoptionView({
               value={sortKey}
               onChange={(event) => setSortKey(event.target.value as IndividualSortKey)}
             >
-              <option value="tokens">토큰 사용량</option>
-              <option value="code">Code Lines</option>
-              <option value="density">코드 산출 밀도</option>
+              <option value="tokens">합산 토큰 사용량</option>
+              <option value="code">합산 Code Lines</option>
+              <option value="density">합산 코드 산출 밀도</option>
               <option value="commits">GitLab 커밋</option>
               <option value="gitlab">GitLab 수정 라인</option>
             </select>
@@ -5083,6 +5085,8 @@ function AdoptionView({
             <tbody>
               {rows.map(({
                 user,
+                codex,
+                combined,
                 evaluation,
                 monthlySpend,
                 weeklyUsage,
@@ -5103,12 +5107,6 @@ function AdoptionView({
                 const generatedCodeLines = isWeekly
                   ? weeklyCodeCollected ? weeklyUsage?.codeLines ?? null : null
                   : evaluation?.codeLines ?? null;
-                const codex = codexUsageForRange(user.email, periodStartDate, periodEndDate);
-                const combined = combinedAiUsage(
-                  (isWeekly ? weeklyUsage?.totalTokens : monthlySpend?.totalTokens) ?? null,
-                  metricsMeasured ? generatedCodeLines : null,
-                  codex,
-                );
                 const teamGroup = individualTeamGroup(user.email);
                 const previousTeamGroup = index > 0
                   ? individualTeamGroup(rows[index - 1].user.email)
