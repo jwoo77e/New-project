@@ -4812,27 +4812,45 @@ td strong {
 
 .individual-utilization-table th:nth-child(2),
 .individual-utilization-table td:nth-child(2) {
-  min-width: 360px;
+  min-width: 250px;
   white-space: normal;
 }
 
 .individual-utilization-table th:nth-child(3),
 .individual-utilization-table td:nth-child(3) {
-  width: 190px;
-  min-width: 190px;
-  max-width: 190px;
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
   white-space: normal;
 }
 
 .individual-utilization-table th:nth-child(4),
-.individual-utilization-table td:nth-child(4) {
-  min-width: 310px;
+.individual-utilization-table td:nth-child(4),
+.individual-utilization-table th:nth-child(5),
+.individual-utilization-table td:nth-child(5) {
+  min-width: 170px;
   white-space: normal;
 }
 
-.individual-utilization-table th:nth-child(5),
-.individual-utilization-table td:nth-child(5) {
-  min-width: 430px;
+.individual-utilization-table th:nth-child(6),
+.individual-utilization-table td:nth-child(6) {
+  min-width: 260px;
+}
+
+.individual-utilization-table th:nth-child(7),
+.individual-utilization-table td:nth-child(7) {
+  min-width: 320px;
+}
+
+.individual-combined-usage {
+  display: grid;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.individual-combined-usage small {
+  font-size: 0.72rem;
+  font-weight: normal;
 }
 
 .individual-utilization-table .individual-team-group-row td {

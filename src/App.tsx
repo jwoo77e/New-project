@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { codexUsageForRange, combinedAiUsage } from "./data/codexUsageData";
 import type { FormEvent, ReactNode } from "react";
 import {
   Activity,
@@ -4796,6 +4797,7 @@ function AdoptionView({
   const gitlabPeriodSummary = periodStartDate && periodEndDate
     ? gitlabSummaryForRange(periodStartDate, periodEndDate)
     : { commitCount: 0, mergeCommitCount: 0, additions: 0, deletions: 0, changedLines: 0, changedFiles: 0, activeDays: 0, activeAuthors: 0, activeProjects: 0 };
+  const codexPeriod = codexUsageForRange("", periodStartDate, periodEndDate);
 
   const rows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -4952,6 +4954,7 @@ function AdoptionView({
           <span className="eyebrow">Period Analysis</span>
           <div className="individual-period-title">
             <h2>{periodLabel} 개인별 AI 활동 근거</h2>
+            <small>Codex: {codexPeriod.periodLabel || "해당 기간 수집중"} · 합산은 수집값 기준</small>
             <span className="state-pill warning">{coverageNote}</span>
           </div>
           <p>
@@ -5037,12 +5040,12 @@ function AdoptionView({
 
       <section className="individual-period-summary" aria-label={`${periodLabel} 핵심 활용 지표`}>
         <article>
-          <span><FileText size={17} />Code Lines</span>
+          <span><FileText size={17} />Claude Code Lines</span>
           <strong>{weeklyCodeCollected ? `${numberFormat.format(periodSummary.codeLines)}줄` : "수집중"}</strong>
           <small>{isWeekly ? weeklyCodeCollected ? weeklyCodePeriod && selectedWeeklyUsage?.coverage !== "complete" ? `${weeklyCodePeriod} 부분 집계` : "해당 주차 순증" : "Code Lines 원천 미제공" : "최신 월 누적"}</small>
         </article>
         <article>
-          <span><Activity size={17} />{isWeekly ? "주간 토큰" : "월 누적 토큰"}</span>
+          <span><Activity size={17} />{isWeekly ? "Claude 주간 토큰" : "Claude 월 누적 토큰"}</span>
           <strong>{usageSummary ? formatTokens(usageSummary.totalTokens) : "수집중"}</strong>
           <small>{coverageNote}</small>
         </article>
@@ -5066,8 +5069,10 @@ function AdoptionView({
             <thead>
               <tr>
                 <th>사용자</th>
-                <th>Code Lines · 산출 밀도</th>
-                <th>토큰 사용량</th>
+                <th>Claude Code Lines · 산출 밀도</th>
+                <th>Claude 토큰</th>
+                <th>Codex 토큰 · Code Lines</th>
+                <th title="Claude와 Codex 보고값의 합계입니다. 수집 기간이 다를 수 있으며 도구 간 중복 생성·수정 라인은 제거하지 않습니다.">전체 토큰 · Code Lines</th>
                 <th>GitLab 커밋 · 수정 라인 · 반영률</th>
                 <th>주요 사용 범위</th>
               </tr>
@@ -5095,6 +5100,12 @@ function AdoptionView({
                 const generatedCodeLines = isWeekly
                   ? weeklyCodeCollected ? weeklyUsage?.codeLines ?? null : null
                   : evaluation?.codeLines ?? null;
+                const codex = codexUsageForRange(user.email, periodStartDate, periodEndDate);
+                const combined = combinedAiUsage(
+                  (isWeekly ? weeklyUsage?.totalTokens : monthlySpend?.totalTokens) ?? null,
+                  metricsMeasured ? generatedCodeLines : null,
+                  codex,
+                );
                 const teamGroup = individualTeamGroup(user.email);
                 const previousTeamGroup = index > 0
                   ? individualTeamGroup(rows[index - 1].user.email)
@@ -5107,7 +5118,7 @@ function AdoptionView({
                   <Fragment key={user.email}>
                     {teamGroup !== previousTeamGroup && (
                       <tr className={`individual-team-group-row ${teamGroup}`}>
-                        <td colSpan={5}>
+                        <td colSpan={7}>
                           <strong>{groupMeta.label}</strong>
                           <span>{groupMeta.detail} · {groupCount}명</span>
                         </td>
@@ -5164,6 +5175,22 @@ function AdoptionView({
                                 />
                               : <span className="state-pill neutral">월별 Spend 수집중</span>
                         ) : metricsUncollected ? <span className={`state-pill ${toolUnpaid ? "warning" : "neutral"}`}>{toolUnpaid ? "미지급" : "수집중"}</span> : null}
+                      </td>
+                      <td>
+                        {codex.collected ? codex.present ? (
+                          <div className="individual-combined-usage">
+                            <strong title={`${numberFormat.format(codex.tokens)} 토큰`}>{formatTokens(codex.tokens)} <small>토큰</small></strong>
+                            <span>{numberFormat.format(codex.codeLines)}줄</span>
+                          </div>
+                        ) : <span className="state-pill neutral">미사용</span>
+                          : <span className="state-pill neutral">{codex.overlapping ? "기간 미일치" : "수집중"}</span>}
+                      </td>
+                      <td>
+                        <div className="individual-combined-usage">
+                          <strong title={combined.tokens === null ? undefined : `${numberFormat.format(combined.tokens)} 토큰`}>{combined.tokens === null ? "수집중" : `${formatTokens(combined.tokens)} 토큰`}</strong>
+                          <span>{combined.codeLines === null ? "수집중" : `${numberFormat.format(combined.codeLines)}줄`}</span>
+                          {combined.partial && <small>확인분 합산</small>}
+                        </div>
                       </td>
                       <td>
                         {teamGroup === "development" && (
