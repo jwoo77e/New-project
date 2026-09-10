@@ -4802,7 +4802,7 @@ td strong {
 }
 
 .individual-utilization-table table {
-  min-width: 1510px;
+  min-width: 1390px;
 }
 
 .individual-utilization-table th:nth-child(1),
@@ -4811,34 +4811,26 @@ td strong {
 }
 
 .individual-utilization-table th:nth-child(2),
-.individual-utilization-table td:nth-child(2) {
-  min-width: 250px;
-  white-space: normal;
-}
-
+.individual-utilization-table td:nth-child(2),
 .individual-utilization-table th:nth-child(3),
 .individual-utilization-table td:nth-child(3) {
-  width: 120px;
-  min-width: 120px;
-  max-width: 120px;
-  white-space: normal;
-}
-
-.individual-utilization-table th:nth-child(4),
-.individual-utilization-table td:nth-child(4),
-.individual-utilization-table th:nth-child(5),
-.individual-utilization-table td:nth-child(5) {
   min-width: 170px;
   white-space: normal;
 }
 
-.individual-utilization-table th:nth-child(6),
-.individual-utilization-table td:nth-child(6) {
+.individual-utilization-table th:nth-child(4),
+.individual-utilization-table td:nth-child(4) {
+  min-width: 250px;
+  white-space: normal;
+}
+
+.individual-utilization-table th:nth-child(5),
+.individual-utilization-table td:nth-child(5) {
   min-width: 260px;
 }
 
-.individual-utilization-table th:nth-child(7),
-.individual-utilization-table td:nth-child(7) {
+.individual-utilization-table th:nth-child(6),
+.individual-utilization-table td:nth-child(6) {
   min-width: 320px;
 }
 

@@ -4287,7 +4287,7 @@ function IndividualTokenUsageCell({
 }) {
   return (
     <div className="individual-token-cell">
-      <strong className="individual-token-actual">{formatTokens(actualTokens)}</strong>
+      <strong className="individual-token-actual" title={`${numberFormat.format(actualTokens)} 토큰`}>{formatTokens(actualTokens)} <small>토큰</small></strong>
     </div>
   );
 }
@@ -5073,8 +5073,7 @@ function AdoptionView({
             <thead>
               <tr>
                 <th>사용자</th>
-                <th>Claude Code Lines</th>
-                <th>Claude 토큰</th>
+                <th>Claude 토큰 · Code Lines</th>
                 <th>Codex 토큰 · Code Lines</th>
                 <th title="Claude와 Codex 보고값의 합계입니다. 수집 기간이 다를 수 있으며 도구 간 중복 생성·수정 라인은 제거하지 않습니다.">전체 토큰 · Code Lines · 산출 밀도</th>
                 <th>GitLab 커밋 · 수정 라인 · 반영률</th>
@@ -5122,7 +5121,7 @@ function AdoptionView({
                   <Fragment key={user.email}>
                     {teamGroup !== previousTeamGroup && (
                       <tr className={`individual-team-group-row ${teamGroup}`}>
-                        <td colSpan={7}>
+                        <td colSpan={6}>
                           <strong>{groupMeta.label}</strong>
                           <span>{groupMeta.detail} · {groupCount}명</span>
                         </td>
@@ -5145,19 +5144,8 @@ function AdoptionView({
                         </button>
                       </td>
                       <td>
-                        {metricsMeasured ? (
-                          isWeekly
-                            ? weeklyUsage && weeklyCodeCollected
-                              ? <strong>{numberFormat.format(weeklyUsage.codeLines)}줄</strong>
-                              : <span className="state-pill neutral">주차별 수집중</span>
-                            : evaluation?.codeLines == null
-                              ? <span className="state-pill neutral">월 단위</span>
-                              : <strong>{numberFormat.format(evaluation.codeLines)}줄</strong>
-                        ) : metricsUncollected ? <span className={`state-pill ${toolUnpaid ? "warning" : "neutral"}`}>{toolUnpaid ? "미지급" : "수집중"}</span> : null}
-                      </td>
-                      <td>
-                        {metricsMeasured ? (
-                          isWeekly
+                        {metricsMeasured ? <div className="individual-combined-usage">
+                          {isWeekly
                             ? weeklyUsage
                               ? weeklyRecalculated
                                 ? <span className="state-pill warning">활동량 산정 제외</span>
@@ -5170,7 +5158,11 @@ function AdoptionView({
                                   actualTokens={monthlySpend.totalTokens}
                                 />
                               : <span className="state-pill neutral">월별 Spend 수집중</span>
-                        ) : metricsUncollected ? <span className={`state-pill ${toolUnpaid ? "warning" : "neutral"}`}>{toolUnpaid ? "미지급" : "수집중"}</span> : null}
+                          }
+                          {generatedCodeLines === null
+                            ? <span className="state-pill neutral">Code Lines 수집중</span>
+                            : <span>{numberFormat.format(generatedCodeLines)}줄</span>}
+                        </div> : metricsUncollected ? <span className={`state-pill ${toolUnpaid ? "warning" : "neutral"}`}>{toolUnpaid ? "미지급" : "수집중"}</span> : null}
                       </td>
                       <td>
                         {codex.collected ? codex.present ? (
