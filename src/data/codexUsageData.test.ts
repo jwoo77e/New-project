@@ -2,8 +2,23 @@ import {describe, expect, it} from "vitest";
 import snapshot from "./codexUsageSnapshot.json";
 import {codexUsageForRange, combinedAiUsage} from "./codexUsageData";
 import {individualUtilizationData} from "./individualUtilizationData";
+import {calculateCodeOutputDensity} from "../lib/codeOutputDensity";
+import {gitlabCommittedCodeRatio} from "./gitlabActivityData";
 
 describe("Codex usage", () => {
+  it("uses combined generated lines as the commit ratio denominator", () => {
+    const combined = combinedAiUsage(1399874957, 18294,
+      codexUsageForRange("wody@riskzero.kr", "2026-09-03", "2026-09-09"));
+    expect(gitlabCommittedCodeRatio(combined.codeLines, 33107)).toBe(50);
+    expect(gitlabCommittedCodeRatio(0, 33107)).toBeNull();
+    expect(gitlabCommittedCodeRatio(null, 33107)).toBeNull();
+  });
+  it("calculates density from combined lines and tokens, not per-tool densities", () => {
+    const combined = combinedAiUsage(1399874957, 18294,
+      codexUsageForRange("wody@riskzero.kr", "2026-09-03", "2026-09-09"));
+    expect(calculateCodeOutputDensity(combined.codeLines!, combined.tokens!))
+      .toBeCloseTo(66214 / 2961569089 * 1000000);
+  });
   it("reconciles all nine exported accounts with existing dashboard users", () => {
     const users = snapshot.periods[0].users;
     expect(Object.keys(users)).toHaveLength(9);

@@ -4127,12 +4127,14 @@ function monthlyCodeDensitySamplesForUser(
     if (!spendPeriod || !usage || !codeSource) return [];
     const [spendStartDate, spendEndDate] = spendPeriod.period.split(/\s*~\s*/);
     if (!spendStartDate || !spendEndDate) return [];
+    const combined = combinedAiUsage(usage.totalTokens, user.monthlyCodeLines[month] ?? 0,
+      codexUsageForRange(user.email, `${month}-01`, `${month}-31`));
 
     return [{
       key: month,
       label: monthLabel(month),
-      codeLines: user.monthlyCodeLines[month] ?? 0,
-      totalTokens: usage.totalTokens,
+      codeLines: combined.codeLines ?? 0,
+      totalTokens: combined.tokens ?? 0,
       periodAligned: codeSource.period
         ? codeSource.period === spendPeriod.period
         : isMonthlyCodePeriodAligned({
@@ -4156,11 +4158,13 @@ function weeklyCodeDensitySamplesForUser(
     const period = individualUtilizationData.weeklyUsage[week];
     const usage = period?.users[email];
     if (!period || !usage || period.source.codeMethod === "not_collected") return [];
+    const combined = combinedAiUsage(usage.totalTokens, usage.codeLines,
+      codexUsageForRange(email, period.startDate, period.endDate));
     return [{
       key: week,
       label: period.label,
-      codeLines: usage.codeLines,
-      totalTokens: usage.totalTokens,
+      codeLines: combined.codeLines ?? 0,
+      totalTokens: combined.tokens ?? 0,
       periodAligned: true,
     }];
   });
@@ -4260,7 +4264,7 @@ function IndividualCodeDensityCell({
           <CodeOutputDensitySparkline trend={trend} />
           <span
             className={`individual-density-readout ${trend.direction}`}
-            title="동일 기간 Code Lines를 총 토큰으로 나눈 1M 토큰당 코드 산출량입니다. 품질이나 개인 성과를 직접 의미하지 않습니다."
+            title="Claude와 Codex의 수집된 합산 Code Lines ÷ 합산 토큰 × 1,000,000입니다. 수집 범위에 따라 일부 사용량만 포함될 수 있으며 품질이나 개인 성과를 직접 의미하지 않습니다."
           >
             <small>1M 토큰당</small>
             <b>{formatCodeDensity(currentPoint.linesPerMillionTokens)}줄</b>
@@ -4297,7 +4301,7 @@ function IndividualGitlabActivityCell({
 }) {
   const observed = metrics.commitCount > 0 || metrics.mergeCommitCount > 0;
   const committedCodeRatio = gitlabCommittedCodeRatio(generatedCodeLines, metrics.additions);
-  const ratioTitle = "GitLab 추가 라인 ÷ Claude Code Lines × 100. 수동 작성과 자동 생성 파일이 함께 집계되어 100%를 초과할 수 있습니다.";
+  const ratioTitle = "GitLab 추가 라인 ÷ (Claude + Codex 합산 Code Lines) × 100. 수집된 생성 라인 기준이며 도구 간 중복은 제거하지 않습니다. 수동 작성과 자동 생성 파일이 함께 집계되어 100%를 초과할 수 있으며 실제 AI 코드 채택률을 의미하지 않습니다.";
   const ratioReadout = (
     <span
       className={`individual-commit-ratio ${committedCodeRatio == null ? "unavailable" : ""}`}
@@ -4881,6 +4885,7 @@ function AdoptionView({
             : isWeekly
               ? row.weeklyUsage?.codeLines ?? 0
               : evaluation?.codeLines ?? 0;
+          summary.codeLines += codexUsageForRange(row.user.email, periodStartDate, periodEndDate).codeLines;
           return summary;
         },
         {
@@ -4888,28 +4893,27 @@ function AdoptionView({
           codeLines: 0,
         },
       ),
-    [isWeekly, rows, weeklyCodeCollected],
+    [isWeekly, rows, weeklyCodeCollected, periodStartDate, periodEndDate],
   );
 
   const usageSummary = useMemo(() => {
-    if (isWeekly) {
-      return selectedWeeklyUsage?.totals ?? null;
-    }
-    if (!selectedMonthlySpend) return null;
+    if (!(isWeekly ? selectedWeeklyUsage : selectedMonthlySpend) && !codexPeriod.collected) return null;
     const measuredSpendRows = rows.filter(
-      (row) => row.user.measurementStatus === "measured" && row.monthlySpend,
+      (row) => (isWeekly ? row.weeklyUsage : row.monthlySpend) ||
+        codexUsageForRange(row.user.email, periodStartDate, periodEndDate).present,
     );
     if (measuredSpendRows.length === 0) return null;
     return measuredSpendRows.reduce(
       (summary, row) => {
-        if (!row.monthlySpend) return summary;
-        summary.requests += row.monthlySpend.requests;
-        summary.totalTokens += row.monthlySpend.totalTokens;
+        const usage = isWeekly ? row.weeklyUsage : row.monthlySpend;
+        summary.requests += usage?.requests ?? 0;
+        summary.totalTokens += (usage?.totalTokens ?? 0) +
+          codexUsageForRange(row.user.email, periodStartDate, periodEndDate).tokens;
         return summary;
       },
       { requests: 0, totalTokens: 0 },
     );
-  }, [isWeekly, rows, selectedMonthlySpend, selectedWeeklyUsage]);
+  }, [isWeekly, rows, selectedMonthlySpend, selectedWeeklyUsage, codexPeriod.collected, periodStartDate, periodEndDate]);
 
   const pendingProfileUser = pendingProfileEmail
     ? data.users.find((user) => user.email === pendingProfileEmail) ?? null
@@ -5040,14 +5044,14 @@ function AdoptionView({
 
       <section className="individual-period-summary" aria-label={`${periodLabel} 핵심 활용 지표`}>
         <article>
-          <span><FileText size={17} />Claude Code Lines</span>
-          <strong>{weeklyCodeCollected ? `${numberFormat.format(periodSummary.codeLines)}줄` : "수집중"}</strong>
-          <small>{isWeekly ? weeklyCodeCollected ? weeklyCodePeriod && selectedWeeklyUsage?.coverage !== "complete" ? `${weeklyCodePeriod} 부분 집계` : "해당 주차 순증" : "Code Lines 원천 미제공" : "최신 월 누적"}</small>
+          <span><FileText size={17} />전체 Code Lines</span>
+          <strong>{weeklyCodeCollected || codexPeriod.collected ? `${numberFormat.format(periodSummary.codeLines)}줄` : "수집중"}</strong>
+          <small>Claude + Codex 수집분 합산 · {isWeekly ? weeklyCodeCollected ? weeklyCodePeriod && selectedWeeklyUsage?.coverage !== "complete" ? `${weeklyCodePeriod} 부분 집계` : "해당 주차" : "Claude Code Lines 수집중" : "월 누적"}</small>
         </article>
         <article>
-          <span><Activity size={17} />{isWeekly ? "Claude 주간 토큰" : "Claude 월 누적 토큰"}</span>
+          <span><Activity size={17} />{isWeekly ? "전체 주간 토큰" : "전체 월 누적 토큰"}</span>
           <strong>{usageSummary ? formatTokens(usageSummary.totalTokens) : "수집중"}</strong>
-          <small>{coverageNote}</small>
+          <small>Claude + Codex 수집분 합산 · {coverageNote}</small>
         </article>
         <article>
           <span><GitCommitHorizontal size={17} />GitLab 개발 활동</span>
@@ -5069,10 +5073,10 @@ function AdoptionView({
             <thead>
               <tr>
                 <th>사용자</th>
-                <th>Claude Code Lines · 산출 밀도</th>
+                <th>Claude Code Lines</th>
                 <th>Claude 토큰</th>
                 <th>Codex 토큰 · Code Lines</th>
-                <th title="Claude와 Codex 보고값의 합계입니다. 수집 기간이 다를 수 있으며 도구 간 중복 생성·수정 라인은 제거하지 않습니다.">전체 토큰 · Code Lines</th>
+                <th title="Claude와 Codex 보고값의 합계입니다. 수집 기간이 다를 수 있으며 도구 간 중복 생성·수정 라인은 제거하지 않습니다.">전체 토큰 · Code Lines · 산출 밀도</th>
                 <th>GitLab 커밋 · 수정 라인 · 반영률</th>
                 <th>주요 사용 범위</th>
               </tr>
@@ -5144,19 +5148,11 @@ function AdoptionView({
                         {metricsMeasured ? (
                           isWeekly
                             ? weeklyUsage && weeklyCodeCollected
-                              ? <IndividualCodeDensityCell
-                                  codeLines={weeklyUsage.codeLines}
-                                  selectedSample={selectedDensitySample}
-                                  trend={codeDensityTrend}
-                                />
+                              ? <strong>{numberFormat.format(weeklyUsage.codeLines)}줄</strong>
                               : <span className="state-pill neutral">주차별 수집중</span>
                             : evaluation?.codeLines == null
                               ? <span className="state-pill neutral">월 단위</span>
-                              : <IndividualCodeDensityCell
-                                  codeLines={evaluation.codeLines}
-                                  selectedSample={selectedDensitySample}
-                                  trend={codeDensityTrend}
-                                />
+                              : <strong>{numberFormat.format(evaluation.codeLines)}줄</strong>
                         ) : metricsUncollected ? <span className={`state-pill ${toolUnpaid ? "warning" : "neutral"}`}>{toolUnpaid ? "미지급" : "수집중"}</span> : null}
                       </td>
                       <td>
@@ -5188,14 +5184,20 @@ function AdoptionView({
                       <td>
                         <div className="individual-combined-usage">
                           <strong title={combined.tokens === null ? undefined : `${numberFormat.format(combined.tokens)} 토큰`}>{combined.tokens === null ? "수집중" : `${formatTokens(combined.tokens)} 토큰`}</strong>
-                          <span>{combined.codeLines === null ? "수집중" : `${numberFormat.format(combined.codeLines)}줄`}</span>
+                          {combined.codeLines === null ? <span>수집중</span> : (
+                            <IndividualCodeDensityCell
+                              codeLines={combined.codeLines}
+                              selectedSample={selectedDensitySample}
+                              trend={codeDensityTrend}
+                            />
+                          )}
                           {combined.partial && <small>확인분 합산</small>}
                         </div>
                       </td>
                       <td>
                         {teamGroup === "development" && (
                           <IndividualGitlabActivityCell
-                            generatedCodeLines={generatedCodeLines}
+                            generatedCodeLines={combined.codeLines}
                             metrics={gitlab}
                           />
                         )}
