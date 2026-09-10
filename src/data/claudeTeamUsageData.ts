@@ -82,6 +82,7 @@ type UsageBreakdown = Record<string, { requests: number; tokens: number; netSpen
 
 type RawUser = {
   email: string;
+  firstObservedMonth?: string;
   displayName: string;
   requests: number;
   promptTokens: number;
@@ -131,7 +132,9 @@ function usageNote(user: RawUser, codeLines: number) {
   return `토큰 ${tokenLabel} · Code Lines 사용 없음`;
 }
 
-const measuredUsers: ClaudeTeamUserUsage[] = snapshot.users.map((user) => {
+const measuredUsers: ClaudeTeamUserUsage[] = snapshot.users
+  .filter((user) => !user.firstObservedMonth || user.firstObservedMonth <= currentMonth)
+  .map((user) => {
   const codeLines = user.monthlyCodeLines[currentMonth] ?? 0;
   const claudeCode = user.productUsage["Claude Code"];
   return {

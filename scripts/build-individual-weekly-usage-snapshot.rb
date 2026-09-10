@@ -13,6 +13,7 @@ options = {
   coverage: "complete",
   current_spend: [],
   current_code: [],
+  previous_code: [],
   spend_user_overlays: [],
 }
 
@@ -41,7 +42,7 @@ OptionParser.new do |parser|
 
     options[:spend_user_overlays] << [email.downcase, path]
   end
-  parser.on("--previous-code PATH", "Previous cumulative Code Lines report") { |value| options[:previous_code] = value }
+  parser.on("--previous-code PATH", "Previous cumulative Code Lines report (repeatable)") { |value| options[:previous_code] << value }
   parser.on("--current-code PATH", "Current cumulative or period Code Lines report (repeatable)") do |value|
     options[:current_code] << value
   end
@@ -180,7 +181,7 @@ period = {
       options[:spend_user_overlays].map { |email, path| "#{File.basename(path)} (#{email} overlay)" }).join(" + "),
     "previousSpendRows" => previous_spend_rows,
     "currentSpendRows" => current_spend_rows,
-    "previousCodeFile" => options[:previous_code] && File.basename(options[:previous_code]),
+    "previousCodeFile" => options[:previous_code].empty? ? nil : options[:previous_code].map { |path| File.basename(path) }.join(" + "),
     "currentCodeFile" => options[:current_code].empty? ? nil : options[:current_code].map { |path| File.basename(path) }.join(" + "),
     "codePeriod" => options[:code_period],
     "spendMethod" => options[:spend_mode] == "period" ? "period_total" : "current_cumulative_minus_previous_cumulative",

@@ -9,14 +9,14 @@ describe("individualUtilizationData", () => {
     const data = individualUtilizationData;
 
     expect(data.source.spend.rowCount).toBe(138);
-    expect(data.users).toHaveLength(40);
-    expect(data.users.filter((user) => user.measurementStatus === "measured")).toHaveLength(32);
+    expect(data.users).toHaveLength(41);
+    expect(data.users.filter((user) => user.measurementStatus === "measured")).toHaveLength(36);
     expect(data.totals.requests).toBe(161582);
     expect(data.totals.totalTokens).toBe(37099774050);
     expect(data.totals.netSpendUsd).toBeCloseTo(414.44, 2);
     expect(data.source.codeLines).toHaveLength(5);
-    expect(sumBy(data.source.codeLines, (item) => item.totalLines)).toBe(1355279);
-    expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(1355279);
+    expect(sumBy(data.source.codeLines, (item) => item.totalLines)).toBe(1475957);
+    expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(1475957);
   });
 
   it("keeps activity metrics behind an explicit HR evidence gate", () => {
@@ -170,7 +170,7 @@ describe("individualUtilizationData", () => {
     ).toBe(true);
   });
 
-  it("publishes the five provided period files as filterable weekly totals", () => {
+  it("publishes the provided period files as filterable weekly totals", () => {
     const data = individualUtilizationData;
     const firstWeek = data.weeklyUsage["2026-08-W1"];
     const secondWeek = data.weeklyUsage["2026-08-W2"];
@@ -184,6 +184,7 @@ describe("individualUtilizationData", () => {
       "2026-08-W3",
       "2026-08-W4",
       "2026-08-W5",
+      "2026-09-W1",
     ]);
     expect(firstWeek).toMatchObject({
       label: "8월 1주차",
@@ -324,7 +325,7 @@ describe("individualUtilizationData", () => {
     expect(data.monthlySpend["2026-08"]?.totals.requests).toBeGreaterThan(
       sumBy(augustThroughFourthWeek, (week) => week.totals.requests),
     );
-    expect(data.weeklyUsageTrend).toHaveLength(5);
+    expect(data.weeklyUsageTrend).toHaveLength(6);
   });
 
   it("produces bounded peer-comparison scores for every user and period", () => {
@@ -424,40 +425,65 @@ describe("individualUtilizationData", () => {
     ).toBe(true);
     expect(data.monthlySpendSource.missingMonths).toHaveLength(0);
     expect(data.monthlySpend["2026-09"]).toMatchObject({
-      fileName: "spend-report-17711e80-a5e7-427c-b20e-230325bbae9f-2026-09-01-to-2026-09-02.csv + spend-report-e59c75bc-469e-466f-bef9-c311748c1df8-2026-09-01-to-2026-09-02.csv + spend-report-f5ff68f8-ab8f-4101-aa65-a766ac49a78e-2026-09-01-to-2026-09-02.csv",
-      period: "2026-09-01 ~ 2026-09-02",
+      fileName: expect.stringContaining("spend-report-2026-09-10.csv"),
+      period: "2026-09-01 ~ 2026-09-09",
       coverage: "partial",
-      rowCount: 84,
+      rowCount: 195,
       totals: {
-        requests: 23560,
-        totalTokens: 5230992572,
-        netSpendUsd: 70.5,
+        requests: 81782,
+        totalTokens: 18338073147,
+        netSpendUsd: 233.08,
       },
     });
     expect(data.monthlySpend["2026-09"]?.users["woosung.jeon@riskzero.kr"]).toMatchObject({
-      requests: 4140,
-      totalTokens: 1303710798,
+      requests: 14744,
+      totalTokens: 4553066693,
     });
     expect(data.monthlySpend["2026-09"]?.users["yspark@riskzero.kr"]).toMatchObject({
-      requests: 745,
-      totalTokens: 171659607,
+      requests: 1625,
+      totalTokens: 378110335,
     });
     expect(data.monthlySpend["2026-09"]?.users["bigone@riskzero.kr"]).toMatchObject({
-      requests: 759,
-      totalTokens: 182378494,
+      requests: 4888,
+      totalTokens: 592792889,
     });
     expect(data.monthlySpend["2026-09"]?.users["airyoubi77@riskzero.kr"]).toMatchObject({
-      requests: 39,
-      totalTokens: 5180932,
+      requests: 124,
+      totalTokens: 15530642,
       products: ["Chat"],
-      models: ["claude-opus-5"],
+      models: ["claude-fable-5-1", "claude-opus-5"],
     });
     expect(data.source.codeLines.find((item) => item.month === "2026-09")).toMatchObject({
-      fileName: "2026-09-03-claude_code.csv + claude_code_team_2026_09_01_to_2026_09_30.csv",
-      period: "2026-09-01 ~ 2026-09-02",
-      rowCount: 19,
-      totalLines: 65601,
+      fileName: "claude_code_team_2026_09_10.csv + claude_code_team_2026_09_10_Clevel.csv",
+      period: "2026-09-01 ~ 2026-09-09",
+      rowCount: 22,
+      totalLines: 186279,
     });
+  });
+
+  it("adds September 3-9 without double-counting the monthly code baseline", () => {
+    const data = individualUtilizationData;
+    const week = data.weeklyUsage["2026-09-W1"];
+    expect(week).toMatchObject({
+      label: "9월 1주차", startDate: "2026-09-03", endDate: "2026-09-09",
+      source: {spendMethod: "period_total", codeMethod: "current_cumulative_minus_previous_cumulative"},
+      totals: {activeUsers: 30, requests: 58222, totalTokens: 13107080575, codeLines: 120678, netSpendUsd: 162.58},
+    });
+    expect(week.users["wody@riskzero.kr"]).toMatchObject({codeLines: 32922 - 14628, totalTokens: 1399874957});
+    expect(week.users["woosung.jeon@riskzero.kr"]).toMatchObject({codeLines: 21343 - 5520, totalTokens: 3249355895});
+    expect(sumBy(Object.values(week.users), (user) => user.codeLines)).toBe(week.totals.codeLines);
+    expect(sumBy(Object.values(week.users), (user) => user.totalTokens)).toBe(week.totals.totalTokens);
+    expect(data.monthlySpend["2026-09"]?.totals.totalTokens).toBe(5230992572 + week.totals.totalTokens);
+    expect(data.source.codeLines.find((source) => source.month === "2026-09")?.totalLines).toBe(65601 + week.totals.codeLines);
+    for (const email of ["pms0805@riskzero.kr", "kjh17@riskzero.kr", "pentasix@riskzero.kr", "kh.kim@riskzero.kr"]) {
+      expect(data.users.find((user) => user.email === email)?.measurementStatus).toBe("measured");
+      expect(week.users[email].totalTokens).toBeGreaterThan(0);
+    }
+    expect(data.users.find((user) => user.email === "kh.kim@riskzero.kr")?.displayName).toBe("김기환 대리");
+    expect(week.users["bigone@riskzero.kr"]).toMatchObject({totalTokens: 410414395, codeLines: 18177 - 5538, products: ["Cowork"]});
+    expect(week.users["yspark@riskzero.kr"]).toMatchObject({totalTokens: 206450728, codeLines: 0, products: ["Chat", "Cowork"]});
+    expect(week.users["airyoubi77@riskzero.kr"]).toMatchObject({requests: 85, totalTokens: 10349710, products: ["Chat"], models: ["claude-fable-5-1", "claude-opus-5"]});
+    expect(data.users.find((user) => user.email === "bigone@riskzero.kr")?.monthlyCodeLines["2026-09"]).toBe(18177);
   });
 
   it("reconciles the provided May through July Code Lines files", () => {

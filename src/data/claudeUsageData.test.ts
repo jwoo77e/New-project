@@ -9,7 +9,7 @@ const sumBy = <T>(items: T[], select: (item: T) => number) =>
 describe("Claude usage snapshots", () => {
   it("captures the complete August source files", () => {
     expect(initialClaudeTeamUsageData.source).toMatchObject({
-      generatedAt: "2026-09-03",
+      generatedAt: "2026-09-10",
       spendFile: "spend-report-e59c75bc-469e-466f-bef9-c311748c1df8-2026-08-01-to-2026-08-31.csv + spend-report-f5ff68f8-ab8f-4101-aa65-a766ac49a78e-2026-08-01-to-2026-08-31.csv + spend-report-17711e80-a5e7-427c-b20e-230325bbae9f-2026-08-01-to-2026-08-31.csv (yspark@riskzero.kr overlay)",
       codeLinesFile: "claude_code_team_2026_08_01_to_2026_08_31.csv",
     });

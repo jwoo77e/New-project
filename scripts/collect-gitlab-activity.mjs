@@ -225,6 +225,46 @@ export async function writeGitlabActivitySnapshot(snapshot, {
   return absolutePath;
 }
 
+export function mergeGitlabActivityRange(existing, incoming, startDate, endDate) {
+  if (startDate > endDate || incoming.source.projectErrors.length > 0) {
+    throw new Error("유효한 기간의 오류 없는 GitLab 수집 결과가 필요합니다.");
+  }
+  if (existing.source.baseUrl !== incoming.source.baseUrl || existing.source.group.id !== incoming.source.group.id) {
+    throw new Error("다른 GitLab 원천의 스냅샷은 병합할 수 없습니다.");
+  }
+  const inRange = (commit) => commit.day >= startDate && commit.day <= endDate;
+  const commits = new Map();
+  for (const [snapshot, select] of [[existing, (commit) => !inRange(commit)], [incoming, inRange]]) {
+    for (const user of snapshot.users) {
+      for (const commit of user.commits.filter(select)) {
+        commits.set(commitKey(commit), { ...commit, authorEmail: user.email, authorName: user.email });
+      }
+    }
+  }
+  const rows = [...commits.values()];
+  const merged = aggregateGitlabActivity({
+    collectedAt: new Date(incoming.source.generatedAt),
+    baseUrl: existing.source.baseUrl,
+    group: existing.source.group,
+    since: existing.source.since,
+    until: new Date(existing.source.until) > new Date(incoming.source.until) ? existing.source.until : incoming.source.until,
+    projects: [...new Set(rows.map((commit) => commit.projectId))],
+    commits: rows,
+  });
+  // Commit rows do not retain each original author alias. Preserve verified user identity metadata.
+  for (const user of merged.users) {
+    const originals = [existing, incoming].flatMap((snapshot) => snapshot.users.filter((item) => item.email === user.email));
+    user.sourceEmails = [...new Set(originals.flatMap((item) => item.sourceEmails))].sort();
+    user.authorNames = [...new Set(originals.flatMap((item) => item.authorNames))].sort((a, b) => a.localeCompare(b, "ko"));
+  }
+  merged.source.projectCount = incoming.source.projectCount;
+  merged.totals.projects = incoming.totals.projects;
+  merged.source.detailPolicy = incoming.source.detailPolicy;
+  merged.source.refreshedPeriod = `${startDate} ~ ${endDate}`;
+  merged.source.historyPolicy = "갱신 기간 밖의 검증된 기존 커밋 이력을 보존";
+  return merged;
+}
+
 export function summarizeDiffs(diffs) {
   const files = diffs.slice(0, 20).map((diff) => ({
     path: diff.new_path || diff.old_path,
