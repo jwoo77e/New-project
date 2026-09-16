@@ -1219,14 +1219,15 @@ async function collectGeminiMonitoring(env) {
     const accessToken = await getGoogleAccessToken(env);
     const usage = emptyUsage();
     for (const projectId of projectIds) {
+      const quotaProjectId = env.GOOGLE_MONITORING_QUOTA_PROJECT_ID?.trim() || projectId;
       for (const metricType of geminiRequestMetricTypes) {
-        await addGoogleMonitoringMetricUsage({ projectId, accessToken, metricType, usage, valueType: "requests" });
+        await addGoogleMonitoringMetricUsage({ projectId, quotaProjectId, accessToken, metricType, usage, valueType: "requests" });
       }
       for (const metricType of geminiInputTokenMetricTypes) {
-        await addGoogleMonitoringMetricUsage({ projectId, accessToken, metricType, usage, valueType: "inputTokens" });
+        await addGoogleMonitoringMetricUsage({ projectId, quotaProjectId, accessToken, metricType, usage, valueType: "inputTokens" });
       }
       for (const metricType of geminiOutputTokenMetricTypes) {
-        await addGoogleMonitoringMetricUsage({ projectId, accessToken, metricType, usage, valueType: "outputTokens" });
+        await addGoogleMonitoringMetricUsage({ projectId, quotaProjectId, accessToken, metricType, usage, valueType: "outputTokens" });
       }
     }
 
@@ -1491,8 +1492,8 @@ export async function collectBillingCostBreakdown(
   });
 }
 
-async function addGoogleMonitoringMetricUsage({ projectId, accessToken, metricType, usage, valueType }) {
-  const series = await listGoogleMonitoringTimeSeries(projectId, accessToken, metricType);
+async function addGoogleMonitoringMetricUsage({ projectId, quotaProjectId, accessToken, metricType, usage, valueType }) {
+  const series = await listGoogleMonitoringTimeSeries(projectId, accessToken, metricType, quotaProjectId);
   for (const timeSeries of series) {
     const model = stringValue(timeSeries.metric?.labels?.model, "Gemini total").replace(/^models\//, "");
     for (const point of timeSeries.points ?? []) {
@@ -1509,7 +1510,14 @@ async function addGoogleMonitoringMetricUsage({ projectId, accessToken, metricTy
   }
 }
 
-async function listGoogleMonitoringTimeSeries(projectId, accessToken, metricType) {
+export function googleMonitoringHeaders(accessToken, quotaProjectId) {
+  return {
+    Authorization: `Bearer ${accessToken}`,
+    "x-goog-user-project": quotaProjectId,
+  };
+}
+
+async function listGoogleMonitoringTimeSeries(projectId, accessToken, metricType, quotaProjectId = projectId) {
   const allSeries = [];
   let pageToken = "";
 
@@ -1525,7 +1533,7 @@ async function listGoogleMonitoringTimeSeries(projectId, accessToken, metricType
     url.searchParams.set("view", "FULL");
     if (pageToken) url.searchParams.set("pageToken", pageToken);
 
-    const result = await getJson(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    const result = await getJson(url, { headers: googleMonitoringHeaders(accessToken, quotaProjectId) });
     if (!result.ok) {
       if (isIgnorableMonitoringMetricError(result.error)) return [];
       throw new Error(`Cloud Monitoring 조회 실패 (${metricType}): ${result.error}`);

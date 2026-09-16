@@ -5,6 +5,7 @@ import {
   buildBigQueryBillingTableRef,
   buildGeminiBillingProjectFilter,
   getPaginatedJson,
+  googleMonitoringHeaders,
   parseGammaGenerationIds,
   parseClaudeCosts,
   resolveAnthropicAdminKeys,
@@ -15,6 +16,12 @@ import {
 } from "./fetch-api-usage.mjs";
 
 describe("provider API pagination", () => {
+  it("explicitly attributes Monitoring requests to the selected consumer project", () => {
+    expect(googleMonitoringHeaders("test-token", "zeroby-two")).toEqual({
+      Authorization: "Bearer test-token",
+      "x-goog-user-project": "zeroby-two",
+    });
+  });
   it("collects every OpenAI and Claude page using the next_page cursor", async () => {
     const requestedPages = [];
     const fetchImpl = async (url) => {
