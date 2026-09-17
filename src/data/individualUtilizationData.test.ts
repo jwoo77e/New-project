@@ -15,8 +15,8 @@ describe("individualUtilizationData", () => {
     expect(data.totals.totalTokens).toBe(37099774050);
     expect(data.totals.netSpendUsd).toBeCloseTo(414.44, 2);
     expect(data.source.codeLines).toHaveLength(5);
-    expect(sumBy(data.source.codeLines, (item) => item.totalLines)).toBe(1568736);
-    expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(1568736);
+    expect(sumBy(data.source.codeLines, (item) => item.totalLines)).toBe(1582870);
+    expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(1582870);
   });
 
   it("keeps activity metrics behind an explicit HR evidence gate", () => {
@@ -429,10 +429,10 @@ describe("individualUtilizationData", () => {
       fileName: expect.stringContaining("spend-report-2026-09-10.csv"),
       period: "2026-09-01 ~ 2026-09-16",
       coverage: "partial",
-      rowCount: 291,
+      rowCount: 307,
       totals: {
-        requests: 140073,
-        totalTokens: 31580313828,
+        requests: 147087,
+        totalTokens: 32666629278,
         netSpendUsd: 964.28,
       },
     });
@@ -441,24 +441,24 @@ describe("individualUtilizationData", () => {
       totalTokens: 6858630480,
     });
     expect(data.monthlySpend["2026-09"]?.users["yspark@riskzero.kr"]).toMatchObject({
-      requests: 1625,
-      totalTokens: 378110335,
+      requests: 4902,
+      totalTokens: 753033574,
     });
     expect(data.monthlySpend["2026-09"]?.users["bigone@riskzero.kr"]).toMatchObject({
-      requests: 4888,
-      totalTokens: 592792889,
+      requests: 8441,
+      totalTokens: 1262693981,
     });
     expect(data.monthlySpend["2026-09"]?.users["airyoubi77@riskzero.kr"]).toMatchObject({
-      requests: 124,
-      totalTokens: 15530642,
-      products: ["Chat"],
-      models: ["claude-fable-5-1", "claude-opus-5"],
+      requests: 308,
+      totalTokens: 57021761,
+      products: ["Chat", "Office Agents"],
+      models: ["claude-fable-5-1", "claude-haiku-4-5-20251001", "claude-opus-5"],
     });
     expect(data.source.codeLines.find((item) => item.month === "2026-09")).toMatchObject({
-      fileName: "claude_code_team_2026_09_17.csv",
+      fileName: "claude_code_team_2026_09_17.csv + claude_code_team_026_09_17.csv",
       period: "2026-09-01 ~ 2026-09-16",
       rowCount: 22,
-      totalLines: 279058,
+      totalLines: 293192,
     });
   });
 
@@ -475,10 +475,13 @@ describe("individualUtilizationData", () => {
     expect(sumBy(Object.values(week.users), (user) => user.codeLines)).toBe(week.totals.codeLines);
     expect(sumBy(Object.values(week.users), (user) => user.totalTokens)).toBe(week.totals.totalTokens);
     const weekTwo = data.weeklyUsage["2026-09-W2"];
-    expect(weekTwo.totals).toMatchObject({requests: 58291, totalTokens: 13242240681, codeLines: 92779, netSpendUsd: 731.2});
+    expect(weekTwo.totals).toMatchObject({requests: 65305, totalTokens: 14328556131, codeLines: 106913, netSpendUsd: 731.2});
+    expect(weekTwo.users["airyoubi77@riskzero.kr"]).toMatchObject({requests: 184, totalTokens: 41491119, products: ["Chat", "Office Agents"]});
+    expect(weekTwo.users["bigone@riskzero.kr"]).toMatchObject({requests: 3553, totalTokens: 669901092, codeLines: 32311 - 18177});
+    expect(weekTwo.users["yspark@riskzero.kr"]).toMatchObject({requests: 3277, totalTokens: 374923239, codeLines: 0});
     expect(weekTwo.users["wody@riskzero.kr"].codeLines).toBe(53497 - 32922);
-    expect(sumBy(Object.values(weekTwo.users), user => user.codeLines)).toBe(92779);
-    expect(sumBy(Object.values(weekTwo.users), user => user.totalTokens)).toBe(13242240681);
+    expect(sumBy(Object.values(weekTwo.users), user => user.codeLines)).toBe(106913);
+    expect(sumBy(Object.values(weekTwo.users), user => user.totalTokens)).toBe(14328556131);
     expect(data.monthlySpend["2026-09"]?.totals.totalTokens).toBe(5230992572 + week.totals.totalTokens + weekTwo.totals.totalTokens);
     expect(data.source.codeLines.find((source) => source.month === "2026-09")?.totalLines).toBe(65601 + week.totals.codeLines + weekTwo.totals.codeLines);
     for (const email of ["pms0805@riskzero.kr", "kjh17@riskzero.kr", "pentasix@riskzero.kr", "kh.kim@riskzero.kr"]) {
@@ -489,7 +492,7 @@ describe("individualUtilizationData", () => {
     expect(week.users["bigone@riskzero.kr"]).toMatchObject({totalTokens: 410414395, codeLines: 18177 - 5538, products: ["Cowork"]});
     expect(week.users["yspark@riskzero.kr"]).toMatchObject({totalTokens: 206450728, codeLines: 0, products: ["Chat", "Cowork"]});
     expect(week.users["airyoubi77@riskzero.kr"]).toMatchObject({requests: 85, totalTokens: 10349710, products: ["Chat"], models: ["claude-fable-5-1", "claude-opus-5"]});
-    expect(data.users.find((user) => user.email === "bigone@riskzero.kr")?.monthlyCodeLines["2026-09"]).toBe(18177);
+    expect(data.users.find((user) => user.email === "bigone@riskzero.kr")?.monthlyCodeLines["2026-09"]).toBe(32311);
   });
 
   it("reconciles the provided May through July Code Lines files", () => {
