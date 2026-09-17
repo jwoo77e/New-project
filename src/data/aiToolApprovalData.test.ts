@@ -95,6 +95,8 @@ describe("initialAiToolApprovalData", () => {
       "wody@riskzero.kr",
       "kys0392@riskzero.kr",
       "woosung.jeon@riskzero.kr",
+      "mjkim1122@riskzero.kr",
+      "sieghaft@riskzero.kr",
       "mygu@riskzero.kr",
       "ykchj1011@riskzero.kr",
     ]);
@@ -102,7 +104,6 @@ describe("initialAiToolApprovalData", () => {
       "hb777lee@riskzero.kr",
       "hhlee0227@riskzero.kr",
       "huizhen0227@riskzero.kr",
-      "mjkim1122@riskzero.kr",
       "staycurious@riskzero.kr",
       "crow326@riskzero.kr",
       "sjpark@riskzero.kr",
@@ -113,7 +114,32 @@ describe("initialAiToolApprovalData", () => {
         record.category === "ChatGPT" &&
         record.startMonth === "2026-09",
       ),
-    ).toHaveLength(10);
+    ).toHaveLength(11);
+  });
+
+  it("assigns Minjeong and Seongjin one ChatGPT Premium seat each from September and preserves Claude seats", () => {
+    for (const [account, owner, claudeTool, claudeMonthlyUsd] of [
+      ["mjkim1122@riskzero.kr", "김민정 차장 / 플랫폼개발", "Claude Team Plan Standard", 25],
+      ["sieghaft@riskzero.kr", "김성진 부장 / 플랫폼개발", "Claude Team Plan Premium", 125],
+    ] as const) {
+      expect(initialAiToolApprovalData.records.filter(
+        (record) => record.account === account && record.category === "ChatGPT",
+      )).toEqual([expect.objectContaining({
+        tool: "chatGPT Business Plan Premium",
+        owner,
+        department: "플랫폼개발",
+        monthlyUsd: 125,
+        monthlyKrw: 185_625,
+        startMonth: "2026-09",
+        paymentMethod: "AI 전용 카드",
+      })]);
+      expect(initialAiToolApprovalData.records.find(
+        (record) => record.account === account && record.category === "Claude",
+      )).toMatchObject({ tool: claudeTool, monthlyUsd: claudeMonthlyUsd });
+      expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-08").records.some(
+        (record) => record.account === account && record.category === "ChatGPT",
+      )).toBe(false);
+    }
   });
 
   it("assigns Kim Hana and Jeon Woosung to Claude Team Premium", () => {
@@ -389,8 +415,8 @@ describe("initialAiToolApprovalData", () => {
     });
     expect(initialAiToolApprovalData.toolSummary.find((item) => item.key === "Claude Pro Max 5")).toBeUndefined();
     expect(initialAiToolApprovalData.toolSummary.find((item) => item.key === "Claude Pro Max 20")).toBeUndefined();
-    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(3_940.59);
-    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(7_351_776.15);
+    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(4_165.59);
+    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(7_685_901.15);
   });
 
   it("keeps category and payment totals aligned with the updated total", () => {
@@ -404,12 +430,13 @@ describe("initialAiToolApprovalData", () => {
     expect(
       initialAiToolApprovalData.categorySummary.find((item) => item.key === "ChatGPT"),
     ).toMatchObject({
-      count: 15,
-      monthlyUsd: 1_365,
-      monthlyKrw: 2_027_025,
+      count: 16,
+      monthlyUsd: 1_590,
+      monthlyKrw: 2_361_150,
     });
-    expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(63);
-    expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(7_351_776.15);
+    expect(initialAiToolApprovalData.totalAccounts).toBe(64);
+    expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(64);
+    expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(7_685_901.15);
     expect(
       initialAiToolApprovalData.paymentSummary.find((item) => item.key === "계약 고정비"),
     ).toBeUndefined();
@@ -431,6 +458,16 @@ describe("initialAiToolApprovalData", () => {
     expect(chatGptProducts.reduce((sum, item) => sum + item.count, 0)).toBe(chatGptCategory?.count);
     expect(chatGptProducts.reduce((sum, item) => sum + item.monthlyUsd, 0)).toBe(chatGptCategory?.monthlyUsd);
     expect(chatGptProducts.reduce((sum, item) => sum + item.monthlyKrw, 0)).toBe(chatGptCategory?.monthlyKrw);
+    expect(chatGptProducts.find((item) => item.key === "chatGPT Business Plan Premium")).toMatchObject({
+      count: 8,
+      monthlyUsd: 1_000,
+      monthlyKrw: 1_485_000,
+    });
+    expect(chatGptProducts.find((item) => item.key === "chatGPT Business Plan Standard")).toMatchObject({
+      count: 6,
+      monthlyUsd: 150,
+      monthlyKrw: 222_750,
+    });
   });
 
   it("aggregates monthly approval costs by person and excludes shared costs", () => {
@@ -511,6 +548,18 @@ describe("initialAiToolApprovalData", () => {
       monthlyUsd: 360.12,
       monthlyKrw: 534_778.2,
     });
+    expect(summary.people.find((person) => person.name === "김민정 차장")).toMatchObject({
+      itemCount: 2,
+      tools: ["chatGPT Business Plan Premium", "Claude Team Plan Standard"],
+      monthlyUsd: 150,
+      monthlyKrw: 222_750,
+    });
+    expect(summary.people.find((person) => person.name === "김성진 부장")).toMatchObject({
+      itemCount: 2,
+      tools: ["chatGPT Business Plan Premium", "Claude Team Plan Premium"],
+      monthlyUsd: 250,
+      monthlyKrw: 371_250,
+    });
     expect(summary.sharedMonthlyKrw).toBe(1_522_453.2);
     expect(summary.personalMonthlyKrw + summary.sharedMonthlyKrw).toBe(
       initialAiToolApprovalData.totalMonthlyKrw,
@@ -542,14 +591,14 @@ describe("initialAiToolApprovalData", () => {
       monthlyKrw: 5_866_776.15,
     });
     expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-09")).toMatchObject({
-      count: 63,
-      monthlyUsd: 3_940.59,
-      monthlyKrw: 7_351_776.15,
+      count: 64,
+      monthlyUsd: 4_165.59,
+      monthlyKrw: 7_685_901.15,
     });
     expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-10")).toMatchObject({
-      count: 63,
-      monthlyUsd: 3_940.59,
-      monthlyKrw: 7_351_776.15,
+      count: 64,
+      monthlyUsd: 4_165.59,
+      monthlyKrw: 7_685_901.15,
     });
   });
 
