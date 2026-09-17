@@ -670,18 +670,6 @@ const weeklyTrend: IndividualTrendPoint[] = weeks.map((week) => {
 });
 
 const availableWeeklyPeriods: IndividualWeeklyUsagePeriod[] = [...weeklyUsageSnapshot.periods];
-if (!availableWeeklyPeriods.some((period) => period.key === "2026-09-W2")) {
-  availableWeeklyPeriods.push({
-    key: "2026-09-W2", label: "9월 2주차", startDate: "2026-09-10", endDate: "2026-09-16",
-    coverage: "partial",
-    source: {
-      previousSpendFile: null, currentSpendFile: "", previousSpendRows: 0, currentSpendRows: 0,
-      previousCodeFile: null, currentCodeFile: null, spendMethod: "not_collected", codeMethod: "not_collected",
-    },
-    totals: {activeUsers: 0, requests: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, netSpendUsd: 0, codeLines: 0},
-    users: {}, notes: ["Codex 및 GitLab 수집 기간. Claude 원천은 아직 수집되지 않았습니다."],
-  });
-}
 const weeklyUsage = Object.fromEntries(
   availableWeeklyPeriods.map((period) => [period.key, period] as const),
 ) as Record<string, IndividualWeeklyUsagePeriod>;

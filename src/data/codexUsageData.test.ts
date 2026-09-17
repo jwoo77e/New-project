@@ -43,17 +43,18 @@ describe("Codex usage", () => {
     expect(combinedAiUsage(2003677746, 32922, codex)).toEqual({tokens: 3998802272, codeLines: 91170, partial: true});
     expect(combinedAiUsage(null, null, codexUsageForRange("unknown", "2026-08-01", "2026-08-31"))).toEqual({tokens: null, codeLines: null, partial: true});
   });
-  it("exposes September week two without fabricating Claude activity", () => {
+  it("combines September week two Claude and Codex activity", () => {
     const week = individualUtilizationData.weeklyUsage["2026-09-W2"];
     expect(week.startDate).toBe("2026-09-10");
     expect(week.endDate).toBe("2026-09-16");
-    expect(week.source.codeMethod).toBe("not_collected");
+    expect(week.source.codeMethod).toBe("current_cumulative_minus_previous_cumulative");
     const users = snapshot.periods.find(p => p.startDate === week.startDate)!.users;
     expect(Object.keys(users)).toHaveLength(9);
     expect(Object.keys(users).every(email => individualUtilizationData.users.some(u => u.email === email))).toBe(true);
     expect(Object.values(users).reduce((sum, u) => sum + u.tokens, 0)).toBe(2062461615);
     expect(Object.values(users).reduce((sum, u) => sum + u.codeLines, 0)).toBe(54787);
     const usage = codexUsageForRange("wody@riskzero.kr", week.startDate, week.endDate);
+    expect(combinedAiUsage(week.users["wody@riskzero.kr"].totalTokens, week.users["wody@riskzero.kr"].codeLines, usage)).toEqual({tokens: 1464774545, codeLines: 30903, partial: false});
     expect(combinedAiUsage(null, null, usage)).toEqual({tokens: 433430394, codeLines: 10328, partial: true});
   });
 });

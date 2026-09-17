@@ -116,7 +116,11 @@ Dir.mktmpdir("individual-usage-week") do |directory|
   utilization["users"].sort_by! { |u| u.fetch("email") }
   source = utilization.dig("source", "codeLines").find { |item| item.fetch("month") == month }
   preserved = utilization.fetch("users").select { |u| !current_code.key?(u.fetch("email")) && u.fetch("monthlyCodeLines").key?(month) }
-  source["preservedAccounts"] ||= preserved.map { |u| {"email" => u.fetch("email"), "period" => source.fetch("period"), "codeLines" => u.fetch("monthlyCodeLines").fetch(month), "fileName" => source.fetch("fileName")} }
+  source["preservedAccounts"] ||= []
+  preserved.each do |user|
+    next if source["preservedAccounts"].any? { |account| account.fetch("email") == user.fetch("email") }
+    source["preservedAccounts"] << {"email" => user.fetch("email"), "period" => source.fetch("period"), "codeLines" => user.fetch("monthlyCodeLines").fetch(month), "fileName" => source.fetch("fileName")}
+  end
   source["preservedAccounts"].select! { |account| preserved.any? { |u| u.fetch("email") == account.fetch("email") } }
   source["fileName"] = options.fetch("code").map { |file| File.basename(file) }.join(" + ")
   source["period"] = "#{month}-01 ~ #{options.fetch('end')}"
