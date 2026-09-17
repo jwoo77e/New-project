@@ -1,7 +1,7 @@
 import snapshot from "./codexUsageSnapshot.json";
 
 type CodexUsage = {tokens: number; codeLines: number};
-type Period = {startDate: string; endDate: string; users: Record<string, CodexUsage>};
+type Period = {startDate: string; endDate: string; users: Partial<Record<string, CodexUsage>>};
 const periods: Period[] = snapshot.periods;
 
 export function codexUsageForRange(email: string, startDate: string, endDate: string) {

@@ -42,6 +42,49 @@
           "codeLines": 3696
         }
       }
+    },
+    {
+      "startDate": "2026-09-10",
+      "endDate": "2026-09-16",
+      "fileName": "leaderboard-users_workspace-riskzero_2026-09-10-to-2026-09-16.csv",
+      "users": {
+        "jaewoo.kim@riskzero.kr": {
+          "tokens": 339976735,
+          "codeLines": 1653
+        },
+        "kys0392@riskzero.kr": {
+          "tokens": 441521174,
+          "codeLines": 11445
+        },
+        "mjkim1122@riskzero.kr": {
+          "tokens": 3980961,
+          "codeLines": 169
+        },
+        "mygu@riskzero.kr": {
+          "tokens": 6231543,
+          "codeLines": 58
+        },
+        "sjpark@riskzero.kr": {
+          "tokens": 3115990,
+          "codeLines": 0
+        },
+        "staycurious@riskzero.kr": {
+          "tokens": 6648565,
+          "codeLines": 0
+        },
+        "wody@riskzero.kr": {
+          "tokens": 433430394,
+          "codeLines": 10328
+        },
+        "woosung.jeon@riskzero.kr": {
+          "tokens": 369447712,
+          "codeLines": 2834
+        },
+        "ykchj1011@riskzero.kr": {
+          "tokens": 458108541,
+          "codeLines": 28300
+        }
+      }
     }
   ]
 }

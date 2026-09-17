@@ -4157,7 +4157,12 @@ function weeklyCodeDensitySamplesForUser(
   return individualUtilizationData.usageWeeks.slice(0, selectedIndex + 1).flatMap((week) => {
     const period = individualUtilizationData.weeklyUsage[week];
     const usage = period?.users[email];
-    if (!period || !usage || period.source.codeMethod === "not_collected") return [];
+    if (!period) return [];
+    if (!usage || period.source.codeMethod === "not_collected") {
+      const codex = codexUsageForRange(email, period.startDate, period.endDate);
+      return codex.present ? [{key: week, label: period.label, codeLines: codex.codeLines,
+        totalTokens: codex.tokens, periodAligned: true}] : [];
+    }
     const combined = combinedAiUsage(usage.totalTokens, usage.codeLines,
       codexUsageForRange(email, period.startDate, period.endDate));
     return [{
@@ -4971,7 +4976,7 @@ function AdoptionView({
                     ? `토큰과 Code Lines는 ${weeklyCodePeriod} 전체 기간값을 사용합니다.`
                     : `토큰은 주차 전체 Spend 기간값을 사용합니다. Code Lines는 ${weeklyCodePeriod} 누적 순증으로, 주차보다 짧은 부분 집계입니다.`
                   : "토큰은 주차별 Spend 기간값을 사용하고, Code Lines는 월 누적 스냅샷 간 차이로 해당 주차 순증을 계산합니다. 코드 산출 밀도는 1M 토큰당 Code Lines입니다."
-                : "토큰은 주차별 Spend 기간값을 사용합니다. 선택한 주차는 Code Lines 원천 파일이 없어 코드 산출량과 밀도를 수집중으로 표시합니다."
+                : "Claude Code Lines 원천은 수집중입니다. Codex 자료가 있는 경우 해당 토큰과 코드 라인은 합산에 포함됩니다."
               : "토큰은 월 누적 Spend를 사용하고, Code Lines는 최신 월 누적 스냅샷을 사용합니다. 코드 산출 밀도는 집계 기간이 일치할 때만 계산합니다."}
           </p>
         </div>

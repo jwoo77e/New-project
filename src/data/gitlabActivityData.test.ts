@@ -9,6 +9,12 @@ import {
 } from "./gitlabActivityData";
 
 describe("gitlabActivityData", () => {
+  it("includes September week two GitLab activity", () => {
+    expect(gitlabSummaryForRange("2026-09-10", "2026-09-16")).toMatchObject({
+      activeAuthors: 16, commitCount: 369, mergeCommitCount: 75,
+      additions: 67933, deletions: 19694, changedLines: 87627,
+    });
+  });
   it("reconciles user totals with the source snapshot", () => {
     const totals = gitlabActivityData.users.reduce(
       (sum, user) => ({
@@ -57,7 +63,7 @@ describe("gitlabActivityData", () => {
 
   it("publishes the complete August month and August 27 to September 2 range", () => {
     expect(gitlabActivityData.source).toMatchObject({
-      period: "2026-05-01 ~ 2026-09-09",
+      period: "2026-05-01 ~ 2026-09-16",
       projectErrors: [],
     });
     expect(gitlabSummaryForRange("2026-08-01", "2026-08-31")).toMatchObject({
