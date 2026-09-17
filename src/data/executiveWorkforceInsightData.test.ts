@@ -3,14 +3,14 @@ import { executiveWorkforceInsightData } from "./executiveWorkforceInsightData";
 
 describe("executiveWorkforceInsightData", () => {
   it("reconciles employee Team Plan coverage excluding the non-user", () => {
-    expect(executiveWorkforceInsightData.eligibleEmployees).toBe(40);
+    expect(executiveWorkforceInsightData.eligibleEmployees).toBe(42);
     expect(executiveWorkforceInsightData.nonToolUsers).toBe(1);
     expect(executiveWorkforceInsightData.departedEmployees).toBe(1);
-    expect(executiveWorkforceInsightData.teamPlanUsers).toBe(38);
-    expect(executiveWorkforceInsightData.teamPlanStandardUsers).toBe(26);
+    expect(executiveWorkforceInsightData.teamPlanUsers).toBe(40);
+    expect(executiveWorkforceInsightData.teamPlanStandardUsers).toBe(28);
     expect(executiveWorkforceInsightData.teamPlanPremiumUsers).toBe(12);
     expect(executiveWorkforceInsightData.executiveTeamPlanSeats).toBe(0);
-    expect(executiveWorkforceInsightData.teamPlanCoverageRate).toBe(95);
+    expect(executiveWorkforceInsightData.teamPlanCoverageRate).toBeCloseTo((40 / 42) * 100, 5);
     expect(executiveWorkforceInsightData.chatGptOnlyUsers).toBe(1);
     expect(executiveWorkforceInsightData.personalConversionAccounts).toHaveLength(0);
     expect(executiveWorkforceInsightData.sharedConversionAccounts).toHaveLength(0);
@@ -34,18 +34,18 @@ describe("executiveWorkforceInsightData", () => {
     expect(executiveWorkforceInsightData.pureAdditionalCostKrw).toBe(0);
     expect(executiveWorkforceInsightData.proposedTeamPlanActionCostKrw).toBe(0);
     expect(executiveWorkforceInsightData.netMonthlyChangeKrw).toBe(0);
-    expect(executiveWorkforceInsightData.projectedMonthlyKrw).toBeCloseTo(7_277_526.15, 2);
+    expect(executiveWorkforceInsightData.projectedMonthlyKrw).toBeCloseTo(7_351_776.15, 2);
   });
 
-  it("measures token coverage against the 38 assigned Team Plan seats", () => {
+  it("measures token coverage against the 40 assigned Team Plan seats", () => {
     expect(executiveWorkforceInsightData.tokenMeasuredUsers).toBe(21);
-    expect(executiveWorkforceInsightData.tokenMeasurementTarget).toBe(38);
-    expect(executiveWorkforceInsightData.tokenPendingUsers).toHaveLength(17);
+    expect(executiveWorkforceInsightData.tokenMeasurementTarget).toBe(40);
+    expect(executiveWorkforceInsightData.tokenPendingUsers).toHaveLength(19);
     expect(executiveWorkforceInsightData.tokenPendingUsers.map((user) => user.name)).toEqual(
-      expect.arrayContaining(["김대일 상무", "이형배 상무"]),
+      expect.arrayContaining(["김대일 상무", "이형배 상무", "최지숙 과장", "김기환 대리"]),
     );
     expect(executiveWorkforceInsightData.tokenPendingUsers.map((user) => user.name)).not.toContain("대표님");
-    expect(executiveWorkforceInsightData.tokenMeasurementCoverageRate).toBeCloseTo((21 / 38) * 100, 5);
+    expect(executiveWorkforceInsightData.tokenMeasurementCoverageRate).toBeCloseTo((21 / 40) * 100, 5);
     expect(executiveWorkforceInsightData.tokenActivityClassifiedUsers).toBe(19);
     expect(executiveWorkforceInsightData.powerUsers).toHaveLength(8);
     expect(executiveWorkforceInsightData.regularUsers).toHaveLength(6);

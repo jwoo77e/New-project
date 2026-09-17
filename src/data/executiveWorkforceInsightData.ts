@@ -16,7 +16,8 @@ type TeamPlanConversionAccount = {
   currentMonthlyKrw: number;
 };
 
-const eligibleEmployees = 40;
+// Includes the previously omitted Kim Gihwan and the newly hired Choi Jisuk.
+const eligibleEmployees = 42;
 const nonToolUsers = 1;
 const chatGptOnlyUsers = 1;
 const leaveExcludedEmployees = 2;
