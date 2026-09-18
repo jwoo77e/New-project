@@ -42,17 +42,27 @@ export const gammaDriveUsageData: GammaDriveUsageData = {
   source: {
     name: "Gamma Drive 산출물 폴더",
     folderUrl: "https://drive.google.com/drive/folders/1lBGlyDjDzeGqsZP4Vpz5UgI1Mf0flDzC?usp=drive_link",
-    collectedAt: "2026-07-30 12:02 KST",
+    collectedAt: "2026-09-18 23:10 KST",
     status: "수집",
-    note: "Drive 폴더 전체 15개 파일의 목록과 내용을 확인해 Google Slides 12개, 다운로드 PDF 3개의 활용 주제와 업무 목적을 분류했습니다.",
+    note: "Drive 폴더와 하위 폴더를 전수 확인해 Google Slides 12개, 다운로드 PDF 4개 등 전체 16개 산출물의 활용 주제와 업무 목적을 분류했습니다.",
   },
-  artifactCount: 15,
+  artifactCount: 16,
   googleSlidesCount: 12,
-  pdfCount: 3,
-  totalPages: 224,
-  primaryTheme: "스마트 안전관리와 AI CCTV 기반 RiskZero 영업 제안",
-  businessUse: "공공기관·개발공사·건설현장 대상 제안서, 도입 보고서, 제품 기능 소개와 홈페이지 리뉴얼 기획 초안 생산",
+  pdfCount: 4,
+  totalPages: 243,
+  primaryTheme: "스마트 안전관리·AI CCTV 기반 RiskZero 영업 및 입찰 제안",
+  businessUse: "공공기관·개발공사·건설현장 대상 제안서, 입찰전략 브리핑, 도입 보고서, 제품 기능 소개와 홈페이지 리뉴얼 기획 초안 생산",
   artifacts: [
+    {
+      id: "1QYCRysjVhe2mLxP_GeNmsGSlStGi7YqB",
+      title: "KNOC 스마트 안전관리 통합시스템 2단계 구축 용역 제안전략 브리핑",
+      url: "https://drive.google.com/file/d/1QYCRysjVhe2mLxP_GeNmsGSlStGi7YqB/view?usp=drivesdk",
+      category: "솔루션 제안서",
+      format: "PDF",
+      createdAt: "2026-09-14 KST",
+      slideCount: 19,
+      focus: "KNOC 2단계 사업의 입찰·평가 구조, 기술 1위 제안전략, 수행조직, 추가제안과 리스크 대응",
+    },
     {
       id: "1FNKGNVPx8XBSVCj39tjk-haJyJoH7B8Y",
       title: "제로가드 기능 소개",
@@ -207,8 +217,8 @@ export const gammaDriveUsageData: GammaDriveUsageData = {
   topicMix: [
     {
       topic: "스마트 안전관리 플랫폼 제안",
-      count: 10,
-      note: "RiskZero 3.0, Smart TBM, Safety Index, 통합 관제, 스마트 장비 연동 제안이 반복되며 1장 PDF 변형 2개가 추가되었습니다.",
+      count: 11,
+      note: "RiskZero 3.0, Smart TBM, Safety Index, 통합 관제, 스마트 장비 연동 제안에 KNOC 2단계 입찰전략 브리핑이 추가됐으며 1장 PDF 변형 2개도 포함됩니다.",
     },
     {
       topic: "AI CCTV 도입·효과 보고",
@@ -232,9 +242,9 @@ export const gammaDriveUsageData: GammaDriveUsageData = {
     },
   ],
   insights: [
-    "Gamma Drive에는 Google Slides 12개와 다운로드 PDF 3개, 총 15개 산출물 224장이 축적되어 있습니다.",
-    "7월 30일 추가된 PDF 중 2개는 같은 스마트 안전관리 제안의 1장 변형 시안이고, 1개는 제로가드 기능과 현장 적용 프로세스를 설명하는 별도 자료입니다.",
-    "건설·공공·개발공사 안전관리 제안에 집중되어 재사용성은 높지만, 유사 시안은 최종본 선별과 근거 검증 상태를 함께 관리해야 합니다.",
+    "Gamma Drive에는 Google Slides 12개와 다운로드 PDF 4개, 총 16개 산출물 243장이 축적되어 있습니다.",
+    "9월 14일 생성된 19장 KNOC 제안전략 브리핑은 입찰·평가 구조와 기술 1위 전략, 수행조직 및 리스크 대응을 대표이사 보고용으로 정리했습니다.",
+    "건설·공공·개발공사 안전관리 제안에 집중되어 재사용성은 높지만, 동일·유사 제목의 플랫폼 제안과 AI CCTV 보고, 1장 PDF 변형은 최종본 선별과 근거 검증 상태를 함께 관리해야 합니다.",
   ],
   actions: [
     "매주 금요일 23시에 Drive 폴더 전체 파일과 하위 폴더를 다시 확인해 신규 산출물과 통계를 갱신합니다.",
