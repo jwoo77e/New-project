@@ -58,6 +58,7 @@ abort "--spend is required" if options[:spend].empty?
 abort "at least one --code is required" if options[:code].empty?
 
 DISPLAY_NAMES = {
+  "jsc@riskzero.kr" => "최지숙 과장",
   "kh.kim@riskzero.kr" => "김기환 대리",
   "hhlee0227@riskzero.kr" => "이한호 대리",
   "wody@riskzero.kr" => "정재요 차장",

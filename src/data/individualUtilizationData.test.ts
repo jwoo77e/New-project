@@ -103,6 +103,7 @@ describe("individualUtilizationData", () => {
 
   it("maps the requested users to company email addresses", () => {
     const expectedAccounts = new Map([
+      ["최지숙 과장", "jsc@riskzero.kr"],
       ["최종윤 이사", "drager72@riskzero.kr"],
       ["최용호 대리", "use0505@riskzero.kr"],
       ["조욱상 이사", "airyoubi77@riskzero.kr"],
