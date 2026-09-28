@@ -9,14 +9,15 @@ describe("individualUtilizationData", () => {
     const data = individualUtilizationData;
 
     expect(data.source.spend.rowCount).toBe(138);
-    expect(data.users).toHaveLength(42);
-    expect(data.users.filter((user) => user.measurementStatus === "measured")).toHaveLength(39);
+    expect(data.users).toHaveLength(41);
+    expect(data.users.filter((user) => user.measurementStatus === "measured")).toHaveLength(38);
+    expect(data.users.some((user) => user.email === "jisub1221@riskzero.kr")).toBe(false);
     expect(data.totals.requests).toBe(161582);
     expect(data.totals.totalTokens).toBe(37099774050);
     expect(data.totals.netSpendUsd).toBeCloseTo(414.44, 2);
     expect(data.source.codeLines).toHaveLength(5);
     expect(sumBy(data.source.codeLines, (item) => item.totalLines)).toBe(1708706);
-    expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(1708706);
+    expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(1686709);
   });
 
   it("keeps activity metrics behind an explicit HR evidence gate", () => {

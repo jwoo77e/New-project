@@ -70,6 +70,7 @@ export type AiToolApprovalData = {
   paymentSummary: AiToolApprovalSummary[];
   departmentSummary: AiToolApprovalSummary[];
   records: AiToolApprovalRecord[];
+  historicalRecords?: Array<AiToolApprovalRecord & { throughMonth: string }>;
   insights: string[];
 };
 
@@ -487,18 +488,6 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 28,
-    category: "Claude",
-    tool: "Claude Team Plan Standard",
-    account: "jisub1221@riskzero.kr",
-    owner: "심지섭 대리 / 플랫폼개발",
-    department: "플랫폼개발",
-    monthlyUsd: 25,
-    monthlyKrw: 37125,
-    paymentMethod: "AI 전용 카드",
-    note: "",
-  },
-  {
     no: 29,
     category: "Claude",
     tool: "Claude Team Plan Standard",
@@ -686,6 +675,23 @@ const records: AiToolApprovalRecord[] = [
   },
 ];
 
+// The seat remains in past plan comparisons, but is absent from the current approval sheet.
+const historicalRecords: Array<AiToolApprovalRecord & { throughMonth: string }> = [
+  {
+    no: 28,
+    category: "Claude",
+    tool: "Claude Team Plan Standard",
+    account: "jisub1221@riskzero.kr",
+    owner: "심지섭 대리 / 플랫폼개발",
+    department: "플랫폼개발",
+    monthlyUsd: 25,
+    monthlyKrw: 37125,
+    paymentMethod: "AI 전용 카드",
+    note: "과거 계획 비교용 · 현재 결재 원장 제외",
+    throughMonth: "2026-08",
+  },
+];
+
 const normalizedRecords = records.map((record, index) => ({ ...record, no: index + 1 }));
 const totalMonthlyUsd = sum(records, "monthlyUsd");
 const totalMonthlyKrw = sum(records, "monthlyKrw");
@@ -705,7 +711,7 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     sheetName: "전사 AI도구 현황조사표",
     collectedAt: "2026-09-18",
     period: "2026년 9월 월 고정비 기준 · USD 1 = 1,485원",
-    note: "계정 ID, 주사용자/부서, 구독료, 결재수단과 적용 시작월을 반영했으며 AI 도구 사용 직원 40명 Claude Team Plan, ChatGPT Business Premium·Standard와 플랫폼개발팀 GH AI Agent 개발용 AI API 서비스 고정비 150만원을 포함",
+    note: "계정 ID, 주사용자/부서, 구독료, 결재수단과 적용 시작월을 반영했습니다. 퇴사자 심지섭 대리의 Claude Standard 좌석은 현재 운영 예산에서 제외했으며, 실제 청구 중단 여부는 별도 확인이 필요합니다. Claude Team Plan, ChatGPT Business Premium·Standard와 플랫폼개발팀 GH AI Agent 개발용 AI API 서비스 고정비 150만원을 포함합니다.",
   },
   exchangeRate,
   totalAccounts: records.length,
@@ -720,6 +726,7 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
   paymentSummary,
   departmentSummary,
   records: normalizedRecords,
+  historicalRecords,
   insights: [
     `등록된 AI 도구 결재 항목은 ${records.length}개이며 9월 월 고정비 합계는 ${formatKrw(totalMonthlyKrw)}입니다. USD 결재 항목 합계는 ${formatUsd(totalMonthlyUsd)}입니다.`,
     `AI 전용 카드 결재가 ${aiDedicatedCard?.count ?? 0}개 항목, ${formatKrw(aiDedicatedCard?.monthlyKrw ?? 0)}으로 전체 월액의 ${(aiDedicatedCard?.share ?? 0).toFixed(1)}%를 차지합니다.`,
@@ -746,6 +753,7 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     "변경 반영: 전략사업팀 최지숙 과장에게 Claude Team Plan Standard를 2026년 9월부터 할당했습니다.",
     "변경 반영: 임성범 부장과 이형배 상무는 Claude Team Plan Standard로, 박연석 전무·김대일 상무·이병현 이사·조욱상 이사는 Premium으로 전환했습니다.",
     "변경 반영: 대표님의 Claude Team Plan Premium과 AI 도구를 사용하지 않는 강훈 부장의 Claude Team Plan Standard를 결재 원장에서 제거했습니다.",
+    "변경 반영: 퇴사자 심지섭 대리의 Claude Team Plan Standard 1좌석($25·37,125원)을 현재 월 고정비 예산에서 제외했습니다. 실제 청구 중단 여부는 별도 확인이 필요합니다.",
   ],
 };
 
@@ -753,9 +761,10 @@ export function approvalMonthlyTotalsForMonth(
   approvalData: AiToolApprovalData,
   month: string,
 ) {
-  const activeRecords = approvalData.records.filter(
-    (record) => !record.startMonth || record.startMonth <= month,
-  );
+  const activeRecords = [
+    ...approvalData.records.filter((record) => !record.startMonth || record.startMonth <= month),
+    ...(approvalData.historicalRecords ?? []).filter((record) => month <= record.throughMonth),
+  ];
 
   const pricedRecords = activeRecords.map((record) => {
     if (record.priceHistory?.length) {

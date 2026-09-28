@@ -1,4 +1,5 @@
 import snapshotJson from "./individualUtilizationSnapshot.json";
+import { isCurrentEmployee } from "./activeRoster";
 
 export type ClaudeTeamUsageLevel = "High" | "Medium" | "Low";
 
@@ -115,6 +116,7 @@ type RawSnapshot = {
 };
 
 const snapshot = snapshotJson as unknown as RawSnapshot;
+const currentSnapshotUsers = snapshot.users.filter((user) => isCurrentEmployee(user.email));
 const currentMonth = "2026-08";
 const currentCodeSource = snapshot.source.codeLines.find((source) => source.month === currentMonth);
 
@@ -132,7 +134,7 @@ function usageNote(user: RawUser, codeLines: number) {
   return `토큰 ${tokenLabel} · Code Lines 사용 없음`;
 }
 
-const measuredUsers: ClaudeTeamUserUsage[] = snapshot.users
+const measuredUsers: ClaudeTeamUserUsage[] = currentSnapshotUsers
   .filter((user) => !user.firstObservedMonth || user.firstObservedMonth <= currentMonth)
   .map((user) => {
   const codeLines = user.monthlyCodeLines[currentMonth] ?? 0;
@@ -180,7 +182,7 @@ const claudeTeamUsers = [...measuredUsers, ...unmeasuredUsers];
 
 function aggregateBreakdown(type: "productUsage" | "modelUsage") {
   const aggregate = new Map<string, { requests: number; tokens: number; spendUsd: number; users: string[] }>();
-  snapshot.users.forEach((user) => {
+  currentSnapshotUsers.forEach((user) => {
     Object.entries(user[type]).forEach(([name, usage]) => {
       const current = aggregate.get(name) ?? { requests: 0, tokens: 0, spendUsd: 0, users: [] };
       current.requests += usage.requests;
@@ -213,6 +215,8 @@ const topCodeUser = [...measuredUsers].sort((a, b) => b.codeLines - a.codeLines)
 const licensedUsers = claudeTeamUsers.length;
 const spendUsers = measuredUsers.filter((user) => user.requests > 0).length;
 const codeUsers = measuredUsers.filter((user) => user.codeLines > 0).length;
+const sumUsers = (key: "requests" | "promptTokens" | "completionTokens" | "totalTokens" | "netSpendUsd" | "grossSpendUsd" | "codeLines") =>
+  measuredUsers.reduce((total, user) => total + user[key], 0);
 
 export const initialClaudeTeamUsageData: ClaudeTeamUsageData = {
   source: {
@@ -222,7 +226,7 @@ export const initialClaudeTeamUsageData: ClaudeTeamUsageData = {
     membersFile: "members-e59c75bc-469e-466f-bef9-c311748c1df8-2026-07-20.csv",
     spendFile: snapshot.source.spend.fileName,
     codeLinesFile: currentCodeSource?.fileName ?? "2026-08-13-claude_code.csv",
-    note: "8월 Spend와 Claude Code Lines는 8월 월 전체 원본을 사용했습니다.",
+    note: "8월 Spend와 Claude Code Lines는 8월 월 전체 원본을 사용하고 현재 직원 명단으로 표시 대상을 한정했습니다. 원본 청구액과 현재 좌석 예산은 별도입니다.",
     verification: {
       spendRecords: snapshot.source.spend.rowCount,
       codeLineAccounts: currentCodeSource?.rowCount ?? 0,
@@ -239,20 +243,20 @@ export const initialClaudeTeamUsageData: ClaudeTeamUsageData = {
   activeUsers: licensedUsers,
   spendUsers,
   codeUsers,
-  totalRequests: snapshot.totals.requests,
-  totalPromptTokens: snapshot.totals.promptTokens,
-  totalCompletionTokens: snapshot.totals.completionTokens,
-  totalTokens: snapshot.totals.totalTokens,
-  totalNetSpendUsd: snapshot.totals.netSpendUsd,
-  totalGrossSpendUsd: snapshot.totals.grossSpendUsd,
-  totalCodeLines: currentCodeSource?.totalLines ?? 0,
+  totalRequests: sumUsers("requests"),
+  totalPromptTokens: sumUsers("promptTokens"),
+  totalCompletionTokens: sumUsers("completionTokens"),
+  totalTokens: sumUsers("totalTokens"),
+  totalNetSpendUsd: sumUsers("netSpendUsd"),
+  totalGrossSpendUsd: sumUsers("grossSpendUsd"),
+  totalCodeLines: sumUsers("codeLines"),
   productUsage,
   modelUsage,
   users: claudeTeamUsers,
   insights: [
-    `Team Plan ${licensedUsers}개 계정은 활성 상태이며, 8월 1~31일 원천에서 ${spendUsers}개 계정의 사용 신호가 확인됩니다.`,
-    `8월 1~31일 누적 요청은 ${snapshot.totals.requests.toLocaleString("ko-KR")}건, 토큰은 ${(snapshot.totals.totalTokens / 1_000_000_000).toFixed(2)}B입니다.`,
-    `8월 누적 Claude Code Lines는 ${currentCodeSource?.totalLines.toLocaleString("ko-KR") ?? "0"}줄이며 ${codeUsers}개 계정에서 확인됩니다.`,
+    `현재 직원 기준 Team Plan 표시 계정은 ${licensedUsers}개이며, 8월 1~31일 원천에서 ${spendUsers}개 계정의 사용 신호가 확인됩니다.`,
+    `현재 직원의 8월 1~31일 누적 요청은 ${sumUsers("requests").toLocaleString("ko-KR")}건, 토큰은 ${(sumUsers("totalTokens") / 1_000_000_000).toFixed(2)}B입니다.`,
+    `현재 직원의 8월 누적 Claude Code Lines는 ${sumUsers("codeLines").toLocaleString("ko-KR")}줄이며 ${codeUsers}개 계정에서 확인됩니다.`,
     `토큰 사용량은 ${topTokenUser.displayName} ${(topTokenUser.totalTokens / 1_000_000_000).toFixed(2)}B, Code Lines는 ${topCodeUser.displayName} ${topCodeUser.codeLines.toLocaleString("ko-KR")}줄이 가장 많습니다.`,
     "월별 Spend와 Code Lines는 월 전체 원본을 사용하고, 주차별 Code Lines는 월 누적 스냅샷 간 순증을 사용합니다.",
   ],

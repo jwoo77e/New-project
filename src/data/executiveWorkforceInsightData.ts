@@ -1,5 +1,6 @@
 import { initialAiToolApprovalData } from "./aiToolApprovalData";
 import { individualUtilizationData } from "./individualUtilizationData";
+import { isCurrentEmployee } from "./activeRoster";
 
 export type ExecutiveUsageSegment = {
   key: "power" | "regular" | "low";
@@ -17,11 +18,11 @@ type TeamPlanConversionAccount = {
 };
 
 // Includes the previously omitted Kim Gihwan and the newly hired Choi Jisuk.
-const eligibleEmployees = 42;
+const eligibleEmployees = 41;
 const nonToolUsers = 1;
 const chatGptOnlyUsers = 1;
 const leaveExcludedEmployees = 2;
-const departedEmployees = 1;
+const departedEmployees = 2;
 const tokenReferenceMonth = "2026-07";
 const powerUserThreshold = 1_000_000_000;
 const lowUsageThreshold = 100_000_000;
@@ -64,6 +65,7 @@ const userNameByEmail = new Map(
   individualUtilizationData.users.map((user) => [user.email, user.displayName]),
 );
 const julyTokenUsers = Object.entries(julySpend.users)
+  .filter(([email]) => isCurrentEmployee(email))
   .map(([email, usage]) => ({
     email,
     displayName: userNameByEmail.get(email) ?? email,

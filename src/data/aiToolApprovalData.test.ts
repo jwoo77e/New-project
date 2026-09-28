@@ -451,23 +451,27 @@ describe("initialAiToolApprovalData", () => {
         (item) => item.key === "Claude Team Plan Standard",
       ),
     ).toMatchObject({
-      count: 28,
-      monthlyUsd: 700,
-      monthlyKrw: 1_039_500,
+      count: 27,
+      monthlyUsd: 675,
+      monthlyKrw: 1_002_375,
     });
     expect(initialAiToolApprovalData.toolSummary.find((item) => item.key === "Claude Pro Max 5")).toBeUndefined();
     expect(initialAiToolApprovalData.toolSummary.find((item) => item.key === "Claude Pro Max 20")).toBeUndefined();
-    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(4_025.59);
-    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(7_478_001.15);
+    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(4_000.59);
+    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(7_440_876.15);
   });
 
   it("keeps category and payment totals aligned with the updated total", () => {
+    expect(initialAiToolApprovalData.records.some((record) => record.account === "jisub1221@riskzero.kr")).toBe(false);
+    expect(buildApprovalPersonCostSummary(initialAiToolApprovalData.records).people.some(
+      (person) => person.name === "심지섭 대리",
+    )).toBe(false);
     expect(
       initialAiToolApprovalData.categorySummary.find((item) => item.key === "Claude"),
     ).toMatchObject({
-      count: 40,
-      monthlyUsd: 2_200,
-      monthlyKrw: 3_267_000,
+      count: 39,
+      monthlyUsd: 2_175,
+      monthlyKrw: 3_229_875,
     });
     expect(
       initialAiToolApprovalData.categorySummary.find((item) => item.key === "ChatGPT"),
@@ -476,9 +480,9 @@ describe("initialAiToolApprovalData", () => {
       monthlyUsd: 1_450,
       monthlyKrw: 2_153_250,
     });
-    expect(initialAiToolApprovalData.totalAccounts).toBe(66);
-    expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(66);
-    expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(7_478_001.15);
+    expect(initialAiToolApprovalData.totalAccounts).toBe(65);
+    expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(65);
+    expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(7_440_876.15);
     expect(
       initialAiToolApprovalData.paymentSummary.find((item) => item.key === "계약 고정비"),
     ).toBeUndefined();
@@ -515,7 +519,7 @@ describe("initialAiToolApprovalData", () => {
     for (const expected of [
       { key: "전략실", count: 3, monthlyUsd: 265.12, monthlyKrw: 393_703.2 },
       { key: "기술연구소", count: 7, monthlyUsd: 565.12, monthlyKrw: 839_203.2 },
-      { key: "플랫폼개발", count: 37, monthlyUsd: 2_300, monthlyKrw: 4_915_500 },
+      { key: "플랫폼개발", count: 36, monthlyUsd: 2_275, monthlyKrw: 4_878_375 },
     ]) {
       expect(initialAiToolApprovalData.departmentSummary.find(
         (department) => department.key === expected.key,
@@ -660,14 +664,14 @@ describe("initialAiToolApprovalData", () => {
       monthlyKrw: 5_866_776.15,
     });
     expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-09")).toMatchObject({
-      count: 66,
-      monthlyUsd: 4_025.59,
-      monthlyKrw: 7_478_001.15,
+      count: 65,
+      monthlyUsd: 4_000.59,
+      monthlyKrw: 7_440_876.15,
     });
     expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-10")).toMatchObject({
-      count: 66,
-      monthlyUsd: 4_025.59,
-      monthlyKrw: 7_478_001.15,
+      count: 65,
+      monthlyUsd: 4_000.59,
+      monthlyKrw: 7_440_876.15,
     });
   });
 

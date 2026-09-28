@@ -1,6 +1,7 @@
 import snapshotJson from "./individualUtilizationSnapshot.json";
 import monthlySpendSnapshotJson from "./individualMonthlySpendSnapshot.json";
 import weeklyUsageSnapshotJson from "./individualWeeklyUsageSnapshot.json";
+import { isCurrentEmployee } from "./activeRoster";
 
 export type IndividualPeriodMode = "month" | "week";
 export type IndividualEvaluationLevel = "leading" | "active" | "growing" | "early" | "unobserved";
@@ -207,6 +208,7 @@ type RawIndividualWeeklyUsageSnapshot = {
 const snapshot = snapshotJson as unknown as RawIndividualSnapshot;
 const monthlySpendSnapshot = monthlySpendSnapshotJson as unknown as RawIndividualMonthlySpendSnapshot;
 const weeklyUsageSnapshot = weeklyUsageSnapshotJson as unknown as RawIndividualWeeklyUsageSnapshot;
+const currentSnapshotUsers = snapshot.users.filter((user) => isCurrentEmployee(user.email));
 const emptyActivity: ActivitySignal = {
   conversations: 0,
   humanPrompts: 0,
@@ -268,14 +270,14 @@ const rawMonthlySpendByMonth = new Map(
 const monthlySpend = Object.fromEntries(
   months.map((month) => [month, rawMonthlySpendByMonth.get(month) ?? null]),
 ) as Record<string, IndividualMonthlySpendPeriod | null>;
-const weeks = Array.from(new Set(snapshot.users.flatMap((user) => Object.keys(user.weeklyActivity)))).sort();
-const allRequests = snapshot.users.map((user) => user.requests);
-const allTokens = snapshot.users.map((user) => user.totalTokens);
-const allCompletionTokens = snapshot.users.map((user) => user.completionTokens);
-const allConversations = snapshot.users.map((user) => sumActivity(user.weeklyActivity).conversations);
-const allPrompts = snapshot.users.map((user) => sumActivity(user.weeklyActivity).humanPrompts);
-const allActiveDays = snapshot.users.map((user) => sumActivity(user.weeklyActivity).activeDays);
-const allCodeLines = snapshot.users.map((user) =>
+const weeks = Array.from(new Set(currentSnapshotUsers.flatMap((user) => Object.keys(user.weeklyActivity)))).sort();
+const allRequests = currentSnapshotUsers.map((user) => user.requests);
+const allTokens = currentSnapshotUsers.map((user) => user.totalTokens);
+const allCompletionTokens = currentSnapshotUsers.map((user) => user.completionTokens);
+const allConversations = currentSnapshotUsers.map((user) => sumActivity(user.weeklyActivity).conversations);
+const allPrompts = currentSnapshotUsers.map((user) => sumActivity(user.weeklyActivity).humanPrompts);
+const allActiveDays = currentSnapshotUsers.map((user) => sumActivity(user.weeklyActivity).activeDays);
+const allCodeLines = currentSnapshotUsers.map((user) =>
   Object.values(user.monthlyCodeLines).reduce((sum, value) => sum + value, 0),
 );
 const sharedAccountEmails = new Set([
@@ -283,7 +285,7 @@ const sharedAccountEmails = new Set([
   "jyjo@riskzero.kr",
 ]);
 
-const measuredUsers: IndividualUtilizationUser[] = snapshot.users
+const measuredUsers: IndividualUtilizationUser[] = currentSnapshotUsers
   .filter((user) => !sharedAccountEmails.has(user.email))
   .map((user) => {
   const totalActivity = sumActivity(user.weeklyActivity);
@@ -314,11 +316,11 @@ const measuredUsers: IndividualUtilizationUser[] = snapshot.users
     months.map((month) => {
       const activity = user.monthlyActivity[month] ?? emptyActivity;
       const monthCodeLines = user.monthlyCodeLines[month] ?? 0;
-      const monthConversations = snapshot.users.map((item) => (item.monthlyActivity[month] ?? emptyActivity).conversations);
-      const monthPrompts = snapshot.users.map((item) => (item.monthlyActivity[month] ?? emptyActivity).humanPrompts);
-      const monthResponses = snapshot.users.map((item) => (item.monthlyActivity[month] ?? emptyActivity).assistantResponses);
-      const monthActiveDays = snapshot.users.map((item) => (item.monthlyActivity[month] ?? emptyActivity).activeDays);
-      const monthLines = snapshot.users.map((item) => item.monthlyCodeLines[month] ?? 0);
+      const monthConversations = currentSnapshotUsers.map((item) => (item.monthlyActivity[month] ?? emptyActivity).conversations);
+      const monthPrompts = currentSnapshotUsers.map((item) => (item.monthlyActivity[month] ?? emptyActivity).humanPrompts);
+      const monthResponses = currentSnapshotUsers.map((item) => (item.monthlyActivity[month] ?? emptyActivity).assistantResponses);
+      const monthActiveDays = currentSnapshotUsers.map((item) => (item.monthlyActivity[month] ?? emptyActivity).activeDays);
+      const monthLines = currentSnapshotUsers.map((item) => item.monthlyCodeLines[month] ?? 0);
       const chatActivityObserved = activity.humanPrompts > 0 || activity.conversations > 0 || activity.activeDays > 0;
       const codeActivityObserved = monthCodeLines > 0;
       const observed = chatActivityObserved || codeActivityObserved;
@@ -370,9 +372,9 @@ const measuredUsers: IndividualUtilizationUser[] = snapshot.users
   const weekEvaluations = Object.fromEntries(
     weeks.map((week) => {
       const activity = user.weeklyActivity[week] ?? emptyActivity;
-      const weekConversations = snapshot.users.map((item) => (item.weeklyActivity[week] ?? emptyActivity).conversations);
-      const weekPrompts = snapshot.users.map((item) => (item.weeklyActivity[week] ?? emptyActivity).humanPrompts);
-      const weekActiveDays = snapshot.users.map((item) => (item.weeklyActivity[week] ?? emptyActivity).activeDays);
+      const weekConversations = currentSnapshotUsers.map((item) => (item.weeklyActivity[week] ?? emptyActivity).conversations);
+      const weekPrompts = currentSnapshotUsers.map((item) => (item.weeklyActivity[week] ?? emptyActivity).humanPrompts);
+      const weekActiveDays = currentSnapshotUsers.map((item) => (item.weeklyActivity[week] ?? emptyActivity).activeDays);
       const observed = activity.humanPrompts > 0 || activity.conversations > 0;
       const activityScore = Math.round(
         percentile(activity.conversations, weekConversations) * 0.3 +
@@ -554,6 +556,7 @@ const unmeasuredUserSeeds: Array<{
 
 const measuredEmails = new Set(measuredUsers.map((user) => user.email));
 const unmeasuredUsers: IndividualUtilizationUser[] = unmeasuredUserSeeds
+  .filter((user) => isCurrentEmployee(user.email))
   .filter((seed) => !measuredEmails.has(seed.email))
   .map(({ evidence, ...seed }) => ({
   ...seed,
@@ -645,7 +648,7 @@ const monthlyTrend: IndividualTrendPoint[] = months.map((month) => {
     key: month,
     label: monthLabel(month),
     ...activity,
-    codeLines: snapshot.source.codeLines.find((item) => item.month === month)?.totalLines ?? 0,
+    codeLines: users.reduce((sum, user) => sum + (user.monthlyCodeLines[month] ?? 0), 0),
   };
 });
 

@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import { platformWbsSimulationData } from "./platformWbsSimulationData";
 
 describe("platformWbsSimulationData", () => {
-  it("covers all 24 platform development members with a clear simulation boundary", () => {
+  it("covers all 23 current platform development members with a clear simulation boundary", () => {
     expect(platformWbsSimulationData.source.mode).toBe("simulation");
-    expect(platformWbsSimulationData.summary.memberCount).toBe(24);
-    expect(new Set(platformWbsSimulationData.members.map((member) => member.email)).size).toBe(24);
+    expect(platformWbsSimulationData.summary.memberCount).toBe(23);
+    expect(new Set(platformWbsSimulationData.members.map((member) => member.email)).size).toBe(23);
+    expect(platformWbsSimulationData.members.some((member) => member.email === "jisub1221@riskzero.kr")).toBe(false);
     expect(platformWbsSimulationData.members.find((member) => member.displayName === "박수진 과장")).toMatchObject({
       email: "sjpark@riskzero.kr",
       project: "신규 플랫폼",
@@ -28,7 +29,7 @@ describe("platformWbsSimulationData", () => {
     expect(platformWbsSimulationData.summary.completedTaskCount).toBe(
       platformWbsSimulationData.members.reduce((sum, member) => sum + member.completedTaskCount, 0),
     );
-    expect(platformWbsSimulationData.summary.normalMemberCount).toBe(24);
+    expect(platformWbsSimulationData.summary.normalMemberCount).toBe(23);
     expect(
       platformWbsSimulationData.members.every(
         (member) =>
