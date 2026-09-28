@@ -67,7 +67,7 @@ abort "missing options: #{missing.join(', ')}" unless missing.empty?
 start_date = Date.iso8601(options[:start_date])
 end_date = Date.iso8601(options[:end_date])
 period_days = (end_date - start_date).to_i + 1
-abort "weekly period must contain 1 to 7 days" unless period_days.between?(1, 7)
+abort "reporting period must contain 1 to 14 days" unless period_days.between?(1, 14)
 
 METRICS = {
   "requests" => "total_requests",
@@ -78,6 +78,11 @@ METRICS = {
 
 def number(row, column)
   row[column].to_s.delete(",$").to_f
+end
+
+def source_label(path)
+  parent = File.basename(File.dirname(path))
+  parent.unicode_normalize(:nfc) == "클로드사용현황파일" ? File.basename(path) : "#{parent.unicode_normalize(:nfc)}/#{File.basename(path)}"
 end
 
 def read_spend(paths)
@@ -141,7 +146,7 @@ current_code = options[:code_mode] == "not-collected" ? {} : read_code(options[:
 emails = (previous_spend.keys | current_spend.keys | previous_code.keys | current_code.keys).sort
 users = emails.to_h do |email|
   previous = previous_spend.fetch(email, {})
-  current = current_spend[email]
+  current = current_spend.fetch(email, {})
   values = METRICS.keys.to_h do |metric|
     delta = current.fetch(metric, 0) - previous.fetch(metric, 0)
     [metric, metric == "netSpendUsd" ? delta.round(6) : delta.to_i]
@@ -176,13 +181,13 @@ period = {
   "endDate" => end_date.iso8601,
   "coverage" => options[:coverage],
   "source" => {
-    "previousSpendFile" => options[:previous_spend] && File.basename(options[:previous_spend]),
-    "currentSpendFile" => (options[:current_spend].map { |path| File.basename(path) } +
-      options[:spend_user_overlays].map { |email, path| "#{File.basename(path)} (#{email} overlay)" }).join(" + "),
+    "previousSpendFile" => options[:previous_spend] && source_label(options[:previous_spend]),
+    "currentSpendFile" => (options[:current_spend].map { |path| source_label(path) } +
+      options[:spend_user_overlays].map { |email, path| "#{source_label(path)} (#{email} overlay)" }).join(" + "),
     "previousSpendRows" => previous_spend_rows,
     "currentSpendRows" => current_spend_rows,
-    "previousCodeFile" => options[:previous_code].empty? ? nil : options[:previous_code].map { |path| File.basename(path) }.join(" + "),
-    "currentCodeFile" => options[:current_code].empty? ? nil : options[:current_code].map { |path| File.basename(path) }.join(" + "),
+    "previousCodeFile" => options[:previous_code].empty? ? nil : options[:previous_code].map { |path| source_label(path) }.join(" + "),
+    "currentCodeFile" => options[:current_code].empty? ? nil : options[:current_code].map { |path| source_label(path) }.join(" + "),
     "codePeriod" => options[:code_period],
     "spendMethod" => options[:spend_mode] == "period" ? "period_total" : "current_cumulative_minus_previous_cumulative",
     "codeMethod" => case options[:code_mode]

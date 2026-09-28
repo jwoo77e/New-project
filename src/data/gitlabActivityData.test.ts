@@ -15,6 +15,18 @@ describe("gitlabActivityData", () => {
       additions: 67933, deletions: 19694, changedLines: 87627,
     });
   });
+  it("includes September 17-27 activity from the error-free GitLab refresh", () => {
+    expect(gitlabActivityData.source).toMatchObject({
+      period: "2026-05-01 ~ 2026-09-27",
+      refreshedPeriod: "2026-09-17 ~ 2026-09-27",
+      projectCount: 94,
+      projectErrors: [],
+    });
+    expect(gitlabSummaryForRange("2026-09-17", "2026-09-27")).toMatchObject({
+      commitCount: 496, mergeCommitCount: 151, additions: 132188,
+      deletions: 17010, changedLines: 149198, activeAuthors: 14,
+    });
+  });
   it("reconciles user totals with the source snapshot", () => {
     const totals = gitlabActivityData.users.reduce(
       (sum, user) => ({
@@ -63,7 +75,7 @@ describe("gitlabActivityData", () => {
 
   it("publishes the complete August month and August 27 to September 2 range", () => {
     expect(gitlabActivityData.source).toMatchObject({
-      period: "2026-05-01 ~ 2026-09-16",
+      period: "2026-05-01 ~ 2026-09-27",
       projectErrors: [],
     });
     expect(gitlabSummaryForRange("2026-08-01", "2026-08-31")).toMatchObject({

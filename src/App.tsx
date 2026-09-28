@@ -4788,11 +4788,12 @@ function AdoptionView({
     ? selectedWeeklyUsage?.label ?? "주차 미선택"
     : fullMonthLabel(selectedMonth);
   const selectedMonthlySpend = data.monthlySpend[selectedMonth] ?? null;
+  const weeklyClaudeCollected = !isWeekly || selectedWeeklyUsage?.source.spendMethod !== "not_collected";
   const weeklyCodeCollected = !isWeekly || selectedWeeklyUsage?.source.codeMethod !== "not_collected";
   const weeklyCodePeriod = isWeekly ? selectedWeeklyUsage?.source.codePeriod : null;
   const coverageNote = isWeekly
     ? selectedWeeklyUsage
-      ? `${selectedWeeklyUsage.startDate} ~ ${selectedWeeklyUsage.endDate} · 주차 사용량`
+      ? `${selectedWeeklyUsage.startDate} ~ ${selectedWeeklyUsage.endDate} · ${weeklyClaudeCollected ? "주차 사용량" : "Claude 원천 미수집 · Codex/GitLab 확인분"}`
       : "주차별 원천 수집중"
     : selectedMonthlySpend
       ? `${selectedMonthlySpend.period}${selectedMonthlySpend.coverage === "partial" ? " · 부분 집계" : ""}`
@@ -4884,7 +4885,7 @@ function AdoptionView({
           const active = isWeekly
             ? (row.weeklyUsage?.requests ?? 0) > 0 || (row.weeklyUsage?.totalTokens ?? 0) > 0 || (row.weeklyUsage?.codeLines ?? 0) > 0
             : evaluation && (evaluation.conversations > 0 || evaluation.humanPrompts > 0 || (evaluation.codeLines ?? 0) > 0);
-          if (active) {
+          if (active || row.codex.present) {
             summary.activeUsers += 1;
           }
           summary.codeLines += isWeekly && !weeklyCodeCollected
@@ -4970,11 +4971,13 @@ function AdoptionView({
           </div>
           <p>
             {isWeekly
-              ? weeklyCodeCollected
+              ? !weeklyClaudeCollected
+                ? "Claude Spend와 Code Lines 원천은 미수집입니다. Codex와 GitLab은 선택한 기간의 확인값만 표시합니다."
+                : weeklyCodeCollected
                 ? weeklyCodePeriod
                   ? selectedWeeklyUsage?.coverage === "complete"
                     ? `토큰과 Code Lines는 ${weeklyCodePeriod} 전체 기간값을 사용합니다.`
-                    : `토큰은 주차 전체 Spend 기간값을 사용합니다. Code Lines는 ${weeklyCodePeriod} 누적 순증으로, 주차보다 짧은 부분 집계입니다.`
+                    : `토큰은 주차 전체 Spend 기간값을 사용합니다. Code Lines는 ${weeklyCodePeriod} 누적 순증 중 원천에서 확인된 계정만 포함한 부분 집계입니다.`
                   : "토큰은 주차별 Spend 기간값을 사용하고, Code Lines는 월 누적 스냅샷 간 차이로 해당 주차 순증을 계산합니다. 코드 산출 밀도는 1M 토큰당 Code Lines입니다."
                 : "Claude Code Lines 원천은 수집중입니다. Codex 자료가 있는 경우 해당 토큰과 코드 라인은 합산에 포함됩니다."
               : "토큰은 월 누적 Spend를 사용하고, Code Lines는 최신 월 누적 스냅샷을 사용합니다. 코드 산출 밀도는 집계 기간이 일치할 때만 계산합니다."}
@@ -5053,12 +5056,12 @@ function AdoptionView({
         <article>
           <span><FileText size={17} />전체 Code Lines</span>
           <strong>{weeklyCodeCollected || codexPeriod.collected ? `${numberFormat.format(periodSummary.codeLines)}줄` : "수집중"}</strong>
-          <small>Claude + Codex 수집분 합산 · {isWeekly ? weeklyCodeCollected ? weeklyCodePeriod && selectedWeeklyUsage?.coverage !== "complete" ? `${weeklyCodePeriod} 부분 집계` : "해당 주차" : "Claude Code Lines 수집중" : "월 누적"}</small>
+          <small>{isWeekly && !weeklyCodeCollected ? "Codex 확인분 · Claude Code Lines 미수집" : `Claude + Codex 수집분 합산 · ${isWeekly ? weeklyCodePeriod && selectedWeeklyUsage?.coverage !== "complete" ? `${weeklyCodePeriod} 부분 집계` : "해당 주차" : "월 누적"}`}</small>
         </article>
         <article>
           <span><Activity size={17} />{isWeekly ? "전체 주간 토큰" : "전체 월 누적 토큰"}</span>
           <strong>{usageSummary ? formatTokens(usageSummary.totalTokens) : "수집중"}</strong>
-          <small>Claude + Codex 수집분 합산 · {coverageNote}</small>
+          <small>{isWeekly && !weeklyClaudeCollected ? "Codex 확인분 · Claude 토큰 미수집" : `Claude + Codex 수집분 합산 · ${coverageNote}`}</small>
         </article>
         <article>
           <span><GitCommitHorizontal size={17} />GitLab 개발 활동</span>
@@ -5080,7 +5083,7 @@ function AdoptionView({
             <thead>
               <tr>
                 <th>사용자</th>
-                <th>Claude 토큰 · Code Lines</th>
+                <th title="토큰과 순비용은 Claude Spend의 Chat·Claude Code·Cowork 등 수집된 제품 합계입니다. Code Lines는 Claude Code 누적 스냅샷 차이입니다.">Claude 토큰 · Code Lines · 순비용</th>
                 <th>Codex 토큰 · Code Lines</th>
                 <th title="Claude와 Codex 보고값의 합계입니다. 수집 기간이 다를 수 있으며 도구 간 중복 생성·수정 라인은 제거하지 않습니다.">전체 토큰 · Code Lines · 산출 밀도</th>
                 <th>GitLab 커밋 · 수정 라인 · 반영률</th>
@@ -5165,6 +5168,8 @@ function AdoptionView({
                           {generatedCodeLines === null
                             ? <span className="state-pill neutral">Code Lines 수집중</span>
                             : <span>{numberFormat.format(generatedCodeLines)}줄</span>}
+                          {(isWeekly ? weeklyUsage : monthlySpend) &&
+                            <small>순비용 {formatPreciseUsd((isWeekly ? weeklyUsage : monthlySpend)!.netSpendUsd)}</small>}
                         </div> : metricsUncollected ? <span className={`state-pill ${toolUnpaid ? "warning" : "neutral"}`}>{toolUnpaid ? "미지급" : "수집중"}</span> : null}
                       </td>
                       <td>
@@ -5278,7 +5283,19 @@ function IndividualGitlabProfileView({
 }) {
   const monthlySpend = individualUtilizationData.monthlySpend[selectedMonth]?.users[user.email] ?? null;
   const evaluation = user.monthEvaluations[selectedMonth];
+  const weeklyPeriod = Object.values(individualUtilizationData.weeklyUsage).find(
+    (period) => period.startDate === startDate && period.endDate === endDate,
+  );
+  const claudeUsage = weeklyPeriod ? weeklyPeriod.users[user.email] ?? null : monthlySpend;
+  const claudeCodeLines = weeklyPeriod ? weeklyPeriod.users[user.email]?.codeLines ?? null : evaluation?.codeLines ?? null;
+  const codex = codexUsageForRange(user.email, startDate, endDate);
+  const combined = combinedAiUsage(
+    user.measurementStatus === "measured" ? claudeUsage?.totalTokens ?? null : null,
+    user.measurementStatus === "measured" ? claudeCodeLines : null,
+    codex,
+  );
   const gitlab = gitlabUserMetricsForRange(user.email, startDate, endDate);
+  const committedCodeRatio = gitlabCommittedCodeRatio(combined.codeLines, gitlab.additions);
   const gitlabUser = gitlabActivityData.userByEmail.get(user.email);
   const metricsMeasured = user.measurementStatus === "measured";
   const groupUrl = `${gitlabActivityData.source.baseUrl}/${gitlabActivityData.source.group.path}`;
@@ -5304,14 +5321,14 @@ function IndividualGitlabProfileView({
 
       <section className="individual-profile-kpis" aria-label={`${user.displayName} AI 및 GitLab 핵심 지표`}>
         <article>
-          <span><Activity size={17} />{fullMonthLabel(selectedMonth)} 토큰</span>
-          <strong>{metricsMeasured && monthlySpend ? formatTokens(monthlySpend.totalTokens) : "수집중"}</strong>
-          <small>{metricsMeasured && monthlySpend ? `${numberFormat.format(monthlySpend.requests)}건 요청` : "AI 사용량 원천 연결 대기"}</small>
+          <span><Activity size={17} />{periodLabel} 전체 토큰</span>
+          <strong>{combined.tokens === null ? "수집중" : formatTokens(combined.tokens)}</strong>
+          <small>{metricsMeasured && claudeUsage ? `Claude ${numberFormat.format(claudeUsage.requests)}건 요청 · 순비용 ${formatPreciseUsd(claudeUsage.netSpendUsd)}` : "Claude 사용량 원천 연결 대기"}{codex.present ? " · Codex 포함" : ""}</small>
         </article>
         <article>
-          <span><FileText size={17} />Claude Code Lines</span>
-          <strong>{metricsMeasured ? `${numberFormat.format(evaluation?.codeLines ?? 0)}줄` : "수집중"}</strong>
-          <small>Claude Code 원천 기준</small>
+          <span><FileText size={17} />Claude + Codex Code Lines</span>
+          <strong>{combined.codeLines === null ? "수집중" : `${numberFormat.format(combined.codeLines)}줄`}</strong>
+          <small>{combined.partial ? "확인분 합산" : "선택 기간 합산"}</small>
         </article>
         <article>
           <span><GitCommitHorizontal size={17} />GitLab 커밋</span>
@@ -5321,7 +5338,7 @@ function IndividualGitlabProfileView({
         <article>
           <span><FolderGit2 size={17} />GitLab 코드 변경</span>
           <strong>{numberFormat.format(gitlab.changedLines)}줄</strong>
-          <small>+{numberFormat.format(gitlab.additions)} · -{numberFormat.format(gitlab.deletions)}</small>
+          <small>+{numberFormat.format(gitlab.additions)} · -{numberFormat.format(gitlab.deletions)} · 커밋 반영률 {committedCodeRatio === null ? "산정 불가" : formatRate(committedCodeRatio)}</small>
         </article>
       </section>
 

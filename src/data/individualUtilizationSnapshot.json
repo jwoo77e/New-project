@@ -38,10 +38,10 @@
       },
       {
         "month": "2026-09",
-        "fileName": "claude_code_team_2026_09_17.csv + claude_code_team_026_09_17.csv",
-        "period": "2026-09-01 ~ 2026-09-16",
-        "rowCount": 22,
-        "totalLines": 293192,
+        "fileName": "claude_code_team_2026_09_28.csv + Clevel/claude_code_team_2026_09_28.csv",
+        "period": "2026-09-01 ~ 2026-09-27",
+        "rowCount": 23,
+        "totalLines": 419028,
         "preservedAccounts": [
 
         ]
@@ -62,14 +62,14 @@
     ]
   },
   "totals": {
-    "users": 37,
+    "users": 39,
     "requests": 161582,
     "promptTokens": 36963541520,
     "completionTokens": 136232530,
     "totalTokens": 37099774050,
     "netSpendUsd": 414.44,
     "grossSpendUsd": 414.44,
-    "codeLines": 1582870,
+    "codeLines": 1708706,
     "conversations": 168,
     "humanPrompts": 1429,
     "assistantResponses": 1433
@@ -171,7 +171,7 @@
       "modelUsage": {
       },
       "monthlyCodeLines": {
-        "2026-09": 32311
+        "2026-09": 45858
       },
       "monthlyActivity": {
       },
@@ -233,7 +233,7 @@
       "monthlyCodeLines": {
         "2026-07": 4912,
         "2026-08": 860,
-        "2026-09": 8052
+        "2026-09": 28560
       },
       "monthlyActivity": {
         "2026-07": {
@@ -356,6 +356,38 @@
       "firstObservedMonth": "2026-09"
     },
     {
+      "email": "dhlee@riskzero.kr",
+      "displayName": "이동훈 부장",
+      "requests": 0,
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "totalTokens": 0,
+      "netSpendUsd": 0,
+      "grossSpendUsd": 0,
+      "uncachedInputTokens": 0,
+      "cacheReadTokens": 0,
+      "cacheWrite5mTokens": 0,
+      "cacheWrite1hTokens": 0,
+      "webSearchCount": 0,
+      "products": [
+
+      ],
+      "models": [
+
+      ],
+      "productUsage": {
+      },
+      "modelUsage": {
+      },
+      "monthlyCodeLines": {
+      },
+      "monthlyActivity": {
+      },
+      "weeklyActivity": {
+      },
+      "firstObservedMonth": "2026-09"
+    },
+    {
       "email": "doyul@riskzero.kr",
       "displayName": "김도율 차장",
       "requests": 1032,
@@ -409,7 +441,7 @@
       },
       "monthlyCodeLines": {
         "2026-08": 2738,
-        "2026-09": 8315
+        "2026-09": 11380
       },
       "monthlyActivity": {
       },
@@ -507,7 +539,7 @@
       },
       "monthlyCodeLines": {
         "2026-08": 5287,
-        "2026-09": 6250
+        "2026-09": 6836
       },
       "monthlyActivity": {
       },
@@ -589,7 +621,7 @@
         "2026-06": 157114,
         "2026-07": 36471,
         "2026-08": 27147,
-        "2026-09": 8501
+        "2026-09": 16459
       },
       "monthlyActivity": {
         "2026-05": {
@@ -749,7 +781,7 @@
         "2026-06": 16469,
         "2026-07": 33248,
         "2026-08": 13049,
-        "2026-09": 3432
+        "2026-09": 12209
       },
       "monthlyActivity": {
         "2026-05": {
@@ -849,7 +881,7 @@
         "2026-06": 12673,
         "2026-07": 14974,
         "2026-08": 20220,
-        "2026-09": 22358
+        "2026-09": 28285
       },
       "monthlyActivity": {
       },
@@ -930,7 +962,7 @@
         "2026-06": 12520,
         "2026-07": 31431,
         "2026-08": 35134,
-        "2026-09": 12236
+        "2026-09": 22740
       },
       "monthlyActivity": {
         "2026-05": {
@@ -1164,6 +1196,38 @@
       }
     },
     {
+      "email": "jsc@riskzero.kr",
+      "displayName": "jsc@riskzero.kr",
+      "requests": 0,
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "totalTokens": 0,
+      "netSpendUsd": 0,
+      "grossSpendUsd": 0,
+      "uncachedInputTokens": 0,
+      "cacheReadTokens": 0,
+      "cacheWrite5mTokens": 0,
+      "cacheWrite1hTokens": 0,
+      "webSearchCount": 0,
+      "products": [
+
+      ],
+      "models": [
+
+      ],
+      "productUsage": {
+      },
+      "modelUsage": {
+      },
+      "monthlyCodeLines": {
+      },
+      "monthlyActivity": {
+      },
+      "weeklyActivity": {
+      },
+      "firstObservedMonth": "2026-09"
+    },
+    {
       "email": "jungyr98@riskzero.kr",
       "displayName": "정유라 사원",
       "requests": 6530,
@@ -1208,7 +1272,7 @@
         "2026-06": 2622,
         "2026-07": 4072,
         "2026-08": 4758,
-        "2026-09": 4750
+        "2026-09": 11278
       },
       "monthlyActivity": {
       },
@@ -1335,7 +1399,7 @@
         "2026-06": 18419,
         "2026-07": 41870,
         "2026-08": 30139,
-        "2026-09": 20573
+        "2026-09": 25345
       },
       "monthlyActivity": {
       },
@@ -1440,7 +1504,7 @@
         "2026-06": 4876,
         "2026-07": 5427,
         "2026-08": 9982,
-        "2026-09": 32384
+        "2026-09": 33916
       },
       "monthlyActivity": {
       },
@@ -1508,7 +1572,7 @@
       "monthlyCodeLines": {
         "2026-07": 0,
         "2026-08": 1432,
-        "2026-09": 13427
+        "2026-09": 13474
       },
       "monthlyActivity": {
         "2026-07": {
@@ -1809,7 +1873,7 @@
         "2026-06": 10180,
         "2026-07": 2329,
         "2026-08": 7317,
-        "2026-09": 2658
+        "2026-09": 13064
       },
       "monthlyActivity": {
       },
@@ -1871,7 +1935,7 @@
       "monthlyCodeLines": {
         "2026-05": 3,
         "2026-06": 2000,
-        "2026-09": 478
+        "2026-09": 494
       },
       "monthlyActivity": {
         "2026-05": {
@@ -1983,7 +2047,7 @@
         "2026-06": 0,
         "2026-07": 1485,
         "2026-08": 2970,
-        "2026-09": 0
+        "2026-09": 151
       },
       "monthlyActivity": {
         "2026-05": {
@@ -2188,7 +2252,7 @@
         "2026-06": 2901,
         "2026-07": 13659,
         "2026-08": 18066,
-        "2026-09": 4565
+        "2026-09": 5524
       },
       "monthlyActivity": {
         "2026-07": {
@@ -2359,7 +2423,7 @@
         "2026-06": 75261,
         "2026-07": 92207,
         "2026-08": 109081,
-        "2026-09": 53497
+        "2026-09": 66702
       },
       "monthlyActivity": {
         "2026-05": {
@@ -2495,7 +2559,7 @@
         "2026-06": 27246,
         "2026-07": 62942,
         "2026-08": 127541,
-        "2026-09": 30359
+        "2026-09": 38614
       },
       "monthlyActivity": {
         "2026-05": {
@@ -2611,7 +2675,7 @@
       "monthlyCodeLines": {
         "2026-07": 864,
         "2026-08": 13531,
-        "2026-09": 24978
+        "2026-09": 34071
       },
       "monthlyActivity": {
         "2026-07": {
@@ -2707,7 +2771,8 @@
         }
       },
       "monthlyCodeLines": {
-        "2026-08": 0
+        "2026-08": 0,
+        "2026-09": 0
       },
       "monthlyActivity": {
       },

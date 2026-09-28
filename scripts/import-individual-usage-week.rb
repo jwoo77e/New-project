@@ -23,6 +23,11 @@ weekly, monthly, utilization = paths.map { |path| JSON.parse(File.read(path)) }
 numeric = %w[requests promptTokens completionTokens totalTokens netSpendUsd]
 now = Time.now.getlocal("+09:00").iso8601
 
+def source_label(path)
+  parent = File.basename(File.dirname(path))
+  parent.unicode_normalize(:nfc) == "클로드사용현황파일" ? File.basename(path) : "#{parent.unicode_normalize(:nfc)}/#{File.basename(path)}"
+end
+
 def code_rows(paths)
   output = {}
   paths.each do |path|
@@ -70,7 +75,7 @@ Dir.mktmpdir("individual-usage-week") do |directory|
   end
   spend_emails = options.fetch("spend").flat_map { |file| CSV.read(file, headers: true).map { |row| row.fetch("user_email").strip.downcase } }.uniq
   components << {
-    "weekKey" => options.fetch("key"), "fileName" => options.fetch("spend").map { |file| File.basename(file) }.join(" + "),
+    "weekKey" => options.fetch("key"), "fileName" => options.fetch("spend").map { |file| source_label(file) }.join(" + "),
     "period" => "#{start_date} ~ #{end_date}", "rowCount" => period.dig("source", "currentSpendRows"),
     "users" => period.fetch("users").select { |email, _| spend_emails.include?(email) }.transform_values { |u| u.reject { |key, _| key == "codeLines" } },
   }
@@ -116,19 +121,22 @@ Dir.mktmpdir("individual-usage-week") do |directory|
   utilization["users"].sort_by! { |u| u.fetch("email") }
   source = utilization.dig("source", "codeLines").find { |item| item.fetch("month") == month }
   preserved = utilization.fetch("users").select { |u| !current_code.key?(u.fetch("email")) && u.fetch("monthlyCodeLines").key?(month) }
+  if preserved.any?
+    period["coverage"] = "partial"
+    period["notes"] << "이전 월 누적 원천에 있던 #{preserved.size}개 계정이 새 Code Lines 파일에 없어 해당 계정의 이번 기간 순증은 미수집입니다."
+  end
   source["preservedAccounts"] ||= []
   preserved.each do |user|
     next if source["preservedAccounts"].any? { |account| account.fetch("email") == user.fetch("email") }
     source["preservedAccounts"] << {"email" => user.fetch("email"), "period" => source.fetch("period"), "codeLines" => user.fetch("monthlyCodeLines").fetch(month), "fileName" => source.fetch("fileName")}
   end
   source["preservedAccounts"].select! { |account| preserved.any? { |u| u.fetch("email") == account.fetch("email") } }
-  source["fileName"] = options.fetch("code").map { |file| File.basename(file) }.join(" + ")
+  source["fileName"] = options.fetch("code").map { |file| source_label(file) }.join(" + ")
   source["period"] = "#{month}-01 ~ #{options.fetch('end')}"
   source["rowCount"] = current_code.size + preserved.size
   source["totalLines"] = utilization.fetch("users").sum { |u| u.fetch("monthlyCodeLines").fetch(month, 0) }
   utilization["totals"]["codeLines"] = utilization.dig("source", "codeLines").sum { |item| item.fetch("totalLines") }
   utilization["totals"]["users"] = utilization.fetch("users").size
-  utilization["source"]["generatedAt"] = now
   [weekly, monthly, utilization].zip(paths).each { |data, path| File.write(path, JSON.pretty_generate(data) + "\n") }
   puts JSON.pretty_generate({"week" => period.fetch("totals"), "month" => target.fetch("totals"), "monthlyCodeLines" => source.fetch("totalLines"), "preservedCodeAccounts" => preserved.map { |u| u.fetch("email") }})
 end

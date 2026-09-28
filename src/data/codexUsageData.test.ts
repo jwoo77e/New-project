@@ -39,8 +39,8 @@ describe("Codex usage", () => {
   });
   it("labels monthly totals as observed partial coverage without extrapolating", () => {
     const codex = codexUsageForRange("wody@riskzero.kr", "2026-09-01", "2026-09-30");
-    expect(codex).toMatchObject({collected: true, complete: false, tokens: 1995124526});
-    expect(combinedAiUsage(2003677746, 32922, codex)).toEqual({tokens: 3998802272, codeLines: 91170, partial: true});
+    expect(codex).toMatchObject({collected: true, complete: false, tokens: 3179725555});
+    expect(combinedAiUsage(2003677746, 32922, codex)).toEqual({tokens: 5183403301, codeLines: 147955, partial: true});
     expect(combinedAiUsage(null, null, codexUsageForRange("unknown", "2026-08-01", "2026-08-31"))).toEqual({tokens: null, codeLines: null, partial: true});
   });
   it("combines September week two Claude and Codex activity", () => {
@@ -56,5 +56,21 @@ describe("Codex usage", () => {
     const usage = codexUsageForRange("wody@riskzero.kr", week.startDate, week.endDate);
     expect(combinedAiUsage(week.users["wody@riskzero.kr"].totalTokens, week.users["wody@riskzero.kr"].codeLines, usage)).toEqual({tokens: 1464774545, codeLines: 30903, partial: false});
     expect(combinedAiUsage(null, null, usage)).toEqual({tokens: 433430394, codeLines: 10328, partial: true});
+  });
+  it("combines the September 17-27 Codex export with matching Claude usage", () => {
+    const week = individualUtilizationData.weeklyUsage["2026-09-W3"];
+    const users = snapshot.periods.find(p => p.startDate === week.startDate && p.endDate === week.endDate)!.users;
+    expect(week.source.spendMethod).toBe("period_total");
+    expect(week.source.codeMethod).toBe("current_cumulative_minus_previous_cumulative");
+    expect(Object.keys(users)).toHaveLength(11);
+    expect(Object.keys(users).every(email => individualUtilizationData.users.some(u => u.email === email))).toBe(true);
+    expect(Object.values(users).reduce((sum, u) => sum + u.tokens, 0)).toBe(2840332779);
+    expect(Object.values(users).reduce((sum, u) => sum + u.codeLines, 0)).toBe(96796);
+    const usage = codexUsageForRange("wody@riskzero.kr", week.startDate, week.endDate);
+    expect(usage).toMatchObject({complete: true, tokens: 1184601029, codeLines: 56785});
+    expect(combinedAiUsage(week.users["wody@riskzero.kr"].totalTokens,
+      week.users["wody@riskzero.kr"].codeLines, usage))
+      .toEqual({tokens: 2780285802, codeLines: 69990, partial: false});
+    expect(gitlabCommittedCodeRatio(69990, 18795)).toBeCloseTo(26.8538362623);
   });
 });
