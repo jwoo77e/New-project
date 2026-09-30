@@ -1,6 +1,6 @@
 import {describe, expect, it} from "vitest";
 import snapshot from "./codexUsageSnapshot.json";
-import {codexUsageForRange, combinedAiUsage} from "./codexUsageData";
+import {calendarMonthEnd, codexUsageForRange, combinedAiUsage} from "./codexUsageData";
 import {individualUtilizationData} from "./individualUtilizationData";
 import {calculateCodeOutputDensity} from "../lib/codeOutputDensity";
 import {gitlabCommittedCodeRatio} from "./gitlabActivityData";
@@ -37,11 +37,48 @@ describe("Codex usage", () => {
     expect(codexUsageForRange("wody@riskzero.kr", "2026-08-01", "2026-08-31")).toMatchObject({collected: false, present: false, tokens: 0});
     expect(codexUsageForRange("wody@riskzero.kr", "2026-09-04", "2026-09-05")).toMatchObject({collected: false, overlapping: true, tokens: 0});
   });
-  it("labels monthly totals as observed partial coverage without extrapolating", () => {
+  it("uses the full monthly export once while retaining Claude partial coverage", () => {
     const codex = codexUsageForRange("wody@riskzero.kr", "2026-09-01", "2026-09-30");
-    expect(codex).toMatchObject({collected: true, complete: false, tokens: 3179725555});
-    expect(combinedAiUsage(2003677746, 32922, codex)).toEqual({tokens: 5183403301, codeLines: 147955, partial: true});
+    expect(codex).toMatchObject({collected: true, complete: true, overlapping: false, tokens: 4280170960, codeLines: 184747});
+    expect(combinedAiUsage(2003677746, 32922, codex, false)).toEqual({tokens: 6283848706, codeLines: 217669, partial: true});
     expect(combinedAiUsage(null, null, codexUsageForRange("unknown", "2026-08-01", "2026-08-31"))).toEqual({tokens: null, codeLines: null, partial: true});
+  });
+  it("reconciles all 12 monthly accounts and each monthly remainder", () => {
+    const month = snapshot.monthlyPeriods[0];
+    expect(Object.keys(month.users)).toHaveLength(12);
+    const result = Object.entries(month.users).map(([email, expected]) => {
+      const actual = codexUsageForRange(email, month.startDate, month.endDate);
+      expect(actual).toMatchObject({...expected, complete: true});
+      const previous = snapshot.periods.reduce((sum, period) => {
+        const usage = (period.users as Partial<Record<string, {tokens: number; codeLines: number}>>)[email];
+        return {tokens: sum.tokens + (usage?.tokens ?? 0), codeLines: sum.codeLines + (usage?.codeLines ?? 0)};
+      }, {tokens: 0, codeLines: 0});
+      const remainder = codexUsageForRange(email, "2026-09-28", "2026-09-30");
+      expect(previous.tokens + remainder.tokens).toBe(expected.tokens);
+      expect(previous.codeLines + remainder.codeLines).toBe(expected.codeLines);
+      expect(individualUtilizationData.users.some(user => user.email === email)).toBe(true);
+      return actual;
+    });
+    expect(result.reduce((sum, u) => sum + u.tokens, 0)).toBe(10591805667);
+    expect(result.reduce((sum, u) => sum + u.codeLines, 0)).toBe(350355);
+    const residual = snapshot.derivedPeriods[0];
+    expect(Object.values(residual.users).reduce((sum, u) => sum + u.tokens, 0)).toBe(2807990511);
+    expect(Object.values(residual.users).reduce((sum, u) => sum + u.codeLines, 0)).toBe(121638);
+  });
+  it("exposes the September 1-2 gap rather than claiming an exact fourth week", () => {
+    const week = individualUtilizationData.weeklyUsage["2026-09-W4"];
+    expect(week).toMatchObject({startDate: "2026-09-28", endDate: "2026-09-30", coverage: "partial", users: {}});
+    expect(week.source).toMatchObject({spendMethod: "not_collected", codeMethod: "not_collected"});
+    const codex = codexUsageForRange("wody@riskzero.kr", week.startDate, week.endDate);
+    expect(codex).toMatchObject({tokens: 1100445405, codeLines: 69714, complete: false, periodAligned: false});
+    expect(codex.note).toContain("2026-09-01 ~ 2026-09-02");
+    expect(combinedAiUsage(null, null, codex)).toMatchObject({partial: true});
+    expect(codexUsageForRange("wody@riskzero.kr", "2026-09-03", "2026-09-30").tokens).toBe(3179725555);
+  });
+  it("uses a real month end so September monthly coverage is complete", () => {
+    expect(calendarMonthEnd("2026-09")).toBe("2026-09-30");
+    expect(calendarMonthEnd("2026-10")).toBe("2026-10-31");
+    expect(calendarMonthEnd("2028-02")).toBe("2028-02-29");
   });
   it("combines September week two Claude and Codex activity", () => {
     const week = individualUtilizationData.weeklyUsage["2026-09-W2"];

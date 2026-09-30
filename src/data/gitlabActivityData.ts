@@ -100,6 +100,15 @@ type GitlabActivitySnapshot = {
 const snapshot = snapshotJson as unknown as GitlabActivitySnapshot;
 const userByEmail = new Map(snapshot.users.map((user) => [user.email, user] as const));
 
+export function gitlabRangeCoverage(startDate: string, endDate: string) {
+  const [sourceStart, sourceEnd] = snapshot.source.period.split(" ~ ");
+  return {
+    available: startDate <= sourceEnd && endDate >= sourceStart,
+    complete: startDate >= sourceStart && endDate <= sourceEnd,
+    sourceEnd,
+  };
+}
+
 const emptyMetrics = (): GitlabActivityMetrics => ({
   commitCount: 0,
   mergeCommitCount: 0,

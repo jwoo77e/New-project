@@ -183,6 +183,7 @@ describe("individualUtilizationData", () => {
       "2026-09-W1",
       "2026-09-W2",
       "2026-09-W3",
+      "2026-09-W4",
     ]);
     expect(firstWeek).toMatchObject({
       label: "8월 1주차",

@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { codexUsageForRange, combinedAiUsage } from "./data/codexUsageData";
+import { calendarMonthEnd, codexUsageForRange, combinedAiUsage } from "./data/codexUsageData";
 import type { FormEvent, ReactNode } from "react";
 import {
   Activity,
@@ -93,6 +93,7 @@ import {
 } from "./data/individualUtilizationData";
 import {
   gitlabCommittedCodeRatio,
+  gitlabRangeCoverage,
   gitlabActivityData,
   gitlabCommitsForRange,
   gitlabSummaryForRange,
@@ -961,7 +962,7 @@ function App() {
       eyebrow: "Individual Utilization",
       title: "개인별 AI 활동 근거",
       description: "개인별 AI 활동의 측정 기준과 기간별 근거를 확인합니다.",
-      freshness: `${individualUtilizationData.source.spend.period} · ${formatKstDateTime(individualUtilizationData.source.generatedAt)}`,
+      freshness: "도구별 집계 기간은 아래 표시",
       metrics: [],
     };
   } else if (activeView === "wbs") {
@@ -4127,22 +4128,22 @@ function monthlyCodeDensitySamplesForUser(
     if (!spendPeriod || !usage || !codeSource) return [];
     const [spendStartDate, spendEndDate] = spendPeriod.period.split(/\s*~\s*/);
     if (!spendStartDate || !spendEndDate) return [];
-    const combined = combinedAiUsage(usage.totalTokens, user.monthlyCodeLines[month] ?? 0,
-      codexUsageForRange(user.email, `${month}-01`, `${month}-31`));
+    const codex = codexUsageForRange(user.email, `${month}-01`, calendarMonthEnd(month));
+    const combined = combinedAiUsage(usage.totalTokens, user.monthlyCodeLines[month] ?? 0, codex);
 
     return [{
       key: month,
       label: monthLabel(month),
       codeLines: combined.codeLines ?? 0,
       totalTokens: combined.tokens ?? 0,
-      periodAligned: codeSource.period
+      periodAligned: (!codex.present || codex.periodLabel === spendPeriod.period) && (codeSource.period
         ? codeSource.period === spendPeriod.period
         : isMonthlyCodePeriodAligned({
             codeFileName: codeSource.fileName,
             month,
             spendStartDate,
             spendEndDate,
-          }),
+          })),
     }];
   });
 }
@@ -4161,16 +4162,16 @@ function weeklyCodeDensitySamplesForUser(
     if (!usage || period.source.codeMethod === "not_collected") {
       const codex = codexUsageForRange(email, period.startDate, period.endDate);
       return codex.present ? [{key: week, label: period.label, codeLines: codex.codeLines,
-        totalTokens: codex.tokens, periodAligned: true}] : [];
+        totalTokens: codex.tokens, periodAligned: codex.periodAligned}] : [];
     }
-    const combined = combinedAiUsage(usage.totalTokens, usage.codeLines,
-      codexUsageForRange(email, period.startDate, period.endDate));
+    const codex = codexUsageForRange(email, period.startDate, period.endDate);
+    const combined = combinedAiUsage(usage.totalTokens, usage.codeLines, codex);
     return [{
       key: week,
       label: period.label,
       codeLines: combined.codeLines ?? 0,
       totalTokens: combined.tokens ?? 0,
-      periodAligned: true,
+      periodAligned: codex.periodAligned,
     }];
   });
 }
@@ -4300,10 +4301,13 @@ function IndividualTokenUsageCell({
 function IndividualGitlabActivityCell({
   generatedCodeLines,
   metrics,
+  available = true,
 }: {
   generatedCodeLines: number | null;
   metrics: GitlabActivityMetrics;
+  available?: boolean;
 }) {
+  if (!available) return <span className="state-pill neutral">GitLab 미수집</span>;
   const observed = metrics.commitCount > 0 || metrics.mergeCommitCount > 0;
   const committedCodeRatio = gitlabCommittedCodeRatio(generatedCodeLines, metrics.additions);
   const ratioTitle = "GitLab 추가 라인 ÷ (Claude + Codex 합산 Code Lines) × 100. 수집된 생성 라인 기준이며 도구 간 중복은 제거하지 않습니다. 수동 작성과 자동 생성 파일이 함께 집계되어 100%를 초과할 수 있으며 실제 AI 코드 채택률을 의미하지 않습니다.";
@@ -4367,6 +4371,12 @@ function GitlabActivityDetailPanel({
   const metrics = gitlabUserMetricsForRange(email, startDate, endDate);
   const commits = gitlabCommitsForRange(email, startDate, endDate);
   const sourceUser = gitlabActivityData.userByEmail.get(email);
+  if (!gitlabRangeCoverage(startDate, endDate).available) {
+    return <section className="panel panel-wide gitlab-detail-panel">
+      <h2>{displayName} · {periodLabel} 커밋 활동</h2>
+      <p>선택 기간의 GitLab 자료는 미수집입니다. 현재 수집 범위: {gitlabActivityData.source.period}</p>
+    </section>;
+  }
   const projects = Array.from(
     commits.reduce((map, commit) => {
       const row = map.get(commit.projectPath) ?? {
@@ -4793,21 +4803,22 @@ function AdoptionView({
   const weeklyCodePeriod = isWeekly ? selectedWeeklyUsage?.source.codePeriod : null;
   const coverageNote = isWeekly
     ? selectedWeeklyUsage
-      ? `${selectedWeeklyUsage.startDate} ~ ${selectedWeeklyUsage.endDate} · ${weeklyClaudeCollected ? "주차 사용량" : "Claude 원천 미수집 · Codex/GitLab 확인분"}`
+      ? `${selectedWeeklyUsage.startDate} ~ ${selectedWeeklyUsage.endDate} · ${weeklyClaudeCollected ? "주차 사용량" : "Claude 원천 미수집"}`
       : "주차별 원천 수집중"
     : selectedMonthlySpend
-      ? `${selectedMonthlySpend.period}${selectedMonthlySpend.coverage === "partial" ? " · 부분 집계" : ""}`
+      ? `Claude ${selectedMonthlySpend.period}${selectedMonthlySpend.coverage === "partial" ? " · 부분 집계" : ""}`
       : "월별 Spend 수집중";
   const periodStartDate = isWeekly
     ? selectedWeeklyUsage?.startDate ?? ""
     : `${selectedMonth}-01`;
   const periodEndDate = isWeekly
     ? selectedWeeklyUsage?.endDate ?? ""
-    : `${selectedMonth}-31`;
+    : calendarMonthEnd(selectedMonth);
   const gitlabPeriodSummary = periodStartDate && periodEndDate
     ? gitlabSummaryForRange(periodStartDate, periodEndDate)
     : { commitCount: 0, mergeCommitCount: 0, additions: 0, deletions: 0, changedLines: 0, changedFiles: 0, activeDays: 0, activeAuthors: 0, activeProjects: 0 };
   const codexPeriod = codexUsageForRange("", periodStartDate, periodEndDate);
+  const gitlabCoverage = gitlabRangeCoverage(periodStartDate, periodEndDate);
 
   const rows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -4823,6 +4834,7 @@ function AdoptionView({
             ? (isWeekly ? weeklyCodeCollected ? weeklyUsage?.codeLines ?? null : null : evaluation?.codeLines ?? null)
             : null,
           codex,
+          isWeekly ? selectedWeeklyUsage?.coverage === "complete" : selectedMonthlySpend?.coverage === "complete",
         );
         const codeDensitySamples = isWeekly
           ? weeklyCodeDensitySamplesForUser(user.email, selectedWeek)
@@ -4972,7 +4984,7 @@ function AdoptionView({
           <p>
             {isWeekly
               ? !weeklyClaudeCollected
-                ? "Claude Spend와 Code Lines 원천은 미수집입니다. Codex와 GitLab은 선택한 기간의 확인값만 표시합니다."
+                ? "Claude Spend와 Code Lines 원천은 미수집입니다. Codex의 실제 집계 범위는 위 기간과 아래 안내를 확인하세요."
                 : weeklyCodeCollected
                 ? weeklyCodePeriod
                   ? selectedWeeklyUsage?.coverage === "complete"
@@ -4982,6 +4994,8 @@ function AdoptionView({
                 : "Claude Code Lines 원천은 수집중입니다. Codex 자료가 있는 경우 해당 토큰과 코드 라인은 합산에 포함됩니다."
               : "토큰은 월 누적 Spend를 사용하고, Code Lines는 최신 월 누적 스냅샷을 사용합니다. 코드 산출 밀도는 집계 기간이 일치할 때만 계산합니다."}
           </p>
+          {codexPeriod.note && <p>Codex: {codexPeriod.note}</p>}
+          {!gitlabCoverage.complete && <p>GitLab 수집 범위: {gitlabActivityData.source.period} · 선택 기간 {gitlabCoverage.available ? "부분 집계" : "미수집"}</p>}
         </div>
         <div className="individual-controls">
           <div className="individual-period-mode" aria-label="집계 단위" role="group">
@@ -5059,14 +5073,14 @@ function AdoptionView({
           <small>{isWeekly && !weeklyCodeCollected ? "Codex 확인분 · Claude Code Lines 미수집" : `Claude + Codex 수집분 합산 · ${isWeekly ? weeklyCodePeriod && selectedWeeklyUsage?.coverage !== "complete" ? `${weeklyCodePeriod} 부분 집계` : "해당 주차" : "월 누적"}`}</small>
         </article>
         <article>
-          <span><Activity size={17} />{isWeekly ? "전체 주간 토큰" : "전체 월 누적 토큰"}</span>
+          <span><Activity size={17} />{isWeekly ? codexPeriod.periodAligned ? "전체 주간 토큰" : "월간 차액 토큰" : "전체 월 누적 토큰"}</span>
           <strong>{usageSummary ? formatTokens(usageSummary.totalTokens) : "수집중"}</strong>
           <small>{isWeekly && !weeklyClaudeCollected ? "Codex 확인분 · Claude 토큰 미수집" : `Claude + Codex 수집분 합산 · ${coverageNote}`}</small>
         </article>
         <article>
           <span><GitCommitHorizontal size={17} />GitLab 개발 활동</span>
-          <strong>{numberFormat.format(gitlabPeriodSummary.commitCount)}건</strong>
-          <small>{numberFormat.format(gitlabPeriodSummary.changedLines)}줄 수정 · {gitlabPeriodSummary.activeAuthors}명</small>
+          <strong>{gitlabCoverage.available ? `${numberFormat.format(gitlabPeriodSummary.commitCount)}건` : "미수집"}</strong>
+          <small>{gitlabCoverage.available ? `${numberFormat.format(gitlabPeriodSummary.changedLines)}줄 수정 · ${gitlabPeriodSummary.activeAuthors}명` : `최근 수집: ${gitlabCoverage.sourceEnd}`}</small>
         </article>
       </section>
 
@@ -5110,8 +5124,8 @@ function AdoptionView({
                 );
                 const periodProducts = isWeekly ? weeklyUsage?.products : monthlySpend?.products;
                 const periodModels = isWeekly ? weeklyUsage?.models : monthlySpend?.models;
-                const scopeProducts = periodProducts?.length ? periodProducts : user.products;
-                const scopeModels = periodModels?.length ? periodModels : user.models;
+                const scopeProducts = isWeekly ? periodProducts ?? [] : periodProducts?.length ? periodProducts : user.products;
+                const scopeModels = isWeekly ? periodModels ?? [] : periodModels?.length ? periodModels : user.models;
                 const generatedCodeLines = isWeekly
                   ? weeklyCodeCollected ? weeklyUsage?.codeLines ?? null : null
                   : evaluation?.codeLines ?? null;
@@ -5177,6 +5191,7 @@ function AdoptionView({
                           <div className="individual-combined-usage">
                             <strong title={`${numberFormat.format(codex.tokens)} 토큰`}>{formatTokens(codex.tokens)} <small>토큰</small></strong>
                             <span>{numberFormat.format(codex.codeLines)}줄</span>
+                            {!codex.periodAligned && <small title={codex.note}>월간 차액 · 기간 미분리</small>}
                           </div>
                         ) : <span className="state-pill neutral">미사용</span>
                           : <span className="state-pill neutral">{codex.overlapping ? "기간 미일치" : "수집중"}</span>}
@@ -5197,8 +5212,9 @@ function AdoptionView({
                       <td>
                         {teamGroup === "development" && (
                           <IndividualGitlabActivityCell
-                            generatedCodeLines={combined.codeLines}
+                            generatedCodeLines={codex.periodAligned ? combined.codeLines : null}
                             metrics={gitlab}
+                            available={gitlabCoverage.available}
                           />
                         )}
                       </td>
@@ -5293,9 +5309,11 @@ function IndividualGitlabProfileView({
     user.measurementStatus === "measured" ? claudeUsage?.totalTokens ?? null : null,
     user.measurementStatus === "measured" ? claudeCodeLines : null,
     codex,
+    weeklyPeriod ? weeklyPeriod.coverage === "complete" : individualUtilizationData.monthlySpend[selectedMonth]?.coverage === "complete",
   );
   const gitlab = gitlabUserMetricsForRange(user.email, startDate, endDate);
-  const committedCodeRatio = gitlabCommittedCodeRatio(combined.codeLines, gitlab.additions);
+  const gitlabCoverage = gitlabRangeCoverage(startDate, endDate);
+  const committedCodeRatio = gitlabCommittedCodeRatio(codex.periodAligned && gitlabCoverage.available ? combined.codeLines : null, gitlab.additions);
   const gitlabUser = gitlabActivityData.userByEmail.get(user.email);
   const metricsMeasured = user.measurementStatus === "measured";
   const groupUrl = `${gitlabActivityData.source.baseUrl}/${gitlabActivityData.source.group.path}`;
@@ -5311,6 +5329,7 @@ function IndividualGitlabProfileView({
           <span className="eyebrow">Individual AI & GitLab Activity</span>
           <h2>{user.displayName}</h2>
           <p>{user.displayAccount ?? user.email} · {periodLabel}</p>
+          {codex.note && <p>{codex.note}</p>}
         </div>
         <div className="individual-profile-drive-links">
           <a className="individual-profile-drive-link" href={groupUrl} rel="noreferrer" target="_blank">
@@ -5332,13 +5351,13 @@ function IndividualGitlabProfileView({
         </article>
         <article>
           <span><GitCommitHorizontal size={17} />GitLab 커밋</span>
-          <strong>{numberFormat.format(gitlab.commitCount)}건</strong>
+          <strong>{gitlabCoverage.available ? `${numberFormat.format(gitlab.commitCount)}건` : "미수집"}</strong>
           <small>merge {numberFormat.format(gitlab.mergeCommitCount)}건 별도</small>
         </article>
         <article>
           <span><FolderGit2 size={17} />GitLab 코드 변경</span>
-          <strong>{numberFormat.format(gitlab.changedLines)}줄</strong>
-          <small>+{numberFormat.format(gitlab.additions)} · -{numberFormat.format(gitlab.deletions)} · 커밋 반영률 {committedCodeRatio === null ? "산정 불가" : formatRate(committedCodeRatio)}</small>
+          <strong>{gitlabCoverage.available ? `${numberFormat.format(gitlab.changedLines)}줄` : "미수집"}</strong>
+          <small>{gitlabCoverage.available ? `+${numberFormat.format(gitlab.additions)} · -${numberFormat.format(gitlab.deletions)}` : `최근 수집: ${gitlabCoverage.sourceEnd}`} · 커밋 반영률 {committedCodeRatio === null ? "산정 불가" : formatRate(committedCodeRatio)}</small>
         </article>
       </section>
 

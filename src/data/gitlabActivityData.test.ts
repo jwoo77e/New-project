@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   gitlabCommittedCodeRatio,
+  gitlabRangeCoverage,
   gitlabActivityData,
   gitlabCommitsForRange,
   gitlabSummaryForRange,
@@ -9,6 +10,11 @@ import {
 } from "./gitlabActivityData";
 
 describe("gitlabActivityData", () => {
+  it("distinguishes an uncollected fourth week from zero commits", () => {
+    expect(gitlabRangeCoverage("2026-09-28", "2026-09-30")).toMatchObject({available: false, complete: false});
+    expect(gitlabRangeCoverage("2026-09-01", "2026-09-30")).toMatchObject({available: true, complete: false});
+    expect(gitlabRangeCoverage("2026-09-17", "2026-09-27")).toMatchObject({available: true, complete: true});
+  });
   it("includes September week two GitLab activity", () => {
     expect(gitlabSummaryForRange("2026-09-10", "2026-09-16")).toMatchObject({
       activeAuthors: 16, commitCount: 369, mergeCommitCount: 75,

@@ -2,6 +2,7 @@ import snapshotJson from "./individualUtilizationSnapshot.json";
 import monthlySpendSnapshotJson from "./individualMonthlySpendSnapshot.json";
 import weeklyUsageSnapshotJson from "./individualWeeklyUsageSnapshot.json";
 import { isCurrentEmployee } from "./activeRoster";
+import { codexReportingWeeks } from "./codexUsageData";
 
 export type IndividualPeriodMode = "month" | "week";
 export type IndividualEvaluationLevel = "leading" | "active" | "growing" | "early" | "unobserved";
@@ -672,7 +673,20 @@ const weeklyTrend: IndividualTrendPoint[] = weeks.map((week) => {
   };
 });
 
-const availableWeeklyPeriods: IndividualWeeklyUsagePeriod[] = [...weeklyUsageSnapshot.periods];
+const availableWeeklyPeriods: IndividualWeeklyUsagePeriod[] = [
+  ...weeklyUsageSnapshot.periods,
+  ...codexReportingWeeks.filter((week) => !weeklyUsageSnapshot.periods.some((period) => period.key === week.key))
+    .map((week): IndividualWeeklyUsagePeriod => ({
+      key: week.key, label: week.label, startDate: week.startDate, endDate: week.endDate,
+      coverage: "partial",
+      source: {
+        previousSpendFile: null, currentSpendFile: "미수집", previousSpendRows: 0, currentSpendRows: 0,
+        previousCodeFile: null, currentCodeFile: null, spendMethod: "not_collected", codeMethod: "not_collected",
+      },
+      totals: {activeUsers: 0, requests: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, netSpendUsd: 0, codeLines: 0},
+      users: {}, notes: [week.note, "Claude 사용량·비용은 이 기간에 아직 수집되지 않았습니다."],
+    })),
+].sort((a, b) => a.startDate.localeCompare(b.startDate));
 const weeklyUsage = Object.fromEntries(
   availableWeeklyPeriods.map((period) => [period.key, period] as const),
 ) as Record<string, IndividualWeeklyUsagePeriod>;

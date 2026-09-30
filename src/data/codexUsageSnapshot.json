@@ -91,17 +91,196 @@
       "endDate": "2026-09-27",
       "fileName": "leaderboard-users_workspace-riskzero_2026-09-17-to-2026-09-27.csv",
       "users": {
-        "jaewoo.kim@riskzero.kr": { "tokens": 512913176, "codeLines": 1971 },
-        "woosung.jeon@riskzero.kr": { "tokens": 379388833, "codeLines": 589 },
-        "wody@riskzero.kr": { "tokens": 1184601029, "codeLines": 56785 },
-        "crow326@riskzero.kr": { "tokens": 71431773, "codeLines": 2198 },
-        "staycurious@riskzero.kr": { "tokens": 32843965, "codeLines": 546 },
-        "mjkim1122@riskzero.kr": { "tokens": 39707419, "codeLines": 2318 },
-        "kys0392@riskzero.kr": { "tokens": 438918755, "codeLines": 23330 },
-        "ykchj1011@riskzero.kr": { "tokens": 110475545, "codeLines": 5813 },
-        "mygu@riskzero.kr": { "tokens": 63875770, "codeLines": 3023 },
-        "hhlee0227@riskzero.kr": { "tokens": 6023280, "codeLines": 223 },
-        "hb777lee@riskzero.kr": { "tokens": 153234, "codeLines": 0 }
+        "jaewoo.kim@riskzero.kr": {
+          "tokens": 512913176,
+          "codeLines": 1971
+        },
+        "woosung.jeon@riskzero.kr": {
+          "tokens": 379388833,
+          "codeLines": 589
+        },
+        "wody@riskzero.kr": {
+          "tokens": 1184601029,
+          "codeLines": 56785
+        },
+        "crow326@riskzero.kr": {
+          "tokens": 71431773,
+          "codeLines": 2198
+        },
+        "staycurious@riskzero.kr": {
+          "tokens": 32843965,
+          "codeLines": 546
+        },
+        "mjkim1122@riskzero.kr": {
+          "tokens": 39707419,
+          "codeLines": 2318
+        },
+        "kys0392@riskzero.kr": {
+          "tokens": 438918755,
+          "codeLines": 23330
+        },
+        "ykchj1011@riskzero.kr": {
+          "tokens": 110475545,
+          "codeLines": 5813
+        },
+        "mygu@riskzero.kr": {
+          "tokens": 63875770,
+          "codeLines": 3023
+        },
+        "hhlee0227@riskzero.kr": {
+          "tokens": 6023280,
+          "codeLines": 223
+        },
+        "hb777lee@riskzero.kr": {
+          "tokens": 153234,
+          "codeLines": 0
+        }
+      }
+    }
+  ],
+  "monthlyPeriods": [
+    {
+      "startDate": "2026-09-01",
+      "endDate": "2026-09-30",
+      "fileName": "leaderboard-users_workspace-riskzero_2026-09-01-to-2026-09-30.csv",
+      "users": {
+        "crow326@riskzero.kr": {
+          "tokens": 139613182,
+          "codeLines": 2728
+        },
+        "hb777lee@riskzero.kr": {
+          "tokens": 6546044,
+          "codeLines": 547
+        },
+        "hhlee0227@riskzero.kr": {
+          "tokens": 29500832,
+          "codeLines": 244
+        },
+        "jaewoo.kim@riskzero.kr": {
+          "tokens": 1830648074,
+          "codeLines": 15019
+        },
+        "kys0392@riskzero.kr": {
+          "tokens": 2075144807,
+          "codeLines": 88569
+        },
+        "mjkim1122@riskzero.kr": {
+          "tokens": 64597407,
+          "codeLines": 2719
+        },
+        "mygu@riskzero.kr": {
+          "tokens": 98101213,
+          "codeLines": 4918
+        },
+        "sjpark@riskzero.kr": {
+          "tokens": 5215256,
+          "codeLines": 0
+        },
+        "staycurious@riskzero.kr": {
+          "tokens": 48314034,
+          "codeLines": 702
+        },
+        "wody@riskzero.kr": {
+          "tokens": 4280170960,
+          "codeLines": 184747
+        },
+        "woosung.jeon@riskzero.kr": {
+          "tokens": 1142941796,
+          "codeLines": 5500
+        },
+        "ykchj1011@riskzero.kr": {
+          "tokens": 871012062,
+          "codeLines": 44662
+        }
+      }
+    }
+  ],
+  "derivedPeriods": [
+    {
+      "key": "2026-09-W4",
+      "label": "9월 4주차 (월간 차액)",
+      "startDate": "2026-09-28",
+      "endDate": "2026-09-30",
+      "method": "monthly_total_minus_reported_weeks",
+      "fileName": "leaderboard-users_workspace-riskzero_2026-09-01-to-2026-09-30.csv",
+      "subtractedPeriods": [
+        {
+          "startDate": "2026-09-03",
+          "endDate": "2026-09-09",
+          "fileName": "leaderboard-users_workspace-riskzero_2026-09-03-to-2026-09-09.csv"
+        },
+        {
+          "startDate": "2026-09-10",
+          "endDate": "2026-09-16",
+          "fileName": "leaderboard-users_workspace-riskzero_2026-09-10-to-2026-09-16.csv"
+        },
+        {
+          "startDate": "2026-09-17",
+          "endDate": "2026-09-27",
+          "fileName": "leaderboard-users_workspace-riskzero_2026-09-17-to-2026-09-27.csv"
+        }
+      ],
+      "usageRanges": [
+        {
+          "startDate": "2026-09-01",
+          "endDate": "2026-09-02"
+        },
+        {
+          "startDate": "2026-09-28",
+          "endDate": "2026-09-30"
+        }
+      ],
+      "periodAligned": false,
+      "note": "월 전체에서 기존 주차 합계를 뺀 값입니다. 2026-09-01 ~ 2026-09-02 미분리 사용량이 포함되어 2026-09-28 ~ 2026-09-30만의 사용량으로 확정할 수 없습니다.",
+      "users": {
+        "crow326@riskzero.kr": {
+          "tokens": 68181409,
+          "codeLines": 530
+        },
+        "hb777lee@riskzero.kr": {
+          "tokens": 298246,
+          "codeLines": 0
+        },
+        "hhlee0227@riskzero.kr": {
+          "tokens": 23477552,
+          "codeLines": 21
+        },
+        "jaewoo.kim@riskzero.kr": {
+          "tokens": 355812615,
+          "codeLines": 6194
+        },
+        "kys0392@riskzero.kr": {
+          "tokens": 736610839,
+          "codeLines": 36430
+        },
+        "mjkim1122@riskzero.kr": {
+          "tokens": 20909027,
+          "codeLines": 232
+        },
+        "mygu@riskzero.kr": {
+          "tokens": 21086580,
+          "codeLines": 1410
+        },
+        "sjpark@riskzero.kr": {
+          "tokens": 0,
+          "codeLines": 0
+        },
+        "staycurious@riskzero.kr": {
+          "tokens": 7714491,
+          "codeLines": 156
+        },
+        "wody@riskzero.kr": {
+          "tokens": 1100445405,
+          "codeLines": 69714
+        },
+        "woosung.jeon@riskzero.kr": {
+          "tokens": 223050370,
+          "codeLines": 98
+        },
+        "ykchj1011@riskzero.kr": {
+          "tokens": 250403977,
+          "codeLines": 6853
+        }
       }
     }
   ]
