@@ -65,6 +65,7 @@ Dir.mktmpdir("individual-usage-week") do |directory|
 
   target = monthly.fetch("months").find { |item| item.fetch("month") == month }
   abort "Existing monthly baseline required" unless target
+  abort "Month already reconciled: use import-claude-month.rb to replace its monthly export" if target["monthClose"]
   # Store disjoint source components so a corrected weekly upload replaces, rather than adds twice.
   components = target.fetch("components", [target.reject { |key, _| key == "components" }])
   components = components.reject { |item| item["weekKey"] == options.fetch("key") }

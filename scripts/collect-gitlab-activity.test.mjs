@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aggregateGitlabActivity, mergeGitlabActivityRange, summarizeDiffs } from "./collect-gitlab-activity.mjs";
+import { aggregateGitlabActivity, collectGitlabActivity, mergeGitlabActivityRange, summarizeDiffs } from "./collect-gitlab-activity.mjs";
 
 function commit(overrides = {}) {
   return {
@@ -37,6 +37,53 @@ function commit(overrides = {}) {
 }
 
 describe("GitLab activity aggregation", () => {
+  it("revalidates previously observed commits absent from current branch listings", async () => {
+    const retained = {projectId: 1, sha: "retained", day: "2026-09-10"};
+    const missing = {projectId: 1, sha: "removed", day: "2026-09-10"};
+    const result = await collectGitlabActivity({
+      existingSnapshot: {users: [{commits: [retained, missing]}]},
+      env: {GITLAB_BASE_URL: "https://gitlab.example.com", GITLAB_GROUP_PATH: "group", GITLAB_READ_TOKEN: "test",
+        GITLAB_ACTIVITY_SINCE: "2026-09-01T00:00:00Z", GITLAB_ACTIVITY_UNTIL: "2026-09-30T23:59:59Z", GITLAB_DIFF_COMMIT_LIMIT: "0"},
+      fetchImpl: async input => {
+        const url = new URL(input);
+        if (url.pathname.endsWith("/removed")) return new Response("{}", {status: 404});
+        let body = [];
+        if (url.pathname.endsWith("/groups/group")) body = {id: 5, full_path: "group"};
+        if (url.pathname.endsWith("/groups/5/projects")) body = [{id: 1, name: "sample", path_with_namespace: "group/sample"}];
+        if (url.pathname.endsWith("/retained")) body = {id: "retained", title: "merge", parent_ids: ["a", "b"], authored_date: "2026-09-10T00:00:00Z", author_email: "dev@example.com", stats: {additions: 100, deletions: 0}};
+        return new Response(JSON.stringify(body), {status: 200});
+      },
+    });
+    expect(result.totals).toMatchObject({commitCount: 0, mergeCommitCount: 1, additions: 0});
+    expect(result.source.knownCommitVerification).toEqual({checked: 2, retained: 1, unavailable: [{projectId: 1, sha: "removed"}]});
+  });
+  it("collects all commits when offset pagination repeats the first page", async () => {
+    const rows = Array.from({length: 201}, (_, i) => ({id: `sha-${i}`, title: "change", parent_ids: ["parent"],
+      authored_date: new Date(Date.UTC(2026, 8, 1, 0, i * 60)).toISOString(),
+      author_email: "dev@example.com", stats: {additions: 2, deletions: 1}}));
+    const requests = [];
+    const result = await collectGitlabActivity({
+      env: {GITLAB_BASE_URL: "https://gitlab.example.com", GITLAB_GROUP_PATH: "group", GITLAB_READ_TOKEN: "test",
+        GITLAB_ACTIVITY_SINCE: "2026-09-01T00:00:00Z", GITLAB_ACTIVITY_UNTIL: "2026-09-30T23:59:59Z", GITLAB_DIFF_COMMIT_LIMIT: "0"},
+      fetchImpl: async input => {
+        const url = new URL(input);
+        let body;
+        if (url.pathname === "/api/v4/groups/group") body = {id: 5, full_path: "group"};
+        else if (url.pathname === "/api/v4/groups/5/projects") body = [{id: 1, name: "sample", path_with_namespace: "group/sample"}];
+        else {
+          requests.push(url);
+          const since = new Date(url.searchParams.get("since")), until = new Date(url.searchParams.get("until"));
+          // Simulate the observed server bug: page is ignored and the same first 100 rows return.
+          body = rows.filter(row => new Date(row.authored_date) >= since && new Date(row.authored_date) <= until).slice(0, 100);
+        }
+        return new Response(JSON.stringify(body), {status: 200});
+      },
+    });
+    expect(result.totals).toMatchObject({commitCount: 201, additions: 402, deletions: 201});
+    expect(result.users[0].commits).toHaveLength(201);
+    expect(requests.length).toBeGreaterThan(3);
+    expect(requests.every(url => url.searchParams.get("page") === "1")).toBe(true);
+  });
   it("replaces only the requested range without losing historical commits or double counting", () => {
     const snapshot = (commits) => aggregateGitlabActivity({
       collectedAt: new Date("2026-09-10T00:00:00Z"), baseUrl: "https://gitlab.example.com",

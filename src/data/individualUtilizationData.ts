@@ -65,6 +65,7 @@ type RawIndividualSnapshot = {
       period?: string | null;
       rowCount: number;
       totalLines: number;
+      preservedAccounts?: Array<{ email: string; period: string; codeLines: number; fileName: string }>;
     }>;
     conversations: {
       fileName: string;
@@ -150,6 +151,8 @@ export type IndividualUsageMetrics = {
 export type IndividualMonthlySpendUser = IndividualUsageMetrics & {
   products: string[];
   models: string[];
+  sourcePeriod?: string;
+  coverage?: "partial" | "complete";
 };
 
 export type IndividualMonthlySpendPeriod = {
@@ -159,6 +162,7 @@ export type IndividualMonthlySpendPeriod = {
   rowCount: number | null;
   coverage: "partial" | "complete";
   sourceCommit?: string;
+  preservedAccounts?: string[];
   totals: IndividualUsageMetrics;
   users: Record<string, IndividualMonthlySpendUser>;
 };
@@ -170,6 +174,7 @@ export type IndividualWeeklyUsageMetrics = IndividualUsageMetrics & {
 export type IndividualWeeklyUsageUser = IndividualWeeklyUsageMetrics & {
   products: string[];
   models: string[];
+  coverage?: "partial" | "complete";
 };
 
 export type IndividualWeeklyUsagePeriod = {
@@ -271,6 +276,20 @@ const rawMonthlySpendByMonth = new Map(
 const monthlySpend = Object.fromEntries(
   months.map((month) => [month, rawMonthlySpendByMonth.get(month) ?? null]),
 ) as Record<string, IndividualMonthlySpendPeriod | null>;
+
+export function claudeMonthlyCoverage(email: string, month: string) {
+  const period = monthlySpend[month];
+  const usage = period?.users[email];
+  const codeSource = snapshot.source.codeLines.find((source) => source.month === month);
+  const spendPeriod = usage?.sourcePeriod ?? period?.period;
+  const codePeriod = codeSource?.preservedAccounts?.find((account) => account.email === email)?.period ?? codeSource?.period;
+  return {
+    spendPeriod,
+    codePeriod,
+    complete: Boolean(usage && (usage.coverage ?? period?.coverage) === "complete" &&
+      (!codePeriod || codePeriod === spendPeriod)),
+  };
+}
 const weeks = Array.from(new Set(currentSnapshotUsers.flatMap((user) => Object.keys(user.weeklyActivity)))).sort();
 const allRequests = currentSnapshotUsers.map((user) => user.requests);
 const allTokens = currentSnapshotUsers.map((user) => user.totalTokens);

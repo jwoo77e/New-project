@@ -44,7 +44,7 @@ export async function collectGitlabActivity({
 
   const projectResults = await mapWithConcurrency(projects, concurrency, async (project) => {
     try {
-      const commits = await getAllPages(
+      const commits = await getCommitsInDateRange(
         `${baseUrl}/api/v4/projects/${project.id}/repository/commits`,
         {
           headers,
@@ -75,6 +75,24 @@ export async function collectGitlabActivity({
   const allCommits = projectResults
     .flatMap((result) => result.commits)
     .sort((a, b) => b.authoredAt.localeCompare(a.authoredAt) || a.sha.localeCompare(b.sha));
+  // Previously observed commits can disappear from branch listings after refs
+  // are removed. Revalidate their SHA before retaining historical activity.
+  const listedKeys = new Set(allCommits.map(commitKey));
+  const projectsById = new Map(projects.map((project) => [project.id, project]));
+  const knownMissing = dedupeSnapshotCommits(existingSnapshot).filter((commit) =>
+    commit.day >= dateKeyKst(since) && commit.day <= dateKeyKst(until) &&
+    projectsById.has(commit.projectId) && !listedKeys.has(commitKey(commit)),
+  );
+  const verifiedMissing = await mapWithConcurrency(knownMissing, concurrency, async (commit) => {
+    const response = await fetchImpl(`${baseUrl}/api/v4/projects/${commit.projectId}/repository/commits/${commit.sha}`, { headers });
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`기존 GitLab 커밋 재검증 실패: HTTP ${response.status}`);
+    const raw = await response.json();
+    if (!Number.isFinite(raw.stats?.additions) || !Number.isFinite(raw.stats?.deletions)) throw new Error("기존 GitLab 커밋 stats 누락");
+    return normalizeCommit(raw, projectsById.get(commit.projectId));
+  });
+  allCommits.push(...verifiedMissing.filter(Boolean));
+  allCommits.sort((a, b) => b.authoredAt.localeCompare(a.authoredAt) || a.sha.localeCompare(b.sha));
   const previousDiffByCommit = previousDiffMap(existingSnapshot);
   const diffTargets = allCommits
     .filter((commit) => !commit.isMerge && !previousDiffByCommit.has(commitKey(commit)))
@@ -117,6 +135,12 @@ export async function collectGitlabActivity({
     diffCommitLimit,
     authorAliases,
   });
+  snapshot.source.collectionMethod = "페이지당 100건 미만이 될 때까지 조회 기간 분할 · projectId + SHA 중복 제거 · 기존 누락 SHA 직접 재검증";
+  snapshot.source.knownCommitVerification = {
+    checked: knownMissing.length,
+    retained: verifiedMissing.filter(Boolean).length,
+    unavailable: knownMissing.filter((_, index) => !verifiedMissing[index]).map((commit) => ({projectId: commit.projectId, sha: commit.sha})),
+  };
 
   if (projects.length > 0 && projectErrors.length === projects.length) {
     throw new Error("모든 GitLab 프로젝트의 커밋 수집이 실패했습니다.");
@@ -260,6 +284,8 @@ export function mergeGitlabActivityRange(existing, incoming, startDate, endDate)
   merged.source.projectCount = incoming.source.projectCount;
   merged.totals.projects = incoming.totals.projects;
   merged.source.detailPolicy = incoming.source.detailPolicy;
+  merged.source.collectionMethod = incoming.source.collectionMethod;
+  merged.source.knownCommitVerification = incoming.source.knownCommitVerification;
   merged.source.refreshedPeriod = `${startDate} ~ ${endDate}`;
   merged.source.historyPolicy = "갱신 기간 밖의 검증된 기존 커밋 이력을 보존";
   return merged;
@@ -460,6 +486,34 @@ function previousDiffMap(snapshot) {
       .filter((commit) => commit?.projectId && commit?.sha && ["complete", "partial"].includes(commit?.diff?.status))
       .map((commit) => [`${commit.projectId}:${commit.sha}`, commit.diff]),
   );
+}
+
+function dedupeSnapshotCommits(snapshot) {
+  return [...new Map((snapshot?.users ?? []).flatMap((user) => user.commits ?? []).map((commit) => [commitKey(commit), commit])).values()];
+}
+
+// Some GitLab versions repeat commit rows on offset pages (even while advancing
+// X-Next-Page). Split inclusive time windows until every result fits on one page.
+async function getCommitsInDateRange(baseUrl, { headers, fetchImpl, query }) {
+  const url = new URL(baseUrl);
+  for (const [key, value] of Object.entries(query)) url.searchParams.set(key, value);
+  url.searchParams.set("per_page", "100");
+  url.searchParams.set("page", "1");
+  const rows = await getJson(url, { headers, fetchImpl });
+  if (!Array.isArray(rows)) throw new Error(`${url.pathname} 응답이 배열이 아닙니다.`);
+  if (rows.length < 100) {
+    if (rows.some((commit) => !Number.isFinite(commit.stats?.additions) || !Number.isFinite(commit.stats?.deletions))) {
+      throw new Error("GitLab commit stats 누락: 추가·삭제 라인을 검증할 수 없습니다.");
+    }
+    return rows;
+  }
+  const start = Math.floor(new Date(query.since).getTime() / 1000);
+  const end = Math.floor(new Date(query.until).getTime() / 1000);
+  if (end - start <= 1) throw new Error("같은 초의 커밋이 페이지 한도를 초과하여 완전한 수집을 확인할 수 없습니다.");
+  const midpoint = new Date(Math.floor((start + end) / 2) * 1000).toISOString();
+  const left = await getCommitsInDateRange(baseUrl, { headers, fetchImpl, query: { ...query, until: midpoint } });
+  const right = await getCommitsInDateRange(baseUrl, { headers, fetchImpl, query: { ...query, since: midpoint } });
+  return dedupeCommits([...left, ...right]);
 }
 
 async function getAllPages(baseUrl, { headers, fetchImpl, query = {} }) {

@@ -10,27 +10,28 @@ import {
 } from "./gitlabActivityData";
 
 describe("gitlabActivityData", () => {
-  it("distinguishes an uncollected fourth week from zero commits", () => {
-    expect(gitlabRangeCoverage("2026-09-28", "2026-09-30")).toMatchObject({available: false, complete: false});
-    expect(gitlabRangeCoverage("2026-09-01", "2026-09-30")).toMatchObject({available: true, complete: false});
+  it("covers the complete September month and fourth week while leaving October uncollected", () => {
+    expect(gitlabRangeCoverage("2026-09-28", "2026-09-30")).toMatchObject({available: true, complete: true});
+    expect(gitlabRangeCoverage("2026-09-01", "2026-09-30")).toMatchObject({available: true, complete: true});
     expect(gitlabRangeCoverage("2026-09-17", "2026-09-27")).toMatchObject({available: true, complete: true});
+    expect(gitlabRangeCoverage("2026-10-01", "2026-10-31")).toMatchObject({available: false, complete: false});
   });
   it("includes September week two GitLab activity", () => {
     expect(gitlabSummaryForRange("2026-09-10", "2026-09-16")).toMatchObject({
-      activeAuthors: 16, commitCount: 369, mergeCommitCount: 75,
-      additions: 67933, deletions: 19694, changedLines: 87627,
+      activeAuthors: 16, commitCount: 522, mergeCommitCount: 76,
+      additions: 123233, deletions: 23521, changedLines: 146754,
     });
   });
   it("includes September 17-27 activity from the error-free GitLab refresh", () => {
     expect(gitlabActivityData.source).toMatchObject({
-      period: "2026-05-01 ~ 2026-09-27",
-      refreshedPeriod: "2026-09-17 ~ 2026-09-27",
-      projectCount: 94,
+      period: "2026-05-01 ~ 2026-09-30",
+      refreshedPeriod: "2026-09-01 ~ 2026-09-30",
+      projectCount: 95,
       projectErrors: [],
     });
     expect(gitlabSummaryForRange("2026-09-17", "2026-09-27")).toMatchObject({
-      commitCount: 496, mergeCommitCount: 151, additions: 132188,
-      deletions: 17010, changedLines: 149198, activeAuthors: 14,
+      commitCount: 521, mergeCommitCount: 157, additions: 143261,
+      deletions: 18322, changedLines: 161583, activeAuthors: 14,
     });
   });
   it("reconciles user totals with the source snapshot", () => {
@@ -81,7 +82,7 @@ describe("gitlabActivityData", () => {
 
   it("publishes the complete August month and August 27 to September 2 range", () => {
     expect(gitlabActivityData.source).toMatchObject({
-      period: "2026-05-01 ~ 2026-09-27",
+      period: "2026-05-01 ~ 2026-09-30",
       projectErrors: [],
     });
     expect(gitlabSummaryForRange("2026-08-01", "2026-08-31")).toMatchObject({
@@ -93,12 +94,12 @@ describe("gitlabActivityData", () => {
       activeAuthors: 15,
     });
     expect(gitlabSummaryForRange("2026-08-27", "2026-09-02")).toMatchObject({
-      commitCount: 295,
-      mergeCommitCount: 139,
-      additions: 573926,
-      deletions: 55167,
-      changedLines: 629093,
-      activeAuthors: 14,
+      commitCount: 319,
+      mergeCommitCount: 135,
+      additions: 590776,
+      deletions: 61664,
+      changedLines: 652440,
+      activeAuthors: 15,
     });
   });
 
@@ -116,17 +117,31 @@ describe("gitlabActivityData", () => {
 
   it("publishes September 3-9 individually and preserves the September 1-2 baseline", () => {
     expect(gitlabSummaryForRange("2026-09-03", "2026-09-09")).toMatchObject({
-      commitCount: 361, mergeCommitCount: 77, additions: 143710,
-      deletions: 74271, changedLines: 217981, activeAuthors: 16,
+      commitCount: 373, mergeCommitCount: 77, additions: 146363,
+      deletions: 74326, changedLines: 220689, activeAuthors: 16,
     });
     expect(gitlabUserMetricsForRange("wody@riskzero.kr", "2026-09-03", "2026-09-09")).toMatchObject({
-      commitCount: 65, additions: 81060, deletions: 59031,
+      commitCount: 72, additions: 81279, deletions: 59051,
     });
     expect(gitlabUserMetricsForRange("woosung.jeon@riskzero.kr", "2026-09-03", "2026-09-09")).toMatchObject({
       commitCount: 83, additions: 16450, deletions: 3921,
     });
-    expect(gitlabSummaryForRange("2026-09-01", "2026-09-02")).toMatchObject({commitCount: 138, changedLines: 575365});
-    expect(gitlabSummaryForRange("2026-09-01", "2026-09-09")).toMatchObject({commitCount: 499, changedLines: 793346});
+    expect(gitlabSummaryForRange("2026-09-01", "2026-09-02")).toMatchObject({commitCount: 162, changedLines: 598712});
+    expect(gitlabSummaryForRange("2026-09-01", "2026-09-09")).toMatchObject({commitCount: 535, changedLines: 819401});
+  });
+
+  it("reconciles September month and week four with unique commit rows and uncapped combined-code ratios", () => {
+    expect(gitlabSummaryForRange("2026-09-01", "2026-09-30")).toMatchObject({
+      commitCount: 1912, mergeCommitCount: 400, additions: 1327514, deletions: 174821, changedLines: 1502335, activeAuthors: 16,
+    });
+    expect(gitlabSummaryForRange("2026-09-28", "2026-09-30")).toMatchObject({
+      commitCount: 334, mergeCommitCount: 51, additions: 350780, deletions: 23817, changedLines: 374597, activeAuthors: 14,
+    });
+    const rows = gitlabActivityData.users.flatMap(user => gitlabCommitsForRange(user.email, "2026-09-01", "2026-09-30"));
+    expect(new Set(rows.map(row => `${row.projectId}:${row.sha}`)).size).toBe(rows.length);
+    expect(rows.filter(row => !row.isMerge)).toHaveLength(1912);
+    expect(rows.filter(row => !row.isMerge).reduce((sum, row) => sum + row.additions, 0)).toBe(1327514);
+    expect(gitlabCommittedCodeRatio(275786, gitlabUserMetricsForMonth("wody@riskzero.kr", "2026-09").additions)).toBeCloseTo(60.396104);
   });
 
   it("calculates committed additions against generated code lines without capping the ratio", () => {
