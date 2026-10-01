@@ -59,6 +59,38 @@ describe("Claude monthly reconciliation", () => {
     expect(week.unallocatedUsage["late@example.com"]).toMatchObject({requests: 20, totalTokens: 400, baselinePeriod: "2026-09-17 ~ 2026-09-27", periods: ["2026-09-01 ~ 2026-09-16", "2026-09-28 ~ 2026-09-30"]});
     invoke(extra);
     expect(read()).toEqual(saved);
+    const fullBaseline = join(directory, "spend-report-2026-09-01-to-2026-09-27.csv");
+    const baselineCsv = tokens => `user_email,product,model,total_requests,total_prompt_tokens,total_completion_tokens,total_net_spend_usd\nlate@example.com,Chat,model,25,${tokens},0,0\n`;
+    writeFileSync(fullBaseline, baselineCsv(400));
+    const withBaseline = [...extra, "--baseline-spend", fullBaseline];
+    invoke(withBaseline);
+    const resolved = read();
+    const [resolvedMonthly, resolvedWeekly] = resolved.map(JSON.parse);
+    expect(resolvedMonthly.months[0].users).toEqual(updatedMonth.months[0].users);
+    expect(resolvedMonthly.months[0].components).toEqual(updatedMonth.months[0].components);
+    expect(resolvedMonthly.months[0].monthClose.spendBaselineOverrides["late@example.com"]).toMatchObject({
+      period: "2026-09-01 ~ 2026-09-27", usage: {requests: 25, totalTokens: 400},
+      previouslyUncollectedPeriods: ["2026-09-01 ~ 2026-09-16"], previouslyUncollectedUsage: {requests: 15, totalTokens: 300},
+    });
+    expect(resolvedWeekly.periods[1].users["late@example.com"]).toMatchObject({requests: 5, totalTokens: 100, coverage: "complete"});
+    expect(resolvedWeekly.periods[1].totals.totalTokens).toBe(150);
+    expect(resolvedWeekly.periods[1].unallocatedUsage).toEqual({});
+    invoke(withBaseline);
+    expect(read()).toEqual(resolved);
+    // Later imports retain the verified replacement even without attaching it again.
+    invoke(extra);
+    expect(read()).toEqual(resolved);
+    for (const tokens of [99, 600]) {
+      writeFileSync(fullBaseline, baselineCsv(tokens));
+      expect(() => invoke(withBaseline)).toThrow();
+      expect(read()).toEqual(resolved);
+    }
+    writeFileSync(fullBaseline, baselineCsv(400));
+    expect(() => invoke([...withBaseline, "--baseline-spend", fullBaseline])).toThrow();
+    const wrongPeriod = join(directory, "spend-report-2026-09-17-to-2026-09-27.csv");
+    writeFileSync(wrongPeriod, baselineCsv(400));
+    expect(() => invoke([...extra, "--baseline-spend", wrongPeriod])).toThrow();
+    expect(read()).toEqual(resolved);
   }));
   it("adds another organization without replacing closed accounts or double counting matching file names", () => fixture(({invoke, read, directory, spend}) => {
     invoke();

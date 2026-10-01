@@ -69,7 +69,7 @@ describe("Codex usage", () => {
   });
   it("uses the exact fourth-week export and restores aligned combined metrics", () => {
     const week = individualUtilizationData.weeklyUsage["2026-09-W4"];
-    expect(week).toMatchObject({startDate: "2026-09-28", endDate: "2026-09-30", coverage: "partial"});
+    expect(week).toMatchObject({startDate: "2026-09-28", endDate: "2026-09-30", coverage: "complete"});
     expect(week.source).toMatchObject({spendMethod: "current_cumulative_minus_previous_cumulative", codeMethod: "current_cumulative_minus_previous_cumulative"});
     const codex = codexUsageForRange("wody@riskzero.kr", week.startDate, week.endDate);
     expect(codex).toMatchObject({tokens: 365430737, codeLines: 27621, complete: true, periodAligned: true, periodLabel: "2026-09-28 ~ 2026-09-30", note: ""});
@@ -91,8 +91,11 @@ describe("Codex usage", () => {
     const lines = Object.values(actual.users).reduce((sum, usage) => sum + usage.codeLines, 0);
     expect(tokens).toBe(1903801646);
     expect(lines).toBe(79468);
-    expect(tokens + week.totals.totalTokens).toBe(12166070343);
+    expect(tokens + week.totals.totalTokens).toBe(12184455090);
     expect(lines + week.totals.codeLines).toBe(165175);
+    const lbh = week.users["lbh0902@riskzero.kr"];
+    expect(combinedAiUsage(lbh.totalTokens, lbh.codeLines, codexUsageForRange("lbh0902@riskzero.kr", week.startDate, week.endDate)))
+      .toEqual({tokens: 18384747, codeLines: 0, partial: false});
     expect(codexUsageForRange("yspark@riskzero.kr", week.startDate, week.endDate)).toMatchObject({collected: true, present: false, tokens: 0, codeLines: 0, complete: true});
   });
   it("discloses the 26-line source discrepancy without changing monthly or weekly observations", () => {

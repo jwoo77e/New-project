@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-01T10:19:53+09:00",
+  "generatedAt": "2026-10-01T10:31:34+09:00",
   "periods": [
     {
       "key": "2026-08-W1",
@@ -3649,7 +3649,7 @@
       "label": "9월 4주차",
       "startDate": "2026-09-28",
       "endDate": "2026-09-30",
-      "coverage": "partial",
+      "coverage": "complete",
       "source": {
         "previousSpendFile": "spend-report-17711e80-a5e7-427c-b20e-230325bbae9f-2026-09-01-to-2026-09-02.csv + spend-report-e59c75bc-469e-466f-bef9-c311748c1df8-2026-09-01-to-2026-09-02.csv + spend-report-f5ff68f8-ab8f-4101-aa65-a766ac49a78e-2026-09-01-to-2026-09-02.csv + spend-report-2026-09-10.csv + spend-report-2026-09-10-Clevel.csv + spend-report-2026-09-10_HR.csv + spend-report-09-10-to-2026-09-16.csv + spend-report-2026-09-10-to-2026-09-16.csv + spend-report-09-10-to-2026-09-16_HR.csv + spend-report-2026-09-17-to-2026-09-27.csv + Clevel/spend-report-2026-09-17-to-2026-09-27.csv + 이병현이사님/spend-report-2026-09-17-to-2026-09-27.csv + 조욱상이사님/spend-report-f5ff68f8-ab8f-4101-aa65-a766ac49a78e-2026-09-17-to-2026-09-27.csv",
         "currentSpendFile": "spend-report-2026-09-01-to-2026-09-30.csv + Clevel/spend-report-2026-09-01-to-2026-09-30.csv + 조욱상이사님/spend-report-2026-09-01-to-2026-09-30.csv + 이병현이사님/spend-report-2026-09-01-to-2026-09-30.csv",
@@ -3659,16 +3659,26 @@
         "currentCodeFile": "claude_code_team_2026_09_01_to_2026_09_30.csv + Clevel/claude_code_team_2026_09_01_to_2026_09_30.csv",
         "codePeriod": "2026-09-28 ~ 2026-09-30",
         "spendMethod": "current_cumulative_minus_previous_cumulative",
-        "codeMethod": "current_cumulative_minus_previous_cumulative"
+        "codeMethod": "current_cumulative_minus_previous_cumulative",
+        "supplementalSpendBaselines": [
+          {
+            "fileName": "이병현이사님/spend-report-2026-09-01-to-2026-09-27.csv",
+            "rowCount": 7,
+            "accounts": [
+              "lbh0902@riskzero.kr"
+            ],
+            "period": "2026-09-01 ~ 2026-09-27"
+          }
+        ]
       },
       "totals": {
-        "requests": 41843,
-        "promptTokens": 10231560109,
-        "completionTokens": 30708588,
-        "totalTokens": 10262268697,
+        "requests": 41943,
+        "promptTokens": 10249819460,
+        "completionTokens": 30833984,
+        "totalTokens": 10280653444,
         "netSpendUsd": 71.34,
         "codeLines": 85707,
-        "activeUsers": 32
+        "activeUsers": 33
       },
       "users": {
         "airyoubi77@riskzero.kr": {
@@ -4048,6 +4058,26 @@
           "codeLines": 5349,
           "coverage": "complete"
         },
+        "lbh0902@riskzero.kr": {
+          "requests": 100,
+          "promptTokens": 18259351,
+          "completionTokens": 125396,
+          "totalTokens": 18384747,
+          "netSpendUsd": 0.0,
+          "products": [
+            "Chat",
+            "Cowork",
+            "Office Agents"
+          ],
+          "models": [
+            "claude-fable-5-1",
+            "claude-haiku-4-5-20251001",
+            "claude-opus-5",
+            "claude-opus-5-5"
+          ],
+          "codeLines": 0,
+          "coverage": "complete"
+        },
         "mjkim1122@riskzero.kr": {
           "requests": 101,
           "promptTokens": 7984416,
@@ -4348,24 +4378,12 @@
         }
       },
       "unallocatedUsage": {
-        "lbh0902@riskzero.kr": {
-          "requests": 711,
-          "promptTokens": 67135681,
-          "completionTokens": 476892,
-          "totalTokens": 67612573,
-          "netSpendUsd": 0.0,
-          "baselinePeriod": "2026-09-17 ~ 2026-09-27",
-          "periods": [
-            "2026-09-01 ~ 2026-09-16",
-            "2026-09-28 ~ 2026-09-30"
-          ],
-          "reason": "incomplete_spend_baseline"
-        }
       },
       "notes": [
         "Claude 월간 파일에서 2026-09-01 ~ 2026-09-27 누적값을 뺀 차액입니다.",
+        "별도 계정의 보완 누적 보고서 1건은 기존 부분 누적값을 대체하며 이전 주차 원천에 다시 더하지 않습니다.",
         "월간 파일에 없는 별도 0계정의 이번 주 사용량은 미수집입니다.",
-        "이전 집계 기간이 부족한 1계정의 월간 차액은 unallocatedUsage에 보관하고 주차 합계에서 제외했습니다.",
+        "이전 집계 기간이 부족한 0계정의 월간 차액은 unallocatedUsage에 보관하고 주차 합계에서 제외했습니다.",
         "이전 전체 보고서에 행이 없는 계정은 누적 사용량 0을 기준으로 계산하되, 별도 계정의 미수집 기간에는 적용하지 않습니다.",
         "순비용 차액에는 원천 보고서 반올림에 따른 음수 센트 보정이 포함될 수 있습니다."
       ]

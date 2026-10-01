@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-01T10:19:53+09:00",
+  "generatedAt": "2026-10-01T10:31:34+09:00",
   "months": [
     {
       "month": "2026-05",
@@ -4023,6 +4023,44 @@
         ],
         "partialSpendBaselines": {
           "lbh0902@riskzero.kr": "2026-09-17 ~ 2026-09-27"
+        },
+        "spendBaselineOverrides": {
+          "lbh0902@riskzero.kr": {
+            "fileName": "이병현이사님/spend-report-2026-09-01-to-2026-09-27.csv",
+            "rowCount": 7,
+            "accounts": [
+              "lbh0902@riskzero.kr"
+            ],
+            "period": "2026-09-01 ~ 2026-09-27",
+            "usage": {
+              "requests": 785,
+              "promptTokens": 84926684,
+              "completionTokens": 676786,
+              "totalTokens": 85603470,
+              "netSpendUsd": 0.0,
+              "products": [
+                "Chat",
+                "Cowork",
+                "Office Agents"
+              ],
+              "models": [
+                "claude-fable-5-1",
+                "claude-haiku-4-5-20251001",
+                "claude-opus-5",
+                "claude-opus-5-5"
+              ]
+            },
+            "previouslyUncollectedPeriods": [
+              "2026-09-01 ~ 2026-09-16"
+            ],
+            "previouslyUncollectedUsage": {
+              "requests": 611,
+              "promptTokens": 48876330,
+              "completionTokens": 351496,
+              "totalTokens": 49227826,
+              "netSpendUsd": 0.0
+            }
+          }
         }
       }
     }

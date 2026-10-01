@@ -6,9 +6,9 @@ require "bigdecimal"
 require "optparse"
 require "time"
 
-options = { "data-dir" => File.expand_path("../src/data", __dir__), "spend" => [], "code" => [], "previous-code" => [] }
+options = { "data-dir" => File.expand_path("../src/data", __dir__), "spend" => [], "code" => [], "previous-code" => [], "baseline-spend" => [] }
 OptionParser.new do |parser|
-  %w[data-dir spend previous-code code month week-key].each do |key|
+  %w[data-dir spend previous-code code month week-key baseline-spend].each do |key|
     parser.on("--#{key} VALUE") { |value| options[key].is_a?(Array) ? options[key] << value : options[key] = value }
   end
 end.parse!
@@ -65,36 +65,69 @@ baseline.each_value do |usage|
   %w[products models].each { |key| usage[key].sort! }
 end
 
-fields = { "requests" => "total_requests", "promptTokens" => "total_prompt_tokens", "completionTokens" => "total_completion_tokens", "netSpendUsd" => "total_net_spend_usd" }
-current = {}
-spend_exports = []
-options.fetch("spend").each do |path|
-  rows = CSV.read(path, headers: true, encoding: "bom|utf-8")
-  abort "Invalid spend columns" unless (["user_email", "product", "model"] + fields.values).all? { |key| rows.headers.include?(key) }
-  emails = rows.map { |row| row.fetch("user_email").strip.downcase }.uniq
-  abort "Duplicate spend account across sources" unless (emails & current.keys).empty?
-  spend_exports << { "fileName" => source_label(path), "rowCount" => rows.size, "accounts" => emails.sort }
-  rows.each do |row|
-    email = row.fetch("user_email").strip.downcase
-    abort "Missing spend account" if email.empty?
-    current[email] ||= numeric.to_h { |key| [key, 0] }.merge("products" => [], "models" => [])
-    fields.each do |key, field|
-      value = key == "netSpendUsd" ? BigDecimal(row.fetch(field).delete(",")) : Integer(row.fetch(field).delete(","))
-      abort "Negative source usage for #{email}" if value < 0
-      current[email][key] += value
+def read_spend(paths, numeric)
+  fields = { "requests" => "total_requests", "promptTokens" => "total_prompt_tokens", "completionTokens" => "total_completion_tokens", "netSpendUsd" => "total_net_spend_usd" }
+  users, exports = {}, []
+  paths.each do |path|
+    rows = CSV.read(path, headers: true, encoding: "bom|utf-8")
+    abort "Invalid spend columns" unless (["user_email", "product", "model"] + fields.values).all? { |key| rows.headers.include?(key) }
+    emails = rows.map { |row| row.fetch("user_email").strip.downcase }.uniq
+    abort "Duplicate spend account across sources" unless (emails & users.keys).empty?
+    exports << { "fileName" => source_label(path), "rowCount" => rows.size, "accounts" => emails.sort }
+    rows.each do |row|
+      email = row.fetch("user_email").strip.downcase
+      abort "Missing spend account" if email.empty?
+      users[email] ||= numeric.to_h { |key| [key, 0] }.merge("products" => [], "models" => [])
+      fields.each do |key, field|
+        value = key == "netSpendUsd" ? BigDecimal(row.fetch(field).delete(",")) : Integer(row.fetch(field).delete(","))
+        abort "Negative source usage for #{email}" if value < 0
+        users[email][key] += value
+      end
+      { "products" => "product", "models" => "model" }.each { |key, field| users[email][key] |= [row.fetch(field)] }
     end
-    { "products" => "product", "models" => "model" }.each { |key, field| current[email][key] |= [row.fetch(field)] }
   end
+  users.each_value do |usage|
+    usage["totalTokens"] = usage.fetch("promptTokens") + usage.fetch("completionTokens")
+    usage["netSpendUsd"] = usage.fetch("netSpendUsd").round(6).to_f
+    %w[products models].each { |key| usage[key].sort! }
+  end
+  [users, exports]
 end
+current, spend_exports = read_spend(options.fetch("spend"), numeric)
 spend_row_count = spend_exports.sum { |source| source.fetch("rowCount") }
-current.each_value do |usage|
-  usage["totalTokens"] = usage.fetch("promptTokens") + usage.fetch("completionTokens")
-  usage["netSpendUsd"] = usage.fetch("netSpendUsd").round(6).to_f
-  %w[products models].each { |key| usage[key].sort! }
-end
 abort "Empty monthly spend export" if current.empty?
 already_closed = target.fetch("users").select { |_, usage| usage["coverage"] == "complete" }.keys
 abort "Reimport must include previously reconciled accounts; pass all monthly sources together" unless (already_closed - current.keys).empty?
+
+# A complete personal-account baseline replaces its partial component sum.
+# Keep the newly recovered earlier usage separate from the final week's delta.
+baseline_overrides = baseline_meta["spendBaselineOverrides"] || {}
+options.fetch("baseline-spend").each do |path|
+  abort "Baseline spend filename must identify #{first} to #{baseline_last}" unless File.basename(path).end_with?("-#{first}-to-#{baseline_last}.csv")
+end
+replacement_users, replacement_exports = read_spend(options.fetch("baseline-spend"), numeric)
+abort "Empty supplemental baseline export" if options.fetch("baseline-spend").any? && replacement_users.empty?
+replacement_users.each do |email, usage|
+  source = replacement_exports.find { |item| item.fetch("accounts").include?(email) }
+  baseline_overrides[email] = source.merge("period" => baseline_meta.fetch("baselinePeriod"), "usage" => usage)
+end
+baseline_overrides.each do |email, source|
+  known_period = baseline_meta.fetch("partialSpendBaselines")[email]
+  abort "Supplemental baseline requires a known partial monthly account: #{email}" unless known_period && current.key?(email)
+  abort "Supplemental baseline period mismatch" unless source.fetch("period") == baseline_meta.fetch("baselinePeriod")
+  known_first, known_last = known_period.split(" ~ ").map { |date| Date.iso8601(date) }
+  earlier_periods = []
+  earlier_periods << "#{first} ~ #{known_first - 1}" if first < known_first
+  earlier_periods << "#{known_last + 1} ~ #{baseline_last}" if known_last < baseline_last
+  source["previouslyUncollectedPeriods"] = earlier_periods
+  source["previouslyUncollectedUsage"] = numeric.to_h do |key|
+    delta = (source.fetch("usage").fetch(key) - baseline.fetch(email).fetch(key)).round(6)
+    abort "Supplemental baseline below known #{key} for #{email}" if key != "netSpendUsd" && delta < 0
+    [key, delta]
+  end
+  baseline[email] = source.fetch("usage").dup
+end
+baseline_meta["spendBaselineOverrides"] = baseline_overrides unless baseline_overrides.empty?
 def read_code(paths)
   output = {}
   paths.each do |path|
@@ -130,7 +163,7 @@ week_users.each do |email, usage|
   usage["codeLines"] = code.fetch(email, 0) - previous_code.fetch(email, 0)
   abort "Negative code remainder for #{email}" if usage.fetch("codeLines") < 0
   usage["coverage"] = "complete"
-  if (known_period = baseline_meta.fetch("partialSpendBaselines")[email])
+  if (known_period = baseline_meta.fetch("partialSpendBaselines")[email]) && !baseline_overrides.key?(email)
     abort "Separate code allocation required for partial spend baseline: #{email}" if usage.fetch("codeLines") != 0
     known_first, known_last = known_period.split(" ~ ").map { |date| Date.iso8601(date) }
     abort "Invalid partial baseline for #{email}" unless first <= known_first && known_first <= known_last && known_last <= baseline_last
@@ -169,11 +202,13 @@ period = {
     "previousCodeFile" => labels.fetch("previous-code"), "currentCodeFile" => labels.fetch("code"),
     "codePeriod" => "#{baseline_last + 1} ~ #{last}",
     "spendMethod" => "current_cumulative_minus_previous_cumulative", "codeMethod" => "current_cumulative_minus_previous_cumulative",
+    "supplementalSpendBaselines" => baseline_overrides.values.map { |item| item.reject { |key, _| %w[usage previouslyUncollectedUsage previouslyUncollectedPeriods].include?(key) } },
   },
   "totals" => totals.call(week_users.values, numeric + ["codeLines"]).merge("activeUsers" => week_users.values.count { |u| u.fetch("totalTokens") > 0 || u.fetch("codeLines") > 0 }),
   "users" => week_users,
   "unallocatedUsage" => unallocated_usage,
   "notes" => ["Claude 월간 파일에서 #{baseline_meta.fetch('baselinePeriod')} 누적값을 뺀 차액입니다.",
+    "별도 계정의 보완 누적 보고서 #{baseline_overrides.size}건은 기존 부분 누적값을 대체하며 이전 주차 원천에 다시 더하지 않습니다.",
     "월간 파일에 없는 별도 #{preserved.size}계정의 이번 주 사용량은 미수집입니다.",
     "이전 집계 기간이 부족한 #{unallocated_usage.size}계정의 월간 차액은 unallocatedUsage에 보관하고 주차 합계에서 제외했습니다.",
     "이전 전체 보고서에 행이 없는 계정은 누적 사용량 0을 기준으로 계산하되, 별도 계정의 미수집 기간에는 적용하지 않습니다.",

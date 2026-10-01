@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { claudeMonthlyCoverage, individualUtilizationData } from "./individualUtilizationData";
+import monthlySpendSnapshot from "./individualMonthlySpendSnapshot.json";
 
 const sumBy = <T,>(items: T[], selector: (item: T) => number) =>
   items.reduce((sum, item) => sum + selector(item), 0);
@@ -484,9 +485,13 @@ describe("individualUtilizationData", () => {
     expect(sumBy(Object.values(weekTwo.users), user => user.totalTokens)).toBe(14328556131);
     const weekThree = data.weeklyUsage["2026-09-W3"];
     const weekFour = data.weeklyUsage["2026-09-W4"];
-    const unallocatedTokens = sumBy(Object.values(weekFour.unallocatedUsage ?? {}), usage => usage.totalTokens);
-    expect(unallocatedTokens).toBe(67612573);
-    expect(data.monthlySpend["2026-09"]?.totals.totalTokens).toBe(5230992572 + week.totals.totalTokens + weekTwo.totals.totalTokens + weekThree.totals.totalTokens + weekFour.totals.totalTokens + unallocatedTokens);
+    const supplementalBaseline = monthlySpendSnapshot.months.find(month => month.month === "2026-09")!.monthClose!.spendBaselineOverrides["lbh0902@riskzero.kr"];
+    expect(supplementalBaseline).toMatchObject({
+      fileName: "이병현이사님/spend-report-2026-09-01-to-2026-09-27.csv", rowCount: 7, period: "2026-09-01 ~ 2026-09-27",
+      usage: {requests: 785, totalTokens: 85603470, netSpendUsd: 0},
+      previouslyUncollectedPeriods: ["2026-09-01 ~ 2026-09-16"], previouslyUncollectedUsage: {requests: 611, totalTokens: 49227826, netSpendUsd: 0},
+    });
+    expect(data.monthlySpend["2026-09"]?.totals.totalTokens).toBe(5230992572 + week.totals.totalTokens + weekTwo.totals.totalTokens + weekThree.totals.totalTokens + weekFour.totals.totalTokens + supplementalBaseline.previouslyUncollectedUsage.totalTokens);
     expect(data.source.codeLines.find((source) => source.month === "2026-09")?.totalLines).toBe(65601 + week.totals.codeLines + weekTwo.totals.codeLines + weekThree.totals.codeLines + weekFour.totals.codeLines);
     expect(weekThree).toMatchObject({
       startDate: "2026-09-17", endDate: "2026-09-27", coverage: "complete",
@@ -523,7 +528,7 @@ describe("individualUtilizationData", () => {
     expect(data.users.find((user) => user.email === "bigone@riskzero.kr")?.monthlyCodeLines["2026-09"]).toBe(50830);
   });
 
-  it("reconciles the September monthly export and excludes unseparated personal-account usage from the fourth week", () => {
+  it("reconciles the September monthly export and complete fourth-week personal-account usage", () => {
     const data = individualUtilizationData;
     const month = data.monthlySpend["2026-09"]!;
     const updated = Object.values(month.users).filter(user => user.coverage === "complete");
@@ -543,11 +548,11 @@ describe("individualUtilizationData", () => {
     expect(claudeMonthlyCoverage("airyoubi77@riskzero.kr", "2026-09").complete).toBe(true);
     const week = data.weeklyUsage["2026-09-W4"];
     expect(week.source).toMatchObject({previousCodeFile: "claude_code_team_2026_09_28.csv + Clevel/claude_code_team_2026_09_28.csv", currentCodeFile: "claude_code_team_2026_09_01_to_2026_09_30.csv + Clevel/claude_code_team_2026_09_01_to_2026_09_30.csv", codePeriod: "2026-09-28 ~ 2026-09-30"});
-    expect(week.totals).toMatchObject({requests: 41843, totalTokens: 10262268697, netSpendUsd: 71.34, codeLines: 504735 - 419028});
-    expect(week.coverage).toBe("partial");
+    expect(week.totals).toMatchObject({requests: 41943, totalTokens: 10280653444, netSpendUsd: 71.34, codeLines: 504735 - 419028, activeUsers: 33});
+    expect(week.coverage).toBe("complete");
     expect(week.users["airyoubi77@riskzero.kr"]).toMatchObject({requests: 109, promptTokens: 18691935, completionTokens: 152245, totalTokens: 18844180, netSpendUsd: 0, codeLines: 0, coverage: "complete"});
-    expect(week.users["lbh0902@riskzero.kr"]).toBeUndefined();
-    expect(week.unallocatedUsage?.["lbh0902@riskzero.kr"]).toMatchObject({requests: 711, totalTokens: 67612573, baselinePeriod: "2026-09-17 ~ 2026-09-27", periods: ["2026-09-01 ~ 2026-09-16", "2026-09-28 ~ 2026-09-30"]});
+    expect(week.users["lbh0902@riskzero.kr"]).toMatchObject({requests: 100, promptTokens: 18259351, completionTokens: 125396, totalTokens: 18384747, netSpendUsd: 0, codeLines: 0, coverage: "complete"});
+    expect(week.unallocatedUsage).toEqual({});
     expect(sumBy(Object.values(week.users), usage => usage.totalTokens)).toBe(week.totals.totalTokens);
     expect(week.users["bigone@riskzero.kr"]).toMatchObject({requests: 1421, totalTokens: 251081077, codeLines: 50830 - 45858, netSpendUsd: 0, coverage: "complete"});
     expect(week.users["yspark@riskzero.kr"]).toMatchObject({requests: 741, totalTokens: 234778420, codeLines: 33, netSpendUsd: 0, coverage: "complete"});
