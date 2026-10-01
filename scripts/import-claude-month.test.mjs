@@ -33,6 +33,33 @@ function fixture(run, {tokens = 150, previousLines = 10, baselineStart = "2026-0
 }
 
 describe("Claude monthly reconciliation", () => {
+  it("keeps a partial personal-account baseline out of exact weekly totals, including on reimport", () => fixture(({invoke, read, directory}) => {
+    const [monthly, , utilization] = read().map(JSON.parse);
+    const lateUsage = metrics(10, 100, 0);
+    const month = monthly.months[0];
+    month.users["late@example.com"] = {...lateUsage, coverage: "partial", sourcePeriod: "2026-09-17 ~ 2026-09-27"};
+    month.components = [
+      {...month.components[0], users: {"a@example.com": month.users["a@example.com"], "preserved@example.com": month.users["preserved@example.com"]}, period: "2026-09-01 ~ 2026-09-16"},
+      {fileName: "late-old.csv", period: "2026-09-17 ~ 2026-09-27", users: {"late@example.com": lateUsage}},
+    ];
+    utilization.users.push({email: "late@example.com", monthlyCodeLines: {}});
+    writeFileSync(join(directory, "individualMonthlySpendSnapshot.json"), JSON.stringify(monthly));
+    writeFileSync(join(directory, "individualUtilizationSnapshot.json"), JSON.stringify(utilization));
+    const extraSpend = join(directory, "late-month.csv");
+    writeFileSync(extraSpend, "user_email,product,model,total_requests,total_prompt_tokens,total_completion_tokens,total_net_spend_usd\nlate@example.com,Chat,model,30,500,0,0\n");
+    const extra = ["--spend", extraSpend];
+    invoke(extra);
+    const saved = read();
+    const [updatedMonth, updatedWeek] = saved.map(JSON.parse);
+    expect(updatedMonth.months[0].users["late@example.com"]).toMatchObject({requests: 30, totalTokens: 500, sourcePeriod: "2026-09-01 ~ 2026-09-30", coverage: "complete"});
+    const week = updatedWeek.periods[1];
+    expect(week.users["late@example.com"]).toBeUndefined();
+    expect(week.totals.totalTokens).toBe(50);
+    expect(week.coverage).toBe("partial");
+    expect(week.unallocatedUsage["late@example.com"]).toMatchObject({requests: 20, totalTokens: 400, baselinePeriod: "2026-09-17 ~ 2026-09-27", periods: ["2026-09-01 ~ 2026-09-16", "2026-09-28 ~ 2026-09-30"]});
+    invoke(extra);
+    expect(read()).toEqual(saved);
+  }));
   it("adds another organization without replacing closed accounts or double counting matching file names", () => fixture(({invoke, read, directory, spend}) => {
     invoke();
     const before = read().map(JSON.parse);

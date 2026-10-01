@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-01T09:58:46+09:00",
+  "generatedAt": "2026-10-01T10:19:53+09:00",
   "months": [
     {
       "month": "2026-05",
@@ -1314,23 +1314,23 @@
     },
     {
       "month": "2026-09",
-      "fileName": "spend-report-2026-09-01-to-2026-09-30.csv + Clevel/spend-report-2026-09-01-to-2026-09-30.csv",
+      "fileName": "spend-report-2026-09-01-to-2026-09-30.csv + Clevel/spend-report-2026-09-01-to-2026-09-30.csv + 조욱상이사님/spend-report-2026-09-01-to-2026-09-30.csv + 이병현이사님/spend-report-2026-09-01-to-2026-09-30.csv",
       "period": "2026-09-01 ~ 2026-09-30",
-      "rowCount": 219,
-      "coverage": "partial",
+      "rowCount": 232,
+      "coverage": "complete",
       "totals": {
-        "requests": 249576,
-        "promptTokens": 59693449447,
-        "completionTokens": 175782723,
-        "totalTokens": 59869232170,
+        "requests": 250396,
+        "promptTokens": 59779277063,
+        "completionTokens": 176411860,
+        "totalTokens": 59955688923,
         "netSpendUsd": 1500.76
       },
       "users": {
         "airyoubi77@riskzero.kr": {
-          "requests": 447,
-          "promptTokens": 82090373,
-          "completionTokens": 599723,
-          "totalTokens": 82690096,
+          "requests": 556,
+          "promptTokens": 100782308,
+          "completionTokens": 751968,
+          "totalTokens": 101534276,
           "netSpendUsd": 0.0,
           "products": [
             "Chat",
@@ -1339,10 +1339,11 @@
           "models": [
             "claude-fable-5-1",
             "claude-haiku-4-5-20251001",
-            "claude-opus-5"
+            "claude-opus-5",
+            "claude-opus-5-5"
           ],
-          "sourcePeriod": "2026-09-01 ~ 2026-09-27",
-          "coverage": "partial"
+          "sourcePeriod": "2026-09-01 ~ 2026-09-30",
+          "coverage": "complete"
         },
         "bigone@riskzero.kr": {
           "requests": 12994,
@@ -1703,14 +1704,15 @@
           "coverage": "complete"
         },
         "lbh0902@riskzero.kr": {
-          "requests": 174,
-          "promptTokens": 36050354,
-          "completionTokens": 325290,
-          "totalTokens": 36375644,
+          "requests": 885,
+          "promptTokens": 103186035,
+          "completionTokens": 802182,
+          "totalTokens": 103988217,
           "netSpendUsd": 0.0,
           "products": [
             "Chat",
-            "Cowork"
+            "Cowork",
+            "Office Agents"
           ],
           "models": [
             "claude-fable-5-1",
@@ -1718,8 +1720,8 @@
             "claude-opus-5",
             "claude-opus-5-5"
           ],
-          "sourcePeriod": "2026-09-17 ~ 2026-09-27",
-          "coverage": "partial"
+          "sourcePeriod": "2026-09-01 ~ 2026-09-30",
+          "coverage": "complete"
         },
         "mjkim1122@riskzero.kr": {
           "requests": 13148,
@@ -3898,12 +3900,11 @@
         }
       ],
       "preservedAccounts": [
-        "airyoubi77@riskzero.kr",
-        "lbh0902@riskzero.kr"
+
       ],
       "notes": [
         "월간 파일에 포함된 계정은 전체 월 수치로 교체했습니다. components는 차액 계산용 이전 원천이며 현재 월 합계에 다시 더하지 않습니다.",
-        "이번 파일에 없는 별도 계정 2명은 기존 자료와 집계 기간을 유지했습니다."
+        "이번 파일에 없는 별도 계정 0명은 기존 자료와 집계 기간을 유지했습니다."
       ],
       "monthClose": {
         "baselinePeriod": "2026-09-01 ~ 2026-09-27",
@@ -3945,12 +3946,12 @@
           "yspark@riskzero.kr": 0
         },
         "method": "replace_exported_accounts_preserve_other_sources",
-        "exportedAccounts": 34,
+        "exportedAccounts": 36,
         "exportedTotals": {
-          "requests": 248955,
-          "promptTokens": 59575308720,
-          "completionTokens": 174857710,
-          "totalTokens": 59750166430,
+          "requests": 250396,
+          "promptTokens": 59779277063,
+          "completionTokens": 176411860,
+          "totalTokens": 59955688923,
           "netSpendUsd": 1500.76
         },
         "previousCodeExport": {
@@ -4004,8 +4005,25 @@
               "bigone@riskzero.kr",
               "yspark@riskzero.kr"
             ]
+          },
+          {
+            "fileName": "조욱상이사님/spend-report-2026-09-01-to-2026-09-30.csv",
+            "rowCount": 5,
+            "accounts": [
+              "airyoubi77@riskzero.kr"
+            ]
+          },
+          {
+            "fileName": "이병현이사님/spend-report-2026-09-01-to-2026-09-30.csv",
+            "rowCount": 8,
+            "accounts": [
+              "lbh0902@riskzero.kr"
+            ]
           }
-        ]
+        ],
+        "partialSpendBaselines": {
+          "lbh0902@riskzero.kr": "2026-09-17 ~ 2026-09-27"
+        }
       }
     }
   ],

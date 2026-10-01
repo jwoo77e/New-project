@@ -196,6 +196,11 @@ export type IndividualWeeklyUsagePeriod = {
   };
   totals: IndividualWeeklyUsageMetrics & { activeUsers: number };
   users: Record<string, IndividualWeeklyUsageUser>;
+  unallocatedUsage?: Record<string, IndividualUsageMetrics & {
+    baselinePeriod: string;
+    periods: string[];
+    reason: "incomplete_spend_baseline";
+  }>;
   notes: string[];
 };
 

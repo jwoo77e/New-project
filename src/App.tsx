@@ -4803,9 +4803,10 @@ function AdoptionView({
   const weeklyClaudeCollected = !isWeekly || selectedWeeklyUsage?.source.spendMethod !== "not_collected";
   const weeklyCodeCollected = !isWeekly || selectedWeeklyUsage?.source.codeMethod !== "not_collected";
   const weeklyCodePeriod = isWeekly ? selectedWeeklyUsage?.source.codePeriod : null;
+  const unallocatedAccountCount = Object.keys(selectedWeeklyUsage?.unallocatedUsage ?? {}).length;
   const coverageNote = isWeekly
     ? selectedWeeklyUsage
-      ? `${selectedWeeklyUsage.startDate} ~ ${selectedWeeklyUsage.endDate} · ${weeklyClaudeCollected ? "주차 사용량" : "Claude 원천 미수집"}`
+      ? `${selectedWeeklyUsage.startDate} ~ ${selectedWeeklyUsage.endDate} · ${weeklyClaudeCollected ? "주차 사용량" : "Claude 원천 미수집"}${unallocatedAccountCount ? ` · ${unallocatedAccountCount}계정 미확정` : ""}`
       : "주차별 원천 수집중"
     : selectedMonthlySpend
       ? `Claude ${selectedMonthlySpend.period}${selectedMonthlySpend.preservedAccounts?.length
@@ -5000,6 +5001,7 @@ function AdoptionView({
                 : "Claude Code Lines 원천은 수집중입니다. Codex 자료가 있는 경우 해당 토큰과 코드 라인은 합산에 포함됩니다."
               : "토큰은 월 누적 Spend를 사용하고, Code Lines는 최신 월 누적 스냅샷을 사용합니다. 코드 산출 밀도는 집계 기간이 일치할 때만 계산합니다."}
           </p>
+          {isWeekly && unallocatedAccountCount > 0 && <p>Claude {unallocatedAccountCount}계정은 이전 기간 자료가 부족하여 해당 주차 사용량을 분리할 수 없습니다. 해당 월간 차액은 주차 합계에서 제외했습니다.</p>}
           {codexPeriod.note && <p>Codex: {codexPeriod.note}</p>}
           {!gitlabCoverage.complete && <p>GitLab 수집 범위: {gitlabActivityData.source.period} · 선택 기간 {gitlabCoverage.available ? "부분 집계" : "미수집"}</p>}
         </div>
@@ -5123,6 +5125,7 @@ function AdoptionView({
                 gitlab,
               }, index) => {
                 const metricsMeasured = user.measurementStatus === "measured";
+                const unallocatedUsage = isWeekly ? selectedWeeklyUsage?.unallocatedUsage?.[user.email] : null;
                 const metricsUncollected = !metricsMeasured;
                 const toolUnpaid = user.allocationStatus === "unpaid";
                 const weeklyRecalculated = isWeekly && weeklyUsage != null && (
@@ -5178,7 +5181,7 @@ function AdoptionView({
                                 : <IndividualTokenUsageCell
                                     actualTokens={weeklyUsage.totalTokens}
                                   />
-                              : <span className="state-pill neutral">주차별 수집중</span>
+                              : <span className="state-pill neutral">{unallocatedUsage ? "기간 분리 필요" : "주차별 수집중"}</span>
                             : monthlySpend
                               ? <IndividualTokenUsageCell
                                   actualTokens={monthlySpend.totalTokens}
@@ -5194,6 +5197,7 @@ function AdoptionView({
                             <small>기존 자료 · {monthlySpend.sourcePeriod}</small>}
                           {isWeekly && weeklyUsage && weeklyUsage.netSpendUsd < 0 &&
                             <small>원천 비용 반올림 보정</small>}
+                          {unallocatedUsage && <small title={`미분리 ${numberFormat.format(unallocatedUsage.totalTokens)}토큰 · ${numberFormat.format(unallocatedUsage.requests)}건 · ${unallocatedUsage.periods.join(" 및 ")}`}>기존 자료 {unallocatedUsage.baselinePeriod} · 주차 미확정</small>}
                         </div> : metricsUncollected ? <span className={`state-pill ${toolUnpaid ? "warning" : "neutral"}`}>{toolUnpaid ? "미지급" : "수집중"}</span> : null}
                       </td>
                       <td>
@@ -5341,6 +5345,7 @@ function IndividualGitlabProfileView({
           <p>{user.displayAccount ?? user.email} · {periodLabel}</p>
           {codex.note && <p>{codex.note}</p>}
           {!weeklyPeriod && monthlySpend?.coverage === "partial" && <p>Claude 기존 자료 유지 · {monthlySpend.sourcePeriod}</p>}
+          {weeklyPeriod?.unallocatedUsage?.[user.email] && <p>Claude 기간 분리 필요 · 기존 자료 {weeklyPeriod.unallocatedUsage[user.email].baselinePeriod}. 월간 차액은 주차 합계에서 제외했습니다.</p>}
         </div>
         <div className="individual-profile-drive-links">
           <a className="individual-profile-drive-link" href={groupUrl} rel="noreferrer" target="_blank">

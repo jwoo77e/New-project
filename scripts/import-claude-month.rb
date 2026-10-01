@@ -46,6 +46,12 @@ baseline_first, baseline_last = baseline_meta.fetch("baselinePeriod").split(" ~ 
 days = components.flat_map { |c| a, b = c.fetch("period").split(" ~ ").map { |d| Date.iso8601(d) }; (a..b).to_a }.sort
 abort "Baseline must cover month start without gaps or overlaps" unless baseline_first == first && days == (first..baseline_last).to_a && baseline_last < last
 abort "Code and spend baseline periods differ" unless baseline_meta.dig("baselineCodeSource", "period") == baseline_meta.fetch("baselinePeriod")
+# Preserve explicitly partial account baselines before replacing their monthly rows.
+# An absent row in a complete team export may mean zero usage; an uncollected
+# personal-account period must never become zero just because the month closed.
+baseline_meta["partialSpendBaselines"] ||= target.fetch("users").select do |_, usage|
+  usage["coverage"] == "partial" && usage["sourcePeriod"] && usage["sourcePeriod"] != baseline_meta.fetch("baselinePeriod")
+end.transform_values { |usage| usage.fetch("sourcePeriod") }
 baseline = {}
 components.each do |component|
   component.fetch("users").each do |email, usage|
@@ -115,6 +121,7 @@ baseline_meta["previousCodeExport"] = { "fileName" => labels.fetch("previous-cod
 baseline_meta["spendExports"] = spend_exports
 abort "Spend account lost its code source" unless ((old_code.keys & current.keys) - code.keys).empty?
 week_users = current.sort.to_h.transform_values(&:dup)
+unallocated_usage = {}
 week_users.each do |email, usage|
   numeric.each do |key|
     usage[key] = (usage.fetch(key) - baseline.fetch(email, {}).fetch(key, 0)).round(6)
@@ -123,7 +130,19 @@ week_users.each do |email, usage|
   usage["codeLines"] = code.fetch(email, 0) - previous_code.fetch(email, 0)
   abort "Negative code remainder for #{email}" if usage.fetch("codeLines") < 0
   usage["coverage"] = "complete"
+  if (known_period = baseline_meta.fetch("partialSpendBaselines")[email])
+    abort "Separate code allocation required for partial spend baseline: #{email}" if usage.fetch("codeLines") != 0
+    known_first, known_last = known_period.split(" ~ ").map { |date| Date.iso8601(date) }
+    abort "Invalid partial baseline for #{email}" unless first <= known_first && known_first <= known_last && known_last <= baseline_last
+    remaining_periods = []
+    remaining_periods << "#{first} ~ #{known_first - 1}" if known_first > first
+    remaining_periods << "#{known_last + 1} ~ #{last}"
+    unallocated_usage[email] = numeric.to_h { |key| [key, usage.fetch(key)] }.merge(
+      "baselinePeriod" => known_period, "periods" => remaining_periods,
+      "reason" => "incomplete_spend_baseline")
+  end
 end
+week_users.reject! { |email, _| unallocated_usage.key?(email) }
 preserved = baseline.keys - current.keys
 users = baseline.select { |email, _| preserved.include?(email) }.transform_values(&:dup)
 users.each do |email, usage|
@@ -143,7 +162,7 @@ target.merge!("users" => users.sort.to_h, "totals" => totals.call(users.values, 
 period = {
   "key" => options.fetch("week-key"), "label" => "#{first.month}월 #{options.fetch('week-key').split('W').last}주차",
   "startDate" => (baseline_last + 1).to_s, "endDate" => last.to_s,
-  "coverage" => preserved.empty? ? "complete" : "partial",
+  "coverage" => preserved.empty? && unallocated_usage.empty? ? "complete" : "partial",
   "source" => {
     "previousSpendFile" => baseline_meta.fetch("baselineSpendFile"), "currentSpendFile" => labels.fetch("spend"),
     "previousSpendRows" => baseline_meta.fetch("baselineSpendRows"), "currentSpendRows" => spend_row_count,
@@ -153,9 +172,11 @@ period = {
   },
   "totals" => totals.call(week_users.values, numeric + ["codeLines"]).merge("activeUsers" => week_users.values.count { |u| u.fetch("totalTokens") > 0 || u.fetch("codeLines") > 0 }),
   "users" => week_users,
-  "notes" => ["Claude 월간 파일에서 #{baseline_meta.fetch('baselinePeriod')} 누적값을 뺀 차액입니다. Codex 차액의 미분리 기간은 별도로 표시합니다.",
+  "unallocatedUsage" => unallocated_usage,
+  "notes" => ["Claude 월간 파일에서 #{baseline_meta.fetch('baselinePeriod')} 누적값을 뺀 차액입니다.",
     "월간 파일에 없는 별도 #{preserved.size}계정의 이번 주 사용량은 미수집입니다.",
-    "이전 전체 보고서에 행이 없는 계정은 누적 사용량 0을 기준으로 차액을 계산했습니다.",
+    "이전 집계 기간이 부족한 #{unallocated_usage.size}계정의 월간 차액은 unallocatedUsage에 보관하고 주차 합계에서 제외했습니다.",
+    "이전 전체 보고서에 행이 없는 계정은 누적 사용량 0을 기준으로 계산하되, 별도 계정의 미수집 기간에는 적용하지 않습니다.",
     "순비용 차액에는 원천 보고서 반올림에 따른 음수 센트 보정이 포함될 수 있습니다."],
 }
 weekly["periods"] = (weekly.fetch("periods").reject { |p| p.fetch("key") == options.fetch("week-key") } + [period]).sort_by { |p| p.fetch("startDate") }
@@ -172,4 +193,4 @@ utilization["totals"]["codeLines"] = utilization.dig("source", "codeLines").sum 
   data["generatedAt"] = Time.now.getlocal("+09:00").iso8601 if data.key?("generatedAt")
   File.write(path, JSON.pretty_generate(data) + "\n")
 end
-puts JSON.pretty_generate({ "exportedAccounts" => current.size, "preservedAccounts" => preserved.sort, "monthlyTotals" => target.fetch("totals"), "monthlyCodeLines" => code_source.fetch("totalLines"), "week" => period.fetch("totals") })
+puts JSON.pretty_generate({ "exportedAccounts" => current.size, "preservedAccounts" => preserved.sort, "unallocatedAccounts" => unallocated_usage.keys, "monthlyTotals" => target.fetch("totals"), "monthlyCodeLines" => code_source.fetch("totalLines"), "week" => period.fetch("totals") })

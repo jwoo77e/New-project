@@ -424,13 +424,13 @@ describe("individualUtilizationData", () => {
     ).toBe(true);
     expect(data.monthlySpendSource.missingMonths).toHaveLength(0);
     expect(data.monthlySpend["2026-09"]).toMatchObject({
-      fileName: "spend-report-2026-09-01-to-2026-09-30.csv + Clevel/spend-report-2026-09-01-to-2026-09-30.csv",
+      fileName: "spend-report-2026-09-01-to-2026-09-30.csv + Clevel/spend-report-2026-09-01-to-2026-09-30.csv + 조욱상이사님/spend-report-2026-09-01-to-2026-09-30.csv + 이병현이사님/spend-report-2026-09-01-to-2026-09-30.csv",
       period: "2026-09-01 ~ 2026-09-30",
-      coverage: "partial",
-      rowCount: 219,
+      coverage: "complete",
+      rowCount: 232,
       totals: {
-        requests: 249576,
-        totalTokens: 59869232170,
+        requests: 250396,
+        totalTokens: 59955688923,
         netSpendUsd: 1500.76,
       },
     });
@@ -449,10 +449,10 @@ describe("individualUtilizationData", () => {
       totalTokens: 1924732152,
     });
     expect(data.monthlySpend["2026-09"]?.users["airyoubi77@riskzero.kr"]).toMatchObject({
-      requests: 447,
-      totalTokens: 82690096,
+      requests: 556,
+      totalTokens: 101534276,
       products: ["Chat", "Office Agents"],
-      models: ["claude-fable-5-1", "claude-haiku-4-5-20251001", "claude-opus-5"],
+      models: ["claude-fable-5-1", "claude-haiku-4-5-20251001", "claude-opus-5", "claude-opus-5-5"],
     });
     expect(data.source.codeLines.find((item) => item.month === "2026-09")).toMatchObject({
       fileName: "claude_code_team_2026_09_01_to_2026_09_30.csv + Clevel/claude_code_team_2026_09_01_to_2026_09_30.csv",
@@ -484,7 +484,9 @@ describe("individualUtilizationData", () => {
     expect(sumBy(Object.values(weekTwo.users), user => user.totalTokens)).toBe(14328556131);
     const weekThree = data.weeklyUsage["2026-09-W3"];
     const weekFour = data.weeklyUsage["2026-09-W4"];
-    expect(data.monthlySpend["2026-09"]?.totals.totalTokens).toBe(5230992572 + week.totals.totalTokens + weekTwo.totals.totalTokens + weekThree.totals.totalTokens + weekFour.totals.totalTokens);
+    const unallocatedTokens = sumBy(Object.values(weekFour.unallocatedUsage ?? {}), usage => usage.totalTokens);
+    expect(unallocatedTokens).toBe(67612573);
+    expect(data.monthlySpend["2026-09"]?.totals.totalTokens).toBe(5230992572 + week.totals.totalTokens + weekTwo.totals.totalTokens + weekThree.totals.totalTokens + weekFour.totals.totalTokens + unallocatedTokens);
     expect(data.source.codeLines.find((source) => source.month === "2026-09")?.totalLines).toBe(65601 + week.totals.codeLines + weekTwo.totals.codeLines + weekThree.totals.codeLines + weekFour.totals.codeLines);
     expect(weekThree).toMatchObject({
       startDate: "2026-09-17", endDate: "2026-09-27", coverage: "complete",
@@ -521,35 +523,38 @@ describe("individualUtilizationData", () => {
     expect(data.users.find((user) => user.email === "bigone@riskzero.kr")?.monthlyCodeLines["2026-09"]).toBe(50830);
   });
 
-  it("reconciles the September monthly export and fourth-week difference while preserving supplemental accounts", () => {
+  it("reconciles the September monthly export and excludes unseparated personal-account usage from the fourth week", () => {
     const data = individualUtilizationData;
     const month = data.monthlySpend["2026-09"]!;
     const updated = Object.values(month.users).filter(user => user.coverage === "complete");
-    expect(updated).toHaveLength(34);
-    expect(sumBy(updated, user => user.requests)).toBe(248955);
-    expect(sumBy(updated, user => user.totalTokens)).toBe(59750166430);
+    expect(updated).toHaveLength(36);
+    expect(sumBy(updated, user => user.requests)).toBe(250396);
+    expect(sumBy(updated, user => user.totalTokens)).toBe(59955688923);
     expect(sumBy(updated, user => user.netSpendUsd)).toBeCloseTo(1500.76, 2);
-    expect(month.preservedAccounts).toEqual(["airyoubi77@riskzero.kr", "lbh0902@riskzero.kr"]);
+    expect(month.preservedAccounts).toEqual([]);
     expect(claudeMonthlyCoverage("wody@riskzero.kr", "2026-09")).toEqual({
       complete: true, spendPeriod: "2026-09-01 ~ 2026-09-30", codePeriod: "2026-09-01 ~ 2026-09-30",
     });
     expect(claudeMonthlyCoverage("bigone@riskzero.kr", "2026-09")).toEqual({
       complete: true, spendPeriod: "2026-09-01 ~ 2026-09-30", codePeriod: "2026-09-01 ~ 2026-09-30",
     });
-    expect(month.users["lbh0902@riskzero.kr"].sourcePeriod).toBe("2026-09-17 ~ 2026-09-27");
+    expect(month.users["lbh0902@riskzero.kr"]).toMatchObject({requests: 885, promptTokens: 103186035, completionTokens: 802182, totalTokens: 103988217, netSpendUsd: 0, sourcePeriod: "2026-09-01 ~ 2026-09-30", coverage: "complete"});
+    expect(claudeMonthlyCoverage("lbh0902@riskzero.kr", "2026-09").complete).toBe(true);
+    expect(claudeMonthlyCoverage("airyoubi77@riskzero.kr", "2026-09").complete).toBe(true);
     const week = data.weeklyUsage["2026-09-W4"];
     expect(week.source).toMatchObject({previousCodeFile: "claude_code_team_2026_09_28.csv + Clevel/claude_code_team_2026_09_28.csv", currentCodeFile: "claude_code_team_2026_09_01_to_2026_09_30.csv + Clevel/claude_code_team_2026_09_01_to_2026_09_30.csv", codePeriod: "2026-09-28 ~ 2026-09-30"});
-    expect(week.totals).toMatchObject({requests: 41734, totalTokens: 10243424517, netSpendUsd: 71.34, codeLines: 504735 - 419028});
+    expect(week.totals).toMatchObject({requests: 41843, totalTokens: 10262268697, netSpendUsd: 71.34, codeLines: 504735 - 419028});
+    expect(week.coverage).toBe("partial");
+    expect(week.users["airyoubi77@riskzero.kr"]).toMatchObject({requests: 109, promptTokens: 18691935, completionTokens: 152245, totalTokens: 18844180, netSpendUsd: 0, codeLines: 0, coverage: "complete"});
+    expect(week.users["lbh0902@riskzero.kr"]).toBeUndefined();
+    expect(week.unallocatedUsage?.["lbh0902@riskzero.kr"]).toMatchObject({requests: 711, totalTokens: 67612573, baselinePeriod: "2026-09-17 ~ 2026-09-27", periods: ["2026-09-01 ~ 2026-09-16", "2026-09-28 ~ 2026-09-30"]});
+    expect(sumBy(Object.values(week.users), usage => usage.totalTokens)).toBe(week.totals.totalTokens);
     expect(week.users["bigone@riskzero.kr"]).toMatchObject({requests: 1421, totalTokens: 251081077, codeLines: 50830 - 45858, netSpendUsd: 0, coverage: "complete"});
     expect(week.users["yspark@riskzero.kr"]).toMatchObject({requests: 741, totalTokens: 234778420, codeLines: 33, netSpendUsd: 0, coverage: "complete"});
     expect(data.users.find(user => user.email === "yspark@riskzero.kr")?.monthlyCodeLines["2026-09"]).toBe(33);
     expect(week.users["wody@riskzero.kr"]).toMatchObject({codeLines: 91039 - 66702, totalTokens: 2262622007});
     expect(week.users["ykchj1011@riskzero.kr"].netSpendUsd).toBe(-0.01);
     expect(week.users["crow326@riskzero.kr"].netSpendUsd).toBe(-0.01);
-    for (const email of month.preservedAccounts!) {
-      expect(week.users[email]).toBeUndefined();
-      expect(month.users[email].coverage).toBe("partial");
-    }
     expect(month.totals.netSpendUsd).toBeCloseTo(1429.42 + week.totals.netSpendUsd, 2);
   });
 

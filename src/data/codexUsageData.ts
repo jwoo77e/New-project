@@ -73,8 +73,8 @@ export function codexUsageForRange(email: string, startDate: string, endDate: st
 
 export function combinedAiUsage(claudeTokens: number | null, claudeLines: number | null, codex: ReturnType<typeof codexUsageForRange>, claudePeriodComplete = true) {
   return {
-    tokens: claudeTokens === null && !codex.collected ? null : (claudeTokens ?? 0) + codex.tokens,
-    codeLines: claudeLines === null && !codex.collected ? null : (claudeLines ?? 0) + codex.codeLines,
+    tokens: claudeTokens === null && !codex.present ? null : (claudeTokens ?? 0) + codex.tokens,
+    codeLines: claudeLines === null && !codex.present ? null : (claudeLines ?? 0) + codex.codeLines,
     partial: claudeTokens === null || claudeLines === null || !claudePeriodComplete || !codex.complete || codex.overlapping,
   };
 }

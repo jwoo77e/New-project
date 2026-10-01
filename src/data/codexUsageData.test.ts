@@ -91,7 +91,7 @@ describe("Codex usage", () => {
     const lines = Object.values(actual.users).reduce((sum, usage) => sum + usage.codeLines, 0);
     expect(tokens).toBe(1903801646);
     expect(lines).toBe(79468);
-    expect(tokens + week.totals.totalTokens).toBe(12147226163);
+    expect(tokens + week.totals.totalTokens).toBe(12166070343);
     expect(lines + week.totals.codeLines).toBe(165175);
     expect(codexUsageForRange("yspark@riskzero.kr", week.startDate, week.endDate)).toMatchObject({collected: true, present: false, tokens: 0, codeLines: 0, complete: true});
   });
@@ -110,12 +110,19 @@ describe("Codex usage", () => {
     const month = individualUtilizationData.monthlySpend["2026-09"]!;
     const combined = users.map(user => combinedAiUsage(month.users[user.email]?.totalTokens ?? null,
       user.monthlyCodeLines["2026-09"] ?? 0, codexUsageForRange(user.email, "2026-09-01", "2026-09-30")));
-    expect(combined.reduce((sum, usage) => sum + (usage.tokens ?? 0), 0)).toBe(70461037837);
+    expect(combined.reduce((sum, usage) => sum + (usage.tokens ?? 0), 0)).toBe(70547494590);
     expect(combined.reduce((sum, usage) => sum + (usage.codeLines ?? 0), 0)).toBe(855090);
     const wody = combinedAiUsage(month.users["wody@riskzero.kr"].totalTokens, 91039,
       codexUsageForRange("wody@riskzero.kr", "2026-09-01", "2026-09-30"));
     expect(wody).toEqual({tokens: 11173499637, codeLines: 275786, partial: false});
     expect(gitlabCommittedCodeRatio(wody.codeLines, 33107)).toBeCloseTo(33107 / 275786 * 100);
+  });
+  it("keeps unresolved Claude usage unknown when the account has no Codex activity", () => {
+    const week = individualUtilizationData.weeklyUsage["2026-09-W4"];
+    const codex = codexUsageForRange("lbh0902@riskzero.kr", week.startDate, week.endDate);
+    expect(codex).toMatchObject({collected: true, present: false});
+    expect(combinedAiUsage(null, null, codex, false)).toEqual({tokens: null, codeLines: null, partial: true});
+    expect(combinedAiUsage(0, 0, codex)).toEqual({tokens: 0, codeLines: 0, partial: false});
   });
   it("uses a real month end so September monthly coverage is complete", () => {
     expect(calendarMonthEnd("2026-09")).toBe("2026-09-30");
