@@ -1,9 +1,9 @@
 import {describe, expect, it} from "vitest";
 import snapshot from "./codexUsageSnapshot.json";
-import {calendarMonthEnd, codexUsageForRange, combinedAiUsage} from "./codexUsageData";
+import {calendarMonthEnd, codexReportingWeeks, codexUsageForRange, combinedAiUsage} from "./codexUsageData";
 import {individualUtilizationData} from "./individualUtilizationData";
 import {calculateCodeOutputDensity} from "../lib/codeOutputDensity";
-import {gitlabCommittedCodeRatio} from "./gitlabActivityData";
+import {gitlabCommittedCodeRatio, gitlabUserMetricsForRange} from "./gitlabActivityData";
 
 describe("Codex usage", () => {
   it("uses combined generated lines as the commit ratio denominator", () => {
@@ -43,17 +43,17 @@ describe("Codex usage", () => {
     expect(combinedAiUsage(2003677746, 32922, codex, false)).toEqual({tokens: 6283848706, codeLines: 217669, partial: true});
     expect(combinedAiUsage(null, null, codexUsageForRange("unknown", "2026-08-01", "2026-08-31"))).toEqual({tokens: null, codeLines: null, partial: true});
   });
-  it("reconciles all 12 monthly accounts and each monthly remainder", () => {
+  it("preserves all 12 monthly accounts and the superseded remainder as provenance", () => {
     const month = snapshot.monthlyPeriods[0];
     expect(Object.keys(month.users)).toHaveLength(12);
     const result = Object.entries(month.users).map(([email, expected]) => {
       const actual = codexUsageForRange(email, month.startDate, month.endDate);
       expect(actual).toMatchObject({...expected, complete: true});
-      const previous = snapshot.periods.reduce((sum, period) => {
+      const previous = snapshot.periods.filter(period => period.endDate <= "2026-09-27").reduce((sum, period) => {
         const usage = (period.users as Partial<Record<string, {tokens: number; codeLines: number}>>)[email];
         return {tokens: sum.tokens + (usage?.tokens ?? 0), codeLines: sum.codeLines + (usage?.codeLines ?? 0)};
       }, {tokens: 0, codeLines: 0});
-      const remainder = codexUsageForRange(email, "2026-09-28", "2026-09-30");
+      const remainder = (snapshot.derivedPeriods[0].users as Record<string, {tokens: number; codeLines: number}>)[email];
       expect(previous.tokens + remainder.tokens).toBe(expected.tokens);
       expect(previous.codeLines + remainder.codeLines).toBe(expected.codeLines);
       expect(individualUtilizationData.users.some(user => user.email === email)).toBe(true);
@@ -64,16 +64,46 @@ describe("Codex usage", () => {
     const residual = snapshot.derivedPeriods[0];
     expect(Object.values(residual.users).reduce((sum, u) => sum + u.tokens, 0)).toBe(2807990511);
     expect(Object.values(residual.users).reduce((sum, u) => sum + u.codeLines, 0)).toBe(121638);
+    expect(residual.supersededBy).toBe("leaderboard-users_workspace-riskzero_2026-09-28-to-2026-09-30.csv");
+    expect(codexReportingWeeks).toHaveLength(0);
   });
-  it("exposes the September 1-2 gap rather than claiming an exact fourth week", () => {
+  it("uses the exact fourth-week export and restores aligned combined metrics", () => {
     const week = individualUtilizationData.weeklyUsage["2026-09-W4"];
     expect(week).toMatchObject({startDate: "2026-09-28", endDate: "2026-09-30", coverage: "partial"});
     expect(week.source).toMatchObject({spendMethod: "current_cumulative_minus_previous_cumulative", codeMethod: "current_cumulative_minus_previous_cumulative"});
     const codex = codexUsageForRange("wody@riskzero.kr", week.startDate, week.endDate);
-    expect(codex).toMatchObject({tokens: 1100445405, codeLines: 69714, complete: false, periodAligned: false});
-    expect(codex.note).toContain("2026-09-01 ~ 2026-09-02");
+    expect(codex).toMatchObject({tokens: 365430737, codeLines: 27621, complete: true, periodAligned: true, periodLabel: "2026-09-28 ~ 2026-09-30", note: ""});
+    const claude = week.users["wody@riskzero.kr"];
+    const combined = combinedAiUsage(claude.totalTokens, claude.codeLines, codex);
+    expect(combined).toEqual({tokens: 2628052744, codeLines: 51958, partial: false});
+    const gitlab = gitlabUserMetricsForRange("wody@riskzero.kr", week.startDate, week.endDate);
+    expect(gitlab).toMatchObject({commitCount: 129, additions: 20866});
+    expect(gitlabCommittedCodeRatio(combined.codeLines, gitlab.additions)).toBeCloseTo(20866 / 51958 * 100);
     expect(combinedAiUsage(null, null, codex)).toMatchObject({partial: true});
-    expect(codexUsageForRange("wody@riskzero.kr", "2026-09-03", "2026-09-30").tokens).toBe(3179725555);
+    expect(codexUsageForRange("wody@riskzero.kr", "2026-09-03", "2026-09-30")).toMatchObject({tokens: 3545156292, complete: true});
+    const actual = snapshot.periods.find(period => period.startDate === week.startDate)!;
+    expect(Object.keys(actual.users)).toHaveLength(10);
+    for (const [email, usage] of Object.entries(actual.users)) {
+      expect(individualUtilizationData.users.some(user => user.email === email)).toBe(true);
+      expect(codexUsageForRange(email, week.startDate, week.endDate)).toMatchObject({...usage, complete: true, periodAligned: true});
+    }
+    const tokens = Object.values(actual.users).reduce((sum, usage) => sum + usage.tokens, 0);
+    const lines = Object.values(actual.users).reduce((sum, usage) => sum + usage.codeLines, 0);
+    expect(tokens).toBe(1903801646);
+    expect(lines).toBe(79468);
+    expect(tokens + week.totals.totalTokens).toBe(12147226163);
+    expect(lines + week.totals.codeLines).toBe(165175);
+    expect(codexUsageForRange("yspark@riskzero.kr", week.startDate, week.endDate)).toMatchObject({collected: true, present: false, tokens: 0, codeLines: 0, complete: true});
+  });
+  it("discloses the 26-line source discrepancy without changing monthly or weekly observations", () => {
+    expect(snapshot.monthlyReconciliations[0].discrepancies).toEqual([
+      {email: "jaewoo.kim@riskzero.kr", metric: "codeLines", monthlyTotal: 15019, periodsTotal: 15045, excess: 26},
+    ]);
+    expect(codexUsageForRange("jaewoo.kim@riskzero.kr", "2026-09-01", "2026-09-30").codeLines).toBe(15019);
+    const week = codexUsageForRange("jaewoo.kim@riskzero.kr", "2026-09-28", "2026-09-30");
+    expect(week).toMatchObject({codeLines: 6220, complete: true, periodAligned: true});
+    expect(week.note).toContain("26");
+    expect(codexUsageForRange("", "2026-09-28", "2026-09-30").note).not.toContain("미분리");
   });
   it("recalculates September combined totals and commit ratios after the Claude month close", () => {
     const users = individualUtilizationData.users;

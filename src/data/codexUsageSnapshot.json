@@ -136,6 +136,53 @@
           "codeLines": 0
         }
       }
+    },
+    {
+      "startDate": "2026-09-28",
+      "endDate": "2026-09-30",
+      "fileName": "leaderboard-users_workspace-riskzero_2026-09-28-to-2026-09-30.csv",
+      "users": {
+        "crow326@riskzero.kr": {
+          "tokens": 68181409,
+          "codeLines": 530
+        },
+        "hhlee0227@riskzero.kr": {
+          "tokens": 23477552,
+          "codeLines": 21
+        },
+        "jaewoo.kim@riskzero.kr": {
+          "tokens": 195475942,
+          "codeLines": 6220
+        },
+        "kys0392@riskzero.kr": {
+          "tokens": 736610839,
+          "codeLines": 36430
+        },
+        "mjkim1122@riskzero.kr": {
+          "tokens": 19170869,
+          "codeLines": 227
+        },
+        "mygu@riskzero.kr": {
+          "tokens": 21086580,
+          "codeLines": 1410
+        },
+        "staycurious@riskzero.kr": {
+          "tokens": 7714491,
+          "codeLines": 156
+        },
+        "wody@riskzero.kr": {
+          "tokens": 365430737,
+          "codeLines": 27621
+        },
+        "woosung.jeon@riskzero.kr": {
+          "tokens": 221989433,
+          "codeLines": 0
+        },
+        "ykchj1011@riskzero.kr": {
+          "tokens": 244663794,
+          "codeLines": 6853
+        }
+      }
     }
   ],
   "monthlyPeriods": [
@@ -281,7 +328,46 @@
           "tokens": 250403977,
           "codeLines": 6853
         }
-      }
+      },
+      "supersededBy": "leaderboard-users_workspace-riskzero_2026-09-28-to-2026-09-30.csv"
+    }
+  ],
+  "monthlyReconciliations": [
+    {
+      "startDate": "2026-09-01",
+      "endDate": "2026-09-30",
+      "monthlyFile": "leaderboard-users_workspace-riskzero_2026-09-01-to-2026-09-30.csv",
+      "comparedPeriods": [
+        {
+          "startDate": "2026-09-03",
+          "endDate": "2026-09-09",
+          "fileName": "leaderboard-users_workspace-riskzero_2026-09-03-to-2026-09-09.csv"
+        },
+        {
+          "startDate": "2026-09-10",
+          "endDate": "2026-09-16",
+          "fileName": "leaderboard-users_workspace-riskzero_2026-09-10-to-2026-09-16.csv"
+        },
+        {
+          "startDate": "2026-09-17",
+          "endDate": "2026-09-27",
+          "fileName": "leaderboard-users_workspace-riskzero_2026-09-17-to-2026-09-27.csv"
+        },
+        {
+          "startDate": "2026-09-28",
+          "endDate": "2026-09-30",
+          "fileName": "leaderboard-users_workspace-riskzero_2026-09-28-to-2026-09-30.csv"
+        }
+      ],
+      "discrepancies": [
+        {
+          "email": "jaewoo.kim@riskzero.kr",
+          "metric": "codeLines",
+          "monthlyTotal": 15019,
+          "periodsTotal": 15045,
+          "excess": 26
+        }
+      ]
     }
   ]
 }

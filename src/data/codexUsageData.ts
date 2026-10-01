@@ -2,9 +2,31 @@ import snapshot from "./codexUsageSnapshot.json";
 
 type CodexUsage = {tokens: number; codeLines: number};
 type Period = {startDate: string; endDate: string; users: Partial<Record<string, CodexUsage>>};
+type MonthlyReconciliation = {
+  startDate: string;
+  endDate: string;
+  comparedPeriods: Array<Pick<Period, "startDate" | "endDate">>;
+  discrepancies: Array<{email: string; metric: string; monthlyTotal: number; periodsTotal: number; excess: number}>;
+};
 const periods: Period[] = snapshot.periods;
 const monthlyPeriods: Period[] = snapshot.monthlyPeriods;
-export const codexReportingWeeks = snapshot.derivedPeriods;
+const monthlyReconciliations: MonthlyReconciliation[] = snapshot.monthlyReconciliations;
+export const codexReportingWeeks = snapshot.derivedPeriods.filter((derived) =>
+  !periods.some((period) => period.startDate === derived.startDate && period.endDate === derived.endDate),
+);
+
+function reconciliationNote(account: string, startDate: string, endDate: string) {
+  return monthlyReconciliations
+    .filter((month) => (month.startDate === startDate && month.endDate === endDate) ||
+      month.comparedPeriods.some((period) => period.startDate === startDate && period.endDate === endDate))
+    .flatMap((month) => month.discrepancies)
+    .filter((item) => !account || item.email === account)
+    .map((item) => {
+      const unit = item.metric === "codeLines" ? "줄" : "토큰";
+      return `${item.email}: 주차 합계 ${item.periodsTotal.toLocaleString("ko-KR")}${unit}이 월간값 ${item.monthlyTotal.toLocaleString("ko-KR")}${unit}보다 ${item.excess.toLocaleString("ko-KR")}${unit} 많습니다. 각 기간의 원본 수치를 표시합니다.`;
+    })
+    .join(" ");
+}
 
 export function calendarMonthEnd(month: string) {
   const [year, monthNumber] = month.split("-").map(Number);
@@ -45,7 +67,7 @@ export function codexUsageForRange(email: string, startDate: string, endDate: st
     codeLines: matches.reduce((sum, u) => sum + u.codeLines, 0),
     periodLabel: contained.map((p) => `${p.startDate} ~ ${p.endDate}`).join(", "),
     periodAligned: true,
-    note: "",
+    note: reconciliationNote(account, startDate, endDate),
   };
 }
 
