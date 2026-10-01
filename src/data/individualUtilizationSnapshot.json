@@ -38,26 +38,15 @@
       },
       {
         "month": "2026-09",
-        "fileName": "claude_code_team_2026_09_01_to_2026_09_30.csv",
+        "fileName": "claude_code_team_2026_09_01_to_2026_09_30.csv + Clevel/claude_code_team_2026_09_01_to_2026_09_30.csv",
         "period": "2026-09-01 ~ 2026-09-30",
         "rowCount": 23,
-        "totalLines": 499730,
+        "totalLines": 504735,
         "preservedAccounts": [
-          {
-            "email": "bigone@riskzero.kr",
-            "period": "2026-09-01 ~ 2026-09-27",
-            "codeLines": 45858,
-            "fileName": "claude_code_team_2026_09_28.csv + Clevel/claude_code_team_2026_09_28.csv"
-          },
-          {
-            "email": "yspark@riskzero.kr",
-            "period": "2026-09-01 ~ 2026-09-27",
-            "codeLines": 0,
-            "fileName": "claude_code_team_2026_09_28.csv + Clevel/claude_code_team_2026_09_28.csv"
-          }
+
         ],
-        "exportedRowCount": 21,
-        "exportedTotalLines": 453872
+        "exportedRowCount": 23,
+        "exportedTotalLines": 504735
       }
     ],
     "conversations": {
@@ -82,7 +71,7 @@
     "totalTokens": 37099774050,
     "netSpendUsd": 414.44,
     "grossSpendUsd": 414.44,
-    "codeLines": 1789408,
+    "codeLines": 1794413,
     "conversations": 168,
     "humanPrompts": 1429,
     "assistantResponses": 1433
@@ -184,7 +173,7 @@
       "modelUsage": {
       },
       "monthlyCodeLines": {
-        "2026-09": 45858
+        "2026-09": 50830
       },
       "monthlyActivity": {
       },
@@ -2785,7 +2774,7 @@
       },
       "monthlyCodeLines": {
         "2026-08": 0,
-        "2026-09": 0
+        "2026-09": 33
       },
       "monthlyActivity": {
       },

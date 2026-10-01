@@ -1,5 +1,5 @@
 import {execFileSync} from "node:child_process";
-import {mkdtempSync, readFileSync, rmSync, writeFileSync} from "node:fs";
+import {mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join, resolve} from "node:path";
 import {describe, expect, it} from "vitest";
@@ -24,15 +24,40 @@ function fixture(run, {tokens = 150, previousLines = 10, baselineStart = "2026-0
     writeFileSync(spend, `user_email,product,model,total_requests,total_prompt_tokens,total_completion_tokens,total_net_spend_usd\na@example.com,Claude Code,model,15,${tokens},0,1.00\n`);
     writeFileSync(code, "User,Lines this Month\na@example.com,15\n");
     writeFileSync(previous, `User,Lines this Month\na@example.com,${previousLines}\n`);
-    const invoke = () => execFileSync("ruby", [resolve("scripts/import-claude-month.rb"), "--data-dir", directory,
-      "--month", "2026-09", "--week-key", "2026-09-W4", "--spend", spend, "--code", code, "--previous-code", previous], {stdio: "pipe", encoding: "utf8"});
-    run({invoke, read: () => files.map(file => readFileSync(file, "utf8")), baseline, code});
+    const invoke = (extra = []) => execFileSync("ruby", [resolve("scripts/import-claude-month.rb"), "--data-dir", directory,
+      "--month", "2026-09", "--week-key", "2026-09-W4", "--spend", spend, "--code", code, "--previous-code", previous, ...extra], {stdio: "pipe", encoding: "utf8"});
+    run({invoke, read: () => files.map(file => readFileSync(file, "utf8")), baseline, code, directory, spend});
   } finally {
     rmSync(directory, {recursive: true, force: true});
   }
 }
 
 describe("Claude monthly reconciliation", () => {
+  it("adds another organization without replacing closed accounts or double counting matching file names", () => fixture(({invoke, read, directory, spend}) => {
+    invoke();
+    const before = read().map(JSON.parse);
+    const supplemental = join(directory, "Clevel");
+    mkdirSync(supplemental);
+    const extraSpend = join(supplemental, "monthly.csv"), extraCode = join(supplemental, "monthly-code.csv"), extraPrevious = join(supplemental, "previous-code.csv");
+    writeFileSync(extraSpend, "user_email,product,model,total_requests,total_prompt_tokens,total_completion_tokens,total_net_spend_usd\npreserved@example.com,Claude Code,model,6,80,0,3.00\n");
+    writeFileSync(extraCode, "User,Lines this Month\npreserved@example.com,9\n");
+    writeFileSync(extraPrevious, "User,Lines this Month\npreserved@example.com,7\n");
+    const extra = ["--spend", extraSpend, "--code", extraCode, "--previous-code", extraPrevious];
+    invoke(extra);
+    const saved = read();
+    const [monthly, weekly, utilization] = saved.map(JSON.parse);
+    expect(monthly.months[0].users["a@example.com"]).toEqual(before[0].months[0].users["a@example.com"]);
+    expect(weekly.periods[1].users["a@example.com"]).toEqual(before[1].periods[1].users["a@example.com"]);
+    expect(monthly.months[0]).toMatchObject({coverage: "complete", preservedAccounts: [], totals: {totalTokens: 230, netSpendUsd: 4}});
+    expect(monthly.months[0].monthClose.spendExports[1]).toEqual({fileName: "Clevel/monthly.csv", rowCount: 1, accounts: ["preserved@example.com"]});
+    expect(weekly.periods[1].users["preserved@example.com"]).toMatchObject({requests: 1, totalTokens: 30, netSpendUsd: 1, codeLines: 2});
+    expect(utilization.source.codeLines[0]).toMatchObject({totalLines: 24, preservedAccounts: []});
+    invoke(extra);
+    expect(read()).toEqual(saved);
+    expect(() => invoke()).toThrow();
+    expect(() => invoke([...extra, "--spend", spend])).toThrow();
+    expect(read()).toEqual(saved);
+  }));
   it("replaces imported accounts, preserves other sources, and retains rounding corrections", () => fixture(({invoke, read, baseline, code}) => {
     invoke();
     const first = read();

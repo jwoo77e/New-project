@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-01T09:45:05+09:00",
+  "generatedAt": "2026-10-01T09:58:46+09:00",
   "months": [
     {
       "month": "2026-05",
@@ -1314,15 +1314,15 @@
     },
     {
       "month": "2026-09",
-      "fileName": "spend-report-2026-09-01-to-2026-09-30.csv",
+      "fileName": "spend-report-2026-09-01-to-2026-09-30.csv + Clevel/spend-report-2026-09-01-to-2026-09-30.csv",
       "period": "2026-09-01 ~ 2026-09-30",
-      "rowCount": 194,
+      "rowCount": 219,
       "coverage": "partial",
       "totals": {
-        "requests": 247414,
-        "promptTokens": 59209898743,
-        "completionTokens": 173473930,
-        "totalTokens": 59383372673,
+        "requests": 249576,
+        "promptTokens": 59693449447,
+        "completionTokens": 175782723,
+        "totalTokens": 59869232170,
         "netSpendUsd": 1500.76
       },
       "users": {
@@ -1345,10 +1345,10 @@
           "coverage": "partial"
         },
         "bigone@riskzero.kr": {
-          "requests": 11573,
-          "promptTokens": 1664503981,
-          "completionTokens": 9147094,
-          "totalTokens": 1673651075,
+          "requests": 12994,
+          "promptTokens": 1914352342,
+          "completionTokens": 10379810,
+          "totalTokens": 1924732152,
           "netSpendUsd": 0.0,
           "products": [
             "Chat",
@@ -1363,8 +1363,8 @@
             "claude-sonnet-4-6",
             "claude-sonnet-5"
           ],
-          "sourcePeriod": "2026-09-01 ~ 2026-09-27",
-          "coverage": "partial"
+          "sourcePeriod": "2026-09-01 ~ 2026-09-30",
+          "coverage": "complete"
         },
         "crow326@riskzero.kr": {
           "requests": 15342,
@@ -1995,10 +1995,10 @@
           "coverage": "complete"
         },
         "yspark@riskzero.kr": {
-          "requests": 6611,
-          "promptTokens": 960405594,
-          "completionTokens": 7273105,
-          "totalTokens": 967678699,
+          "requests": 7352,
+          "promptTokens": 1194107937,
+          "completionTokens": 8349182,
+          "totalTokens": 1202457119,
           "netSpendUsd": 0.0,
           "products": [
             "Chat",
@@ -2013,10 +2013,11 @@
             "claude-opus-4-8",
             "claude-opus-5",
             "claude-opus-5-5",
-            "claude-sonnet-5"
+            "claude-sonnet-5",
+            "claude-sonnet-5-5"
           ],
-          "sourcePeriod": "2026-09-01 ~ 2026-09-27",
-          "coverage": "partial"
+          "sourcePeriod": "2026-09-01 ~ 2026-09-30",
+          "coverage": "complete"
         }
       },
       "components": [
@@ -3898,13 +3899,11 @@
       ],
       "preservedAccounts": [
         "airyoubi77@riskzero.kr",
-        "bigone@riskzero.kr",
-        "lbh0902@riskzero.kr",
-        "yspark@riskzero.kr"
+        "lbh0902@riskzero.kr"
       ],
       "notes": [
         "월간 파일에 포함된 계정은 전체 월 수치로 교체했습니다. components는 차액 계산용 이전 원천이며 현재 월 합계에 다시 더하지 않습니다.",
-        "이번 파일에 없는 별도 계정 4명은 기존 자료와 집계 기간을 유지했습니다."
+        "이번 파일에 없는 별도 계정 2명은 기존 자료와 집계 기간을 유지했습니다."
       ],
       "monthClose": {
         "baselinePeriod": "2026-09-01 ~ 2026-09-27",
@@ -3946,19 +3945,67 @@
           "yspark@riskzero.kr": 0
         },
         "method": "replace_exported_accounts_preserve_other_sources",
-        "exportedAccounts": 32,
+        "exportedAccounts": 34,
         "exportedTotals": {
-          "requests": 228609,
-          "promptTokens": 56466848441,
-          "completionTokens": 156128718,
-          "totalTokens": 56622977159,
+          "requests": 248955,
+          "promptTokens": 59575308720,
+          "completionTokens": 174857710,
+          "totalTokens": 59750166430,
           "netSpendUsd": 1500.76
         },
         "previousCodeExport": {
-          "fileName": "claude_code_team_2026_09_28.csv",
-          "rowCount": 21,
-          "totalLines": 373170
-        }
+          "fileName": "claude_code_team_2026_09_28.csv + Clevel/claude_code_team_2026_09_28.csv",
+          "rowCount": 23,
+          "totalLines": 419028
+        },
+        "spendExports": [
+          {
+            "fileName": "spend-report-2026-09-01-to-2026-09-30.csv",
+            "rowCount": 194,
+            "accounts": [
+              "crow326@riskzero.kr",
+              "cslee@riskzero.kr",
+              "day@riskzero.kr",
+              "dhlee@riskzero.kr",
+              "doyul@riskzero.kr",
+              "drager72@riskzero.kr",
+              "hb777lee@riskzero.kr",
+              "hchbae1001@riskzero.kr",
+              "hhlee0227@riskzero.kr",
+              "huizhen0227@riskzero.kr",
+              "jaewoo.kim@riskzero.kr",
+              "jhpark@riskzero.kr",
+              "jhyun@riskzero.kr",
+              "jsc@riskzero.kr",
+              "jungyr98@riskzero.kr",
+              "kh.kim@riskzero.kr",
+              "kjh17@riskzero.kr",
+              "kys0392@riskzero.kr",
+              "mjkim1122@riskzero.kr",
+              "mjlee0828@riskzero.kr",
+              "mygu@riskzero.kr",
+              "pentasix@riskzero.kr",
+              "pms0805@riskzero.kr",
+              "rkgmf1230@riskzero.kr",
+              "sieghaft@riskzero.kr",
+              "sjlim@riskzero.kr",
+              "songinna@riskzero.kr",
+              "staycurious@riskzero.kr",
+              "use0505@riskzero.kr",
+              "wody@riskzero.kr",
+              "woosung.jeon@riskzero.kr",
+              "ykchj1011@riskzero.kr"
+            ]
+          },
+          {
+            "fileName": "Clevel/spend-report-2026-09-01-to-2026-09-30.csv",
+            "rowCount": 25,
+            "accounts": [
+              "bigone@riskzero.kr",
+              "yspark@riskzero.kr"
+            ]
+          }
+        ]
       }
     }
   ],

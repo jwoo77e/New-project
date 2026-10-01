@@ -80,8 +80,8 @@ describe("Codex usage", () => {
     const month = individualUtilizationData.monthlySpend["2026-09"]!;
     const combined = users.map(user => combinedAiUsage(month.users[user.email]?.totalTokens ?? null,
       user.monthlyCodeLines["2026-09"] ?? 0, codexUsageForRange(user.email, "2026-09-01", "2026-09-30")));
-    expect(combined.reduce((sum, usage) => sum + (usage.tokens ?? 0), 0)).toBe(69975178340);
-    expect(combined.reduce((sum, usage) => sum + (usage.codeLines ?? 0), 0)).toBe(850085);
+    expect(combined.reduce((sum, usage) => sum + (usage.tokens ?? 0), 0)).toBe(70461037837);
+    expect(combined.reduce((sum, usage) => sum + (usage.codeLines ?? 0), 0)).toBe(855090);
     const wody = combinedAiUsage(month.users["wody@riskzero.kr"].totalTokens, 91039,
       codexUsageForRange("wody@riskzero.kr", "2026-09-01", "2026-09-30"));
     expect(wody).toEqual({tokens: 11173499637, codeLines: 275786, partial: false});
