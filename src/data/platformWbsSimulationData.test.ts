@@ -2,21 +2,17 @@ import { describe, expect, it } from "vitest";
 import { platformWbsSimulationData } from "./platformWbsSimulationData";
 
 describe("platformWbsSimulationData", () => {
-  it("covers all 23 current platform development members with a clear simulation boundary", () => {
+  it("covers all 22 current platform development members with a clear simulation boundary", () => {
     expect(platformWbsSimulationData.source.mode).toBe("simulation");
-    expect(platformWbsSimulationData.summary.memberCount).toBe(23);
-    expect(new Set(platformWbsSimulationData.members.map((member) => member.email)).size).toBe(23);
+    expect(platformWbsSimulationData.summary.memberCount).toBe(22);
+    expect(new Set(platformWbsSimulationData.members.map((member) => member.email)).size).toBe(22);
     expect(platformWbsSimulationData.members.some((member) => member.email === "jisub1221@riskzero.kr")).toBe(false);
     expect(platformWbsSimulationData.members.find((member) => member.displayName === "박수진 과장")).toMatchObject({
       email: "sjpark@riskzero.kr",
       project: "신규 플랫폼",
       workPackage: "품질 기준 관리",
     });
-    expect(platformWbsSimulationData.members.find((member) => member.displayName === "송인나 대리")).toMatchObject({
-      email: "songinna@riskzero.kr",
-      project: "신규 플랫폼",
-      workPackage: "QA 시나리오",
-    });
+    expect(platformWbsSimulationData.members.some((member) => member.email === "songinna@riskzero.kr")).toBe(false);
     expect(platformWbsSimulationData.members.find((member) => member.displayName === "최종윤 이사")?.email)
       .toBe("drager72@riskzero.kr");
     expect(platformWbsSimulationData.members.find((member) => member.displayName === "이창섭 부장")?.email)
@@ -29,7 +25,7 @@ describe("platformWbsSimulationData", () => {
     expect(platformWbsSimulationData.summary.completedTaskCount).toBe(
       platformWbsSimulationData.members.reduce((sum, member) => sum + member.completedTaskCount, 0),
     );
-    expect(platformWbsSimulationData.summary.normalMemberCount).toBe(23);
+    expect(platformWbsSimulationData.summary.normalMemberCount).toBe(22);
     expect(
       platformWbsSimulationData.members.every(
         (member) =>

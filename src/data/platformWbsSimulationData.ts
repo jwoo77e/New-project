@@ -1,3 +1,5 @@
+import { isCurrentEmployee } from "./activeRoster";
+
 export type PlatformWbsStatus = "ahead" | "on-track" | "at-risk" | "delayed";
 
 export type PlatformWbsMemberProgress = {
@@ -354,7 +356,7 @@ function statusForVariance(variance: number): PlatformWbsStatus {
   return "delayed";
 }
 
-const members = memberSeeds.map((member) => {
+const members = memberSeeds.filter((member) => isCurrentEmployee(member.email)).map((member) => {
   const scheduleVariance = member.actualProgress - member.plannedProgress;
   return {
     ...member,

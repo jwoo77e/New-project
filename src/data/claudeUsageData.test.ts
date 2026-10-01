@@ -14,13 +14,14 @@ describe("Claude usage snapshots", () => {
       codeLinesFile: "claude_code_team_2026_08_01_to_2026_08_31.csv",
     });
     expect(initialClaudeTeamUsageData.source.verification.spendRecords).toBe(138);
-    expect(initialClaudeTeamUsageData.licensedUsers).toBe(32);
-    expect(initialClaudeTeamUsageData.activeUsers).toBe(32);
-    expect(initialClaudeTeamUsageData.totalRequests).toBe(161524);
-    expect(initialClaudeTeamUsageData.totalTokens).toBe(37097746150);
+    expect(initialClaudeTeamUsageData.licensedUsers).toBe(31);
+    expect(initialClaudeTeamUsageData.activeUsers).toBe(31);
+    expect(initialClaudeTeamUsageData.totalRequests).toBe(161524 - 17);
+    expect(initialClaudeTeamUsageData.totalTokens).toBe(37097746150 - 1523030);
     expect(initialClaudeTeamUsageData.totalGrossSpendUsd).toBeCloseTo(414.44, 2);
     expect(initialClaudeTeamUsageData.totalCodeLines).toBe(442131);
     expect(initialClaudeTeamUsageData.users.some((user) => user.email === "jisub1221@riskzero.kr")).toBe(false);
+    expect(initialClaudeTeamUsageData.users.some((user) => user.email === "songinna@riskzero.kr")).toBe(false);
 
     expect(claudeExportUsageData.source).toMatchObject({
       collectedAt: "2026-08-05",

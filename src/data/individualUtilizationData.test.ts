@@ -10,9 +10,10 @@ describe("individualUtilizationData", () => {
     const data = individualUtilizationData;
 
     expect(data.source.spend.rowCount).toBe(138);
-    expect(data.users).toHaveLength(41);
-    expect(data.users.filter((user) => user.measurementStatus === "measured")).toHaveLength(38);
+    expect(data.users).toHaveLength(40);
+    expect(data.users.filter((user) => user.measurementStatus === "measured")).toHaveLength(37);
     expect(data.users.some((user) => user.email === "jisub1221@riskzero.kr")).toBe(false);
+    expect(data.users.some((user) => user.email === "songinna@riskzero.kr")).toBe(false);
     expect(data.totals.requests).toBe(161582);
     expect(data.totals.totalTokens).toBe(37099774050);
     expect(data.totals.netSpendUsd).toBeCloseTo(414.44, 2);
@@ -71,7 +72,7 @@ describe("individualUtilizationData", () => {
       .toMatchObject({requests: 35, totalTokens: 3225504, netSpendUsd: 7.51});
   });
 
-  it("promotes Park Sujin and Song Inna to measured users when the new source includes them", () => {
+  it("keeps measured Park Sujin visible while excluding departed Song Inna", () => {
     const users = individualUtilizationData.users.filter((user) =>
       ["sjpark@riskzero.kr", "songinna@riskzero.kr"].includes(user.email),
     );
@@ -86,17 +87,6 @@ describe("individualUtilizationData", () => {
         models: ["claude-haiku-4-5-20251001", "claude-sonnet-5"],
         requests: 13,
         totalTokens: 786254,
-        totalCodeLines: 0,
-      }),
-      expect.objectContaining({
-        displayName: "송인나 대리",
-        displayAccount: "songinna@riskzero.kr",
-        measurementStatus: "measured",
-        usageScopeOverride: null,
-        products: ["Cowork"],
-        models: ["claude-haiku-4-5-20251001", "claude-sonnet-5"],
-        requests: 17,
-        totalTokens: 1523030,
         totalCodeLines: 0,
       }),
     ]);

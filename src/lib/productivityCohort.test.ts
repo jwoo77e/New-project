@@ -89,8 +89,8 @@ describe("buildProductivityExecutiveModel", () => {
       claudeConversations: 75,
       conversationSignals: 75,
     });
-    expect(model.activeUsers).toBe(32);
-    expect(model.licensedUsers).toBe(32);
+    expect(model.activeUsers).toBe(31);
+    expect(model.licensedUsers).toBe(31);
     expect(model.activationRate).toBe(100);
     expect(model.observableRepositoryOutputs).toBe(
       driveArtifactRepositoryData.activityAnalysis.totalOutputSignals +
@@ -267,7 +267,7 @@ describe("buildProductivityExecutiveModel", () => {
     expect(model.axKpis.adoption).toMatchObject({
       evidenceContributors: 3,
     });
-    expect(model.axKpis.adoption.evidenceCoverageRate).toBeCloseTo((3 / 32) * 100, 5);
+    expect(model.axKpis.adoption.evidenceCoverageRate).toBeCloseTo((3 / 31) * 100, 5);
 
     expect(model.axKpis.activity).toMatchObject({
       observedDays: 4,
@@ -293,13 +293,13 @@ describe("buildProductivityExecutiveModel", () => {
   });
 
   it("reconciles active Claude seats with the latest spend activity", () => {
-    expect(initialClaudeTeamUsageData.source.verification.memberAccounts).toBe(32);
-    expect(initialClaudeTeamUsageData.source.verification.activeMemberAccounts).toBe(32);
-    expect(initialClaudeTeamUsageData.source.verification.approvedAccounts).toBe(32);
+    expect(initialClaudeTeamUsageData.source.verification.memberAccounts).toBe(31);
+    expect(initialClaudeTeamUsageData.source.verification.activeMemberAccounts).toBe(31);
+    expect(initialClaudeTeamUsageData.source.verification.approvedAccounts).toBe(31);
     expect(initialClaudeTeamUsageData.source.verification.approvedButNoUsage).toBe(1);
-    expect(initialClaudeTeamUsageData.users).toHaveLength(32);
-    expect(initialClaudeTeamUsageData.activeUsers).toBe(32);
-    expect(initialClaudeTeamUsageData.spendUsers).toBe(30);
+    expect(initialClaudeTeamUsageData.users).toHaveLength(31);
+    expect(initialClaudeTeamUsageData.activeUsers).toBe(31);
+    expect(initialClaudeTeamUsageData.spendUsers).toBe(29);
     expect(initialClaudeTeamUsageData.codeUsers).toBe(18);
     expect(
       initialClaudeTeamUsageData.users.find((user) => user.email === "dhlee@riskzero.kr"),

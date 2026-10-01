@@ -519,19 +519,6 @@ const records: AiToolApprovalRecord[] = [
     note: "",
   },
   {
-    no: 32,
-    category: "Claude",
-    tool: "Claude Team Plan Standard",
-    account: "songinna@riskzero.kr",
-    owner: "송인나 대리 / 플랫폼개발",
-    department: "플랫폼개발",
-    monthlyUsd: 25,
-    monthlyKrw: 37125,
-    startMonth: "2026-08",
-    paymentMethod: "AI 전용 카드",
-    note: "",
-  },
-  {
     no: 33,
     category: "Claude",
     tool: "Claude Team Plan Standard",
@@ -685,6 +672,20 @@ const records: AiToolApprovalRecord[] = [
 // The seat remains in past plan comparisons, but is absent from the current approval sheet.
 const historicalRecords: Array<AiToolApprovalRecord & { throughMonth: string }> = [
   {
+    no: 32,
+    category: "Claude",
+    tool: "Claude Team Plan Standard",
+    account: "songinna@riskzero.kr",
+    owner: "송인나 대리 / 플랫폼개발",
+    department: "플랫폼개발",
+    monthlyUsd: 25,
+    monthlyKrw: 37125,
+    startMonth: "2026-08",
+    throughMonth: "2026-09",
+    paymentMethod: "AI 전용 카드",
+    note: "퇴사에 따라 2026년 10월 운영 예산부터 제외 · 8~9월 계획 비교용",
+  },
+  {
     no: 28,
     category: "Claude",
     tool: "Claude Team Plan Standard",
@@ -718,7 +719,7 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     sheetName: "전사 AI도구 현황조사표",
     collectedAt: "2026-10-01",
     period: "2026년 10월 월 고정비 기준 · USD 1 = 1,485원",
-    note: "계정 ID, 주사용자/부서, 구독료, 결재수단과 적용 시작월을 반영했습니다. 퇴사자 심지섭 대리의 Claude Standard 좌석은 현재 운영 예산에서 제외했으며, 실제 청구 중단 여부는 별도 확인이 필요합니다. Claude Team Plan, ChatGPT Business Premium·Standard와 플랫폼개발팀 GH AI Agent 개발용 AI API 서비스 고정비 150만원을 포함합니다.",
+    note: "계정 ID, 주사용자/부서, 구독료, 결재수단과 적용 시작월을 반영했습니다. 퇴사자 심지섭 대리·송인나 대리의 Claude Standard 좌석은 현재 운영 예산에서 제외했으며, 실제 청구 중단 여부는 별도 확인이 필요합니다. Claude Team Plan, ChatGPT Business Premium·Standard와 플랫폼개발팀 GH AI Agent 개발용 AI API 서비스 고정비 150만원을 포함합니다.",
   },
   exchangeRate,
   totalAccounts: records.length,
@@ -746,7 +747,7 @@ export const initialAiToolApprovalData: AiToolApprovalData = {
     "변경 반영: 구문영 사원의 Claude Team Plan을 Standard에서 Premium으로 변경하고 월 고정비 예산을 조정했습니다.",
     "변경 반영: 이동훈 부장에게 Claude Team Plan Standard를 할당하고 월 고정비 예산을 조정했습니다.",
     "변경 반영: 이동훈 부장에게 ChatGPT Business Plan Standard를 2026년 9월부터 추가하고 기존 Claude 좌석은 유지했습니다.",
-    "변경 반영: 송인나 대리에게 Claude Team Plan Standard를 2026년 8월부터 할당했습니다.",
+    "변경 반영: 퇴사자 송인나 대리의 Claude Team Plan Standard 1좌석($25·37,125원)을 2026년 10월부터 운영 예산에서 제외했습니다. 8~9월 계획 비교에는 기존 할당을 유지합니다.",
     "변경 반영: 전사 chatGPT Pro(20배) 계정은 사용 종료로 결재 원장에서 제거했습니다.",
     "변경 반영: 2026년 9월부터 박연석 전무와 김대일 상무의 ChatGPT Pro(20배)를 Business Plan Premium으로 변경했습니다.",
     "변경 반영: 2026년 9월부터 이민재 부장에게 ChatGPT Business Plan Standard를 추가하고 김성진 부장의 Premium, 이한호 대리의 Standard는 유지했습니다.",
@@ -771,7 +772,9 @@ export function approvalMonthlyTotalsForMonth(
 ) {
   const activeRecords = [
     ...approvalData.records.filter((record) => !record.startMonth || record.startMonth <= month),
-    ...(approvalData.historicalRecords ?? []).filter((record) => month <= record.throughMonth),
+    ...(approvalData.historicalRecords ?? []).filter(
+      (record) => (!record.startMonth || record.startMonth <= month) && month <= record.throughMonth,
+    ),
   ];
 
   const pricedRecords = activeRecords.map((record) => {

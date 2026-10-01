@@ -17,12 +17,12 @@ type TeamPlanConversionAccount = {
   currentMonthlyKrw: number;
 };
 
-// Includes the previously omitted Kim Gihwan and the newly hired Choi Jisuk.
-const eligibleEmployees = 41;
+// Includes Kim Gihwan and Choi Jisuk; excludes Song Inna after her October departure notice.
+const eligibleEmployees = 40;
 const nonToolUsers = 1;
 const chatGptOnlyUsers = 1;
 const leaveExcludedEmployees = 2;
-const departedEmployees = 2;
+const departedEmployees = 3;
 const tokenReferenceMonth = "2026-07";
 const powerUserThreshold = 1_000_000_000;
 const lowUsageThreshold = 100_000_000;
@@ -76,7 +76,7 @@ const julyTokenUsers = Object.entries(julySpend.users)
 const supplementalTokenMeasuredAccounts = [
   "dhlee@riskzero.kr",
   "songinna@riskzero.kr",
-];
+].filter(isCurrentEmployee);
 const measuredTokenEmails = new Set([
   ...julyTokenUsers.map((user) => user.email.toLowerCase()),
   ...supplementalTokenMeasuredAccounts,
