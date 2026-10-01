@@ -1,3 +1,5 @@
+import { appendSeptemberCardSpend } from "./septemberCardSpend";
+
 export type MonthlyActual = {
   month: string;
   label: string;
@@ -51,6 +53,8 @@ export type SourceMeta = {
   expectedMonthlyFixed: number;
   expectedQuarterFixed: number;
   priorYearTotal: number;
+  costBasisNotes?: string[];
+  vendorCostNote?: string;
 };
 
 export type DashboardData = {
@@ -63,7 +67,7 @@ export type DashboardData = {
   topTransactions: TransactionCost[];
 };
 
-export const initialDashboardData: DashboardData = {
+const dashboardThroughAugust: DashboardData = {
   sourceMeta: {
     fileName: "AI 관련 비용 분석_부서별_대시보드용.xlsx + 2026년 4-5월 법인카드 AI 사용내역 + 청구내역조회20260720.xlsx + 하나카드_승인내역_2026-07.xlsx + 승인내역조회_8월.xls",
     sourceSheet: "키워드검색결과 + 2026년 전체내역 + 2026년 5월 + 청구내역조회20260720 + 카드승인내역 + sheet 1",
@@ -318,3 +322,5 @@ export const initialDashboardData: DashboardData = {
     },
   ],
 };
+
+export const initialDashboardData = appendSeptemberCardSpend(dashboardThroughAugust);

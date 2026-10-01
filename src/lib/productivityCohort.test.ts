@@ -12,8 +12,9 @@ import type { DriveArtifactTrendSnapshot } from "./driveArtifactTrendSnapshot";
 import { buildProductivityExecutiveModel } from "./productivityCohort";
 
 describe("buildProductivityExecutiveModel", () => {
+  const actualsThroughAugust = initialDashboardData.monthlyActuals.filter((row) => row.month <= "2026-08");
   const model = buildProductivityExecutiveModel({
-    monthlyActuals: initialDashboardData.monthlyActuals,
+    monthlyActuals: actualsThroughAugust,
     approvalData: initialAiToolApprovalData,
     chatGptData: chatGptUsageData,
     claudeTeamData: initialClaudeTeamUsageData,
@@ -26,6 +27,31 @@ describe("buildProductivityExecutiveModel", () => {
     expect(model.currentMonth).toBe("2026-08");
     expect(model.lagMonths).toBe(0);
     expect(model.cohorts.map((item) => item.status)).toEqual(["확정"]);
+  });
+
+  it("keeps September cost visible when usage sources still end in August", () => {
+    const septemberModel = buildProductivityExecutiveModel({
+      monthlyActuals: initialDashboardData.monthlyActuals,
+      approvalData: initialAiToolApprovalData,
+      chatGptData: chatGptUsageData,
+      claudeTeamData: initialClaudeTeamUsageData,
+      driveData: driveArtifactRepositoryData,
+      gensparkData: initialGensparkUsageData,
+    });
+
+    expect(septemberModel).toMatchObject({
+      lastClosedMonth: "2026-09",
+      currentMonth: "2026-09",
+      lagMonths: 0,
+      lastClosedCostKrw: 8_832_236,
+    });
+    expect(septemberModel.cohorts).toHaveLength(1);
+    expect(septemberModel.cohorts[0]).toMatchObject({
+      month: "2026-09", costKrw: 8_832_236, status: "확정", usageSignals: [], outputSignals: [],
+    });
+    expect(septemberModel.costUsageSeries.find((row) => row.month === "2026-09")).toMatchObject({
+      costKrw: 8_832_236, costStatus: "확정", conversationSignals: null, driveStoredFiles: null,
+    });
   });
 
   it("uses the confirmed August actual while retaining the current fixed-cost baseline", () => {
@@ -80,7 +106,7 @@ describe("buildProductivityExecutiveModel", () => {
 
   it("keeps intervening usage months when the latest source advances beyond the cost lag", () => {
     const augustModel = buildProductivityExecutiveModel({
-      monthlyActuals: initialDashboardData.monthlyActuals,
+      monthlyActuals: actualsThroughAugust,
       approvalData: initialAiToolApprovalData,
       chatGptData: chatGptUsageData,
       claudeTeamData: initialClaudeTeamUsageData,
@@ -180,7 +206,7 @@ describe("buildProductivityExecutiveModel", () => {
       },
     };
     const augustModel = buildProductivityExecutiveModel({
-      monthlyActuals: initialDashboardData.monthlyActuals,
+      monthlyActuals: actualsThroughAugust,
       approvalData: initialAiToolApprovalData,
       chatGptData: chatGptUsageData,
       claudeTeamData: initialClaudeTeamUsageData,

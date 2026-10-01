@@ -2598,6 +2598,9 @@ function MonthlyView({
             </ComposedChart>
           </ResponsiveContainer>
         </div>
+        {sourceMeta.costBasisNotes?.map((note) => (
+          <p className="approval-footnote" key={note}>{note}</p>
+        ))}
       </section>
 
       <section className="panel">

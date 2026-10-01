@@ -224,7 +224,10 @@ export function buildProductivityExecutiveModel({
     .filter(Boolean)
     .sort();
   const latestUsageDate = usageDates[usageDates.length - 1];
-  const currentMonth = latestUsageDate?.slice(0, 7) || lastClosedActual.month;
+  const latestUsageMonth = latestUsageDate?.slice(0, 7) ?? "";
+  const currentMonth = latestUsageMonth > lastClosedActual.month ? latestUsageMonth : lastClosedActual.month;
+  const claudeTeamMonth = latestDate(claudeTeamData.source.period)?.slice(0, 7);
+  const gensparkSnapshotMonth = latestDate(gensparkDrive?.latestOutputDate ?? "")?.slice(0, 7);
   const currentMonthApprovalTotals = approvalMonthlyTotalsForMonth(approvalData, currentMonth);
   const lagMonths = monthDistance(lastClosedActual.month, currentMonth);
   const chatGptByMonth = new Map(chatGptData.monthlyUsage.map((item) => [item.month, item]));
@@ -272,7 +275,7 @@ export function buildProductivityExecutiveModel({
         `Claude 통합 대화 ${claudeConversationCount.toLocaleString("ko-KR")}건 (Export ${claudeExportConversationCount.toLocaleString("ko-KR")} + Drive ${claudeDriveConversationCount.toLocaleString("ko-KR")})`,
       );
     }
-    if (isCurrent) {
+    if (month === claudeTeamMonth) {
       usageSignals.push(`Claude Team 활성 ${claudeTeamData.activeUsers}/${claudeTeamData.licensedUsers}명`);
       usageSignals.push(`Claude 요청 ${claudeTeamData.totalRequests.toLocaleString("ko-KR")}건`);
     }
@@ -282,8 +285,10 @@ export function buildProductivityExecutiveModel({
     if (gensparkOutputCount > 0) {
       outputSignals.push(`Genspark 대표 작업 산출 형식 ${gensparkOutputCount.toLocaleString("ko-KR")}개`);
     }
-    if (isCurrent && gensparkDrive) {
+    if (month === gensparkSnapshotMonth && gensparkDrive) {
       outputSignals.push(`Genspark 누적 산출물 ${gensparkDrive.totalFiles.toLocaleString("ko-KR")}개`);
+    }
+    if (month === claudeTeamMonth) {
       outputSignals.push(`Claude Code ${claudeTeamData.totalCodeLines.toLocaleString("ko-KR")}줄`);
     }
 
