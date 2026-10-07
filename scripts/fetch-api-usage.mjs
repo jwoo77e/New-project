@@ -57,7 +57,7 @@ export async function loadApiUsageEnv({ targetRootDir = process.cwd(), includeLo
 export async function collectApiUsage({
   env = process.env,
   targetRootDir = process.cwd(),
-  requestedDays = 7,
+  requestedDays = 62,
   collectedAt = new Date(),
   mode = "런타임 API 수집",
 } = {}) {
@@ -120,7 +120,7 @@ export async function writeApiUsageSnapshot(snapshot, env = process.env) {
 }
 
 async function runCli() {
-  const requestedDays = parseDays(process.argv.find((arg) => arg.startsWith("--days=")) ?? "--days=7");
+  const requestedDays = parseDays(process.argv.find((arg) => arg.startsWith("--days=")) ?? "--days=62");
   configureRuntime({ targetRootDir: process.cwd(), requestedDays, collectedAt: new Date() });
   const env = await loadApiUsageEnv({ targetRootDir: rootDir });
   const snapshot = await collectApiUsage({
@@ -2091,7 +2091,7 @@ function toDateKey(date) {
 function parseDays(arg) {
   const rawValue = typeof arg === "string" ? (arg.includes("=") ? arg.split("=").at(-1) : arg) : arg;
   const value = Number(rawValue);
-  if (!Number.isFinite(value) || value < 1 || value > 31) return 7;
+  if (!Number.isFinite(value) || value < 1 || value > 62) return 7;
   return Math.round(value);
 }
 

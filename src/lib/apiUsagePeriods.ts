@@ -1,6 +1,6 @@
 import type { ApiDailyUsage } from "../data/apiUsageData";
 
-export type ApiUsagePeriodKey = "recent7" | "week" | "month";
+export type ApiUsagePeriodKey = "recent7" | "week" | "month" | "previousMonth";
 
 export type ApiUsagePeriodSummary = {
   key: ApiUsagePeriodKey;
@@ -15,38 +15,37 @@ export type ApiUsagePeriodSummary = {
 
 const requestKeys = ["openaiRequests", "geminiRequests", "claudeRequests"] as const;
 
-export function buildApiUsagePeriodSummaries(dailyUsage: ApiDailyUsage[]): ApiUsagePeriodSummary[] {
+export function buildApiUsagePeriodSummaries(
+  dailyUsage: ApiDailyUsage[],
+  now = new Date(),
+): ApiUsagePeriodSummary[] {
   const sorted = [...dailyUsage].sort((a, b) => a.date.localeCompare(b.date));
-  const latest = sorted[sorted.length - 1];
-
-  if (!latest) {
-    return [
-      emptySummary("recent7", "최근 7일"),
-      emptySummary("week", "이번 주"),
-      emptySummary("month", "이번 달"),
-    ];
-  }
-
-  const latestDate = parseDateKey(latest.date);
-  const weekStart = new Date(latestDate);
+  // Calendar labels follow the current Korean date, even when a snapshot is stale.
+  const todayKey = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(now);
+  const today = parseDateKey(todayKey);
+  const recentStart = new Date(today);
+  recentStart.setUTCDate(recentStart.getUTCDate() - 6);
+  const weekStart = new Date(today);
   const mondayOffset = (weekStart.getUTCDay() + 6) % 7;
   weekStart.setUTCDate(weekStart.getUTCDate() - mondayOffset);
-  const monthStart = new Date(Date.UTC(latestDate.getUTCFullYear(), latestDate.getUTCMonth(), 1));
+  const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+  const previousMonthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 1, 1));
+  const previousMonthEnd = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 0));
+
+  function range(key: ApiUsagePeriodKey, label: string, start: Date, end: Date, ongoing = false) {
+    const startKey = toDateKey(start);
+    const endKey = toDateKey(end);
+    const rows = sorted.filter((item) => item.date >= startKey && item.date <= endKey);
+    const expectedDays = Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1;
+    const isPartial = ongoing || new Set(rows.map((row) => row.date)).size < expectedDays;
+    return summarize(key, label, rows, isPartial, `${shortDate(startKey)} ~ ${shortDate(endKey)}`);
+  }
 
   return [
-    summarize("recent7", "최근 7일", sorted.slice(-7), false),
-    summarize(
-      "week",
-      "이번 주",
-      sorted.filter((item) => item.date >= toDateKey(weekStart)),
-      latestDate.getUTCDay() !== 0,
-    ),
-    summarize(
-      "month",
-      "이번 달",
-      sorted.filter((item) => item.date >= toDateKey(monthStart)),
-      latestDate.getUTCDate() !== daysInMonth(latestDate),
-    ),
+    range("recent7", "최근 7일", recentStart, today),
+    range("week", "이번 주", weekStart, today, today.getUTCDay() !== 0),
+    range("month", "이번 달", monthStart, today, today.getUTCDate() !== daysInMonth(today)),
+    range("previousMonth", "지난달", previousMonthStart, previousMonthEnd),
   ];
 }
 
@@ -55,14 +54,12 @@ function summarize(
   label: string,
   dailyUsage: ApiDailyUsage[],
   isPartial: boolean,
+  rangeLabel: string,
 ): ApiUsagePeriodSummary {
-  const first = dailyUsage[0];
-  const last = dailyUsage[dailyUsage.length - 1];
-
   return {
     key,
     label,
-    rangeLabel: first && last ? `${shortDate(first.date)} ~ ${shortDate(last.date)}` : "수집 데이터 없음",
+    rangeLabel,
     dailyUsage,
     requests: dailyUsage.reduce(
       (sum, item) => sum + requestKeys.reduce((requestSum, requestKey) => requestSum + item[requestKey], 0),
@@ -72,10 +69,6 @@ function summarize(
     costUsd: roundMoney(dailyUsage.reduce((sum, item) => sum + item.costUsd, 0)),
     isPartial,
   };
-}
-
-function emptySummary(key: ApiUsagePeriodKey, label: string): ApiUsagePeriodSummary {
-  return summarize(key, label, [], true);
 }
 
 function parseDateKey(value: string) {

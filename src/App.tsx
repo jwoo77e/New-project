@@ -523,7 +523,7 @@ function App() {
 
   useEffect(() => {
     let isMounted = true;
-    const snapshotUrls = [`${import.meta.env.BASE_URL}api-usage-snapshot.local.json`, "/api/api-usage?days=31"];
+    const snapshotUrls = [`${import.meta.env.BASE_URL}api-usage-snapshot.local.json`, "/api/api-usage?days=62"];
 
     async function loadApiUsageData() {
       let preferredSnapshot = initialApiUsageData;
@@ -6163,6 +6163,7 @@ function ApiUsageView({
     [apiUsageData.dailyUsage],
   );
   const selectedPeriod = periodSummaries.find((period) => period.key === periodKey) ?? periodSummaries[0];
+  const hasSelectedUsage = selectedPeriod.dailyUsage.length > 0;
   const selectedProviderMetrics = new Map(
     apiUsageData.providers.map((provider) => {
       const prefix = provider.provider.toLowerCase() as "openai" | "gemini" | "claude";
@@ -6213,17 +6214,25 @@ function ApiUsageView({
               className={period.key === selectedPeriod.key ? "active" : ""}
               key={period.key}
               onClick={() => setPeriodKey(period.key)}
+              aria-pressed={period.key === selectedPeriod.key}
               type="button"
             >
               <span>
                 <b>{period.label}</b>
-                <small>{period.rangeLabel}{period.isPartial ? " · 부분 집계" : ""}</small>
+                <small>{period.rangeLabel}{period.dailyUsage.length === 0 ? " · 수집 데이터 없음" : period.isPartial ? " · 부분 집계" : ""}</small>
               </span>
-              <strong>{formatTokens(period.totalTokens)}</strong>
-              <small>{formatRequestCount(period.requests, period.totalTokens)} · {formatUsd(period.costUsd)}</small>
+              <strong>{period.dailyUsage.length ? formatTokens(period.totalTokens) : "—"}</strong>
+              <small>{period.dailyUsage.length ? `${formatRequestCount(period.requests, period.totalTokens)} · ${formatUsd(period.costUsd)}` : "집계 대기"}</small>
             </button>
           ))}
         </div>
+        {selectedPeriod.isPartial && (
+          <p className="approval-footnote">
+            {hasSelectedUsage
+              ? `${selectedPeriod.label}은 ${selectedPeriod.dailyUsage.length}일의 수집값 기준입니다. 미수집 날짜는 합계에 포함되지 않습니다.`
+              : `${selectedPeriod.label}의 수집 데이터가 없습니다.`}
+          </p>
+        )}
       </section>
 
       <section className="panel panel-large">
@@ -6232,7 +6241,7 @@ function ApiUsageView({
             <span className="eyebrow">API Usage</span>
             <h2>{selectedPeriod.label} 토큰 사용량과 비용</h2>
           </div>
-          <span className="state-pill neutral">{selectedPeriod.rangeLabel}{selectedPeriod.isPartial ? " · 부분" : ""}</span>
+          <span className="state-pill neutral">{selectedPeriod.rangeLabel}{!hasSelectedUsage ? " · 수집 데이터 없음" : selectedPeriod.isPartial ? " · 부분" : ""}</span>
         </div>
         <div className="chart-frame">
           <ResponsiveContainer width="100%" height="100%">
@@ -6289,12 +6298,12 @@ function ApiUsageView({
                 <span className={`state-pill ${apiStatusTone(provider.status)}`}>{provider.status}</span>
               </div>
               <div className="api-provider-stats">
-                <span>{formatTokens(selectedProviderMetrics.get(provider.provider)?.tokens ?? 0)} 토큰</span>
-                <span>{formatRequestCount(
+                <span>{hasSelectedUsage ? `${formatTokens(selectedProviderMetrics.get(provider.provider)?.tokens ?? 0)} 토큰` : "수집 데이터 없음"}</span>
+                <span>{hasSelectedUsage ? formatRequestCount(
                   selectedProviderMetrics.get(provider.provider)?.requests ?? 0,
                   selectedProviderMetrics.get(provider.provider)?.tokens ?? 0,
-                )}</span>
-                <span>{formatUsd(selectedProviderMetrics.get(provider.provider)?.costUsd ?? 0)}</span>
+                ) : "—"}</span>
+                <span>{hasSelectedUsage ? formatUsd(selectedProviderMetrics.get(provider.provider)?.costUsd ?? 0) : "—"}</span>
               </div>
               <MeterRow
                 color={provider.color}
@@ -6337,8 +6346,8 @@ function ApiUsageView({
                   <span className="category-dot" style={{ background: provider.color }} />
                   <span>{provider.label}</span>
                 </div>
-                <strong>{formatUsd(providerCostUsd)}</strong>
-                <small>{formatWon(costKrw)} · 전체 {formatRate(share)}</small>
+                <strong>{hasSelectedUsage ? formatUsd(providerCostUsd) : "—"}</strong>
+                <small>{hasSelectedUsage ? `${formatWon(costKrw)} · 전체 ${formatRate(share)}` : "수집 데이터 없음"}</small>
               </article>
             );
           })}
@@ -6348,11 +6357,11 @@ function ApiUsageView({
       <section className="panel panel-wide api-summary-panel">
         <div className="api-summary-item">
           <span>{selectedPeriod.label} 총 토큰</span>
-          <strong>{formatTokens(totalTokens)}</strong>
+          <strong>{hasSelectedUsage ? formatTokens(totalTokens) : "—"}</strong>
         </div>
         <div className="api-summary-item">
           <span>{selectedPeriod.label} 실측 변동비</span>
-          <strong>{formatUsd(totalCost)}</strong>
+          <strong>{hasSelectedUsage ? formatUsd(totalCost) : "—"}</strong>
         </div>
         <div className="api-summary-item">
           <span>계약 고정비</span>
@@ -6360,7 +6369,7 @@ function ApiUsageView({
         </div>
         <div className="api-summary-item">
           <span>최대 비용 공급자</span>
-          <strong>{highestCostProvider?.provider ?? "-"}</strong>
+          <strong>{hasSelectedUsage && totalCost > 0 ? highestCostProvider?.provider ?? "-" : "—"}</strong>
         </div>
         <div className="api-summary-item">
           <span>최대 사용일</span>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildGeminiWorkspaceUsageFromActivities,
+  collectApiUsage,
   buildGammaUsageFromGenerationStatuses,
   buildBigQueryBillingTableRef,
   buildGeminiBillingProjectFilter,
@@ -14,6 +15,17 @@ import {
   resolveGeminiBillingUsageProjectIds,
   resolveOpenAIAdminKeys,
 } from "./fetch-api-usage.mjs";
+
+describe("API usage history window", () => {
+  it("retains 62 daily buckets so even the end of October includes all of September", async () => {
+    const snapshot = await collectApiUsage({ env: {}, requestedDays: 62, collectedAt: new Date("2026-10-31T03:00:00Z") });
+    expect(snapshot.dailyUsage).toHaveLength(62);
+    expect(snapshot.dailyUsage[0].date).toBe("2026-08-31");
+    expect(snapshot.dailyUsage.at(-1).date).toBe("2026-10-31");
+    expect(snapshot.dailyUsage.filter(day => day.date.startsWith("2026-09"))).toHaveLength(30);
+    expect(snapshot.source.period).toBe("최근 62일");
+  });
+});
 
 describe("provider API pagination", () => {
   it("explicitly attributes Monitoring requests to the selected consumer project", () => {
