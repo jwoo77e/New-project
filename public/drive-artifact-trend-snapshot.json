@@ -3,9 +3,9 @@
   "source": {
     "name": "Claude Drive 날짜별 저장 파일 증감",
     "status": "정상",
-    "collectedAt": "2026-10-07-21:04 KST",
-    "generatedAt": "2026-10-07T12:04:02.927Z",
-    "period": "2026-06-23 ~ 2026-10-07",
+    "collectedAt": "2026-10-08-20:58 KST",
+    "generatedAt": "2026-10-08T11:58:01.331Z",
+    "period": "2026-06-23 ~ 2026-10-08",
     "schedule": "매일 21:00 KST",
     "note": "김재우·이형배·전략사업팀·정재요·전우성·배현철 Drive 루트의 모든 하위 폴더를 읽기 전용으로 재귀 조회하고 파일 생성일을 한국시간 기준으로 집계합니다."
   },
@@ -16,10 +16,10 @@
       "folderUrl": "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link",
       "artifacts": [],
       "inventory": {
-        "fileCount": 4099,
+        "fileCount": 4142,
         "directFileCount": 282,
-        "nestedFileCount": 3817,
-        "folderCount": 1326,
+        "nestedFileCount": 3860,
+        "folderCount": 1346,
         "maxDepth": 7,
         "metadataDateAnomalyCount": 85,
         "dailyCounts": [
@@ -301,7 +301,7 @@
           },
           {
             "date": "2026-08-31",
-            "count": 105
+            "count": 104
           },
           {
             "date": "2026-09-01",
@@ -317,7 +317,7 @@
           },
           {
             "date": "2026-09-04",
-            "count": 95
+            "count": 94
           },
           {
             "date": "2026-09-05",
@@ -442,6 +442,10 @@
           {
             "date": "2026-10-07",
             "count": 35
+          },
+          {
+            "date": "2026-10-08",
+            "count": 45
           }
         ]
       }
@@ -640,10 +644,10 @@
       "folderUrl": "https://drive.google.com/drive/folders/1Qn2i19lKy_4OlTu-H1UiVfhuGZTevMZL?usp=drive_link",
       "artifacts": [],
       "inventory": {
-        "fileCount": 3273,
+        "fileCount": 3485,
         "directFileCount": 1,
-        "nestedFileCount": 3272,
-        "folderCount": 1832,
+        "nestedFileCount": 3484,
+        "folderCount": 1960,
         "maxDepth": 11,
         "metadataDateAnomalyCount": 0,
         "dailyCounts": [
@@ -746,6 +750,10 @@
           {
             "date": "2026-10-02",
             "count": 12
+          },
+          {
+            "date": "2026-10-08",
+            "count": 212
           }
         ]
       }
@@ -776,10 +784,10 @@
     }
   ],
   "totals": {
-    "files": 49069,
+    "files": 49324,
     "directFiles": 345,
-    "nestedFiles": 48724,
-    "folders": 4063,
+    "nestedFiles": 48979,
+    "folders": 4211,
     "metadataDateAnomalies": 85
   }
 }
