@@ -175,6 +175,7 @@ describe("individualUtilizationData", () => {
       "2026-09-W2",
       "2026-09-W3",
       "2026-09-W4",
+      "2026-10-W1",
     ]);
     expect(firstWeek).toMatchObject({
       label: "8월 1주차",
@@ -315,7 +316,7 @@ describe("individualUtilizationData", () => {
     expect(data.monthlySpend["2026-08"]?.totals.requests).toBeGreaterThan(
       sumBy(augustThroughFourthWeek, (week) => week.totals.requests),
     );
-    expect(data.weeklyUsageTrend).toHaveLength(9);
+    expect(data.weeklyUsageTrend).toHaveLength(10);
   });
 
   it("produces bounded peer-comparison scores for every user and period", () => {
@@ -551,6 +552,55 @@ describe("individualUtilizationData", () => {
     expect(week.users["ykchj1011@riskzero.kr"].netSpendUsd).toBe(-0.01);
     expect(week.users["crow326@riskzero.kr"].netSpendUsd).toBe(-0.01);
     expect(month.totals.netSpendUsd).toBeCloseTo(1429.42 + week.totals.netSpendUsd, 2);
+  });
+
+  it("uses October 1–7 source totals directly for the first October week", () => {
+    const data = individualUtilizationData;
+    const week = data.weeklyUsage["2026-10-W1"];
+
+    expect(week).toMatchObject({
+      label: "10월 1주차",
+      startDate: "2026-10-01",
+      endDate: "2026-10-07",
+      coverage: "complete",
+      source: {
+        previousSpendFile: null,
+        currentSpendFile: "spend-report-10-01-to-2026-10-07.csv",
+        currentSpendRows: 98,
+        previousCodeFile: null,
+        currentCodeFile: "claude_code_team_2026_10_01_to_2026_10_07.csv",
+        codePeriod: "2026-10-01 ~ 2026-10-07",
+        spendMethod: "period_total",
+        codeMethod: "period_total",
+      },
+      totals: {
+        activeUsers: 29,
+        requests: 37419,
+        promptTokens: 8322785677,
+        completionTokens: 32722938,
+        totalTokens: 8355508615,
+        netSpendUsd: 473.39,
+        codeLines: 181339,
+      },
+    });
+    expect(Object.keys(week.users)).toHaveLength(29);
+    expect(Object.keys(week.users).every(email =>
+      data.users.some(user => user.email === email && user.measurementStatus === "measured"),
+    )).toBe(true);
+    expect(week.users["kys0392@riskzero.kr"]).toMatchObject({
+      requests: 8631, totalTokens: 1703235135, codeLines: 72811, netSpendUsd: 400.48,
+    });
+    expect(week.users["wody@riskzero.kr"]).toMatchObject({
+      requests: 6327, totalTokens: 1623066701, codeLines: 27884, netSpendUsd: 72.91,
+    });
+    expect(week.users["mjlee0828@riskzero.kr"].codeLines).toBe(44672);
+    expect(week.users["jsc@riskzero.kr"]).toMatchObject({
+      requests: 410, totalTokens: 40948273, codeLines: 0, netSpendUsd: 0,
+    });
+    for (const metric of ["requests", "promptTokens", "completionTokens", "totalTokens", "codeLines"] as const) {
+      expect(sumBy(Object.values(week.users), user => user[metric])).toBe(week.totals[metric]);
+    }
+    expect(sumBy(Object.values(week.users), user => user.netSpendUsd)).toBeCloseTo(473.39, 2);
   });
 
   it("reconciles the provided May through July Code Lines files", () => {
