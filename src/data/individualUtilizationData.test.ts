@@ -565,25 +565,25 @@ describe("individualUtilizationData", () => {
       coverage: "complete",
       source: {
         previousSpendFile: null,
-        currentSpendFile: "spend-report-10-01-to-2026-10-07.csv",
-        currentSpendRows: 98,
+        currentSpendFile: "spend-report-10-01-to-2026-10-07.csv + Clevel/spend-report-2026-10-01-to-2026-10-07.csv + 조욱상이사님/spend-report-2026-10-01-to-2026-10-07.csv + 이병현이사님/spend-report-2026-10-01-to-2026-10-07.csv",
+        currentSpendRows: 117,
         previousCodeFile: null,
-        currentCodeFile: "claude_code_team_2026_10_01_to_2026_10_07.csv",
+        currentCodeFile: "claude_code_team_2026_10_01_to_2026_10_07.csv + Clevel/claude_code_team_2026_10_01_to_2026_10_07.csv",
         codePeriod: "2026-10-01 ~ 2026-10-07",
         spendMethod: "period_total",
         codeMethod: "period_total",
       },
       totals: {
-        activeUsers: 29,
-        requests: 37419,
-        promptTokens: 8322785677,
-        completionTokens: 32722938,
-        totalTokens: 8355508615,
+        activeUsers: 33,
+        requests: 40968,
+        promptTokens: 9101404109,
+        completionTokens: 36407897,
+        totalTokens: 9137812006,
         netSpendUsd: 473.39,
-        codeLines: 181339,
+        codeLines: 191660,
       },
     });
-    expect(Object.keys(week.users)).toHaveLength(29);
+    expect(Object.keys(week.users)).toHaveLength(33);
     expect(Object.keys(week.users).every(email =>
       data.users.some(user => user.email === email && user.measurementStatus === "measured"),
     )).toBe(true);
@@ -596,6 +596,18 @@ describe("individualUtilizationData", () => {
     expect(week.users["mjlee0828@riskzero.kr"].codeLines).toBe(44672);
     expect(week.users["jsc@riskzero.kr"]).toMatchObject({
       requests: 410, totalTokens: 40948273, codeLines: 0, netSpendUsd: 0,
+    });
+    expect(week.users["bigone@riskzero.kr"]).toMatchObject({
+      requests: 2813, totalTokens: 645088997, codeLines: 10321, netSpendUsd: 0,
+    });
+    expect(week.users["yspark@riskzero.kr"]).toMatchObject({
+      requests: 609, totalTokens: 118894096, codeLines: 0, netSpendUsd: 0,
+    });
+    expect(week.users["airyoubi77@riskzero.kr"]).toMatchObject({
+      requests: 115, totalTokens: 17500004, codeLines: 0, netSpendUsd: 0,
+    });
+    expect(week.users["lbh0902@riskzero.kr"]).toMatchObject({
+      requests: 12, totalTokens: 820294, codeLines: 0, netSpendUsd: 0,
     });
     for (const metric of ["requests", "promptTokens", "completionTokens", "totalTokens", "codeLines"] as const) {
       expect(sumBy(Object.values(week.users), user => user[metric])).toBe(week.totals[metric]);

@@ -6,6 +6,40 @@ import {calculateCodeOutputDensity} from "../lib/codeOutputDensity";
 import {gitlabCommittedCodeRatio, gitlabUserMetricsForRange} from "./gitlabActivityData";
 
 describe("Codex usage", () => {
+  it("combines the October first-week export with all Claude sources and recalculates the GitLab ratio", () => {
+    const week = individualUtilizationData.weeklyUsage["2026-10-W1"];
+    const period = snapshot.periods.find(item => item.startDate === week.startDate && item.endDate === week.endDate)!;
+    expect(period.fileName).toBe("leaderboard-users_workspace-riskzero_2026-10-01-to-2026-10-07.csv");
+    expect(Object.keys(period.users)).toHaveLength(11);
+    expect(Object.values(period.users).reduce((sum, usage) => sum + usage.tokens, 0)).toBe(4012510940);
+    expect(Object.values(period.users).reduce((sum, usage) => sum + usage.codeLines, 0)).toBe(88310);
+    for (const [email, usage] of Object.entries(period.users)) {
+      expect(individualUtilizationData.users.some(user => user.email === email)).toBe(true);
+      expect(codexUsageForRange(email, week.startDate, week.endDate))
+        .toMatchObject({...usage, collected: true, complete: true, periodAligned: true});
+    }
+    const combinedUsers = individualUtilizationData.users.map(user => {
+      const claude = week.users[user.email];
+      return combinedAiUsage(claude?.totalTokens ?? null, claude?.codeLines ?? null,
+        codexUsageForRange(user.email, week.startDate, week.endDate));
+    });
+    expect(combinedUsers.filter(usage => (usage.tokens ?? 0) > 0)).toHaveLength(34);
+    expect(combinedUsers.reduce((sum, usage) => sum + (usage.tokens ?? 0), 0)).toBe(13150322946);
+    expect(combinedUsers.reduce((sum, usage) => sum + (usage.codeLines ?? 0), 0)).toBe(279970);
+    const email = "wody@riskzero.kr";
+    const claude = week.users[email];
+    const combined = combinedAiUsage(claude.totalTokens, claude.codeLines,
+      codexUsageForRange(email, week.startDate, week.endDate));
+    expect(combined).toEqual({tokens: 3697721149, codeLines: 59554, partial: false});
+    expect(gitlabCommittedCodeRatio(combined.codeLines,
+      gitlabUserMetricsForRange(email, week.startDate, week.endDate).additions)).toBeCloseTo(325.8387346);
+    expect(codexUsageForRange("kys0392@riskzero.kr", week.startDate, week.endDate))
+      .toMatchObject({tokens: 329420686, codeLines: 8678, present: true});
+    expect(combinedAiUsage(null, null, codexUsageForRange("sjpark@riskzero.kr", week.startDate, week.endDate)))
+      .toEqual({tokens: 596844, codeLines: 0, partial: true});
+    expect(codexUsageForRange(email, "2026-10-01", "2026-10-31"))
+      .toMatchObject({collected: true, complete: false});
+  });
   it("uses combined generated lines as the commit ratio denominator", () => {
     const combined = combinedAiUsage(1399874957, 18294,
       codexUsageForRange("wody@riskzero.kr", "2026-09-03", "2026-09-09"));
