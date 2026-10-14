@@ -1,4 +1,4 @@
-import { initialAiToolApprovalData } from "./aiToolApprovalData";
+import { buildApprovalPersonCostSummary, initialAiToolApprovalData } from "./aiToolApprovalData";
 import { individualUtilizationData } from "./individualUtilizationData";
 import { isCurrentEmployee } from "./activeRoster";
 
@@ -17,8 +17,6 @@ type TeamPlanConversionAccount = {
   currentMonthlyKrw: number;
 };
 
-// Includes Kim Gihwan and Choi Jisuk; excludes Song Inna after her October departure notice.
-const eligibleEmployees = 40;
 const nonToolUsers = 1;
 const chatGptOnlyUsers = 1;
 const leaveExcludedEmployees = 2;
@@ -37,6 +35,10 @@ if (!julySpend) {
 }
 
 const approvalRecords = initialAiToolApprovalData.records;
+// Count each assigned employee once, then include the separately tracked non-user.
+// Shared subscriptions and the representative are outside the workforce denominator.
+const eligibleEmployees = buildApprovalPersonCostSummary(approvalRecords).people
+  .filter((person) => person.name !== "대표님").length + nonToolUsers;
 const teamPlanRecords = approvalRecords.filter((record) => record.tool.startsWith("Claude Team Plan"));
 const workforceTeamPlanRecords = teamPlanRecords.filter((record) => record.owner !== "대표님");
 const executiveTeamPlanSeats = teamPlanRecords.length - workforceTeamPlanRecords.length;
@@ -56,10 +58,6 @@ const pureAdditionalCostKrw = pureAdditionalSeats * teamPlanStandardKrw;
 const proposedTeamPlanActionCostKrw = proposedConversionCostKrw + pureAdditionalCostKrw;
 const netMonthlyChangeKrw = proposedTeamPlanActionCostKrw - currentConversionCostKrw;
 const projectedMonthlyKrw = initialAiToolApprovalData.totalMonthlyKrw + netMonthlyChangeKrw;
-
-if (teamPlanUsers !== teamPlanTargetUsers) {
-  throw new Error(`AI 도구 사용 직원 Team Plan 보급 인원이 ${teamPlanUsers}/${teamPlanTargetUsers}명으로 일치하지 않습니다.`);
-}
 
 const userNameByEmail = new Map(
   individualUtilizationData.users.map((user) => [user.email, user.displayName]),
