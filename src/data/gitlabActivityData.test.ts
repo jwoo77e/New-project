@@ -12,13 +12,14 @@ import { codexUsageForRange, combinedAiUsage } from "./codexUsageData";
 import { individualUtilizationData } from "./individualUtilizationData";
 
 describe("gitlabActivityData", () => {
-  it("covers September and October week one without claiming the full October month", () => {
+  it("covers September and the first two October weeks without claiming the full October month", () => {
     expect(gitlabRangeCoverage("2026-09-28", "2026-09-30")).toMatchObject({available: true, complete: true});
     expect(gitlabRangeCoverage("2026-09-01", "2026-09-30")).toMatchObject({available: true, complete: true});
     expect(gitlabRangeCoverage("2026-09-17", "2026-09-27")).toMatchObject({available: true, complete: true});
     expect(gitlabRangeCoverage("2026-10-01", "2026-10-07")).toMatchObject({available: true, complete: true});
     expect(gitlabRangeCoverage("2026-10-01", "2026-10-31")).toMatchObject({available: true, complete: false});
-    expect(gitlabRangeCoverage("2026-10-08", "2026-10-14")).toMatchObject({available: false, complete: false});
+    expect(gitlabRangeCoverage("2026-10-08", "2026-10-14")).toMatchObject({available: true, complete: true});
+    expect(gitlabRangeCoverage("2026-10-15", "2026-10-21")).toMatchObject({available: false, complete: false});
   });
   it("includes September week two GitLab activity", () => {
     expect(gitlabSummaryForRange("2026-09-10", "2026-09-16")).toMatchObject({
@@ -28,9 +29,9 @@ describe("gitlabActivityData", () => {
   });
   it("includes September 17-27 activity from the error-free GitLab refresh", () => {
     expect(gitlabActivityData.source).toMatchObject({
-      period: "2026-05-01 ~ 2026-10-07",
-      refreshedPeriod: "2026-10-01 ~ 2026-10-07",
-      projectCount: 103,
+      period: "2026-05-01 ~ 2026-10-14",
+      refreshedPeriod: "2026-10-08 ~ 2026-10-14",
+      projectCount: 104,
       projectErrors: [],
     });
     expect(gitlabSummaryForRange("2026-09-17", "2026-09-27")).toMatchObject({
@@ -86,7 +87,7 @@ describe("gitlabActivityData", () => {
 
   it("publishes the complete August month and August 27 to September 2 range", () => {
     expect(gitlabActivityData.source).toMatchObject({
-      period: "2026-05-01 ~ 2026-10-07",
+      period: "2026-05-01 ~ 2026-10-14",
       projectErrors: [],
     });
     expect(gitlabSummaryForRange("2026-08-01", "2026-08-31")).toMatchObject({
@@ -186,6 +187,41 @@ describe("gitlabActivityData", () => {
     expect(gitlabCommittedCodeRatio(combined.codeLines, gitlab.additions)).toBeCloseTo(325.8387346);
     expect(gitlabUserMetricsForRange("mjlee0828@riskzero.kr", week.startDate, week.endDate))
       .toMatchObject({commitCount: 35, additions: 283184, deletions: 21877});
+  });
+
+  it("reconciles October week two commits and uses combined Claude and Codex lines for the ratio", () => {
+    const week = individualUtilizationData.weeklyUsage["2026-10-W2"];
+    expect(gitlabSummaryForRange(week.startDate, week.endDate)).toMatchObject({
+      commitCount: 217, mergeCommitCount: 76, additions: 257524,
+      deletions: 45582, changedLines: 303106, activeAuthors: 12,
+    });
+    const commits = gitlabActivityData.users.flatMap(user =>
+      gitlabCommitsForRange(user.email, week.startDate, week.endDate),
+    );
+    expect(commits).toHaveLength(293);
+    expect(new Set(commits.map(commit => `${commit.projectId}:${commit.sha}`)).size).toBe(293);
+    expect(commits.filter(commit => !commit.isMerge)).toHaveLength(217);
+    expect(commits.filter(commit => !commit.isMerge).every(commit =>
+      ["complete", "partial"].includes(commit.diff.status),
+    )).toBe(true);
+    for (const user of gitlabActivityData.users) {
+      const rows = gitlabCommitsForRange(user.email, week.startDate, week.endDate);
+      if (!rows.length) continue;
+      expect(individualUtilizationData.users.some(person => person.email === user.email)).toBe(true);
+      expect(gitlabUserMetricsForRange(user.email, week.startDate, week.endDate)).toMatchObject({
+        commitCount: rows.filter(row => !row.isMerge).length,
+        mergeCommitCount: rows.filter(row => row.isMerge).length,
+        additions: rows.filter(row => !row.isMerge).reduce((sum, row) => sum + row.additions, 0),
+      });
+    }
+    const email = "wody@riskzero.kr";
+    const claude = week.users[email];
+    const combined = combinedAiUsage(claude.totalTokens, claude.codeLines,
+      codexUsageForRange(email, week.startDate, week.endDate));
+    expect(combined).toEqual({tokens: 1412736715, codeLines: 32612, partial: false});
+    const gitlab = gitlabUserMetricsForRange(email, week.startDate, week.endDate);
+    expect(gitlab).toMatchObject({commitCount: 40, mergeCommitCount: 10, additions: 9039});
+    expect(gitlabCommittedCodeRatio(combined.codeLines, gitlab.additions)).toBeCloseTo(9039 / (6717 + 25895) * 100);
   });
 
   it("calculates committed additions against generated code lines without capping the ratio", () => {

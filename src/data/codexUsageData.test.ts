@@ -6,6 +6,33 @@ import {calculateCodeOutputDensity} from "../lib/codeOutputDensity";
 import {gitlabCommittedCodeRatio, gitlabUserMetricsForRange} from "./gitlabActivityData";
 
 describe("Codex usage", () => {
+  it("combines the October second-week export with all supplied Claude account sources", () => {
+    const week = individualUtilizationData.weeklyUsage["2026-10-W2"];
+    const period = snapshot.periods.find(item => item.startDate === week.startDate && item.endDate === week.endDate)!;
+    expect(period.fileName).toBe("leaderboard-users_workspace-riskzero_2026-10-08-to-2026-10-14.csv");
+    expect(Object.keys(period.users)).toHaveLength(12);
+    expect(Object.values(period.users).reduce((sum, usage) => sum + usage.tokens, 0)).toBe(2918235217);
+    expect(Object.values(period.users).reduce((sum, usage) => sum + usage.codeLines, 0)).toBe(65812);
+    for (const [email, usage] of Object.entries(period.users)) {
+      expect(individualUtilizationData.users.some(user => user.email === email)).toBe(true);
+      expect(codexUsageForRange(email, week.startDate, week.endDate))
+        .toMatchObject({...usage, collected: true, complete: true, periodAligned: true});
+    }
+    const combined = individualUtilizationData.users.map(user => {
+      const claude = week.users[user.email];
+      return combinedAiUsage(claude?.totalTokens ?? null, claude?.codeLines ?? null,
+        codexUsageForRange(user.email, week.startDate, week.endDate));
+    });
+    expect(combined.filter(usage => (usage.tokens ?? 0) > 0)).toHaveLength(32);
+    expect(combined.reduce((sum, usage) => sum + (usage.tokens ?? 0), 0)).toBe(14583955871);
+    expect(combined.reduce((sum, usage) => sum + (usage.codeLines ?? 0), 0)).toBe(205353);
+    expect(codexUsageForRange("wody@riskzero.kr", "2026-10-01", "2026-10-14"))
+      .toMatchObject({tokens: 2956112464, codeLines: 57565, complete: true});
+    expect(codexUsageForRange("wody@riskzero.kr", "2026-10-01", "2026-10-31"))
+      .toMatchObject({collected: true, complete: false});
+    expect(combinedAiUsage(null, null, codexUsageForRange("sjpark@riskzero.kr", week.startDate, week.endDate)))
+      .toEqual({tokens: 1198775, codeLines: 0, partial: true});
+  });
   it("combines the October first-week export with all Claude sources and recalculates the GitLab ratio", () => {
     const week = individualUtilizationData.weeklyUsage["2026-10-W1"];
     const period = snapshot.periods.find(item => item.startDate === week.startDate && item.endDate === week.endDate)!;
