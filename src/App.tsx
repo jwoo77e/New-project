@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { calendarMonthEnd, codexUsageForRange, combinedAiUsage } from "./data/codexUsageData";
+import { codexUsageForRange, combinedAiUsage } from "./data/codexUsageData";
 import type { FormEvent, ReactNode } from "react";
 import {
   Activity,
@@ -89,6 +89,8 @@ import {
 import {
   individualUtilizationData,
   claudeMonthlyCoverage,
+  claudeCodeLinesForMonth,
+  individualMonthlyRange,
   type IndividualPeriodMode,
   type IndividualUtilizationUser,
 } from "./data/individualUtilizationData";
@@ -98,7 +100,6 @@ import {
   gitlabActivityData,
   gitlabCommitsForRange,
   gitlabSummaryForRange,
-  gitlabUserMetricsForMonth,
   gitlabUserMetricsForRange,
   type GitlabActivityMetrics,
   type GitlabCommitSummary,
@@ -4129,26 +4130,28 @@ function monthlyCodeDensitySamplesForUser(
     const spendPeriod = individualUtilizationData.monthlySpend[month];
     const usage = spendPeriod?.users[user.email];
     const codeSource = individualUtilizationData.source.codeLines.find((item) => item.month === month);
-    if (!spendPeriod || !usage || !codeSource) return [];
+    if (!spendPeriod || !usage || (!codeSource && !spendPeriod.weeklyRollup)) return [];
     const coverage = claudeMonthlyCoverage(user.email, month);
     const [spendStartDate, spendEndDate] = (coverage.spendPeriod ?? spendPeriod.period).split(/\s*~\s*/);
     if (!spendStartDate || !spendEndDate) return [];
-    const codex = codexUsageForRange(user.email, `${month}-01`, calendarMonthEnd(month));
-    const combined = combinedAiUsage(usage.totalTokens, user.monthlyCodeLines[month] ?? 0, codex);
+    const range = individualMonthlyRange(month);
+    const codex = codexUsageForRange(user.email, range.startDate, range.endDate);
+    const combined = combinedAiUsage(usage.totalTokens, claudeCodeLinesForMonth(user.email, month), codex, coverage.complete);
 
     return [{
       key: month,
       label: monthLabel(month),
       codeLines: combined.codeLines ?? 0,
       totalTokens: combined.tokens ?? 0,
-      periodAligned: (!codex.present || codex.periodLabel === coverage.spendPeriod) && (coverage.codePeriod
+      periodAligned: (!spendPeriod.weeklyRollup || coverage.complete) &&
+        (!codex.present || (codex.complete && coverage.spendPeriod === `${range.startDate} ~ ${range.endDate}`)) && (coverage.codePeriod
         ? coverage.codePeriod === coverage.spendPeriod
-        : isMonthlyCodePeriodAligned({
+        : Boolean(codeSource && isMonthlyCodePeriodAligned({
             codeFileName: codeSource.fileName,
             month,
             spendStartDate,
             spendEndDate,
-          })),
+          }))),
     }];
   });
 }
@@ -4799,10 +4802,11 @@ function AdoptionView({
   const [pendingProfileEmail, setPendingProfileEmail] = useState<string | null>(null);
   const selectedWeeklyUsage = data.weeklyUsage[selectedWeek] ?? null;
   const isWeekly = periodMode === "week";
+  const selectedMonthlySpend = data.monthlySpend[selectedMonth] ?? null;
+  const monthlyRange = individualMonthlyRange(selectedMonth);
   const periodLabel = isWeekly
     ? selectedWeeklyUsage?.label ?? "주차 미선택"
-    : fullMonthLabel(selectedMonth);
-  const selectedMonthlySpend = data.monthlySpend[selectedMonth] ?? null;
+    : `${fullMonthLabel(selectedMonth)}${selectedMonthlySpend?.weeklyRollup ? ` · ${monthlyRange.endDate.slice(5)}까지 누적` : ""}`;
   const weeklyClaudeCollected = !isWeekly || selectedWeeklyUsage?.source.spendMethod !== "not_collected";
   const weeklyCodeCollected = !isWeekly || selectedWeeklyUsage?.source.codeMethod !== "not_collected";
   const weeklyCodePeriod = isWeekly ? selectedWeeklyUsage?.source.codePeriod : null;
@@ -4812,16 +4816,18 @@ function AdoptionView({
       ? `${selectedWeeklyUsage.startDate} ~ ${selectedWeeklyUsage.endDate} · ${weeklyClaudeCollected ? "주차 사용량" : "Claude 원천 미수집"}${unallocatedAccountCount ? ` · ${unallocatedAccountCount}계정 미확정` : ""}`
       : "주차별 원천 수집중"
     : selectedMonthlySpend
-      ? `Claude ${selectedMonthlySpend.period}${selectedMonthlySpend.preservedAccounts?.length
+      ? selectedMonthlySpend.weeklyRollup
+        ? `Claude ${selectedMonthlySpend.period} · ${selectedMonthlySpend.weeklyRollup.throughLabel}까지 누적`
+        : `Claude ${selectedMonthlySpend.period}${selectedMonthlySpend.preservedAccounts?.length
           ? ` · 별도 ${selectedMonthlySpend.preservedAccounts.length}계정 이전 자료 유지`
           : selectedMonthlySpend.coverage === "partial" ? " · 부분 집계" : ""}`
       : "월별 Spend 수집중";
   const periodStartDate = isWeekly
     ? selectedWeeklyUsage?.startDate ?? ""
-    : `${selectedMonth}-01`;
+    : monthlyRange.startDate;
   const periodEndDate = isWeekly
     ? selectedWeeklyUsage?.endDate ?? ""
-    : calendarMonthEnd(selectedMonth);
+    : monthlyRange.endDate;
   const gitlabPeriodSummary = periodStartDate && periodEndDate
     ? gitlabSummaryForRange(periodStartDate, periodEndDate)
     : { commitCount: 0, mergeCommitCount: 0, additions: 0, deletions: 0, changedLines: 0, changedFiles: 0, activeDays: 0, activeAuthors: 0, activeProjects: 0 };
@@ -4851,9 +4857,7 @@ function AdoptionView({
         const codeDensityTrend = buildCodeOutputDensityTrend(codeDensitySamples, selectedDensityKey);
         const selectedDensitySample =
           codeDensitySamples.find((sample) => sample.key === selectedDensityKey) ?? null;
-        const gitlab = isWeekly && selectedWeeklyUsage
-          ? gitlabUserMetricsForRange(user.email, selectedWeeklyUsage.startDate, selectedWeeklyUsage.endDate)
-          : gitlabUserMetricsForMonth(user.email, selectedMonth);
+        const gitlab = gitlabUserMetricsForRange(user.email, periodStartDate, periodEndDate);
         return {
           user,
           evaluation,
@@ -5002,7 +5006,9 @@ function AdoptionView({
                     : `토큰은 주차 전체 Spend 기간값을 사용합니다. Code Lines는 ${weeklyCodePeriod} 누적 순증 중 원천에서 확인된 계정만 포함한 부분 집계입니다.`
                   : "토큰은 주차별 Spend 기간값을 사용하고, Code Lines는 월 누적 스냅샷 간 차이로 해당 주차 순증을 계산합니다. 코드 산출 밀도는 1M 토큰당 Code Lines입니다."
                 : "Claude Code Lines 원천은 수집중입니다. Codex 자료가 있는 경우 해당 토큰과 코드 라인은 합산에 포함됩니다."
-              : "토큰은 월 누적 Spend를 사용하고, Code Lines는 최신 월 누적 스냅샷을 사용합니다. 코드 산출 밀도는 집계 기간이 일치할 때만 계산합니다."}
+              : selectedMonthlySpend?.weeklyRollup
+                ? `${selectedMonthlySpend.period}의 수집된 주차 자료를 합산했습니다. Claude·Codex와 GitLab을 같은 기간으로 비교하며, 계정별 미수집 주차는 부분 집계로 표시합니다.`
+                : "토큰은 월 누적 Spend를 사용하고, Code Lines는 최신 월 누적 스냅샷을 사용합니다. 코드 산출 밀도는 집계 기간이 일치할 때만 계산합니다."}
           </p>
           {isWeekly && unallocatedAccountCount > 0 && <p>Claude {unallocatedAccountCount}계정은 이전 기간 자료가 부족하여 해당 주차 사용량을 분리할 수 없습니다. 해당 월간 차액은 주차 합계에서 제외했습니다.</p>}
           {codexPeriod.note && <p>Codex: {codexPeriod.note}</p>}
@@ -5046,6 +5052,7 @@ function AdoptionView({
                 : data.months.map((key) => (
                     <option key={key} value={key}>
                       {fullMonthLabel(key)}
+                      {data.monthlySpend[key]?.weeklyRollup ? ` (${data.monthlySpend[key]!.weeklyRollup!.endDate.slice(5)}까지 누적)` : ""}
                     </option>
                   ))}
             </select>
@@ -5197,7 +5204,7 @@ function AdoptionView({
                           {(isWeekly ? weeklyUsage : monthlySpend) &&
                             <small>순비용 {formatPreciseUsd((isWeekly ? weeklyUsage : monthlySpend)!.netSpendUsd)}</small>}
                           {!isWeekly && monthlySpend?.coverage === "partial" &&
-                            <small>기존 자료 · {monthlySpend.sourcePeriod}</small>}
+                            <small>{selectedMonthlySpend?.weeklyRollup ? "수집된 주차만 합산" : "기존 자료"} · {monthlySpend.sourcePeriod}</small>}
                           {isWeekly && weeklyUsage && weeklyUsage.netSpendUsd < 0 &&
                             <small>원천 비용 반올림 보정</small>}
                           {unallocatedUsage && <small title={`미분리 ${numberFormat.format(unallocatedUsage.totalTokens)}토큰 · ${numberFormat.format(unallocatedUsage.requests)}건 · ${unallocatedUsage.periods.join(" 및 ")}`}>기존 자료 {unallocatedUsage.baselinePeriod} · 주차 미확정</small>}
@@ -5347,7 +5354,7 @@ function IndividualGitlabProfileView({
           <h2>{user.displayName}</h2>
           <p>{user.displayAccount ?? user.email} · {periodLabel}</p>
           {codex.note && <p>{codex.note}</p>}
-          {!weeklyPeriod && monthlySpend?.coverage === "partial" && <p>Claude 기존 자료 유지 · {monthlySpend.sourcePeriod}</p>}
+          {!weeklyPeriod && monthlySpend?.coverage === "partial" && <p>Claude {individualUtilizationData.monthlySpend[selectedMonth]?.weeklyRollup ? "수집된 주차만 합산" : "기존 자료 유지"} · {monthlySpend.sourcePeriod}</p>}
           {weeklyPeriod?.unallocatedUsage?.[user.email] && <p>Claude 기간 분리 필요 · 기존 자료 {weeklyPeriod.unallocatedUsage[user.email].baselinePeriod}. 월간 차액은 주차 합계에서 제외했습니다.</p>}
         </div>
         <div className="individual-profile-drive-links">

@@ -2,7 +2,8 @@ import snapshotJson from "./individualUtilizationSnapshot.json";
 import monthlySpendSnapshotJson from "./individualMonthlySpendSnapshot.json";
 import weeklyUsageSnapshotJson from "./individualWeeklyUsageSnapshot.json";
 import { isCurrentEmployee } from "./activeRoster";
-import { codexReportingWeeks } from "./codexUsageData";
+import { calendarMonthEnd, codexReportingWeeks } from "./codexUsageData";
+import { buildWeeklyMonthlyUsage } from "./weeklyMonthlyUsage";
 
 export type IndividualPeriodMode = "month" | "week";
 export type IndividualEvaluationLevel = "leading" | "active" | "growing" | "early" | "unobserved";
@@ -153,6 +154,7 @@ export type IndividualMonthlySpendUser = IndividualUsageMetrics & {
   models: string[];
   sourcePeriod?: string;
   coverage?: "partial" | "complete";
+  codeLines?: number | null;
 };
 
 export type IndividualMonthlySpendPeriod = {
@@ -163,6 +165,7 @@ export type IndividualMonthlySpendPeriod = {
   coverage: "partial" | "complete";
   sourceCommit?: string;
   preservedAccounts?: string[];
+  weeklyRollup?: {startDate: string; endDate: string; weekKeys: string[]; throughLabel: string};
   totals: IndividualUsageMetrics;
   users: Record<string, IndividualMonthlySpendUser>;
 };
@@ -274,25 +277,43 @@ function weekLabel(weekStart: string) {
   return `${start.getMonth() + 1}/${start.getDate()}-${end.getMonth() + 1}/${end.getDate()}`;
 }
 
-const months = snapshot.source.codeLines.map((item) => item.month).sort();
+const weeklyMonthlyUsage = buildWeeklyMonthlyUsage(weeklyUsageSnapshot.periods, monthlySpendSnapshot.months.map(period => period.month));
+const months = [...new Set([
+  ...snapshot.source.codeLines.map(item => item.month),
+  ...monthlySpendSnapshot.months.map(period => period.month),
+  ...Object.keys(weeklyMonthlyUsage),
+])].sort();
 const rawMonthlySpendByMonth = new Map(
   monthlySpendSnapshot.months.map((item) => [item.month, item] as const),
 );
 const monthlySpend = Object.fromEntries(
-  months.map((month) => [month, rawMonthlySpendByMonth.get(month) ?? null]),
+  months.map((month) => [month, rawMonthlySpendByMonth.get(month) ?? weeklyMonthlyUsage[month] ?? null]),
 ) as Record<string, IndividualMonthlySpendPeriod | null>;
+
+export function individualMonthlyRange(month: string) {
+  const rollup = monthlySpend[month]?.weeklyRollup;
+  return {startDate: rollup?.startDate ?? `${month}-01`, endDate: rollup?.endDate ?? calendarMonthEnd(month)};
+}
+
+export function claudeCodeLinesForMonth(email: string, month: string): number | null {
+  if (monthlySpend[month]?.weeklyRollup) return monthlySpend[month]?.users[email]?.codeLines ?? null;
+  const user = currentSnapshotUsers.find(item => item.email === email);
+  return user && snapshot.source.codeLines.some(source => source.month === month) ? user.monthlyCodeLines[month] ?? 0 : null;
+}
 
 export function claudeMonthlyCoverage(email: string, month: string) {
   const period = monthlySpend[month];
   const usage = period?.users[email];
   const codeSource = snapshot.source.codeLines.find((source) => source.month === month);
   const spendPeriod = usage?.sourcePeriod ?? period?.period;
-  const codePeriod = codeSource?.preservedAccounts?.find((account) => account.email === email)?.period ?? codeSource?.period;
+  const codePeriod = period?.weeklyRollup
+    ? usage?.codeLines != null ? usage.sourcePeriod : undefined
+    : codeSource?.preservedAccounts?.find((account) => account.email === email)?.period ?? codeSource?.period;
   return {
     spendPeriod,
     codePeriod,
     complete: Boolean(usage && (usage.coverage ?? period?.coverage) === "complete" &&
-      (!codePeriod || codePeriod === spendPeriod)),
+      (!period?.weeklyRollup || usage.codeLines != null) && (!codePeriod || codePeriod === spendPeriod)),
   };
 }
 const weeks = Array.from(new Set(currentSnapshotUsers.flatMap((user) => Object.keys(user.weeklyActivity)))).sort();
@@ -340,16 +361,16 @@ const measuredUsers: IndividualUtilizationUser[] = currentSnapshotUsers
   const monthEvaluations = Object.fromEntries(
     months.map((month) => {
       const activity = user.monthlyActivity[month] ?? emptyActivity;
-      const monthCodeLines = user.monthlyCodeLines[month] ?? 0;
+      const monthCodeLines = claudeCodeLinesForMonth(user.email, month);
       const monthConversations = currentSnapshotUsers.map((item) => (item.monthlyActivity[month] ?? emptyActivity).conversations);
       const monthPrompts = currentSnapshotUsers.map((item) => (item.monthlyActivity[month] ?? emptyActivity).humanPrompts);
       const monthResponses = currentSnapshotUsers.map((item) => (item.monthlyActivity[month] ?? emptyActivity).assistantResponses);
       const monthActiveDays = currentSnapshotUsers.map((item) => (item.monthlyActivity[month] ?? emptyActivity).activeDays);
-      const monthLines = currentSnapshotUsers.map((item) => item.monthlyCodeLines[month] ?? 0);
+      const monthLines = currentSnapshotUsers.map((item) => claudeCodeLinesForMonth(item.email, month) ?? 0);
       const chatActivityObserved = activity.humanPrompts > 0 || activity.conversations > 0 || activity.activeDays > 0;
-      const codeActivityObserved = monthCodeLines > 0;
+      const codeActivityObserved = (monthCodeLines ?? 0) > 0;
       const observed = chatActivityObserved || codeActivityObserved;
-      const codePercentile = percentile(monthCodeLines, monthLines);
+      const codePercentile = percentile(monthCodeLines ?? 0, monthLines);
       const chatWeightedActivity =
         percentile(activity.conversations, monthConversations) * 0.25 +
           percentile(activity.humanPrompts, monthPrompts) * 0.35 +
@@ -375,7 +396,7 @@ const measuredUsers: IndividualUtilizationUser[] = currentSnapshotUsers
         ? `대화 ${activity.conversations}건 · 대화 프롬프트 ${activity.humanPrompts}건`
         : "대화 활동 없음";
       const codeCoverage = codeActivityObserved ? " · Claude Code 프롬프트·활성일 수집중" : "";
-      const evidence = `${chatEvidence}${codeCoverage} · Code ${monthCodeLines.toLocaleString("ko-KR")}줄`;
+      const evidence = `${chatEvidence}${codeCoverage} · Code ${monthCodeLines == null ? "수집중" : `${monthCodeLines.toLocaleString("ko-KR")}줄`}`;
 
       return [
         month,
@@ -662,7 +683,7 @@ const monthlyTrend: IndividualTrendPoint[] = months.map((month) => {
       total.conversations += signal.conversations;
       total.humanPrompts += signal.humanPrompts;
       total.assistantResponses += signal.assistantResponses;
-      if (signal.humanPrompts > 0 || signal.conversations > 0 || (user.monthlyCodeLines[month] ?? 0) > 0) {
+      if (signal.humanPrompts > 0 || signal.conversations > 0 || (claudeCodeLinesForMonth(user.email, month) ?? 0) > 0) {
         total.activeUsers += 1;
       }
       return total;
@@ -673,7 +694,7 @@ const monthlyTrend: IndividualTrendPoint[] = months.map((month) => {
     key: month,
     label: monthLabel(month),
     ...activity,
-    codeLines: users.reduce((sum, user) => sum + (user.monthlyCodeLines[month] ?? 0), 0),
+    codeLines: users.reduce((sum, user) => sum + (claudeCodeLinesForMonth(user.email, month) ?? 0), 0),
   };
 });
 

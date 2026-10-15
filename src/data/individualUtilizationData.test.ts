@@ -1,11 +1,47 @@
 import { describe, expect, it } from "vitest";
-import { claudeMonthlyCoverage, individualUtilizationData } from "./individualUtilizationData";
+import { claudeCodeLinesForMonth, claudeMonthlyCoverage, individualMonthlyRange, individualUtilizationData } from "./individualUtilizationData";
 import monthlySpendSnapshot from "./individualMonthlySpendSnapshot.json";
+import { codexUsageForRange, combinedAiUsage } from "./codexUsageData";
+import { gitlabCommittedCodeRatio, gitlabSummaryForRange, gitlabUserMetricsForRange } from "./gitlabActivityData";
 
 const sumBy = <T,>(items: T[], selector: (item: T) => number) =>
   items.reduce((sum, item) => sum + selector(item), 0);
 
 describe("individualUtilizationData", () => {
+  it("shows October month-to-date totals through the latest week with aligned Codex and GitLab ranges", () => {
+    const data = individualUtilizationData;
+    expect(data.months[data.months.length - 1]).toBe("2026-10");
+    const month = data.monthlySpend["2026-10"]!;
+    expect(month).toMatchObject({
+      period: "2026-10-01 ~ 2026-10-14", coverage: "partial",
+      weeklyRollup: {startDate: "2026-10-01", endDate: "2026-10-14", weekKeys: ["2026-10-W1", "2026-10-W2"]},
+      totals: {requests: 84910, promptTokens: 20725610226, completionTokens: 77922434, totalTokens: 20803532660, netSpendUsd: 595.23},
+    });
+    const range = individualMonthlyRange("2026-10");
+    expect(range).toEqual({startDate: "2026-10-01", endDate: "2026-10-14"});
+    const combined = data.users.map(user => combinedAiUsage(month.users[user.email]?.totalTokens ?? null,
+      claudeCodeLinesForMonth(user.email, "2026-10"), codexUsageForRange(user.email, range.startDate, range.endDate),
+      claudeMonthlyCoverage(user.email, "2026-10").complete));
+    expect(sumBy(combined, usage => usage.tokens ?? 0)).toBe(27734278817);
+    expect(sumBy(combined, usage => usage.codeLines ?? 0)).toBe(485323);
+    expect(gitlabSummaryForRange(range.startDate, range.endDate)).toMatchObject({commitCount: 676, mergeCommitCount: 144, additions: 798695});
+    const email = "wody@riskzero.kr";
+    expect(data.users.find(user => user.email === email)?.monthEvaluations["2026-10"].codeLines).toBe(34601);
+    expect(claudeMonthlyCoverage(email, "2026-10")).toEqual({
+      spendPeriod: month.period, codePeriod: month.period, complete: true,
+    });
+    expect(gitlabCommittedCodeRatio(92166, gitlabUserMetricsForRange(email, range.startDate, range.endDate).additions))
+      .toBeCloseTo(203089 / 92166 * 100);
+    for (const email of ["day@riskzero.kr", "woals1329@riskzero.kr"]) {
+      expect(month.users[email].coverage).toBe("partial");
+      expect(claudeMonthlyCoverage(email, "2026-10").complete).toBe(false);
+    }
+    expect(month.users["khoon@riskzero.kr"]).toBeUndefined();
+    expect(claudeCodeLinesForMonth("khoon@riskzero.kr", "2026-10")).toBeNull();
+    expect(data.monthlySpend["2026-09"]).toEqual(monthlySpendSnapshot.months.find(period => period.month === "2026-09"));
+    expect(individualMonthlyRange("2026-09")).toEqual({startDate: "2026-09-01", endDate: "2026-09-30"});
+  });
+
   it("reconciles the complete August monthly sources", () => {
     const data = individualUtilizationData;
 
