@@ -15,4 +15,16 @@ describe("dashboard startup", () => {
     expect(html).toContain("485,323줄");
     expect(html).toContain("676건");
   });
+
+  it("renders the October sum for users active in only one week without a period mismatch", () => {
+    const rows = renderToString(<App />).split("</tr>");
+    for (const [email, tokens] of [["day@riskzero.kr", "13,789,658"], ["woals1329@riskzero.kr", "1,347,200"]]) {
+      const row = rows.find(row => row.includes(email));
+      expect(row).toBeDefined();
+      expect(row).toContain(`${tokens} 토큰`);
+      expect(row).toContain("1M 토큰당");
+      expect(row).not.toContain("기간 불일치");
+      expect(row).not.toContain("수집된 주차만 합산");
+    }
+  });
 });

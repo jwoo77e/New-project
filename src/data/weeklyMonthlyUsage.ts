@@ -30,10 +30,12 @@ export function buildWeeklyMonthlyUsage(
     const users: Record<string, IndividualMonthlySpendUser> = {};
     for (const email of emails) {
       const observed = weeks.filter(week => week.users[email]);
-      const codeCollected = observed.every(week => week.source.codeMethod !== "not_collected" &&
+      const codeCollected = weeks.every(week => week.source.codeMethod !== "not_collected" &&
         (!week.source.codePeriod || week.source.codePeriod === `${week.startDate} ~ ${week.endDate}`));
-      const complete = contiguous && observed.length === weeks.length && codeCollected && observed.every(week =>
-        (week.users[email].coverage ?? week.coverage) === "complete");
+      // Complete period exports omit accounts with no activity. Missing rows
+      // contribute zero; incomplete source periods still retain partial coverage.
+      const complete = contiguous && codeCollected && weeks.every(week =>
+        (week.users[email]?.coverage ?? week.coverage) === "complete");
       const user: IndividualMonthlySpendUser = {
         ...emptyMetrics(), products: [], models: [], codeLines: codeCollected ? 0 : null,
         sourcePeriod: observed.map(week => `${week.startDate} ~ ${week.endDate}`).join(", "),

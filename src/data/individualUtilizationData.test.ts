@@ -32,9 +32,16 @@ describe("individualUtilizationData", () => {
     });
     expect(gitlabCommittedCodeRatio(92166, gitlabUserMetricsForRange(email, range.startDate, range.endDate).additions))
       .toBeCloseTo(203089 / 92166 * 100);
-    for (const email of ["day@riskzero.kr", "woals1329@riskzero.kr"]) {
-      expect(month.users[email].coverage).toBe("partial");
-      expect(claudeMonthlyCoverage(email, "2026-10").complete).toBe(false);
+    for (const [email, totalTokens, requests] of [
+      ["day@riskzero.kr", 13789658, 80],
+      ["woals1329@riskzero.kr", 1347200, 15],
+    ] as const) {
+      expect(month.users[email]).toMatchObject({
+        totalTokens, requests, codeLines: 0, netSpendUsd: 0, coverage: "complete", sourcePeriod: month.period,
+      });
+      expect(claudeMonthlyCoverage(email, "2026-10")).toEqual({
+        spendPeriod: month.period, codePeriod: month.period, complete: true,
+      });
     }
     expect(month.users["khoon@riskzero.kr"]).toBeUndefined();
     expect(claudeCodeLinesForMonth("khoon@riskzero.kr", "2026-10")).toBeNull();

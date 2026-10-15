@@ -42,6 +42,25 @@ describe("weekly month-to-date aggregation", () => {
       .toMatchObject({totalTokens: 200, codeLines: null, coverage: "partial"});
   });
 
+  it("adds zero for an absent account in a complete export but preserves incomplete source coverage", () => {
+    const first = week("2026-10-01", "2026-10-07");
+    const second = week("2026-10-08", "2026-10-14");
+    second.users = {};
+    for (const periods of [[first, second], [{...first, users: {}}, {...second, users: first.users}]]) {
+      const month = buildWeeklyMonthlyUsage(periods, [])["2026-10"];
+      expect(month.users["user@example.com"]).toMatchObject({
+        totalTokens: 100, codeLines: 5, netSpendUsd: 0.1, coverage: "complete",
+        sourcePeriod: "2026-10-01 ~ 2026-10-14",
+      });
+    }
+    second.coverage = "partial";
+    expect(buildWeeklyMonthlyUsage([first, second], [])["2026-10"].users["user@example.com"])
+      .toMatchObject({totalTokens: 100, coverage: "partial"});
+    second.source.codeMethod = "not_collected";
+    expect(buildWeeklyMonthlyUsage([first, second], [])["2026-10"].users["user@example.com"])
+      .toMatchObject({totalTokens: 100, codeLines: null, coverage: "partial"});
+  });
+
   it("does not double-count overlapping exports or prorate a cross-month week", () => {
     expect(buildWeeklyMonthlyUsage([week("2026-10-01", "2026-10-07"), week("2026-10-07", "2026-10-14")], []))
       .toEqual({});
