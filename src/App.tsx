@@ -91,6 +91,7 @@ import {
   claudeMonthlyCoverage,
   claudeCodeLinesForMonth,
   individualMonthlyRange,
+  isConfirmedClaudeNonUsage,
   type IndividualPeriodMode,
   type IndividualUtilizationUser,
 } from "./data/individualUtilizationData";
@@ -4129,14 +4130,16 @@ function monthlyCodeDensitySamplesForUser(
   return individualUtilizationData.months.slice(0, selectedIndex + 1).flatMap((month) => {
     const spendPeriod = individualUtilizationData.monthlySpend[month];
     const usage = spendPeriod?.users[user.email];
+    const claudeLines = claudeCodeLinesForMonth(user.email, month);
+    const claudeUnused = isConfirmedClaudeNonUsage(user.email, {...usage, codeLines: claudeLines});
     const codeSource = individualUtilizationData.source.codeLines.find((item) => item.month === month);
-    if (!spendPeriod || !usage || (!codeSource && !spendPeriod.weeklyRollup)) return [];
+    if (!spendPeriod || (!usage && !claudeUnused) || (!codeSource && !spendPeriod.weeklyRollup)) return [];
     const coverage = claudeMonthlyCoverage(user.email, month);
     const [spendStartDate, spendEndDate] = (coverage.spendPeriod ?? spendPeriod.period).split(/\s*~\s*/);
     if (!spendStartDate || !spendEndDate) return [];
     const range = individualMonthlyRange(month);
     const codex = codexUsageForRange(user.email, range.startDate, range.endDate);
-    const combined = combinedAiUsage(usage.totalTokens, claudeCodeLinesForMonth(user.email, month), codex, coverage.complete);
+    const combined = combinedAiUsage(claudeUnused ? 0 : usage!.totalTokens, claudeLines, codex, coverage.complete);
 
     return [{
       key: month,
@@ -4167,6 +4170,11 @@ function weeklyCodeDensitySamplesForUser(
     const period = individualUtilizationData.weeklyUsage[week];
     const usage = period?.users[email];
     if (!period) return [];
+    if (isConfirmedClaudeNonUsage(email, usage)) {
+      const codex = codexUsageForRange(email, period.startDate, period.endDate);
+      return [{key: week, label: period.label, codeLines: codex.codeLines,
+        totalTokens: codex.tokens, periodAligned: codex.complete && codex.periodAligned}];
+    }
     if (!usage || period.source.codeMethod === "not_collected") {
       const codex = codexUsageForRange(email, period.startDate, period.endDate);
       return codex.present ? [{key: week, label: period.label, codeLines: codex.codeLines,
@@ -4841,14 +4849,18 @@ function AdoptionView({
         const evaluation = user.monthEvaluations[selectedMonth];
         const monthlySpend = selectedMonthlySpend?.users[user.email] ?? null;
         const weeklyUsage = selectedWeeklyUsage?.users[user.email] ?? null;
+        const claudeUnused = isConfirmedClaudeNonUsage(user.email, {
+          ...(isWeekly ? weeklyUsage : monthlySpend),
+          codeLines: isWeekly ? weeklyUsage?.codeLines : evaluation?.codeLines,
+        });
         const codex = codexUsageForRange(user.email, periodStartDate, periodEndDate);
         const combined = combinedAiUsage(
-          (isWeekly ? weeklyUsage?.totalTokens : monthlySpend?.totalTokens) ?? null,
-          user.measurementStatus === "measured"
+          claudeUnused ? 0 : (isWeekly ? weeklyUsage?.totalTokens : monthlySpend?.totalTokens) ?? null,
+          claudeUnused ? 0 : user.measurementStatus === "measured"
             ? (isWeekly ? weeklyCodeCollected ? weeklyUsage?.codeLines ?? null : null : evaluation?.codeLines ?? null)
             : null,
           codex,
-          isWeekly ? (weeklyUsage?.coverage ?? selectedWeeklyUsage?.coverage) === "complete" : claudeMonthlyCoverage(user.email, selectedMonth).complete,
+          claudeUnused || (isWeekly ? (weeklyUsage?.coverage ?? selectedWeeklyUsage?.coverage) === "complete" : claudeMonthlyCoverage(user.email, selectedMonth).complete),
         );
         const codeDensitySamples = isWeekly
           ? weeklyCodeDensitySamplesForUser(user.email, selectedWeek)
@@ -4863,6 +4875,7 @@ function AdoptionView({
           evaluation,
           monthlySpend,
           weeklyUsage,
+          claudeUnused,
           codex,
           combined,
           codeDensityTrend,
@@ -5130,6 +5143,7 @@ function AdoptionView({
                 evaluation,
                 monthlySpend,
                 weeklyUsage,
+                claudeUnused,
                 codeDensityTrend,
                 selectedDensitySample,
                 gitlab,
@@ -5143,8 +5157,9 @@ function AdoptionView({
                 );
                 const periodProducts = isWeekly ? weeklyUsage?.products : monthlySpend?.products;
                 const periodModels = isWeekly ? weeklyUsage?.models : monthlySpend?.models;
-                const scopeProducts = isWeekly ? periodProducts ?? [] : periodProducts?.length ? periodProducts : user.products;
-                const scopeModels = isWeekly ? periodModels ?? [] : periodModels?.length ? periodModels : user.models;
+                const scopeProducts = claudeUnused ? codex.present ? ["Codex"] : []
+                  : isWeekly ? periodProducts ?? [] : periodProducts?.length ? periodProducts : user.products;
+                const scopeModels = claudeUnused ? [] : isWeekly ? periodModels ?? [] : periodModels?.length ? periodModels : user.models;
                 const generatedCodeLines = isWeekly
                   ? weeklyCodeCollected ? weeklyUsage?.codeLines ?? null : null
                   : evaluation?.codeLines ?? null;
@@ -5183,7 +5198,7 @@ function AdoptionView({
                         </button>
                       </td>
                       <td>
-                        {metricsMeasured ? <div className="individual-combined-usage">
+                        {claudeUnused ? <span className="state-pill neutral">미사용</span> : metricsMeasured ? <div className="individual-combined-usage">
                           {isWeekly
                             ? weeklyUsage
                               ? weeklyRecalculated
@@ -5328,12 +5343,13 @@ function IndividualGitlabProfileView({
   );
   const claudeUsage = weeklyPeriod ? weeklyPeriod.users[user.email] ?? null : monthlySpend;
   const claudeCodeLines = weeklyPeriod ? weeklyPeriod.users[user.email]?.codeLines ?? null : evaluation?.codeLines ?? null;
+  const claudeUnused = isConfirmedClaudeNonUsage(user.email, {...claudeUsage, codeLines: claudeCodeLines});
   const codex = codexUsageForRange(user.email, startDate, endDate);
   const combined = combinedAiUsage(
-    user.measurementStatus === "measured" ? claudeUsage?.totalTokens ?? null : null,
-    user.measurementStatus === "measured" ? claudeCodeLines : null,
+    claudeUnused ? 0 : user.measurementStatus === "measured" ? claudeUsage?.totalTokens ?? null : null,
+    claudeUnused ? 0 : user.measurementStatus === "measured" ? claudeCodeLines : null,
     codex,
-    weeklyPeriod ? (weeklyPeriod.users[user.email]?.coverage ?? weeklyPeriod.coverage) === "complete" : claudeMonthlyCoverage(user.email, selectedMonth).complete,
+    claudeUnused || (weeklyPeriod ? (weeklyPeriod.users[user.email]?.coverage ?? weeklyPeriod.coverage) === "complete" : claudeMonthlyCoverage(user.email, selectedMonth).complete),
   );
   const gitlab = gitlabUserMetricsForRange(user.email, startDate, endDate);
   const gitlabCoverage = gitlabRangeCoverage(startDate, endDate);
@@ -5368,7 +5384,7 @@ function IndividualGitlabProfileView({
         <article>
           <span><Activity size={17} />{periodLabel} 전체 토큰</span>
           <strong>{combined.tokens === null ? "수집중" : formatTokens(combined.tokens)}</strong>
-          <small>{metricsMeasured && claudeUsage ? `Claude ${numberFormat.format(claudeUsage.requests)}건 요청 · 순비용 ${formatPreciseUsd(claudeUsage.netSpendUsd)}` : "Claude 사용량 원천 연결 대기"}{codex.present ? " · Codex 포함" : ""}</small>
+          <small>{claudeUnused ? "Claude 미사용" : metricsMeasured && claudeUsage ? `Claude ${numberFormat.format(claudeUsage.requests)}건 요청 · 순비용 ${formatPreciseUsd(claudeUsage.netSpendUsd)}` : "Claude 사용량 원천 연결 대기"}{codex.present ? " · Codex 포함" : ""}</small>
         </article>
         <article>
           <span><FileText size={17} />Claude + Codex Code Lines</span>

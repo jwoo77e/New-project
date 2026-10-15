@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { claudeCodeLinesForMonth, claudeMonthlyCoverage, individualMonthlyRange, individualUtilizationData } from "./individualUtilizationData";
+import { claudeCodeLinesForMonth, claudeMonthlyCoverage, individualMonthlyRange, individualUtilizationData, isConfirmedClaudeNonUsage } from "./individualUtilizationData";
 import monthlySpendSnapshot from "./individualMonthlySpendSnapshot.json";
 import { codexUsageForRange, combinedAiUsage } from "./codexUsageData";
 import { gitlabCommittedCodeRatio, gitlabSummaryForRange, gitlabUserMetricsForRange } from "./gitlabActivityData";
@@ -8,6 +8,24 @@ const sumBy = <T,>(items: T[], selector: (item: T) => number) =>
   items.reduce((sum, item) => sum + selector(item), 0);
 
 describe("individualUtilizationData", () => {
+  it("treats confirmed Claude non-use as zero while preserving historical observations and unknown accounts", () => {
+    const email = "sjpark@riskzero.kr";
+    expect(individualUtilizationData.monthlySpend["2026-10"]?.users[email]).toBeUndefined();
+    expect(isConfirmedClaudeNonUsage(email, null)).toBe(true);
+    expect(claudeCodeLinesForMonth(email, "2026-10")).toBe(0);
+    expect(claudeMonthlyCoverage(email, "2026-10")).toEqual({
+      spendPeriod: "2026-10-01 ~ 2026-10-14", codePeriod: "2026-10-01 ~ 2026-10-14", complete: true,
+    });
+    expect(combinedAiUsage(0, 0, codexUsageForRange(email, "2026-10-01", "2026-10-14")))
+      .toEqual({tokens: 1795619, codeLines: 0, partial: false});
+    const historical = individualUtilizationData.monthlySpend["2026-08"]!.users[email];
+    expect(historical.totalTokens).toBeGreaterThan(0);
+    expect(isConfirmedClaudeNonUsage(email, historical)).toBe(false);
+    expect(isConfirmedClaudeNonUsage(email, {codeLines: 1})).toBe(false);
+    expect(isConfirmedClaudeNonUsage("khoon@riskzero.kr", null)).toBe(false);
+    expect(claudeCodeLinesForMonth("khoon@riskzero.kr", "2026-10")).toBeNull();
+  });
+
   it("shows October month-to-date totals through the latest week with aligned Codex and GitLab ranges", () => {
     const data = individualUtilizationData;
     expect(data.months[data.months.length - 1]).toBe("2026-10");

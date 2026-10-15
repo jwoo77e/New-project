@@ -295,15 +295,33 @@ export function individualMonthlyRange(month: string) {
   return {startDate: rollup?.startDate ?? `${month}-01`, endDate: rollup?.endDate ?? calendarMonthEnd(month)};
 }
 
+// User-confirmed on 2026-10-15. Keep historical observations when a report has usage.
+const confirmedClaudeNonUsers = new Set(["sjpark@riskzero.kr"]);
+export function isConfirmedClaudeNonUsage(
+  email: string,
+  usage?: (Partial<IndividualUsageMetrics> & {codeLines?: number | null}) | null,
+) {
+  return confirmedClaudeNonUsers.has(email.toLowerCase()) &&
+    !(usage?.requests || usage?.totalTokens || usage?.codeLines || usage?.netSpendUsd);
+}
+
 export function claudeCodeLinesForMonth(email: string, month: string): number | null {
-  if (monthlySpend[month]?.weeklyRollup) return monthlySpend[month]?.users[email]?.codeLines ?? null;
+  const period = monthlySpend[month];
+  const usage = period?.users[email];
   const user = currentSnapshotUsers.find(item => item.email === email);
-  return user && snapshot.source.codeLines.some(source => source.month === month) ? user.monthlyCodeLines[month] ?? 0 : null;
+  const lines = period?.weeklyRollup ? usage?.codeLines ?? null
+    : user && snapshot.source.codeLines.some(source => source.month === month) ? user.monthlyCodeLines[month] ?? 0 : null;
+  return isConfirmedClaudeNonUsage(email, {...usage, codeLines: lines}) ? 0 : lines;
 }
 
 export function claudeMonthlyCoverage(email: string, month: string) {
   const period = monthlySpend[month];
   const usage = period?.users[email];
+  if (isConfirmedClaudeNonUsage(email, {...usage, codeLines: claudeCodeLinesForMonth(email, month)})) {
+    const range = individualMonthlyRange(month);
+    const sourcePeriod = `${range.startDate} ~ ${range.endDate}`;
+    return {spendPeriod: sourcePeriod, codePeriod: sourcePeriod, complete: true};
+  }
   const codeSource = snapshot.source.codeLines.find((source) => source.month === month);
   const spendPeriod = usage?.sourcePeriod ?? period?.period;
   const codePeriod = period?.weeklyRollup

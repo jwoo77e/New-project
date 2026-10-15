@@ -27,4 +27,16 @@ describe("dashboard startup", () => {
       expect(row).not.toContain("수집된 주차만 합산");
     }
   });
+
+  it("labels Park Sujin's Claude non-use and shows the complete Codex-only total", () => {
+    const row = renderToString(<App />).split("</tr>").find(row => row.includes("sjpark@riskzero.kr"));
+    expect(row).toBeDefined();
+    const claudeCell = row!.split("</td>")[1];
+    expect(claudeCell).toContain("미사용");
+    expect(claudeCell).not.toContain("수집중");
+    expect(row).toContain("1,795,619 토큰");
+    expect(row).toContain("1M 토큰당");
+    expect(row).not.toContain("확인분 합산");
+    expect(row).not.toContain("Cowork");
+  });
 });
