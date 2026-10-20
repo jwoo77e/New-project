@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { createSign } from "node:crypto";
+import { createHash, createSign } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -105,6 +105,14 @@ export async function collectApiUsage({
     dailyUsage,
     models: [...openai.models, ...gemini.models, ...claude.models].sort((a, b) => b.costUsd - a.costUsd),
     keyHealth: [...keyHealthRows(openai), ...keyHealthRows(gemini), ...keyHealthRows(claude)],
+    usageDetails: [openai, gemini, claude].flatMap((result) => result.usageDetails ?? []),
+    usageDetailCoverage: [openai, gemini, claude].flatMap((result) => result.usageDetailCoverage ?? [{
+      provider: result.provider.provider,
+      sourceName: result.provider.label,
+      startDate: dayBuckets[0].date,
+      endDate: dayBuckets.at(-1).date,
+      collected: false,
+    }]),
     workspaceUsage,
     gammaUsage,
   };
@@ -189,6 +197,7 @@ async function collectOpenAIAdminKey(adminKey, index) {
   usageUrl.searchParams.set("end_time", String(Math.floor(endingAt.getTime() / 1000)));
   usageUrl.searchParams.set("bucket_width", "1d");
   usageUrl.searchParams.append("group_by[]", "model");
+  usageUrl.searchParams.append("group_by[]", "api_key_id");
 
   const costsUrl = new URL("https://api.openai.com/v1/organization/costs");
   costsUrl.searchParams.set("start_time", String(Math.floor(startingAt.getTime() / 1000)));
@@ -258,6 +267,7 @@ async function collectOpenAIAdminKey(adminKey, index) {
     }),
     daily,
     models,
+    ...buildUsageDetails(usage, providerName, keyName, costsResult.ok ? costs.dailyCosts : null, usageResult.ok),
     keyHealth: makeKeyHealth(providerName, {
       name: keyName,
       scope: "organization usage, costs",
@@ -301,6 +311,11 @@ function aggregateOpenAIAdminResults(results, activeKeys) {
     }),
     daily,
     models: combineModelRows(results.flatMap((result) => result.models)),
+    usageDetails: results.flatMap((result) => result.usageDetails ?? []),
+    usageDetailCoverage: results.flatMap((result) => result.usageDetailCoverage ?? [{
+      provider: providerName, sourceName: result.keyHealth.name,
+      startDate: dayBuckets[0].date, endDate: dayBuckets.at(-1).date, collected: false,
+    }]),
     keyHealth: results.map((result) => result.keyHealth),
   };
 }
@@ -409,6 +424,8 @@ async function collectGemini(apiKeys, env) {
     }),
     daily: mergeDaily(usage.daily, billingCosts.ok ? billingCosts.dailyCosts : new Map()),
     models: usageModels.length > 0 ? usageModels : catalogModels,
+    ...buildUsageDetails(usage, providerName, `Cloud Monitoring: ${monitoring.projectLabel}`,
+      billingCosts.ok ? billingCosts.dailyCosts : null, true),
     keyHealth,
   };
 }
@@ -528,6 +545,7 @@ async function collectClaudeAdminKey(adminKey, index) {
   usageUrl.searchParams.set("ending_at", endingAt.toISOString());
   usageUrl.searchParams.set("bucket_width", "1d");
   usageUrl.searchParams.append("group_by[]", "model");
+  usageUrl.searchParams.append("group_by[]", "api_key_id");
 
   const costUrl = new URL("https://api.anthropic.com/v1/organizations/cost_report");
   costUrl.searchParams.set("starting_at", startingAt.toISOString());
@@ -601,6 +619,7 @@ async function collectClaudeAdminKey(adminKey, index) {
     }),
     daily,
     models,
+    ...buildUsageDetails(usage, providerName, keyName, costResult.ok ? costs.dailyCosts : null, usageResult.ok),
     keyHealth: makeKeyHealth(providerName, {
       name: keyName,
       scope: "admin usage, costs",
@@ -646,6 +665,11 @@ function aggregateClaudeAdminResults(results, activeKeys) {
     }),
     daily,
     models: combineModelRows(results.flatMap((result) => result.models)),
+    usageDetails: results.flatMap((result) => result.usageDetails ?? []),
+    usageDetailCoverage: results.flatMap((result) => result.usageDetailCoverage ?? [{
+      provider: providerName, sourceName: result.keyHealth.name,
+      startDate: dayBuckets[0].date, endDate: dayBuckets.at(-1).date, collected: false,
+    }]),
     keyHealth: results.map((result) => result.keyHealth),
   };
 }
@@ -1056,7 +1080,8 @@ function parseOpenAIUsage(payload) {
       const requests = numberValue(result.num_model_requests ?? result.requests ?? result.num_requests);
       const inputTokens = numberValue(result.input_tokens);
       const outputTokens = numberValue(result.output_tokens);
-      addUsage(usage, date, model, requests, inputTokens, outputTokens);
+      addUsage(usage, date, model, requests, inputTokens, outputTokens,
+        result.api_key_id, providerHasRequestCount(result));
     }
   }
   return usage;
@@ -1093,7 +1118,8 @@ function parseClaudeUsage(payload) {
         numberValue(result.cache_creation?.ephemeral_1h_input_tokens) +
         numberValue(result.cache_creation?.ephemeral_5m_input_tokens);
       const outputTokens = numberValue(result.output_tokens ?? result.output_tokens_count);
-      addUsage(usage, date, model, requests, inputTokens, outputTokens);
+      addUsage(usage, date, model, requests, inputTokens, outputTokens,
+        result.api_key_id, providerHasRequestCount(result));
     }
   }
   return usage;
@@ -1642,7 +1668,12 @@ export function buildBigQueryBillingTableRef(projectId, datasetId, tableId) {
   return `${safeProjectId}.${safeDatasetId}.${safeTableId}`;
 }
 
-function addUsage(usage, date, model, requests, inputTokens, outputTokens) {
+function providerHasRequestCount(result) {
+  return [result.num_model_requests, result.requests, result.num_requests,
+    result.message_count, result.messages, result.count].some((value) => value != null);
+}
+
+function addUsage(usage, date, model, requests, inputTokens, outputTokens, apiKeyId = null, requestsKnown = true) {
   usage.totalRequests += requests;
   usage.inputTokens += inputTokens;
   usage.outputTokens += outputTokens;
@@ -1662,6 +1693,38 @@ function addUsage(usage, date, model, requests, inputTokens, outputTokens) {
   modelUsage.inputTokens += inputTokens;
   modelUsage.outputTokens += outputTokens;
   usage.models.set(model, modelUsage);
+
+  // Only provider-issued identifiers enter this map; never the authentication key.
+  const keyId = typeof apiKeyId === "string" && apiKeyId ? apiKeyId : null;
+  const detailId = JSON.stringify([date, model, keyId]);
+  const detail = usage.details.get(detailId) ?? {
+    date, model, keyId, requests: 0, inputTokens: 0, outputTokens: 0,
+  };
+  detail.requests = requestsKnown && detail.requests !== null ? detail.requests + requests : null;
+  detail.inputTokens += inputTokens;
+  detail.outputTokens += outputTokens;
+  usage.details.set(detailId, detail);
+}
+
+function buildUsageDetails(usage, provider, sourceName, dailyCosts, collected) {
+  return {
+    usageDetailCoverage: [{
+      provider, sourceName, startDate: dayBuckets[0].date, endDate: dayBuckets.at(-1).date, collected,
+    }],
+    usageDetails: [...usage.details.values()].map((row) => {
+      // Keep a stable pseudonymous identifier, not the raw key ID or a secret.
+      const keyId = row.keyId ? createHash("sha256").update(`${provider}:${row.keyId}`).digest("hex").slice(0, 16) : null;
+      const tokens = usage.daily.get(row.date)?.tokens ?? 0;
+      const dayCost = dailyCosts?.get(row.date) ?? 0;
+      return {
+        ...row, provider, sourceName, keyId,
+        keyName: keyId ? `API 키 ${keyId.slice(0, 8)}` : provider === "Gemini" ? "키 미구분 (프로젝트 집계)" : "키 미지정 사용량",
+        // Same-day token allocation is an estimate, never provider-billed key cost.
+        costUsd: dailyCosts === null || tokens === 0 ? null :
+          Math.round(dayCost * (row.inputTokens + row.outputTokens) / tokens * 1e8) / 1e8,
+      };
+    }),
+  };
 }
 
 function mergeDaily(usageDaily, dailyCosts) {
@@ -1961,6 +2024,7 @@ function emptyUsage() {
     outputTokens: 0,
     daily: new Map(),
     models: new Map(),
+    details: new Map(),
   };
 }
 

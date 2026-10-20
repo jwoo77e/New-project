@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   buildGeminiWorkspaceUsageFromActivities,
   collectApiUsage,
@@ -463,3 +463,73 @@ function workspaceActivity(time, email, action, extraParameters = {}) {
     ],
   };
 }
+
+
+describe("daily key and model collection", () => {
+  it("retains daily/model/key dimensions through pagination and estimates costs within each day", async () => {
+    const urls = [];
+    vi.stubGlobal("fetch", async (url) => {
+      urls.push(new URL(url));
+      const isClaude = url.hostname === "api.anthropic.com";
+      const isCost = url.pathname.includes("cost");
+      const page2 = url.searchParams.has("page");
+      const day = page2 ? "2026-10-01" : "2026-09-30";
+      const usage = isClaude
+        ? [{ model: "claude-test", api_key_id: "provider-key-a", uncached_input_tokens: 10,
+          cache_read_input_tokens: 20, cache_creation: { ephemeral_5m_input_tokens: 30 }, output_tokens: 40 }]
+        : [{ model: "gpt-test", api_key_id: "provider-key-a", num_model_requests: 2, input_tokens: 60, output_tokens: 40 },
+          { model: "gpt-test", api_key_id: "provider-key-b", num_model_requests: 3, input_tokens: 180, output_tokens: 120 },
+          { model: "gpt-other", api_key_id: null, num_model_requests: 1, input_tokens: 60, output_tokens: 40 }];
+      const amount = (page2 ? 20 : 10) * (isClaude ? 100 : 1);
+      return new Response(JSON.stringify({ data: [{ starting_at: `${day}T00:00:00Z`,
+        results: isCost ? [{ amount: isClaude ? String(amount) : { value: amount } }] : usage }],
+        has_more: !page2, next_page: page2 ? null : "second" }), { status: 200 });
+    });
+    try {
+      const snapshot = await collectApiUsage({
+        env: { OPENAI_ADMIN_KEY: "secret-openai", ANTHROPIC_ADMIN_API_KEY: "secret-claude" },
+        collectedAt: new Date("2026-10-21T03:00:00Z"),
+      });
+      expect(urls.filter(url => url.pathname.includes("usage")).every(url =>
+        url.searchParams.getAll("group_by[]").join(",") === "model,api_key_id")).toBe(true);
+      expect(snapshot.usageDetails).toHaveLength(8);
+      const openai = snapshot.usageDetails.filter(row => row.provider === "OpenAI");
+      expect(openai.filter(row => row.date === "2026-09-30").map(row => row.costUsd)).toEqual([2, 6, 2]);
+      expect(openai.filter(row => row.date === "2026-10-01").map(row => row.costUsd)).toEqual([4, 12, 4]);
+      expect(openai[0].keyId).toBe(openai[3].keyId);
+      expect(openai[0].keyId).not.toBe(openai[1].keyId);
+      expect(openai[2].keyId).toBeNull();
+      expect(snapshot.usageDetails.find(row => row.provider === "Claude"))
+        .toMatchObject({ inputTokens: 60, outputTokens: 40, requests: null, costUsd: 10 });
+      expect(JSON.stringify(snapshot)).not.toContain("secret-");
+      expect(JSON.stringify(snapshot)).not.toContain("provider-key-");
+      expect(snapshot.usageDetailCoverage.filter(row => row.collected)).toHaveLength(2);
+      for (const provider of ["OpenAI", "Claude"]) {
+        const total = snapshot.usageDetails.filter(row => row.provider === provider)
+          .reduce((sum, row) => sum + row.inputTokens + row.outputTokens, 0);
+        const source = snapshot.providers.find(row => row.provider === provider);
+        expect(total).toBe(source.inputTokens + source.outputTokens);
+      }
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it("does not turn failed cost collection into free usage or failed usage into measured zero", async () => {
+    vi.stubGlobal("fetch", async (url, options) => {
+      if (url.pathname.includes("cost") || options.headers.Authorization === "Bearer broken") {
+        return new Response(JSON.stringify({ error: { message: "unavailable" } }), { status: 403 });
+      }
+      return new Response(JSON.stringify({ data: [{ starting_at: "2026-10-01T00:00:00Z",
+        results: [{ model: "test", api_key_id: "id", num_model_requests: 1, input_tokens: 100, output_tokens: 20 }] }],
+        has_more: false }), { status: 200 });
+    });
+    try {
+      const snapshot = await collectApiUsage({
+        env: { OPENAI_ADMIN_KEY: "working", OPENAI_ADMIN_KEY_2: "broken" },
+        collectedAt: new Date("2026-10-21T03:00:00Z"),
+      });
+      expect(snapshot.usageDetails).toHaveLength(1);
+      expect(snapshot.usageDetails[0].costUsd).toBeNull();
+      expect(snapshot.usageDetailCoverage.filter(row => row.provider === "OpenAI").map(row => row.collected)).toEqual([true, false]);
+    } finally { vi.unstubAllGlobals(); }
+  });
+});

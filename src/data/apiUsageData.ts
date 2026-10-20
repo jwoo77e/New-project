@@ -56,6 +56,28 @@ export type ApiKeyHealth = {
   note: string;
 };
 
+// Daily facts retain the model/key dimensions; cumulative models cannot be date-filtered.
+export type ApiUsageDetail = {
+  date: string;
+  provider: ApiProviderName;
+  sourceName: string;
+  keyId: string | null;
+  keyName: string;
+  model: string;
+  requests: number | null;
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number | null;
+};
+
+export type ApiUsageDetailCoverage = {
+  provider: ApiProviderName;
+  sourceName: string;
+  startDate: string;
+  endDate: string;
+  collected: boolean;
+};
+
 export type GeminiWorkspaceUserUsageLevel = "High" | "Medium" | "Low" | "Zero";
 
 export type GeminiWorkspaceUserUsage = {
@@ -173,6 +195,8 @@ export type ApiUsageData = {
   dailyUsage: ApiDailyUsage[];
   models: ApiModelUsage[];
   keyHealth: ApiKeyHealth[];
+  usageDetails?: ApiUsageDetail[];
+  usageDetailCoverage?: ApiUsageDetailCoverage[];
   workspaceUsage?: GeminiWorkspaceUsageData;
   gammaUsage?: GammaUsageData;
 };

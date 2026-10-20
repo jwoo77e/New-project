@@ -6208,3 +6208,17 @@ td strong {
   }
 
 }
+
+.api-detail-panel { display: grid; gap: 16px; }
+.api-detail-panel h3 { margin: 8px 0 0; }
+.api-detail-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.api-detail-periods { display: flex; flex-wrap: wrap; gap: 6px; }
+.api-detail-periods button, .api-detail-filters select {
+  padding: 9px 12px; border: 1px solid #d7e2db; border-radius: 8px;
+  background: #fff; color: #234c3d; font: inherit;
+}
+.api-detail-periods button { cursor: pointer; }
+.api-detail-periods button.active { background: #234c3d; border-color: #234c3d; color: #fff; }
+.api-detail-filters label { display: grid; gap: 6px; font-size: 13px; min-width: 0; max-width: 100%; }
+.api-detail-filters select { max-width: 100%; }
+.api-detail-empty { padding: 28px 16px; text-align: center; color: #64756c; white-space: normal; }

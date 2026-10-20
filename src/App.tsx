@@ -1,3 +1,4 @@
+import { ApiUsageDetails } from "./components/ApiUsageDetails";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { codexUsageForRange, combinedAiUsage } from "./data/codexUsageData";
 import type { FormEvent, ReactNode } from "react";
@@ -6180,7 +6181,7 @@ function ApiUsageView({
   apiUsageData: ApiUsageData;
   fixedApiServiceRecords: AiToolApprovalRecord[];
 }) {
-  const [periodKey, setPeriodKey] = useState<ApiUsagePeriodKey>("recent7");
+  const [periodKey, setPeriodKey] = useState<ApiUsagePeriodKey>("month");
   const periodSummaries = useMemo(
     () => buildApiUsagePeriodSummaries(apiUsageData.dailyUsage),
     [apiUsageData.dailyUsage],
@@ -6400,47 +6401,7 @@ function ApiUsageView({
         </div>
       </section>
 
-      <section className="panel panel-wide">
-        <div className="panel-header">
-          <div>
-            <span className="eyebrow">Models</span>
-            <h2>모델별 사용량</h2>
-          </div>
-          <span className="state-pill neutral">{apiUsageData.source.period} 누적 · 비용 추정</span>
-        </div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>공급자</th>
-                <th>모델</th>
-                <th>요청</th>
-                <th>입력 토큰</th>
-                <th>출력 토큰</th>
-                <th>비용</th>
-                <th>응답</th>
-                <th>오류율</th>
-              </tr>
-            </thead>
-            <tbody>
-              {apiUsageData.models.map((row) => (
-                <tr key={`${row.provider}-${row.model}`}>
-                  <td>{row.provider}</td>
-                  <td>
-                    <strong>{row.model}</strong>
-                  </td>
-                  <td>{formatRequestCount(row.requests, row.inputTokens + row.outputTokens)}</td>
-                  <td>{formatTokens(row.inputTokens)}</td>
-                  <td>{formatTokens(row.outputTokens)}</td>
-                  <td>{formatUsd(row.costUsd)}</td>
-                  <td>{formatLatency(row.avgLatencyMs)}</td>
-                  <td>{formatRate(row.errorRate)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <ApiUsageDetails data={apiUsageData} period={selectedPeriod} periods={periodSummaries} onPeriodChange={setPeriodKey} />
 
       <section className="panel panel-wide">
         <div className="panel-header">

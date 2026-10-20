@@ -6,6 +6,8 @@ export type ApiUsagePeriodSummary = {
   key: ApiUsagePeriodKey;
   label: string;
   rangeLabel: string;
+  startDate: string;
+  endDate: string;
   dailyUsage: ApiDailyUsage[];
   requests: number;
   totalTokens: number;
@@ -38,7 +40,7 @@ export function buildApiUsagePeriodSummaries(
     const rows = sorted.filter((item) => item.date >= startKey && item.date <= endKey);
     const expectedDays = Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1;
     const isPartial = ongoing || new Set(rows.map((row) => row.date)).size < expectedDays;
-    return summarize(key, label, rows, isPartial, `${shortDate(startKey)} ~ ${shortDate(endKey)}`);
+    return { ...summarize(key, label, rows, isPartial, `${shortDate(startKey)} ~ ${shortDate(endKey)}`), startDate: startKey, endDate: endKey };
   }
 
   return [
@@ -55,7 +57,7 @@ function summarize(
   dailyUsage: ApiDailyUsage[],
   isPartial: boolean,
   rangeLabel: string,
-): ApiUsagePeriodSummary {
+): Omit<ApiUsagePeriodSummary, "startDate" | "endDate"> {
   return {
     key,
     label,
