@@ -424,8 +424,7 @@ async function collectGemini(apiKeys, env) {
     }),
     daily: mergeDaily(usage.daily, billingCosts.ok ? billingCosts.dailyCosts : new Map()),
     models: usageModels.length > 0 ? usageModels : catalogModels,
-    ...buildUsageDetails(usage, providerName, `Cloud Monitoring: ${monitoring.projectLabel}`,
-      billingCosts.ok ? billingCosts.dailyCosts : null, true),
+    ...buildGeminiProjectDetails(usage, monitoring.projectIds, billingCosts, env),
     keyHealth,
   };
 }
@@ -1278,6 +1277,7 @@ async function collectGeminiBillingCosts(env) {
     const query = `
       SELECT
         DATE(usage_start_time) AS usage_date,
+        project.id AS project_id,
         SUM(
           (cost + IFNULL((SELECT SUM(credit.amount) FROM UNNEST(credits) AS credit), 0)) /
           COALESCE(NULLIF(currency_conversion_rate, 0), 1)
@@ -1293,8 +1293,8 @@ async function collectGeminiBillingCosts(env) {
           OR LOWER(sku.description) LIKE '%generative language%'
           OR LOWER(sku.description) LIKE '%generative ai%'
         )
-      GROUP BY usage_date
-      ORDER BY usage_date`;
+      GROUP BY usage_date, project_id
+      ORDER BY usage_date, project_id`;
     const queryParameters = [
       {
         name: "startingAt",
@@ -1326,7 +1326,12 @@ async function collectGeminiBillingCosts(env) {
       return { ok: false, error: queryResult.error };
     }
 
+    // Never publish incomplete project cost attribution as a complete result.
+    if (queryResult.data.jobComplete === false || queryResult.data.pageToken) {
+      return { ok: false, error: "BigQuery 프로젝트별 비용 응답이 미완료이거나 추가 페이지가 있습니다." };
+    }
     const dailyCosts = new Map();
+    const projectDailyCosts = new Map();
     let totalCostUsd = 0;
     const fields = queryResult.data.schema?.fields ?? [];
     for (const row of queryResult.data.rows ?? []) {
@@ -1335,10 +1340,14 @@ async function collectGeminiBillingCosts(env) {
       const cost = roundMoney(numberValue(values.cost));
       if (!date) continue;
       dailyCosts.set(date, roundMoney((dailyCosts.get(date) ?? 0) + cost));
+      const projectId = stringValue(values.project_id, "");
+      const projectCosts = projectDailyCosts.get(projectId) ?? new Map();
+      projectCosts.set(date, roundMoney((projectCosts.get(date) ?? 0) + cost));
+      projectDailyCosts.set(projectId, projectCosts);
       totalCostUsd += cost;
     }
 
-    return { ok: true, totalCostUsd: roundMoney(totalCostUsd), dailyCosts, projectFilterLabel: projectFilter.label };
+    return { ok: true, totalCostUsd: roundMoney(totalCostUsd), dailyCosts, projectDailyCosts, projectFilterLabel: projectFilter.label };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
@@ -1526,11 +1535,11 @@ async function addGoogleMonitoringMetricUsage({ projectId, quotaProjectId, acces
       const date = dateFromTimeSeriesPoint(point);
       const value = pointValue(point);
       if (valueType === "requests") {
-        addUsage(usage, date, model, value, 0, 0);
+        addUsage(usage, date, model, value, 0, 0, null, true, projectId);
       } else if (valueType === "inputTokens") {
-        addUsage(usage, date, model, 0, value, 0);
+        addUsage(usage, date, model, 0, value, 0, null, true, projectId);
       } else {
-        addUsage(usage, date, model, 0, 0, value);
+        addUsage(usage, date, model, 0, 0, value, null, true, projectId);
       }
     }
   }
@@ -1673,7 +1682,7 @@ function providerHasRequestCount(result) {
     result.message_count, result.messages, result.count].some((value) => value != null);
 }
 
-function addUsage(usage, date, model, requests, inputTokens, outputTokens, apiKeyId = null, requestsKnown = true) {
+function addUsage(usage, date, model, requests, inputTokens, outputTokens, apiKeyId = null, requestsKnown = true, projectId = null) {
   usage.totalRequests += requests;
   usage.inputTokens += inputTokens;
   usage.outputTokens += outputTokens;
@@ -1696,14 +1705,39 @@ function addUsage(usage, date, model, requests, inputTokens, outputTokens, apiKe
 
   // Only provider-issued identifiers enter this map; never the authentication key.
   const keyId = typeof apiKeyId === "string" && apiKeyId ? apiKeyId : null;
-  const detailId = JSON.stringify([date, model, keyId]);
+  const detailId = JSON.stringify([date, model, keyId, projectId]);
   const detail = usage.details.get(detailId) ?? {
-    date, model, keyId, requests: 0, inputTokens: 0, outputTokens: 0,
+    date, model, keyId, ...(projectId ? { projectId } : {}), requests: 0, inputTokens: 0, outputTokens: 0,
   };
   detail.requests = requestsKnown && detail.requests !== null ? detail.requests + requests : null;
   detail.inputTokens += inputTokens;
   detail.outputTokens += outputTokens;
   usage.details.set(detailId, detail);
+}
+
+function buildGeminiProjectDetails(usage, projectIds, billingCosts, env) {
+  const billingProjectIds = resolveGeminiBillingUsageProjectIds(env);
+  const results = projectIds.map((projectId) => {
+    const projectUsage = emptyUsage();
+    for (const row of usage.details.values()) {
+      if (row.projectId === projectId) {
+        addUsage(projectUsage, row.date, row.model, row.requests ?? 0,
+          row.inputTokens, row.outputTokens, null, row.requests !== null, projectId);
+      }
+    }
+    const billingCovered = billingCosts.ok && (billingProjectIds.length === 0 ||
+      billingProjectIds.includes("*") || billingProjectIds.includes(projectId));
+    const details = buildUsageDetails(projectUsage, "Gemini", projectId,
+      billingCovered ? billingCosts.projectDailyCosts.get(projectId) ?? new Map() : null, true);
+    return {
+      usageDetails: details.usageDetails.map((row) => ({ ...row, keyName: projectId })),
+      usageDetailCoverage: details.usageDetailCoverage.map((row) => ({ ...row, projectId })),
+    };
+  });
+  return {
+    usageDetails: results.flatMap((result) => result.usageDetails),
+    usageDetailCoverage: results.flatMap((result) => result.usageDetailCoverage),
+  };
 }
 
 function buildUsageDetails(usage, provider, sourceName, dailyCosts, collected) {

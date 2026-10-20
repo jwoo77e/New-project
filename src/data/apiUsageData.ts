@@ -58,6 +58,7 @@ export type ApiKeyHealth = {
 
 // Daily facts retain the model/key dimensions; cumulative models cannot be date-filtered.
 export type ApiUsageDetail = {
+  projectId?: string;
   date: string;
   provider: ApiProviderName;
   sourceName: string;
@@ -71,6 +72,7 @@ export type ApiUsageDetail = {
 };
 
 export type ApiUsageDetailCoverage = {
+  projectId?: string;
   provider: ApiProviderName;
   sourceName: string;
   startDate: string;

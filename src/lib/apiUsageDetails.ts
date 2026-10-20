@@ -2,7 +2,13 @@ import type { ApiUsageDetail } from "../data/apiUsageData";
 import type { ApiUsagePeriodSummary } from "./apiUsagePeriods";
 
 export function apiUsageKeyId(row: ApiUsageDetail) {
-  return JSON.stringify([row.provider, row.sourceName, row.keyId]);
+  return row.provider === "Gemini" && row.projectId
+    ? JSON.stringify([row.provider, "project", row.projectId])
+    : JSON.stringify([row.provider, row.sourceName, row.keyId]);
+}
+
+export function apiUsageGroupLabel(row: Pick<ApiUsageDetail, "provider" | "projectId" | "keyName">) {
+  return row.provider === "Gemini" ? row.projectId || "프로젝트 미구분 (기존 합산 데이터)" : row.keyName;
 }
 
 export function filterApiUsageDetails(

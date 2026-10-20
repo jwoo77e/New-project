@@ -533,3 +533,62 @@ describe("daily key and model collection", () => {
     } finally { vi.unstubAllGlobals(); }
   });
 });
+
+describe("Gemini project collection", () => {
+  it.each(["complete", "excluded-project", "billing-failed", "billing-incomplete"])(
+    "preserves project facts and project-local costs (%s)", async (scenario) => {
+      const { generateKeyPairSync } = await import("node:crypto");
+      const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+      const account = JSON.stringify({ client_email: "test@example.invalid",
+        private_key: privateKey.export({ type: "pkcs8", format: "pem" }) });
+      let query = "";
+      vi.stubGlobal("fetch", async (input, options = {}) => {
+        const url = new URL(input);
+        let data = {};
+        if (url.hostname === "oauth2.googleapis.com") data = { access_token: "test-token" };
+        else if (url.hostname === "generativelanguage.googleapis.com") data = { models: [] };
+        else if (url.hostname === "monitoring.googleapis.com") {
+          const factor = url.pathname.includes("project-alpha") ? 1 : 2;
+          const metric = url.searchParams.get("filter");
+          const value = metric.includes("generate_content_free_tier_requests/") ? factor :
+            metric.includes("generate_content_free_tier_input_token_count/") ? factor * 100 :
+            metric.includes("generate_content_usage_output_token_count") ? factor * 10 : 0;
+          data = { timeSeries: value ? [{ metric: { labels: { model: "gemini-test" } },
+            points: [{ interval: { startTime: "2026-10-19T00:00:00Z" }, value: { int64Value: String(value) } }] }] : [] };
+        } else if (url.hostname === "bigquery.googleapis.com") {
+          query = JSON.parse(options.body).query;
+          if (scenario === "billing-failed") return new Response(JSON.stringify({ error: { message: "denied" } }), { status: 403 });
+          data = { jobComplete: scenario !== "billing-incomplete",
+            schema: { fields: [{ name: "usage_date" }, { name: "project_id" }, { name: "cost" }] },
+            rows: [
+              { f: [{ v: "2026-10-19" }, { v: "project-alpha" }, { v: "9" }] },
+              ...(scenario === "excluded-project" ? [] : [{ f: [{ v: "2026-10-19" }, { v: "project-beta" }, { v: "1" }] }]),
+            ] };
+        } else throw new Error(`Unexpected test endpoint: ${url.hostname}`);
+        return new Response(JSON.stringify(data), { status: 200 });
+      });
+      try {
+        const snapshot = await collectApiUsage({ env: {
+          GEMINI_API_KEY: "test-key", GOOGLE_SERVICE_ACCOUNT_JSON: account,
+          GOOGLE_MONITORING_PROJECT_IDS: "project-alpha,project-beta", GOOGLE_BILLING_BQ_PROJECT_ID: "billing-project",
+          GOOGLE_BILLING_BQ_DATASET: "billing", GOOGLE_BILLING_BQ_TABLE: "gcp_billing_export_v1_test",
+          GOOGLE_BILLING_USAGE_PROJECT_IDS: scenario === "excluded-project" ? "project-alpha" : "*",
+        }, collectedAt: new Date("2026-10-21T03:00:00Z") });
+        const details = snapshot.usageDetails.filter(row => row.provider === "Gemini");
+        expect(details).toHaveLength(2);
+        expect(details.map(row => row.projectId)).toEqual(["project-alpha", "project-beta"]);
+        expect(details.map(row => row.inputTokens)).toEqual([100, 200]);
+        expect(details.map(row => row.outputTokens)).toEqual([10, 20]);
+        expect(details.map(row => row.requests)).toEqual([1, 2]);
+        expect(details.map(row => row.costUsd)).toEqual(scenario === "complete" ? [9, 1] :
+          scenario === "excluded-project" ? [9, null] : [null, null]);
+        expect(details.map(row => row.keyName)).toEqual(["project-alpha", "project-beta"]);
+        expect(snapshot.usageDetailCoverage.filter(row => row.provider === "Gemini").map(row => row.projectId))
+          .toEqual(["project-alpha", "project-beta"]);
+        expect(snapshot.providers.find(row => row.provider === "Gemini").inputTokens).toBe(300);
+        expect(query).toContain("project.id AS project_id");
+        expect(query).toContain("GROUP BY usage_date, project_id");
+      } finally { vi.unstubAllGlobals(); }
+    },
+  );
+});

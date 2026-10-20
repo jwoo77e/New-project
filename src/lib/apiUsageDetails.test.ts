@@ -46,3 +46,20 @@ describe("API key/model period breakdowns", () => {
     expect(summarizeApiUsageDetails([], "model")).toEqual([]);
   });
 });
+
+describe("Gemini project breakdowns", () => {
+  it("separates projects with the same model and applies project/period filters together", () => {
+    const rows = [
+      fact("2026-10-01", { provider: "Gemini", keyId: null, projectId: "project-alpha" }),
+      fact("2026-10-02", { provider: "Gemini", keyId: null, projectId: "project-beta" }),
+      fact("2026-09-30", { provider: "Gemini", keyId: null, projectId: "project-alpha" }),
+    ];
+    const period = { startDate: "2026-10-01", endDate: "2026-10-21" };
+    const monthly = filterApiUsageDetails(rows, period, "Gemini");
+    expect(summarizeApiUsageDetails(monthly, "key")).toHaveLength(2);
+    expect(summarizeApiUsageDetails(monthly, "model")[0].totalTokens).toBe(240);
+    expect(filterApiUsageDetails(rows, period, "Gemini", apiUsageKeyId(rows[0]))).toEqual([rows[0]]);
+    expect(apiUsageKeyId(rows[0])).toBe(apiUsageKeyId({ ...rows[0], sourceName: "different label" }));
+    expect(apiUsageKeyId(rows[0])).not.toBe(apiUsageKeyId({ ...rows[0], projectId: undefined }));
+  });
+});
