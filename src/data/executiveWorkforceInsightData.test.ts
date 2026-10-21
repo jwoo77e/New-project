@@ -34,7 +34,7 @@ describe("executiveWorkforceInsightData", () => {
     expect(executiveWorkforceInsightData.pureAdditionalCostKrw).toBe(0);
     expect(executiveWorkforceInsightData.proposedTeamPlanActionCostKrw).toBe(0);
     expect(executiveWorkforceInsightData.netMonthlyChangeKrw).toBe(0);
-    expect(executiveWorkforceInsightData.projectedMonthlyKrw).toBeCloseTo(7_886_376.15, 2);
+    expect(executiveWorkforceInsightData.projectedMonthlyKrw).toBeCloseTo(8_034_876.15, 2);
   });
 
   it("measures token coverage against the 39 assigned Team Plan seats", () => {

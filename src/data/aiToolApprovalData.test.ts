@@ -132,6 +132,10 @@ describe("initialAiToolApprovalData", () => {
       "staycurious@riskzero.kr",
       "crow326@riskzero.kr",
       "sjpark@riskzero.kr",
+      "sblim0519@riskzero.kr",
+      "jyjo@riskzero.kr",
+      "doyul@riskzero.kr",
+      "jsc@riskzero.kr",
     ]);
     expect(
       initialAiToolApprovalData.records.filter((record) =>
@@ -140,6 +144,29 @@ describe("initialAiToolApprovalData", () => {
         record.startMonth === "2026-09",
       ),
     ).toHaveLength(13);
+    const september = approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-09");
+    const october = approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-10");
+    for (const [account, owner, department] of [
+      ["sblim0519@riskzero.kr", "임성범 부장 / 전략사업팀", "전략사업팀"],
+      ["jyjo@riskzero.kr", "조주연 부장 / 전략사업팀", "전략사업팀"],
+      ["doyul@riskzero.kr", "김도율 차장 / 스마트서비스", "스마트서비스"],
+      ["jsc@riskzero.kr", "최지숙 과장 / 전략사업팀", "전략사업팀"],
+    ] as const) {
+      expect(october.records.filter(
+        (record) => record.account === account && record.category === "ChatGPT",
+      )).toEqual([expect.objectContaining({
+        tool: "chatGPT Business Plan Standard", owner, department,
+        monthlyUsd: 25, monthlyKrw: 37_125, startMonth: "2026-10",
+      })]);
+      expect(september.records.some(
+        (record) => record.account === account && record.category === "ChatGPT",
+      )).toBe(false);
+      expect(october.records.find(
+        (record) => record.account === account && record.category === "Claude",
+      )).toEqual(september.records.find(
+        (record) => record.account === account && record.category === "Claude",
+      ));
+    }
   });
 
   it("assigns Minjeong and Seongjin one ChatGPT Premium seat each from September and preserves Claude seats", () => {
@@ -215,9 +242,9 @@ describe("initialAiToolApprovalData", () => {
       expect(october.records.find(record => record.category === "Claude" && record.account === account))
         .toMatchObject({monthlyUsd: 125, monthlyKrw: 185625});
     }
-    expect(october.count).toBe(september.count);
-    expect(october.monthlyUsd - september.monthlyUsd).toBeCloseTo(300, 2);
-    expect(october.monthlyKrw - september.monthlyKrw).toBeCloseTo(445500, 2);
+    expect(october.count).toBe(september.count + 4);
+    expect(october.monthlyUsd - september.monthlyUsd).toBeCloseTo(400, 2);
+    expect(october.monthlyKrw - september.monthlyKrw).toBeCloseTo(594000, 2);
     expect(november.monthlyKrw).toBe(october.monthlyKrw);
   });
 
@@ -280,7 +307,7 @@ describe("initialAiToolApprovalData", () => {
 
   it("assigns Choi Jisuk one Standard seat from September without backdating costs", () => {
     expect(initialAiToolApprovalData.records.filter(
-      (record) => record.account === "jsc@riskzero.kr",
+      (record) => record.account === "jsc@riskzero.kr" && record.category === "Claude",
     )).toEqual([expect.objectContaining({
       category: "Claude",
       tool: "Claude Team Plan Standard",
@@ -488,8 +515,8 @@ describe("initialAiToolApprovalData", () => {
     });
     expect(initialAiToolApprovalData.toolSummary.find((item) => item.key === "Claude Pro Max 5")).toBeUndefined();
     expect(initialAiToolApprovalData.toolSummary.find((item) => item.key === "Claude Pro Max 20")).toBeUndefined();
-    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(4_300.59);
-    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(7_886_376.15);
+    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(4_400.59);
+    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(8_034_876.15);
   });
 
   it("keeps category and payment totals aligned with the updated total", () => {
@@ -507,13 +534,13 @@ describe("initialAiToolApprovalData", () => {
     expect(
       initialAiToolApprovalData.categorySummary.find((item) => item.key === "ChatGPT"),
     ).toMatchObject({
-      count: 18,
-      monthlyUsd: 1_450,
-      monthlyKrw: 2_153_250,
+      count: 22,
+      monthlyUsd: 1_550,
+      monthlyKrw: 2_301_750,
     });
-    expect(initialAiToolApprovalData.totalAccounts).toBe(65);
-    expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(65);
-    expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(7_886_376.15);
+    expect(initialAiToolApprovalData.totalAccounts).toBe(69);
+    expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(69);
+    expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(8_034_876.15);
     expect(
       initialAiToolApprovalData.paymentSummary.find((item) => item.key === "계약 고정비"),
     ).toBeUndefined();
@@ -540,9 +567,9 @@ describe("initialAiToolApprovalData", () => {
       monthlyKrw: 1_856_250,
     });
     expect(chatGptProducts.find((item) => item.key === "chatGPT Business Plan Standard")).toMatchObject({
-      count: 8,
-      monthlyUsd: 200,
-      monthlyKrw: 297_000,
+      count: 12,
+      monthlyUsd: 300,
+      monthlyKrw: 445_500,
     });
   });
 
@@ -567,9 +594,9 @@ describe("initialAiToolApprovalData", () => {
     expect(summary.people.find((person) => person.name === "임성범 부장")).toMatchObject({
       name: "임성범 부장",
       departments: ["전략사업팀"],
-      itemCount: 2,
-      monthlyUsd: 299.99,
-      monthlyKrw: 445_485.15,
+      itemCount: 3,
+      monthlyUsd: 324.99,
+      monthlyKrw: 482_610.15,
     });
     expect(summary.people.find((person) => person.name === "박연석 전무")).toMatchObject({
       name: "박연석 전무",
@@ -611,10 +638,10 @@ describe("initialAiToolApprovalData", () => {
     });
     expect(summary.people.find((person) => person.name === "최지숙 과장")).toMatchObject({
       departments: ["전략사업팀"],
-      itemCount: 1,
-      tools: ["Claude Team Plan Standard"],
-      monthlyUsd: 25,
-      monthlyKrw: 37_125,
+      itemCount: 2,
+      tools: ["chatGPT Business Plan Standard", "Claude Team Plan Standard"],
+      monthlyUsd: 50,
+      monthlyKrw: 74_250,
     });
     expect(summary.people.find((person) => person.name === "김기환 대리")).toMatchObject({
       departments: ["스마트서비스"],
@@ -700,9 +727,9 @@ describe("initialAiToolApprovalData", () => {
       monthlyKrw: 7_440_876.15,
     });
     expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-10")).toMatchObject({
-      count: 65,
-      monthlyUsd: 4_300.59,
-      monthlyKrw: 7_886_376.15,
+      count: 69,
+      monthlyUsd: 4_400.59,
+      monthlyKrw: 8_034_876.15,
     });
   });
 

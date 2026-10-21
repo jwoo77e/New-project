@@ -116,11 +116,12 @@ describe("strategy shared-account profiles", () => {
 
       expect(profile.approvalOwner).toBe("임성범 부장");
       expect(records.map((record) => record.tool)).toEqual([
+        "chatGPT Business Plan Standard",
         "Claude Team Plan Standard",
         "Genspark Pro",
       ]);
-      expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBeCloseTo(299.99, 2);
-      expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBeCloseTo(445_485.15, 2);
+      expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBeCloseTo(324.99, 2);
+      expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBeCloseTo(482_610.15, 2);
     }
   });
 });
