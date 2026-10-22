@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { initialAiToolApprovalData } from "./aiToolApprovalData";
+import { approvalMonthlyTotalsForMonth, initialAiToolApprovalData } from "./aiToolApprovalData";
 import {
   baeHyeoncheolProfileData,
   individualProfileDataByEmail,
@@ -74,7 +74,6 @@ describe("strategy shared-account profiles", () => {
       "yspark@riskzero.kr",
       "wody@riskzero.kr",
       "woosung.jeon@riskzero.kr",
-      "hchbae1001@riskzero.kr",
     ]);
 
     for (const profile of profiles) {
@@ -144,14 +143,23 @@ describe("baeHyeoncheolProfileData", () => {
     expect(data.monthlyPromptCounts).toEqual([{ month: "2026-09", prompts: 446 }]);
   });
 
-  it("uses Bae Hyeoncheol's current premium subscription cost", () => {
+  it("excludes Bae Hyeoncheol's current profile and seat while preserving costs through September", () => {
     const records = initialAiToolApprovalData.records.filter((record) =>
       record.owner.startsWith(baeHyeoncheolProfileData.approvalOwner),
     );
 
-    expect(records.map((record) => record.tool)).toEqual(["Claude Team Plan Premium"]);
-    expect(records.reduce((sum, record) => sum + record.monthlyUsd, 0)).toBe(125);
-    expect(records.reduce((sum, record) => sum + record.monthlyKrw, 0)).toBe(185_625);
+    expect(records).toHaveLength(0);
+    expect(individualProfileDataByEmail[baeHyeoncheolProfileData.email]).toBeUndefined();
+    for (const month of ["2026-07", "2026-08", "2026-09"]) {
+      expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, month).records.find(
+        record => record.account === baeHyeoncheolProfileData.email,
+      )).toMatchObject({tool: "Claude Team Plan Premium", monthlyUsd: 125, monthlyKrw: 185_625});
+    }
+    for (const month of ["2026-10", "2026-11"]) {
+      expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, month).records.some(
+        record => record.account === baeHyeoncheolProfileData.email,
+      )).toBe(false);
+    }
   });
 });
 

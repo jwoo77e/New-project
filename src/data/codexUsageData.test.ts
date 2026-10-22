@@ -6,6 +6,25 @@ import {calculateCodeOutputDensity} from "../lib/codeOutputDensity";
 import {gitlabCommittedCodeRatio, gitlabUserMetricsForRange} from "./gitlabActivityData";
 
 describe("Codex usage", () => {
+  it("reconciles October third-week Codex and Claude usage for the same GitLab period", () => {
+    const week = individualUtilizationData.weeklyUsage["2026-10-W3"];
+    const period = snapshot.periods.find(item => item.startDate === week.startDate && item.endDate === week.endDate)!;
+    expect(Object.keys(period.users)).toHaveLength(13);
+    expect(Object.values(period.users).reduce((sum, user) => sum + user.tokens, 0)).toBe(2609131292);
+    expect(Object.values(period.users).reduce((sum, user) => sum + user.codeLines, 0)).toBe(22060);
+    const combined = individualUtilizationData.users.map(user => combinedAiUsage(
+      week.users[user.email]?.totalTokens ?? null, week.users[user.email]?.codeLines ?? null,
+      codexUsageForRange(user.email, week.startDate, week.endDate),
+    ));
+    expect(combined.reduce((sum, user) => sum + (user.tokens ?? 0), 0)).toBe(18524638340);
+    expect(combined.reduce((sum, user) => sum + (user.codeLines ?? 0), 0)).toBe(148027);
+    const email = "wody@riskzero.kr";
+    const codex = codexUsageForRange(email, week.startDate, week.endDate);
+    expect(codex).toMatchObject({tokens: 631128440, codeLines: 4233, complete: true});
+    const total = combinedAiUsage(week.users[email].totalTokens, week.users[email].codeLines, codex);
+    expect(gitlabCommittedCodeRatio(total.codeLines, gitlabUserMetricsForRange(email, week.startDate, week.endDate).additions))
+      .toBeCloseTo(29567 / (38324 + 4233) * 100);
+  });
   it("combines the October second-week export with all supplied Claude account sources", () => {
     const week = individualUtilizationData.weeklyUsage["2026-10-W2"];
     const period = snapshot.periods.find(item => item.startDate === week.startDate && item.endDate === week.endDate)!;
@@ -50,9 +69,9 @@ describe("Codex usage", () => {
       return combinedAiUsage(claude?.totalTokens ?? null, claude?.codeLines ?? null,
         codexUsageForRange(user.email, week.startDate, week.endDate));
     });
-    expect(combinedUsers.filter(usage => (usage.tokens ?? 0) > 0)).toHaveLength(34);
-    expect(combinedUsers.reduce((sum, usage) => sum + (usage.tokens ?? 0), 0)).toBe(13150322946);
-    expect(combinedUsers.reduce((sum, usage) => sum + (usage.codeLines ?? 0), 0)).toBe(279970);
+    expect(combinedUsers.filter(usage => (usage.tokens ?? 0) > 0)).toHaveLength(33);
+    expect(combinedUsers.reduce((sum, usage) => sum + (usage.tokens ?? 0), 0)).toBe(13094357338);
+    expect(combinedUsers.reduce((sum, usage) => sum + (usage.codeLines ?? 0), 0)).toBe(278672);
     const email = "wody@riskzero.kr";
     const claude = week.users[email];
     const combined = combinedAiUsage(claude.totalTokens, claude.codeLines,
@@ -176,8 +195,8 @@ describe("Codex usage", () => {
       user.monthlyCodeLines["2026-09"] ?? 0, codexUsageForRange(user.email, "2026-09-01", "2026-09-30")));
     expect(month.users["songinna@riskzero.kr"].totalTokens).toBe(2723453);
     expect(users.some(user => user.email === "songinna@riskzero.kr")).toBe(false);
-    expect(combined.reduce((sum, usage) => sum + (usage.tokens ?? 0), 0)).toBe(70547494590 - 2723453);
-    expect(combined.reduce((sum, usage) => sum + (usage.codeLines ?? 0), 0)).toBe(855090);
+    expect(combined.reduce((sum, usage) => sum + (usage.tokens ?? 0), 0)).toBe(70547494590 - 2723453 - 1308512467);
+    expect(combined.reduce((sum, usage) => sum + (usage.codeLines ?? 0), 0)).toBe(837561);
     const wody = combinedAiUsage(month.users["wody@riskzero.kr"].totalTokens, 91039,
       codexUsageForRange("wody@riskzero.kr", "2026-09-01", "2026-09-30"));
     expect(wody).toEqual({tokens: 11173499637, codeLines: 275786, partial: false});

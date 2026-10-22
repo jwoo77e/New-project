@@ -9,16 +9,18 @@ describe("dashboard startup", () => {
     expect(html).toContain("개인별 AI 활동 근거");
     expect(html).toContain("AI 도구 결재 현황");
     expect(html).toContain('<option value="2026-10" selected="">');
-    expect(html).toContain("10-14까지 누적");
-    expect(html).toContain("10월 2주차까지 누적");
-    expect(html).toContain("2026-10-01 ~ 2026-10-14");
-    expect(html).toContain("485,323줄");
-    expect(html).toContain("676건");
+    expect(html).toContain("10-21까지 누적");
+    expect(html).toContain("10월 3주차까지 누적");
+    expect(html).toContain("2026-10-01 ~ 2026-10-21");
+    expect(html).toContain("632,052줄");
+    expect(html).toContain("982건");
+    expect(html).not.toContain("hchbae1001@riskzero.kr");
+    expect(html).not.toContain("배현철 사원");
   });
 
   it("renders the October sum for users active in only one week without a period mismatch", () => {
     const rows = renderToString(<App />).split("</tr>");
-    for (const [email, tokens] of [["day@riskzero.kr", "13,789,658"], ["woals1329@riskzero.kr", "1,347,200"]]) {
+    for (const [email, tokens] of [["day@riskzero.kr", "13,789,658"], ["woals1329@riskzero.kr", "5,201,019"]]) {
       const row = rows.find(row => row.includes(email));
       expect(row).toBeDefined();
       expect(row).toContain(`${tokens} 토큰`);
@@ -34,7 +36,7 @@ describe("dashboard startup", () => {
     const claudeCell = row!.split("</td>")[1];
     expect(claudeCell).toContain("미사용");
     expect(claudeCell).not.toContain("수집중");
-    expect(row).toContain("1,795,619 토큰");
+    expect(row).toContain("7,139,913 토큰");
     expect(row).toContain("1M 토큰당");
     expect(row).not.toContain("확인분 합산");
     expect(row).not.toContain("Cowork");

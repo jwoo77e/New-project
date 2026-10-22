@@ -1,3 +1,5 @@
+import { isCurrentEmployee } from "./activeRoster";
+
 export type IndividualProfilePromptTopic = {
   label: string;
   count: number;
@@ -1847,14 +1849,16 @@ export const baeHyeoncheolProfileData: IndividualProfileData = {
   ],
 };
 
-export const individualProfileDataByEmail: Readonly<Record<string, IndividualProfileData>> = {
-  [kimJaewooProfileData.email]: kimJaewooProfileData,
-  [limSeongbeomProfileData.email]: limSeongbeomProfileData,
-  [joJooyeonProfileData.email]: joJooyeonProfileData,
-  [leeHyeongbaeProfileData.email]: leeHyeongbaeProfileData,
-  [kimDaeilProfileData.email]: kimDaeilProfileData,
-  [parkYeonseokProfileData.email]: parkYeonseokProfileData,
-  [jeongJaeyoProfileData.email]: jeongJaeyoProfileData,
-  [jeonWoosungProfileData.email]: jeonWoosungProfileData,
-  [baeHyeoncheolProfileData.email]: baeHyeoncheolProfileData,
-};
+export const individualProfileDataByEmail: Readonly<Record<string, IndividualProfileData>> = Object.fromEntries(
+  [
+    kimJaewooProfileData,
+    limSeongbeomProfileData,
+    joJooyeonProfileData,
+    leeHyeongbaeProfileData,
+    kimDaeilProfileData,
+    parkYeonseokProfileData,
+    jeongJaeyoProfileData,
+    jeonWoosungProfileData,
+    baeHyeoncheolProfileData,
+  ].filter((profile) => isCurrentEmployee(profile.email)).map((profile) => [profile.email, profile]),
+);

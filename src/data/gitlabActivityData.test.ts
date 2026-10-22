@@ -1,3 +1,4 @@
+import { isCurrentEmployee } from "./activeRoster";
 import { describe, expect, it } from "vitest";
 import {
   gitlabCommittedCodeRatio,
@@ -12,14 +13,21 @@ import { codexUsageForRange, combinedAiUsage } from "./codexUsageData";
 import { individualUtilizationData } from "./individualUtilizationData";
 
 describe("gitlabActivityData", () => {
-  it("covers September and the first two October weeks without claiming the full October month", () => {
+  it("covers September and the first three October weeks without claiming the full October month", () => {
     expect(gitlabRangeCoverage("2026-09-28", "2026-09-30")).toMatchObject({available: true, complete: true});
     expect(gitlabRangeCoverage("2026-09-01", "2026-09-30")).toMatchObject({available: true, complete: true});
     expect(gitlabRangeCoverage("2026-09-17", "2026-09-27")).toMatchObject({available: true, complete: true});
     expect(gitlabRangeCoverage("2026-10-01", "2026-10-07")).toMatchObject({available: true, complete: true});
     expect(gitlabRangeCoverage("2026-10-01", "2026-10-31")).toMatchObject({available: true, complete: false});
     expect(gitlabRangeCoverage("2026-10-08", "2026-10-14")).toMatchObject({available: true, complete: true});
-    expect(gitlabRangeCoverage("2026-10-15", "2026-10-21")).toMatchObject({available: false, complete: false});
+    expect(gitlabRangeCoverage("2026-10-15", "2026-10-21")).toMatchObject({available: true, complete: true});
+    expect(gitlabSummaryForRange("2026-10-15", "2026-10-21")).toMatchObject({
+      commitCount: 306, mergeCommitCount: 72, additions: 134192, deletions: 54010, changedLines: 188202, activeAuthors: 14,
+    });
+    const commits = gitlabActivityData.users.flatMap(user => gitlabCommitsForRange(user.email, "2026-10-15", "2026-10-21"));
+    expect(commits).toHaveLength(378);
+    expect(new Set(commits.map(commit => `${commit.projectId}:${commit.sha}`)).size).toBe(378);
+    expect(commits.every(commit => commit.day >= "2026-10-15" && commit.day <= "2026-10-21")).toBe(true);
   });
   it("includes September week two GitLab activity", () => {
     expect(gitlabSummaryForRange("2026-09-10", "2026-09-16")).toMatchObject({
@@ -29,8 +37,8 @@ describe("gitlabActivityData", () => {
   });
   it("includes September 17-27 activity from the error-free GitLab refresh", () => {
     expect(gitlabActivityData.source).toMatchObject({
-      period: "2026-05-01 ~ 2026-10-14",
-      refreshedPeriod: "2026-10-08 ~ 2026-10-14",
+      period: "2026-05-01 ~ 2026-10-21",
+      refreshedPeriod: "2026-10-15 ~ 2026-10-21",
       projectCount: 104,
       projectErrors: [],
     });
@@ -87,7 +95,7 @@ describe("gitlabActivityData", () => {
 
   it("publishes the complete August month and August 27 to September 2 range", () => {
     expect(gitlabActivityData.source).toMatchObject({
-      period: "2026-05-01 ~ 2026-10-14",
+      period: "2026-05-01 ~ 2026-10-21",
       projectErrors: [],
     });
     expect(gitlabSummaryForRange("2026-08-01", "2026-08-31")).toMatchObject({
@@ -167,7 +175,7 @@ describe("gitlabActivityData", () => {
     for (const user of gitlabActivityData.users) {
       const userCommits = gitlabCommitsForRange(user.email, week.startDate, week.endDate);
       if (userCommits.length === 0) continue;
-      expect(individualUtilizationData.users.some(person => person.email === user.email)).toBe(true);
+      expect(individualUtilizationData.users.some(person => person.email === user.email)).toBe(isCurrentEmployee(user.email));
       const nonMerge = userCommits.filter(commit => !commit.isMerge);
       expect(gitlabUserMetricsForRange(user.email, week.startDate, week.endDate)).toMatchObject({
         commitCount: nonMerge.length,
@@ -207,7 +215,7 @@ describe("gitlabActivityData", () => {
     for (const user of gitlabActivityData.users) {
       const rows = gitlabCommitsForRange(user.email, week.startDate, week.endDate);
       if (!rows.length) continue;
-      expect(individualUtilizationData.users.some(person => person.email === user.email)).toBe(true);
+      expect(individualUtilizationData.users.some(person => person.email === user.email)).toBe(isCurrentEmployee(user.email));
       expect(gitlabUserMetricsForRange(user.email, week.startDate, week.endDate)).toMatchObject({
         commitCount: rows.filter(row => !row.isMerge).length,
         mergeCommitCount: rows.filter(row => row.isMerge).length,

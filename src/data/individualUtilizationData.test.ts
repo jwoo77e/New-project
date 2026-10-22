@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { isCurrentEmployee } from "./activeRoster";
 import { claudeCodeLinesForMonth, claudeMonthlyCoverage, individualMonthlyRange, individualUtilizationData, isConfirmedClaudeNonUsage } from "./individualUtilizationData";
 import monthlySpendSnapshot from "./individualMonthlySpendSnapshot.json";
 import { codexUsageForRange, combinedAiUsage } from "./codexUsageData";
@@ -14,10 +15,10 @@ describe("individualUtilizationData", () => {
     expect(isConfirmedClaudeNonUsage(email, null)).toBe(true);
     expect(claudeCodeLinesForMonth(email, "2026-10")).toBe(0);
     expect(claudeMonthlyCoverage(email, "2026-10")).toEqual({
-      spendPeriod: "2026-10-01 ~ 2026-10-14", codePeriod: "2026-10-01 ~ 2026-10-14", complete: true,
+      spendPeriod: "2026-10-01 ~ 2026-10-21", codePeriod: "2026-10-01 ~ 2026-10-21", complete: true,
     });
-    expect(combinedAiUsage(0, 0, codexUsageForRange(email, "2026-10-01", "2026-10-14")))
-      .toEqual({tokens: 1795619, codeLines: 0, partial: false});
+    expect(combinedAiUsage(0, 0, codexUsageForRange(email, "2026-10-01", "2026-10-21")))
+      .toEqual({tokens: 7139913, codeLines: 0, partial: false});
     const historical = individualUtilizationData.monthlySpend["2026-08"]!.users[email];
     expect(historical.totalTokens).toBeGreaterThan(0);
     expect(isConfirmedClaudeNonUsage(email, historical)).toBe(false);
@@ -31,28 +32,28 @@ describe("individualUtilizationData", () => {
     expect(data.months[data.months.length - 1]).toBe("2026-10");
     const month = data.monthlySpend["2026-10"]!;
     expect(month).toMatchObject({
-      period: "2026-10-01 ~ 2026-10-14", coverage: "partial",
-      weeklyRollup: {startDate: "2026-10-01", endDate: "2026-10-14", weekKeys: ["2026-10-W1", "2026-10-W2"]},
-      totals: {requests: 84910, promptTokens: 20725610226, completionTokens: 77922434, totalTokens: 20803532660, netSpendUsd: 595.23},
+      period: "2026-10-01 ~ 2026-10-21", coverage: "partial",
+      weeklyRollup: {startDate: "2026-10-01", endDate: "2026-10-21", weekKeys: ["2026-10-W1", "2026-10-W2", "2026-10-W3"]},
+      totals: {requests: 143913, promptTokens: 36589942244, completionTokens: 129097464, totalTokens: 36719039708, netSpendUsd: 1989.45},
     });
     const range = individualMonthlyRange("2026-10");
-    expect(range).toEqual({startDate: "2026-10-01", endDate: "2026-10-14"});
+    expect(range).toEqual({startDate: "2026-10-01", endDate: "2026-10-21"});
     const combined = data.users.map(user => combinedAiUsage(month.users[user.email]?.totalTokens ?? null,
       claudeCodeLinesForMonth(user.email, "2026-10"), codexUsageForRange(user.email, range.startDate, range.endDate),
       claudeMonthlyCoverage(user.email, "2026-10").complete));
-    expect(sumBy(combined, usage => usage.tokens ?? 0)).toBe(27734278817);
-    expect(sumBy(combined, usage => usage.codeLines ?? 0)).toBe(485323);
-    expect(gitlabSummaryForRange(range.startDate, range.endDate)).toMatchObject({commitCount: 676, mergeCommitCount: 144, additions: 798695});
+    expect(sumBy(combined, usage => usage.tokens ?? 0)).toBe(46202951549);
+    expect(sumBy(combined, usage => usage.codeLines ?? 0)).toBe(632052);
+    expect(gitlabSummaryForRange(range.startDate, range.endDate)).toMatchObject({commitCount: 982, mergeCommitCount: 216, additions: 932887});
     const email = "wody@riskzero.kr";
-    expect(data.users.find(user => user.email === email)?.monthEvaluations["2026-10"].codeLines).toBe(34601);
+    expect(data.users.find(user => user.email === email)?.monthEvaluations["2026-10"].codeLines).toBe(72925);
     expect(claudeMonthlyCoverage(email, "2026-10")).toEqual({
       spendPeriod: month.period, codePeriod: month.period, complete: true,
     });
-    expect(gitlabCommittedCodeRatio(92166, gitlabUserMetricsForRange(email, range.startDate, range.endDate).additions))
-      .toBeCloseTo(203089 / 92166 * 100);
+    expect(gitlabCommittedCodeRatio(134723, gitlabUserMetricsForRange(email, range.startDate, range.endDate).additions))
+      .toBeCloseTo(232656 / 134723 * 100);
     for (const [email, totalTokens, requests] of [
       ["day@riskzero.kr", 13789658, 80],
-      ["woals1329@riskzero.kr", 1347200, 15],
+      ["woals1329@riskzero.kr", 5201019, 50],
     ] as const) {
       expect(month.users[email]).toMatchObject({
         totalTokens, requests, codeLines: 0, netSpendUsd: 0, coverage: "complete", sourcePeriod: month.period,
@@ -71,16 +72,17 @@ describe("individualUtilizationData", () => {
     const data = individualUtilizationData;
 
     expect(data.source.spend.rowCount).toBe(138);
-    expect(data.users).toHaveLength(40);
-    expect(data.users.filter((user) => user.measurementStatus === "measured")).toHaveLength(37);
+    expect(data.users).toHaveLength(39);
+    expect(data.users.filter((user) => user.measurementStatus === "measured")).toHaveLength(36);
     expect(data.users.some((user) => user.email === "jisub1221@riskzero.kr")).toBe(false);
     expect(data.users.some((user) => user.email === "songinna@riskzero.kr")).toBe(false);
+    expect(data.users.some((user) => user.email === "hchbae1001@riskzero.kr")).toBe(false);
     expect(data.totals.requests).toBe(161582);
     expect(data.totals.totalTokens).toBe(37099774050);
     expect(data.totals.netSpendUsd).toBeCloseTo(414.44, 2);
     expect(data.source.codeLines).toHaveLength(5);
     expect(sumBy(data.source.codeLines, (item) => item.totalLines)).toBe(1794413);
-    expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(1772416);
+    expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(1527909);
   });
 
   it("keeps activity metrics behind an explicit HR evidence gate", () => {
@@ -206,8 +208,8 @@ describe("individualUtilizationData", () => {
 
     expect(data.weeks[0]).toBe("2026-05-11");
     expect(data.weeks[data.weeks.length - 1]).toBe("2026-08-03");
-    expect(sumBy(data.weeklyTrend, (item) => item.conversations)).toBe(168);
-    expect(sumBy(data.weeklyTrend, (item) => item.humanPrompts)).toBe(1429);
+    expect(sumBy(data.weeklyTrend, (item) => item.conversations)).toBe(108);
+    expect(sumBy(data.weeklyTrend, (item) => item.humanPrompts)).toBe(906);
     expect(data.weeklyTrend.every((item) => item.codeLines === null)).toBe(true);
     expect(
       data.users.every((user) =>
@@ -238,7 +240,28 @@ describe("individualUtilizationData", () => {
       "2026-09-W4",
       "2026-10-W1",
       "2026-10-W2",
+      "2026-10-W3",
     ]);
+    const octoberThirdWeek = data.weeklyUsage["2026-10-W3"];
+    expect(octoberThirdWeek).toMatchObject({
+      startDate: "2026-10-15", endDate: "2026-10-21", coverage: "complete",
+      source: {codePeriod: "2026-10-15 ~ 2026-10-21", codeMethod: "current_cumulative_minus_previous_cumulative", spendMethod: "period_total"},
+      totals: {activeUsers: 31, requests: 59003, promptTokens: 15864332018, completionTokens: 51175030,
+        totalTokens: 15915507048, netSpendUsd: 1394.22, codeLines: 125967},
+    });
+    for (const [email, requests, totalTokens, codeLines] of [
+      ["bigone@riskzero.kr", 2366, 664956367, 31727 - 24779],
+      ["yspark@riskzero.kr", 500, 94974463, 0],
+      ["lbh0902@riskzero.kr", 806, 171610082, 0],
+      ["airyoubi77@riskzero.kr", 63, 15304121, 0],
+    ] as const) {
+      expect(octoberThirdWeek.users[email]).toMatchObject({requests, totalTokens, codeLines, netSpendUsd: 0, coverage: "complete"});
+      expect(claudeMonthlyCoverage(email, "2026-10").complete).toBe(true);
+    }
+    expect(octoberThirdWeek.users["loadedwin@riskzero.kr"]).toBeUndefined();
+    expect(octoberThirdWeek.users["wody@riskzero.kr"].codeLines).toBe(72925 - 34601);
+    expect(sumBy(Object.values(octoberThirdWeek.users), user => user.codeLines)).toBe(125967);
+    expect(sumBy(Object.values(octoberThirdWeek.users), user => user.totalTokens)).toBe(15915507048);
     expect(firstWeek).toMatchObject({
       label: "8월 1주차",
       startDate: "2026-08-01",
@@ -378,7 +401,7 @@ describe("individualUtilizationData", () => {
     expect(data.monthlySpend["2026-08"]?.totals.requests).toBeGreaterThan(
       sumBy(augustThroughFourthWeek, (week) => week.totals.requests),
     );
-    expect(data.weeklyUsageTrend).toHaveLength(11);
+    expect(data.weeklyUsageTrend).toHaveLength(12);
   });
 
   it("produces bounded peer-comparison scores for every user and period", () => {
@@ -646,7 +669,7 @@ describe("individualUtilizationData", () => {
       },
     });
     expect(Object.keys(week.users)).toHaveLength(33);
-    expect(Object.keys(week.users).every(email =>
+    expect(Object.keys(week.users).filter(isCurrentEmployee).every(email =>
       data.users.some(user => user.email === email && user.measurementStatus === "measured"),
     )).toBe(true);
     expect(week.users["kys0392@riskzero.kr"]).toMatchObject({
