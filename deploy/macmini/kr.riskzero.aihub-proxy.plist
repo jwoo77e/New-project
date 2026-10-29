@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>kr.riskzero.aihub-proxy</string>
+  <key>UserName</key><string>riskzero</string>
+  <key>GroupName</key><string>staff</string>
+  <key>WorkingDirectory</key><string>/Users/riskzero/aihub/proxy</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/caddy</string><string>run</string>
+    <string>--config</string><string>/Users/riskzero/aihub/proxy/Caddyfile</string>
+    <string>--adapter</string><string>caddyfile</string>
+    <string>--envfile</string><string>/Users/riskzero/aihub/secrets/public-proxy.env</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key><string>/Users/riskzero</string>
+    <key>PATH</key><string>/opt/homebrew/bin:/usr/bin:/bin</string>
+    <key>XDG_DATA_HOME</key><string>/Users/riskzero/aihub/proxy/data</string>
+    <key>XDG_CONFIG_HOME</key><string>/Users/riskzero/aihub/proxy/config</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>30</integer>
+  <key>Umask</key><integer>63</integer>
+  <key>StandardOutPath</key><string>/Users/riskzero/aihub/logs/proxy.log</string>
+  <key>StandardErrorPath</key><string>/Users/riskzero/aihub/logs/proxy-error.log</string>
+</dict>
+</plist>

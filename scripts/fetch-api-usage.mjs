@@ -1,8 +1,9 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { createHash, createSign } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { redactRequestError, redactSecretData, redactSecrets } from "./secret-redaction.mjs";
 
 let rootDir = process.cwd();
 let envPath = path.join(rootDir, ".env.local");
@@ -11,6 +12,7 @@ let now = new Date();
 let endingAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
 let startingAt = new Date(endingAt.getTime() - days * 24 * 60 * 60 * 1000);
 let dayBuckets = makeDayBuckets(startingAt, days);
+let collectionSignal;
 
 const providerColors = {
   OpenAI: "#0f8b8d",
@@ -54,7 +56,15 @@ export async function loadApiUsageEnv({ targetRootDir = process.cwd(), includeLo
   };
 }
 
-export async function collectApiUsage({
+export async function collectApiUsage(options = {}) {
+  try {
+    return await collectApiUsageInternal(options);
+  } catch (error) {
+    throw new Error(redactSecrets(error instanceof Error ? error.message : error, apiUsageSecrets(options.env ?? process.env)));
+  }
+}
+
+async function collectApiUsageInternal({
   env = process.env,
   targetRootDir = process.cwd(),
   requestedDays = 62,
@@ -94,11 +104,12 @@ export async function collectApiUsage({
     };
   });
 
-  return {
+  return redactSecretData({
     source: {
       name: "생성형 AI API 사용 현황",
       period: `최근 ${days}일`,
       generatedAt: formatKoreanTimestamp(now),
+      collectedAt: now.toISOString(),
       mode,
     },
     providers,
@@ -115,14 +126,17 @@ export async function collectApiUsage({
     }]),
     workspaceUsage,
     gammaUsage,
-  };
+  }, apiUsageSecrets(env));
 }
 
 export async function writeApiUsageSnapshot(snapshot, env = process.env) {
+  const safeSnapshot = redactSecretData(snapshot, apiUsageSecrets(env));
   const outputPaths = getOutputPaths(env);
   for (const outputPath of outputPaths) {
     await mkdir(path.dirname(outputPath), { recursive: true });
-    await writeFile(outputPath, `${JSON.stringify(snapshot, null, 2)}\n`);
+    const temporaryPath = `${outputPath}.${process.pid}.tmp`;
+    await writeFile(temporaryPath, `${JSON.stringify(safeSnapshot, null, 2)}\n`);
+    await rename(temporaryPath, outputPath);
   }
   return outputPaths;
 }
@@ -171,6 +185,7 @@ function configureRuntime({ targetRootDir = process.cwd(), requestedDays = 7, co
   endingAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
   startingAt = new Date(endingAt.getTime() - days * 24 * 60 * 60 * 1000);
   dayBuckets = makeDayBuckets(startingAt, days);
+  collectionSignal = AbortSignal.timeout(60_000);
 }
 
 async function collectOpenAI(adminKeys) {
@@ -262,8 +277,8 @@ async function collectOpenAIAdminKey(adminKey, index) {
       outputTokens: usage.outputTokens,
       costUsd: costs.totalCostUsd,
       activeKeys: 1,
-      status: "정상",
-      note: usageResult.ok ? "Organization Usage/Costs API 수집 완료" : "Costs API만 수집됨",
+      status: usageResult.ok && costsResult.ok ? "정상" : "주의",
+      note: usageResult.ok && costsResult.ok ? "Organization Usage/Costs API 수집 완료" : "Usage 또는 Costs API 일부 수집 실패",
     }),
     daily,
     models,
@@ -328,8 +343,7 @@ async function collectGemini(apiKeys, env) {
   const keyResults = await Promise.all(
     keys.map(async (apiKey, index) => {
       const modelsUrl = new URL("https://generativelanguage.googleapis.com/v1beta/models");
-      modelsUrl.searchParams.set("key", apiKey.key);
-      const result = await getJson(modelsUrl);
+      const result = await getJson(modelsUrl, { headers: { "x-goog-api-key": apiKey.key } });
       return { apiKey, index: index + 1, result };
     }),
   );
@@ -419,7 +433,7 @@ async function collectGemini(apiKeys, env) {
       outputTokens: usage.outputTokens,
       costUsd: billingCosts.ok ? billingCosts.totalCostUsd : 0,
       activeKeys: keys.length,
-      status: hasUsage && validKeyResults.length === keys.length ? "정상" : "주의",
+      status: billingCosts.ok && validKeyResults.length === keys.length ? "정상" : "주의",
       note: `${validKeyResults.length}/${keys.length}개 API 키 확인. ${note}`,
     }),
     daily: mergeDaily(usage.daily, billingCosts.ok ? billingCosts.dailyCosts : new Map()),
@@ -611,10 +625,10 @@ async function collectClaudeAdminKey(adminKey, index) {
       outputTokens: usage.outputTokens,
       costUsd: costs.totalCostUsd,
       activeKeys: 1,
-      status: "정상",
-      note: usageResult.ok
+      status: usageResult.ok && costResult.ok ? "정상" : "주의",
+      note: usageResult.ok && costResult.ok
         ? `${adminKey.label} Admin Usage/Cost API 수집 완료`
-        : `${adminKey.label} Cost API만 수집됨`,
+        : `${adminKey.label} Usage 또는 Cost API 일부 수집 실패`,
     }),
     daily,
     models,
@@ -1903,20 +1917,20 @@ function errorProvider(provider, note, error) {
 
 async function getJson(url, options = {}) {
   try {
-    const response = await fetch(url, options);
+    const response = await fetch(url, withRequestDeadline(options));
     const text = await response.text();
-    const data = text ? JSON.parse(text) : {};
+    const data = parseProviderJson(text, response.status);
 
     if (!response.ok) {
       return {
         ok: false,
-        error: data?.error?.message ?? data?.message ?? `${response.status} ${response.statusText}`,
+        error: redactRequestError(data?.error?.message ?? data?.message ?? `${response.status} ${response.statusText}`, url, options),
       };
     }
 
     return { ok: true, data };
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+    return { ok: false, error: redactRequestError(error, url, options) };
   }
 }
 
@@ -1937,17 +1951,17 @@ export async function getPaginatedJson(
     let response;
     let data;
     try {
-      response = await fetchImpl(pageUrl, options);
+      response = await fetchImpl(pageUrl, withRequestDeadline(options));
       const text = await response.text();
-      data = text ? JSON.parse(text) : {};
+      data = parseProviderJson(text, response.status);
     } catch (error) {
-      return { ok: false, error: error instanceof Error ? error.message : String(error) };
+      return { ok: false, error: redactRequestError(error, pageUrl, options) };
     }
 
     if (!response.ok) {
       return {
         ok: false,
-        error: data?.error?.message ?? data?.message ?? `${response.status} ${response.statusText}`,
+        error: redactRequestError(data?.error?.message ?? data?.message ?? `${response.status} ${response.statusText}`, pageUrl, options),
       };
     }
 
@@ -1974,6 +1988,21 @@ export async function getPaginatedJson(
   }
 
   return { ok: false, error: `페이지네이션 최대 ${maxPages}페이지를 초과했습니다.` };
+}
+
+function withRequestDeadline(options) {
+  const signals = [AbortSignal.timeout(30_000), collectionSignal, options.signal].filter(Boolean);
+  return { ...options, signal: AbortSignal.any(signals) };
+}
+
+function parseProviderJson(text, status) {
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    // JSON.parse exceptions contain a response excerpt, potentially a partial
+    // credential that cannot be matched reliably against the original key.
+    throw new Error(`API 응답을 JSON으로 해석할 수 없습니다 (HTTP ${status}).`);
+  }
 }
 
 async function readLocalEnv(filePath) {
@@ -2218,7 +2247,18 @@ function splitLabelList(value) {
 }
 
 function shortenError(error) {
-  return String(error ?? "알 수 없는 오류").replace(/\s+/g, " ").slice(0, 120);
+  return redactSecrets(error).replace(/\s+/g, " ").slice(0, 120);
+}
+
+function apiUsageSecrets(env) {
+  return [
+    ...resolveOpenAIAdminKeys(env), ...resolveAnthropicAdminKeys(env), ...resolveGeminiApiKeys(env),
+  ].map(({ key }) => key).concat(
+    env.GAMMA_API_KEY,
+    ...Object.entries(env)
+      .filter(([name]) => /(?:TOKEN|SECRET|PASSWORD|PRIVATE_KEY)(?:_\d+)?$|^GOOGLE_SERVICE_ACCOUNT_JSON(?:_BASE64)?$/.test(name))
+      .map(([, value]) => value),
+  );
 }
 
 function isIgnorableMonitoringMetricError(error) {

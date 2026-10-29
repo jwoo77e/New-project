@@ -2,7 +2,10 @@ import { createReadStream, existsSync } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
-import { collectApiUsage, loadApiUsageEnv } from "./scripts/fetch-api-usage.mjs";
+import { createClientAllowlist } from "./scripts/server-access.mjs";
+import { redactSecrets } from "./scripts/secret-redaction.mjs";
+import { collectApiUsage, loadApiUsageEnv, writeApiUsageSnapshot } from "./scripts/fetch-api-usage.mjs";
+import { createApiUsageRuntime } from "./scripts/api-usage-runtime.mjs";
 import {
   collectNotionPromptUsage,
   loadNotionPromptEnv,
@@ -24,13 +27,23 @@ import {
 const rootDir = process.cwd();
 const distDir = path.join(rootDir, "dist");
 const port = Number(process.env.PORT ?? 4173);
+const host = process.env.HOST ?? "0.0.0.0";
+const isAllowedClient = createClientAllowlist(process.env.ALLOWED_CLIENT_CIDRS);
 const apiUsageCacheMs = Number(process.env.API_USAGE_CACHE_MS ?? 5 * 60 * 1000);
 const notionPromptCacheMs = Number(process.env.NOTION_PROMPT_USAGE_CACHE_MS ?? 24 * 60 * 60 * 1000);
 const notionPromptRefreshHourKst = Number(process.env.NOTION_PROMPT_USAGE_REFRESH_HOUR_KST ?? 8);
 const driveTrendRefreshHourKst = Number(process.env.DRIVE_ARTIFACT_TREND_REFRESH_HOUR_KST ?? 21);
 const gensparkDriveRefreshHourKst = Number(process.env.GENSPARK_DRIVE_REFRESH_HOUR_KST ?? 22);
 
-const apiUsageCaches = new Map();
+const apiUsageRuntime = createApiUsageRuntime({
+  intervalMs: apiUsageCacheMs,
+  collect: collectRuntimeApiUsage,
+  persist: async (snapshot) => writeApiUsageSnapshot(snapshot, await loadApiUsageEnv({ targetRootDir: rootDir })),
+  readSaved: async () => JSON.parse(await readFile(path.join(distDir, "api-usage-snapshot.local.json"), "utf8")),
+  onResult: ({ ok, days, collectedAt }) => console.log(
+    `API usage refresh ${ok ? "completed" : "failed; retained prior data"}: ${days} days${collectedAt ? ` · ${collectedAt}` : ""}`,
+  ),
+});
 
 let notionPromptUsageCache = {
   expiresAt: 0,
@@ -61,6 +74,11 @@ const mimeTypes = {
 };
 
 const server = createServer(async (request, response) => {
+  // Check the actual TCP peer. Forwarded headers must never grant LAN access.
+  if (!isAllowedClient(request.socket.remoteAddress)) {
+    sendText(response, 403, "This dashboard is available only on the company network.");
+    return;
+  }
   try {
     const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
 
@@ -96,45 +114,24 @@ const server = createServer(async (request, response) => {
     await serveStatic(url.pathname, response);
   } catch (error) {
     sendJson(response, 500, {
-      error: error instanceof Error ? error.message : String(error),
+      error: redactSecrets(error instanceof Error ? error.message : String(error)),
     });
   }
 });
 
-server.listen(port, "0.0.0.0", () => {
-  console.log(`AI cost dashboard listening on http://0.0.0.0:${port}`);
+server.listen(port, host, () => {
+  console.log(`AI cost dashboard listening on http://${host}:${port}`);
+  apiUsageRuntime.start();
   scheduleDailyNotionPromptRefresh();
   scheduleDailyDriveArtifactTrendRefresh();
   scheduleDailyGensparkDriveRefresh();
 });
 
 async function handleApiUsage(url, response) {
-  const requestedDays = Number(url.searchParams.get("days") ?? 7);
+  const requestedDays = Number(url.searchParams.get("days") ?? 62);
   const refresh = url.searchParams.get("refresh") === "1";
-  const now = Date.now();
-  const cache = apiUsageCaches.get(requestedDays) ?? {
-    expiresAt: 0,
-    promise: null,
-    snapshot: null,
-  };
-  apiUsageCaches.set(requestedDays, cache);
-
   response.setHeader("cache-control", "no-store");
-
-  if (!refresh && cache.snapshot && cache.expiresAt > now) {
-    sendJson(response, 200, cache.snapshot);
-    return;
-  }
-
-  if (!cache.promise) {
-    cache.promise = collectRuntimeApiUsage(requestedDays).finally(() => {
-      cache.promise = null;
-    });
-  }
-
-  const snapshot = await cache.promise;
-  cache.expiresAt = Date.now() + apiUsageCacheMs;
-  cache.snapshot = snapshot;
+  const snapshot = await apiUsageRuntime.get(requestedDays, { force: refresh });
   sendJson(response, 200, snapshot);
 }
 

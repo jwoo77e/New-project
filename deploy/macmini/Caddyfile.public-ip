@@ -1,0 +1,40 @@
+# Staged configuration. Enable only after public port 80's ACME challenge
+# path reaches port 8081 and the TCP 8444 forwarding rule is ready.
+{
+	admin 127.0.0.1:2020
+	http_port 8081
+	auto_https disable_redirects
+	persist_config off
+	storage file_system {
+		root /Users/riskzero/aihub/proxy/data
+	}
+}
+
+https://{$AIHUB_PUBLIC_IP}:8444 {
+	bind 192.168.0.15
+	tls {
+		issuer acme {
+			dir https://acme-v02.api.letsencrypt.org/directory
+			profile shortlived
+			disable_tlsalpn_challenge
+			alt_http_port 8081
+		}
+	}
+	# Apply authentication to the entire site, including every API and asset.
+	basic_auth {
+		{$AIHUB_AUTH_USER} {$AIHUB_AUTH_HASH}
+	}
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		Cache-Control "private, no-store"
+	}
+	reverse_proxy 192.168.0.15:4176
+}
+
+# The existing public port-80 server must proxy ONLY the ACME challenge
+# path here, preserving Host. Other paths never expose dashboard data.
+http://:8081 {
+	bind 192.168.0.15
+	respond "Not Found" 404
+}

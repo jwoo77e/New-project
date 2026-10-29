@@ -1,3 +1,5 @@
+import { useApiUsage } from "./lib/useApiUsage";
+import type { ApiUsageSyncState } from "./lib/apiUsagePolling";
 import { ApiUsageDetails } from "./components/ApiUsageDetails";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { codexUsageForRange, combinedAiUsage } from "./data/codexUsageData";
@@ -57,8 +59,6 @@ import {
 import { isIndividualProfileAccessCode } from "./lib/individualProfileAccess";
 import {
   initialApiUsageData,
-  isApiUsageData,
-  selectPreferredApiUsageData,
   type ApiKeyStatusValue,
   type ApiProviderStatus,
   type ApiUsageData,
@@ -515,7 +515,7 @@ function App() {
   const [isUploading, setIsUploading] = useState(false);
   const [dashboardData, setDashboardData] = useState<DashboardData>(initialState.data);
   const [isStoredData, setIsStoredData] = useState(initialState.isStoredData);
-  const [apiUsageData, setApiUsageData] = useState<ApiUsageData>(initialApiUsageData);
+  const { data: apiUsageData, sync: apiUsageSync, refresh: refreshApiUsage } = useApiUsage();
   const [individualSelectedMonth, setIndividualSelectedMonth] = useState(
     individualUtilizationData.months[individualUtilizationData.months.length - 1] ?? "",
   );
@@ -523,35 +523,6 @@ function App() {
     useState<DriveArtifactTrendSnapshot | null>(null);
   const [gensparkDriveSnapshot, setGensparkDriveSnapshot] =
     useState<GensparkDriveSnapshot | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    const snapshotUrls = [`${import.meta.env.BASE_URL}api-usage-snapshot.local.json`, "/api/api-usage?days=62"];
-
-    async function loadApiUsageData() {
-      let preferredSnapshot = initialApiUsageData;
-
-      for (const url of snapshotUrls) {
-        try {
-          const response = await fetch(url, { cache: "no-store" });
-          if (!response.ok) continue;
-          const data: unknown = await response.json();
-          if (isApiUsageData(data)) {
-            preferredSnapshot = selectPreferredApiUsageData(preferredSnapshot, data);
-            if (isMounted) setApiUsageData(preferredSnapshot);
-          }
-        } catch {
-          // The runtime API is optional for static deployments; try the next source.
-        }
-      }
-    }
-
-    void loadApiUsageData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -1423,6 +1394,8 @@ function App() {
       {activeView === "api" && (
         <ApiUsageView
           apiUsageData={apiUsageData}
+          sync={apiUsageSync}
+          onRefresh={refreshApiUsage}
           fixedApiServiceRecords={fixedApiServiceRecords}
         />
       )}
@@ -6176,9 +6149,13 @@ function LegacyAdoptionView({
 
 function ApiUsageView({
   apiUsageData,
+  sync,
+  onRefresh,
   fixedApiServiceRecords,
 }: {
   apiUsageData: ApiUsageData;
+  sync: ApiUsageSyncState;
+  onRefresh: () => void;
   fixedApiServiceRecords: AiToolApprovalRecord[];
 }) {
   const [periodKey, setPeriodKey] = useState<ApiUsagePeriodKey>("month");
@@ -6224,6 +6201,17 @@ function ApiUsageView({
 
   return (
     <div className="content-grid api-view">
+      <section className="panel panel-wide api-sync-panel" aria-label="API 수집 상태">
+        <div>
+          <strong>{sync.refreshing ? "최신 사용량 확인 중…" : sync.error ? "자동 수집 확인 필요" : "자동 수집 중"}</strong>
+          <p>마지막 수집 {apiUsageData.source.generatedAt} · 서버 5분 수집 · 화면 1분 확인</p>
+          <small>공급자가 제공하는 사용량·비용을 주기적으로 조회합니다. 공급자 집계가 반영된 이후 표시됩니다.</small>
+          {sync.error && <p className="api-sync-error" role="alert">{sync.error}</p>}
+        </div>
+        <button className="ghost-button" type="button" onClick={onRefresh} disabled={sync.refreshing}>
+          <RotateCcw size={16} />{sync.refreshing ? "확인 중" : "지금 갱신"}
+        </button>
+      </section>
       <section className="panel panel-wide api-period-panel">
         <div className="panel-header">
           <div>

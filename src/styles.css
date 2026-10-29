@@ -2155,6 +2155,26 @@ h2 {
   gap: 14px;
 }
 
+.api-sync-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.api-sync-panel p {
+  margin: 6px 0;
+}
+
+.api-sync-panel small {
+  color: var(--muted);
+}
+
+.api-sync-error {
+  color: #a13c19;
+}
+
 .api-period-panel {
   display: grid;
   gap: 16px;

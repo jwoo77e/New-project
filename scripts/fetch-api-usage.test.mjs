@@ -24,6 +24,66 @@ describe("API usage history window", () => {
     expect(snapshot.dailyUsage.at(-1).date).toBe("2026-10-31");
     expect(snapshot.dailyUsage.filter(day => day.date.startsWith("2026-09"))).toHaveLength(30);
     expect(snapshot.source.period).toBe("최근 62일");
+    expect(snapshot.source.collectedAt).toBe("2026-10-31T03:00:00.000Z");
+  });
+});
+
+describe("partial API collection failures", () => {
+  it.each([
+    ["OpenAI", "OPENAI_ADMIN_KEY", "costs"],
+    ["OpenAI", "OPENAI_ADMIN_KEY", "usage"],
+    ["Claude", "ANTHROPIC_ADMIN_API_KEY", "cost_report"],
+    ["Claude", "ANTHROPIC_ADMIN_API_KEY", "usage_report"],
+  ])("does not label %s collection normal when %s has a failed %s request", async (provider, envKey, endpoint) => {
+    vi.stubGlobal("fetch", async (url) => String(url).includes(endpoint)
+      ? Response.json({ error: { message: "upstream unavailable" } }, { status: 503 })
+      : Response.json({ data: [], has_more: false }));
+    try {
+      const snapshot = await collectApiUsage({ env: { [envKey]: "test-only-key" } });
+      expect(snapshot.providers.find(row => row.provider === provider).status).toBe("주의");
+    } finally { vi.unstubAllGlobals(); }
+  });
+});
+
+describe("API credential privacy", () => {
+  it("uses the Gemini header and keeps echoed credentials out of the complete dashboard response", async () => {
+    const keys = { OPENAI_ADMIN_KEY: "test-openai-private-credential", ANTHROPIC_ADMIN_API_KEY: "test-claude-private-credential", GEMINI_API_KEY: "test-gemini-private-credential" };
+    const calls = [];
+    vi.stubGlobal("fetch", async (input, options = {}) => {
+      const url = new URL(input);
+      const headers = new Headers(options.headers);
+      calls.push({ url, headers });
+      const key = headers.get("authorization")?.replace(/^Bearer /, "") ?? headers.get("x-api-key") ?? headers.get("x-goog-api-key");
+      return new Response(JSON.stringify({ error: { message: `Permission denied for credential ${key}` } }), { status: 403 });
+    });
+    try {
+      const snapshot = await collectApiUsage({ env: { ...keys, GEMINI_API_KEY_LABEL: keys.GEMINI_API_KEY } });
+      const gemini = calls.find(({ url }) => url.hostname === "generativelanguage.googleapis.com");
+      expect(gemini.url.search).toBe("");
+      expect(gemini.headers.get("x-goog-api-key")).toBe(keys.GEMINI_API_KEY);
+      const serialized = JSON.stringify(snapshot);
+      for (const key of Object.values(keys)) expect(serialized).not.toContain(key);
+      expect(serialized).toContain("Permission denied");
+      expect(serialized).toContain("[REDACTED]");
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it.each(["http-error", "network-error", "invalid-json"])("redacts request credentials from paginated %s failures", async (scenario) => {
+    const secret = "opaque-provider-credential";
+    const fetchImpl = async () => {
+      if (scenario === "network-error") throw new Error(`Connection failed with ${secret}`);
+      if (scenario === "invalid-json") return new Response(`invalid ${secret}`, { status: 200 });
+      return new Response(JSON.stringify({ error: { message: `Unauthorized ${secret}` } }), { status: 401 });
+    };
+    const result = await getPaginatedJson(new URL("https://example.com/usage"), { headers: { Authorization: `Bearer ${secret}` } }, { fetchImpl });
+    expect(result.ok).toBe(false);
+    expect(result.error).not.toContain(secret);
+    if (scenario === "invalid-json") {
+      expect(result.error).toContain("JSON");
+      expect(result.error).not.toContain("invalid op");
+    } else {
+      expect(result.error).toContain("[REDACTED]");
+    }
   });
 });
 

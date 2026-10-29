@@ -192,6 +192,9 @@ export type ApiUsageData = {
     period: string;
     generatedAt: string;
     mode: string;
+    collectedAt?: string;
+    lastAttemptAt?: string;
+    refreshError?: string;
   };
   providers: ApiProviderUsage[];
   dailyUsage: ApiDailyUsage[];
@@ -639,16 +642,37 @@ export function isApiUsageData(value: unknown): value is ApiUsageData {
 }
 
 export function selectPreferredApiUsageData(current: ApiUsageData, candidate: ApiUsageData): ApiUsageData {
+  // Static files may also contain runtime snapshots. Compare collection times,
+  // not just the collection mode, or the first runtime snapshot stays forever.
+  const currentTime = apiUsageCollectedAt(current);
+  const candidateTime = apiUsageCollectedAt(candidate);
+  if (currentTime && candidateTime && candidateTime < currentTime) return current;
+
   const currentClaudeCoverage = getClaudeAdminCoverage(current);
   const candidateClaudeCoverage = getClaudeAdminCoverage(candidate);
 
   if (candidateClaudeCoverage > currentClaudeCoverage) return candidate;
   if (candidateClaudeCoverage < currentClaudeCoverage) return current;
 
+  if (candidateTime > currentTime) return candidate;
+  if (candidate.source.lastAttemptAt &&
+      candidate.source.lastAttemptAt >= (current.source.lastAttemptAt ?? "")) return candidate;
+
   if (isRuntimeApiSnapshot(candidate) && !isRuntimeApiSnapshot(current)) return candidate;
   if (isCollectedApiSnapshot(candidate) && !isCollectedApiSnapshot(current)) return candidate;
 
   return current;
+}
+
+export function apiUsageCollectedAt(data: ApiUsageData): number {
+  const explicit = Date.parse(data.source.collectedAt ?? "");
+  if (Number.isFinite(explicit)) return explicit;
+  // Compatibility with snapshots saved before ISO timestamps were introduced.
+  const match = data.source.generatedAt.match(/(\d+)\.\s*(\d+)\.\s*(오전|오후|AM|PM)\s*(\d+):(\d+)/i);
+  if (!match) return 0;
+  const year = Number(data.dailyUsage[data.dailyUsage.length - 1]?.date.slice(0, 4) ?? new Date().getFullYear());
+  const hour = Number(match[4]) % 12 + (/오후|PM/i.test(match[3]) ? 12 : 0);
+  return Date.UTC(year, Number(match[1]) - 1, Number(match[2]), hour - 9, Number(match[5]));
 }
 
 function getClaudeAdminCoverage(data: ApiUsageData) {
