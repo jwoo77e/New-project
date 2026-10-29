@@ -64,7 +64,7 @@
     ]
   },
   "totals": {
-    "users": 39,
+    "users": 40,
     "requests": 161582,
     "promptTokens": 36963541520,
     "completionTokens": 136232530,
@@ -1460,6 +1460,29 @@
       },
       "weeklyActivity": {
       }
+    },
+    {
+      "email": "loadedwin@riskzero.kr",
+      "displayName": "김대영 과장",
+      "requests": 0,
+      "promptTokens": 0,
+      "completionTokens": 0,
+      "totalTokens": 0,
+      "netSpendUsd": 0,
+      "grossSpendUsd": 0,
+      "uncachedInputTokens": 0,
+      "cacheReadTokens": 0,
+      "cacheWrite5mTokens": 0,
+      "cacheWrite1hTokens": 0,
+      "webSearchCount": 0,
+      "products": [],
+      "models": [],
+      "productUsage": {},
+      "modelUsage": {},
+      "monthlyCodeLines": {},
+      "monthlyActivity": {},
+      "weeklyActivity": {},
+      "firstObservedMonth": "2026-10"
     },
     {
       "email": "mjkim1122@riskzero.kr",

@@ -6,6 +6,38 @@ import {calculateCodeOutputDensity} from "../lib/codeOutputDensity";
 import {gitlabCommittedCodeRatio, gitlabUserMetricsForRange} from "./gitlabActivityData";
 
 describe("Codex usage", () => {
+  it("reconciles all fourteen October week-four accounts and recalculates combined GitLab ratios", () => {
+    const week = individualUtilizationData.weeklyUsage["2026-10-W4"];
+    const period = snapshot.periods.find(item => item.startDate === week.startDate && item.endDate === week.endDate)!;
+    expect(period.fileName).toBe("leaderboard-users_workspace-riskzero_2026-10-22-to-2026-10-28.csv");
+    expect(Object.keys(period.users)).toHaveLength(14);
+    expect(Object.values(period.users).reduce((sum, user) => sum + user.tokens, 0)).toBe(2842530724);
+    expect(Object.values(period.users).reduce((sum, user) => sum + user.codeLines, 0)).toBe(26298);
+    for (const [email, usage] of Object.entries(period.users)) {
+      expect(individualUtilizationData.users.some(user => user.email === email)).toBe(true);
+      expect(codexUsageForRange(email, week.startDate, week.endDate))
+        .toMatchObject({...usage, collected: true, complete: true, periodAligned: true});
+    }
+    const combined = individualUtilizationData.users.map(user => combinedAiUsage(
+      week.users[user.email]?.totalTokens ?? null, week.users[user.email]?.codeLines ?? null,
+      codexUsageForRange(user.email, week.startDate, week.endDate),
+    ));
+    expect(combined.reduce((sum, user) => sum + (user.tokens ?? 0), 0)).toBe(18346156011);
+    expect(combined.reduce((sum, user) => sum + (user.codeLines ?? 0), 0)).toBe(171254);
+    expect(codexUsageForRange("sblim0519@riskzero.kr", week.startDate, week.endDate))
+      .toMatchObject({tokens: 445930, codeLines: 0, present: true});
+    expect(codexUsageForRange("jsc@riskzero.kr", week.startDate, week.endDate))
+      .toMatchObject({tokens: 22865423, codeLines: 645, present: true});
+    const email = "wody@riskzero.kr";
+    const total = combinedAiUsage(week.users[email].totalTokens, week.users[email].codeLines,
+      codexUsageForRange(email, week.startDate, week.endDate));
+    expect(total).toEqual({tokens: 2612193345, codeLines: 55784, partial: false});
+    expect(gitlabCommittedCodeRatio(total.codeLines, gitlabUserMetricsForRange(email, week.startDate, week.endDate).additions))
+      .toBeCloseTo(12547 / (43127 + 12657) * 100);
+    // An omitted account in this complete export is zero usage, not an uncollected week.
+    expect(codexUsageForRange("sjpark@riskzero.kr", week.startDate, week.endDate))
+      .toMatchObject({collected: true, complete: true, present: false, tokens: 0, codeLines: 0});
+  });
   it("reconciles October third-week Codex and Claude usage for the same GitLab period", () => {
     const week = individualUtilizationData.weeklyUsage["2026-10-W3"];
     const period = snapshot.periods.find(item => item.startDate === week.startDate && item.endDate === week.endDate)!;

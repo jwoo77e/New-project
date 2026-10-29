@@ -13,7 +13,20 @@ import { codexUsageForRange, combinedAiUsage } from "./codexUsageData";
 import { individualUtilizationData } from "./individualUtilizationData";
 
 describe("gitlabActivityData", () => {
-  it("covers September and the first three October weeks without claiming the full October month", () => {
+  it("reconciles October week four by Korean authored date with every non-merge diff collected", () => {
+    expect(gitlabRangeCoverage("2026-10-22", "2026-10-28"))
+      .toMatchObject({available: true, complete: true});
+    expect(gitlabSummaryForRange("2026-10-22", "2026-10-28")).toMatchObject({
+      commitCount: 294, mergeCommitCount: 134, additions: 119478,
+      deletions: 14221, changedLines: 133699, activeAuthors: 14,
+    });
+    const commits = gitlabActivityData.users.flatMap(user => gitlabCommitsForRange(user.email, "2026-10-22", "2026-10-28"));
+    expect(commits).toHaveLength(428);
+    expect(new Set(commits.map(commit => `${commit.projectId}:${commit.sha}`)).size).toBe(428);
+    expect(commits.every(commit => commit.day >= "2026-10-22" && commit.day <= "2026-10-28")).toBe(true);
+    expect(gitlabActivityData.source.diffCoverage.errorCommits).toBe(0);
+  });
+  it("covers September and the first four October weeks without claiming the full October month", () => {
     expect(gitlabRangeCoverage("2026-09-28", "2026-09-30")).toMatchObject({available: true, complete: true});
     expect(gitlabRangeCoverage("2026-09-01", "2026-09-30")).toMatchObject({available: true, complete: true});
     expect(gitlabRangeCoverage("2026-09-17", "2026-09-27")).toMatchObject({available: true, complete: true});
@@ -37,9 +50,9 @@ describe("gitlabActivityData", () => {
   });
   it("includes September 17-27 activity from the error-free GitLab refresh", () => {
     expect(gitlabActivityData.source).toMatchObject({
-      period: "2026-05-01 ~ 2026-10-21",
-      refreshedPeriod: "2026-10-15 ~ 2026-10-21",
-      projectCount: 104,
+      period: "2026-05-01 ~ 2026-10-28",
+      refreshedPeriod: "2026-10-22 ~ 2026-10-28",
+      projectCount: 108,
       projectErrors: [],
     });
     expect(gitlabSummaryForRange("2026-09-17", "2026-09-27")).toMatchObject({
@@ -95,7 +108,7 @@ describe("gitlabActivityData", () => {
 
   it("publishes the complete August month and August 27 to September 2 range", () => {
     expect(gitlabActivityData.source).toMatchObject({
-      period: "2026-05-01 ~ 2026-10-21",
+      period: "2026-05-01 ~ 2026-10-28",
       projectErrors: [],
     });
     expect(gitlabSummaryForRange("2026-08-01", "2026-08-31")).toMatchObject({
