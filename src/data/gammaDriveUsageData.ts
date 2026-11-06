@@ -6,6 +6,7 @@ export type GammaDriveArtifact = {
     | "솔루션 제안서"
     | "AI CCTV 보고"
     | "홈페이지 리뉴얼"
+    | "프레젠테이션 템플릿"
     | "시범사업 성과"
     | "제품 기능 소개";
   format: "Google Slides" | "PDF";
@@ -42,17 +43,37 @@ export const gammaDriveUsageData: GammaDriveUsageData = {
   source: {
     name: "Gamma Drive 산출물 폴더",
     folderUrl: "https://drive.google.com/drive/folders/1lBGlyDjDzeGqsZP4Vpz5UgI1Mf0flDzC?usp=drive_link",
-    collectedAt: "2026-09-18 23:10 KST",
+    collectedAt: "2026-11-06 23:13 KST",
     status: "수집",
-    note: "Drive 폴더와 하위 폴더를 전수 확인해 Google Slides 12개, 다운로드 PDF 4개 등 전체 16개 산출물의 활용 주제와 업무 목적을 분류했습니다.",
+    note: "Drive 폴더와 하위 폴더를 전수 확인해 Google Slides 12개, 다운로드 PDF 6개 등 전체 18개 산출물의 활용 주제와 업무 목적을 분류했습니다.",
   },
-  artifactCount: 16,
+  artifactCount: 18,
   googleSlidesCount: 12,
-  pdfCount: 4,
-  totalPages: 243,
+  pdfCount: 6,
+  totalPages: 274,
   primaryTheme: "스마트 안전관리·AI CCTV 기반 RiskZero 영업 및 입찰 제안",
-  businessUse: "공공기관·개발공사·건설현장 대상 제안서, 입찰전략 브리핑, 도입 보고서, 제품 기능 소개와 홈페이지 리뉴얼 기획 초안 생산",
+  businessUse: "공공기관·개발공사·건설현장 대상 제안서, 입찰전략 브리핑, 도입 보고서, 제품 기능 소개, 홈페이지 리뉴얼 기획과 범용 프레젠테이션 템플릿 생산",
   artifacts: [
+    {
+      id: "1xxAtqrg2CySmGo0JWedqsf9ozmpKFw_i",
+      title: "SH 도급사업 안전관리시스템",
+      url: "https://drive.google.com/file/d/1xxAtqrg2CySmGo0JWedqsf9ozmpKFw_i/view?usp=drivesdk",
+      category: "솔루션 제안서",
+      format: "PDF",
+      createdAt: "2026-11-04 KST",
+      slideCount: 23,
+      focus: "SH 도급·용역·위탁 사업의 법적 의무, 16개 관리항목, 역할별 대시보드, 위험요인·고위험작업 연결 흐름과 공공 표준 확산",
+    },
+    {
+      id: "12yci0zWmHYbWcQV4yye-7v7ACfeGcyre",
+      title: "발표 제목을 입력하세요",
+      url: "https://drive.google.com/file/d/12yci0zWmHYbWcQV4yye-7v7ACfeGcyre/view?usp=drivesdk",
+      category: "프레젠테이션 템플릿",
+      format: "PDF",
+      createdAt: "2026-11-04 KST",
+      slideCount: 8,
+      focus: "제2롯데타워 야경 톤의 범용 8장 발표 배경 템플릿(표지·목차·섹션·핵심 메시지·지표·비교·프로세스·마무리)",
+    },
     {
       id: "1QYCRysjVhe2mLxP_GeNmsGSlStGi7YqB",
       title: "KNOC 스마트 안전관리 통합시스템 2단계 구축 용역 제안전략 브리핑",
@@ -217,8 +238,8 @@ export const gammaDriveUsageData: GammaDriveUsageData = {
   topicMix: [
     {
       topic: "스마트 안전관리 플랫폼 제안",
-      count: 11,
-      note: "RiskZero 3.0, Smart TBM, Safety Index, 통합 관제, 스마트 장비 연동 제안에 KNOC 2단계 입찰전략 브리핑이 추가됐으며 1장 PDF 변형 2개도 포함됩니다.",
+      count: 12,
+      note: "RiskZero 3.0, Smart TBM, Safety Index, 통합 관제, 스마트 장비 연동 제안에 KNOC 2단계 입찰전략과 SH 도급사업 안전관리 브리핑이 추가됐으며 1장 PDF 변형 2개도 포함됩니다.",
     },
     {
       topic: "AI CCTV 도입·효과 보고",
@@ -231,9 +252,9 @@ export const gammaDriveUsageData: GammaDriveUsageData = {
       note: "국가철도공단 사례처럼 성과 수치와 WEB/APP 기능을 레퍼런스 자료로 구성했습니다.",
     },
     {
-      topic: "브랜드·홈페이지 기획",
-      count: 1,
-      note: "RISKZERO.AI 홈페이지 히어로 메시지와 서비스 정보 구조 개선안을 만들었습니다.",
+      topic: "브랜드·홈페이지·발표 템플릿",
+      count: 2,
+      note: "RISKZERO.AI 홈페이지 히어로 메시지와 서비스 정보 구조 개선안, 제2롯데타워 야경 기반 범용 발표 템플릿을 만들었습니다.",
     },
     {
       topic: "제품 기능·업무 프로세스",
@@ -242,9 +263,9 @@ export const gammaDriveUsageData: GammaDriveUsageData = {
     },
   ],
   insights: [
-    "Gamma Drive에는 Google Slides 12개와 다운로드 PDF 4개, 총 16개 산출물 243장이 축적되어 있습니다.",
-    "9월 14일 생성된 19장 KNOC 제안전략 브리핑은 입찰·평가 구조와 기술 1위 전략, 수행조직 및 리스크 대응을 대표이사 보고용으로 정리했습니다.",
-    "건설·공공·개발공사 안전관리 제안에 집중되어 재사용성은 높지만, 동일·유사 제목의 플랫폼 제안과 AI CCTV 보고, 1장 PDF 변형은 최종본 선별과 근거 검증 상태를 함께 관리해야 합니다.",
+    "Gamma Drive에는 Google Slides 12개와 다운로드 PDF 6개, 총 18개 산출물 274장이 축적되어 있습니다.",
+    "11월 4일 생성된 23장 SH 도급사업 안전관리 자료는 법적 의무, 16개 관리항목, 역할별 대시보드와 공공 표준 확산을 지방도시개발공사 간담회용으로 정리했습니다.",
+    "건설·공공·개발공사 안전관리 제안에 집중되어 재사용성은 높지만, 동일·유사 제목의 플랫폼 제안과 AI CCTV 보고, 1장 PDF 변형, 내용이 비어 있는 범용 발표 템플릿은 실제 활용 가능한 결과물과 구분해야 합니다.",
   ],
   actions: [
     "매주 금요일 23시에 Drive 폴더 전체 파일과 하위 폴더를 다시 확인해 신규 산출물과 통계를 갱신합니다.",
