@@ -6,6 +6,25 @@ import {
 } from "./aiToolApprovalData";
 
 describe("initialAiToolApprovalData", () => {
+  it("moves Lee Byeonghyeon and Jo Wooksang to Standard in November while preserving earlier Premium budgets", () => {
+    for (const account of ["lbh0902@riskzero.kr", "airyoubi77@riskzero.kr"]) {
+      expect(initialAiToolApprovalData.records.filter(record => record.category === "Claude" && record.account === account))
+        .toEqual([expect.objectContaining({tool: "Claude Team Plan Standard", monthlyUsd: 25, monthlyKrw: 37_125})]);
+      for (const [month, tool, monthlyUsd, monthlyKrw] of [
+        ["2026-07", "Claude Team Plan Premium", 110, 163_350],
+        ["2026-08", "Claude Team Plan Premium", 125, 185_625],
+        ["2026-10", "Claude Team Plan Premium", 125, 185_625],
+        ["2026-11", "Claude Team Plan Standard", 25, 37_125],
+        ["2026-12", "Claude Team Plan Standard", 25, 37_125],
+      ] as const) {
+        expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, month).records.find(
+          record => record.category === "Claude" && record.account === account,
+        )).toMatchObject({tool, monthlyUsd, monthlyKrw});
+      }
+    }
+    expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-10").monthlyKrw).toBe(7_849_251.15);
+    expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-11").monthlyKrw).toBe(7_834_401.15);
+  });
   it("uses the assigned company email for each named approval account", () => {
     const accountsByOwner = (owner: string) => initialAiToolApprovalData.records
       .filter((record) => record.owner === owner)
@@ -36,36 +55,35 @@ describe("initialAiToolApprovalData", () => {
     ).toBe(false);
   });
 
-  it("converts the two executive ChatGPT Pro seats to Premium from September without changing prior costs", () => {
-    expect(
-      initialAiToolApprovalData.records.find(
-        (record) => record.account === "riskzeroriskzero@gmail.com",
-      ),
-    ).toBeUndefined();
-    expect(
-      initialAiToolApprovalData.toolSummary.find(
-        (item) => item.key === "chatGPT Pro(20배)",
-      ),
-    ).toBeUndefined();
+  it("restores the two executive ChatGPT Pro seats in November while retaining their prior plan history", () => {
+    expect(initialAiToolApprovalData.records.find(
+      record => record.account === "riskzeroriskzero@gmail.com",
+    )).toBeUndefined();
     for (const account of ["yspark@riskzero.kr", "bigone@riskzero.kr"]) {
       expect(initialAiToolApprovalData.records.filter(
-        (record) => record.account === account && record.category === "ChatGPT",
+        record => record.account === account && record.category === "ChatGPT",
       )).toEqual([expect.objectContaining({
-        tool: "chatGPT Business Plan Premium",
-        monthlyUsd: 125,
-        monthlyKrw: 185_625,
-        pricingEffectiveMonth: "2026-09",
-        previousMonthlyUsd: 220,
-        previousMonthlyKrw: 326_700,
+        tool: "chatGPT Pro(20배)", monthlyUsd: 220, monthlyKrw: 326_700,
         paymentMethod: "AI 전용 카드",
       })]);
-      expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-08").records.find(
-        (record) => record.account === account && record.category === "ChatGPT",
-      )).toMatchObject({ monthlyUsd: 220, monthlyKrw: 326_700 });
+      for (const [month, tool, monthlyUsd, monthlyKrw] of [
+        ["2026-08", "chatGPT Pro(20배)", 220, 326_700],
+        ["2026-09", "chatGPT Business Plan Premium", 125, 185_625],
+        ["2026-10", "chatGPT Business Plan Premium", 125, 185_625],
+        ["2026-11", "chatGPT Pro(20배)", 220, 326_700],
+        ["2026-12", "chatGPT Pro(20배)", 220, 326_700],
+      ] as const) {
+        expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, month).records.find(
+          record => record.account === account && record.category === "ChatGPT",
+        )).toMatchObject({tool, monthlyUsd, monthlyKrw});
+      }
     }
     expect(initialAiToolApprovalData.records.find(
-      (record) => record.account === "bigone@riskzero.kr" && record.category === "ChatGPT",
-    )).toMatchObject({ startMonth: "2026-08" });
+      record => record.account === "bigone@riskzero.kr" && record.category === "ChatGPT",
+    )).toMatchObject({startMonth: "2026-08"});
+    expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, "2026-07").records.some(
+      record => record.account === "bigone@riskzero.kr" && record.category === "ChatGPT",
+    )).toBe(false);
   });
 
   it("adds Minjae Standard and keeps Hanho Standard and Seongjin Premium without duplicates", () => {
@@ -112,8 +130,6 @@ describe("initialAiToolApprovalData", () => {
       .map((record) => record.account);
 
     expect(premiumAccounts).toEqual([
-      "yspark@riskzero.kr",
-      "bigone@riskzero.kr",
       "jaewoo.kim@riskzero.kr",
       "wody@riskzero.kr",
       "kys0392@riskzero.kr",
@@ -245,7 +261,8 @@ describe("initialAiToolApprovalData", () => {
     expect(october.count).toBe(september.count + 3);
     expect(october.monthlyUsd - september.monthlyUsd).toBeCloseTo(275, 2);
     expect(october.monthlyKrw - september.monthlyKrw).toBeCloseTo(408375, 2);
-    expect(november.monthlyKrw).toBe(october.monthlyKrw);
+    expect(november.monthlyUsd - october.monthlyUsd).toBeCloseTo(-10, 2);
+    expect(november.monthlyKrw - october.monthlyKrw).toBeCloseTo(-14_850, 2);
   });
 
   it("adds Kim Gihwan as Smart Service Standard without backdating billing", () => {
@@ -272,7 +289,7 @@ describe("initialAiToolApprovalData", () => {
       (record) => record.category === "Claude" && accounts.includes(record.account),
     );
     expect(otherSeats).toHaveLength(6);
-    expect(otherSeats.reduce((total, record) => total + record.monthlyUsd, 0)).toBe(550);
+    expect(otherSeats.reduce((total, record) => total + record.monthlyUsd, 0)).toBe(350);
   });
 
   it("moves Kim Seongjin to Claude Team Premium from September 2026", () => {
@@ -500,23 +517,23 @@ describe("initialAiToolApprovalData", () => {
         (item) => item.key === "Claude Team Plan Premium",
       ),
     ).toMatchObject({
-      count: 14,
-      monthlyUsd: 1_750,
-      monthlyKrw: 2_598_750,
+      count: 12,
+      monthlyUsd: 1_500,
+      monthlyKrw: 2_227_500,
     });
     expect(
       initialAiToolApprovalData.toolSummary.find(
         (item) => item.key === "Claude Team Plan Standard",
       ),
     ).toMatchObject({
-      count: 24,
-      monthlyUsd: 600,
-      monthlyKrw: 891_000,
+      count: 26,
+      monthlyUsd: 650,
+      monthlyKrw: 965_250,
     });
     expect(initialAiToolApprovalData.toolSummary.find((item) => item.key === "Claude Pro Max 5")).toBeUndefined();
     expect(initialAiToolApprovalData.toolSummary.find((item) => item.key === "Claude Pro Max 20")).toBeUndefined();
-    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(4_275.59);
-    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(7_849_251.15);
+    expect(initialAiToolApprovalData.totalMonthlyUsd).toBe(4_265.59);
+    expect(initialAiToolApprovalData.totalMonthlyKrw).toBe(7_834_401.15);
   });
 
   it("keeps category and payment totals aligned with the updated total", () => {
@@ -528,19 +545,19 @@ describe("initialAiToolApprovalData", () => {
       initialAiToolApprovalData.categorySummary.find((item) => item.key === "Claude"),
     ).toMatchObject({
       count: 38,
-      monthlyUsd: 2_350,
-      monthlyKrw: 3_489_750,
+      monthlyUsd: 2_150,
+      monthlyKrw: 3_192_750,
     });
     expect(
       initialAiToolApprovalData.categorySummary.find((item) => item.key === "ChatGPT"),
     ).toMatchObject({
       count: 22,
-      monthlyUsd: 1_550,
-      monthlyKrw: 2_301_750,
+      monthlyUsd: 1_740,
+      monthlyKrw: 2_583_900,
     });
     expect(initialAiToolApprovalData.totalAccounts).toBe(68);
     expect(initialAiToolApprovalData.aiDedicatedCardAccounts).toBe(68);
-    expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(7_849_251.15);
+    expect(initialAiToolApprovalData.aiDedicatedCardKrw).toBe(7_834_401.15);
     expect(
       initialAiToolApprovalData.paymentSummary.find((item) => item.key === "계약 고정비"),
     ).toBeUndefined();
@@ -556,15 +573,21 @@ describe("initialAiToolApprovalData", () => {
 
     expect(chatGptProducts.map((item) => item.key)).toEqual([
       "chatGPT Business Plan Premium",
+      "chatGPT Pro(20배)",
       "chatGPT Business Plan Standard",
     ]);
     expect(chatGptProducts.reduce((sum, item) => sum + item.count, 0)).toBe(chatGptCategory?.count);
     expect(chatGptProducts.reduce((sum, item) => sum + item.monthlyUsd, 0)).toBe(chatGptCategory?.monthlyUsd);
     expect(chatGptProducts.reduce((sum, item) => sum + item.monthlyKrw, 0)).toBe(chatGptCategory?.monthlyKrw);
     expect(chatGptProducts.find((item) => item.key === "chatGPT Business Plan Premium")).toMatchObject({
-      count: 10,
-      monthlyUsd: 1_250,
-      monthlyKrw: 1_856_250,
+      count: 8,
+      monthlyUsd: 1_000,
+      monthlyKrw: 1_485_000,
+    });
+    expect(chatGptProducts.find((item) => item.key === "chatGPT Pro(20배)")).toMatchObject({
+      count: 2,
+      monthlyUsd: 440,
+      monthlyKrw: 653_400,
     });
     expect(chatGptProducts.find((item) => item.key === "chatGPT Business Plan Standard")).toMatchObject({
       count: 12,
@@ -575,8 +598,8 @@ describe("initialAiToolApprovalData", () => {
 
   it("reflects the executive conversions and Standard additions in department budgets", () => {
     for (const expected of [
-      { key: "전략실", count: 3, monthlyUsd: 265.12, monthlyKrw: 393_703.2 },
-      { key: "기술연구소", count: 7, monthlyUsd: 565.12, monthlyKrw: 839_203.2 },
+      { key: "전략실", count: 3, monthlyUsd: 360.12, monthlyKrw: 534_778.2 },
+      { key: "기술연구소", count: 7, monthlyUsd: 660.12, monthlyKrw: 980_278.2 },
       { key: "플랫폼개발", count: 34, monthlyUsd: 2_425, monthlyKrw: 5_101_125 },
     ]) {
       expect(initialAiToolApprovalData.departmentSummary.find(
@@ -602,9 +625,9 @@ describe("initialAiToolApprovalData", () => {
       name: "박연석 전무",
       departments: ["전략실"],
       itemCount: 3,
-      tools: ["chatGPT Business Plan Premium", "Claude Team Plan Premium", "Gemini(Google Workspace)"],
-      monthlyUsd: 265.12,
-      monthlyKrw: 393_703.2,
+      tools: ["chatGPT Pro(20배)", "Claude Team Plan Premium", "Gemini(Google Workspace)"],
+      monthlyUsd: 360.12,
+      monthlyKrw: 534_778.2,
     });
     expect(summary.people.find((person) => person.name === "김재우 부장")).toMatchObject({
       itemCount: 2,
@@ -663,9 +686,9 @@ describe("initialAiToolApprovalData", () => {
     });
     expect(summary.people.find((person) => person.name === "김대일 상무")).toMatchObject({
       itemCount: 3,
-      tools: ["chatGPT Business Plan Premium", "Claude Team Plan Premium", "Gemini(Google Workspace)"],
-      monthlyUsd: 265.12,
-      monthlyKrw: 393_703.2,
+      tools: ["chatGPT Pro(20배)", "Claude Team Plan Premium", "Gemini(Google Workspace)"],
+      monthlyUsd: 360.12,
+      monthlyKrw: 534_778.2,
     });
     expect(summary.people.find((person) => person.name === "이민재 부장")).toMatchObject({
       itemCount: 2,
@@ -731,6 +754,11 @@ describe("initialAiToolApprovalData", () => {
       monthlyUsd: 4_275.59,
       monthlyKrw: 7_849_251.15,
     });
+    for (const month of ["2026-11", "2026-12"]) {
+      expect(approvalMonthlyTotalsForMonth(initialAiToolApprovalData, month)).toMatchObject({
+        count: 68, monthlyUsd: 4_265.59, monthlyKrw: 7_834_401.15,
+      });
+    }
   });
 
   it("removes the unused ai.marketing Gemini account from approvals", () => {

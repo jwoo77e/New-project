@@ -4,7 +4,7 @@
 
 - Office URL: **http://192.168.0.15:4176/**.
 - Host: `riskzero@192.168.0.15`; Apple M4 Pro, macOS, native Node.js.
-- Application: `/Users/riskzero/aihub/current` points to `releases/20261112-november-alignment`. Previous releases, including `releases/20261112-november-week2`, `releases/20261109-api-usage-sync-v2`, `releases/20261105-november-week1-cost`, `releases/20261103-october-card-cost` and the initial `releases/20261105-november-week1`, are retained for rollback.
+- Application: `/Users/riskzero/aihub/current` points to `releases/20261112-executive-plans`. Previous releases, including `releases/20261112-november-alignment`, `releases/20261112-november-week2`, `releases/20261109-api-usage-sync-v2`, `releases/20261105-november-week1-cost`, `releases/20261103-october-card-cost` and the initial `releases/20261105-november-week1`, are retained for rollback.
 - LaunchDaemon: `/Library/LaunchDaemons/kr.riskzero.aihub.plist`, label `kr.riskzero.aihub`.
 - Listener is bound to `192.168.0.15`. Only actual TCP peers in `192.168.0.0/24` and loopback are allowed. Forwarded headers do not grant access.
 - Config: `/Users/riskzero/aihub/secrets/runtime.env` (0600), linked as `.env.local` inside the release. Do not put it in source control or a public directory.
@@ -15,6 +15,12 @@
 **Railway is controlled by the user.** The user said they would stop it manually in Railway Console after checking the new service. Do not stop, redeploy, remove, or alter Railway as part of Mac mini maintenance. Its health URL returned HTTP 404 on October 28; the cause was not investigated in this API refresh task. Git push alone still does not deploy a new Mac mini release.
 
 The user deferred DNS, then authorized public-IP access on October 24. The user will configure the router personally. See the pending public-IP preparation below. `aihub.riskzero.ai:8443` was discussed but is not configured. Existing Way 2.0, its Caddy settings, DNS and containers remain unchanged. On October 26 the user edited API credentials directly in `runtime.env`; the validated results are below.
+
+## Executive subscription records (2026-11-12)
+
+- From November 2026, Lee Byeonghyeon and Jo Wooksang's Claude records use **Team Plan Standard ($25 / 37,125 KRW each)**. Kim Daeil and Park Yeonseok's ChatGPT records use **Pro(20배)**, retaining the existing ledger budget of **$220 / 326,700 KRW each**. These changes update dashboard subscription records and budgets; they are not provider billing transactions.
+- Current total: **68 items / $4,265.59 / 7,834,401.15 KRW**, a combined decrease of **$10 / 14,850 KRW**. Claude has 26 Standard and 12 Premium seats; ChatGPT has two Pro(20배), eight Business Premium and 12 Business Standard seats. A price-history entry can retain its historical plan name as well as its amount. All January–October amounts and the other 64 records are unchanged; Kim Daeil's August start remains intact.
+- All **294 tests across 40 files**, TypeScript and Vite passed in a clean candidate containing only the scoped edits. Production subscription details and person totals verified all four mappings and the new total. The frontend-only release verified health and all four served hashes while preserving 12 runtime snapshots, nine backend modules and private settings. Provenance: `current/executive-plans-deployment.json`; local verification: `output/claude-standard-20261112/`.
 
 ## November month-to-date period alignment (2026-11-12)
 
