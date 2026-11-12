@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { initialDashboardData } from "./aiCostData";
+import { dashboardThroughSeptember as initialDashboardData } from "./aiCostData";
 import { appendSeptemberCardSpend } from "./septemberCardSpend";
 import report from "./septemberCardSpendSnapshot.json";
 

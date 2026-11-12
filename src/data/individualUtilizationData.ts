@@ -180,6 +180,13 @@ export type IndividualWeeklyUsageUser = IndividualWeeklyUsageMetrics & {
   coverage?: "partial" | "complete";
 };
 
+export function isIndividualPeriodMeasured(
+  user: Pick<IndividualUtilizationUser, "measurementStatus">,
+  usage: IndividualMonthlySpendUser | IndividualWeeklyUsageUser | null | undefined,
+) {
+  return user.measurementStatus === "measured" || usage != null;
+}
+
 export type IndividualWeeklyUsagePeriod = {
   key: string;
   label: string;
@@ -291,8 +298,15 @@ const monthlySpend = Object.fromEntries(
 ) as Record<string, IndividualMonthlySpendPeriod | null>;
 
 export function individualMonthlyRange(month: string) {
-  const rollup = monthlySpend[month]?.weeklyRollup;
-  return {startDate: rollup?.startDate ?? `${month}-01`, endDate: rollup?.endDate ?? calendarMonthEnd(month)};
+  const period = monthlySpend[month];
+  const rollup = period?.weeklyRollup;
+  if (rollup) return {startDate: rollup.startDate, endDate: rollup.endDate};
+  const startDate = `${month}-01`;
+  const monthEnd = calendarMonthEnd(month);
+  const [reportedStart, reportedEnd] = period?.period.split(" ~ ") ?? [];
+  const isMonthToDate = period?.coverage === "partial" && reportedStart === startDate &&
+    /^\d{4}-\d{2}-\d{2}$/.test(reportedEnd ?? "") && reportedEnd >= startDate && reportedEnd <= monthEnd;
+  return {startDate, endDate: isMonthToDate ? reportedEnd : monthEnd};
 }
 
 // User-confirmed on 2026-10-15. Keep historical observations when a report has usage.
@@ -309,7 +323,8 @@ export function claudeCodeLinesForMonth(email: string, month: string): number | 
   const period = monthlySpend[month];
   const usage = period?.users[email];
   const user = currentSnapshotUsers.find(item => item.email === email);
-  const lines = period?.weeklyRollup ? usage?.codeLines ?? null
+  const lines = usage?.codeLines !== undefined ? usage.codeLines
+    : period?.weeklyRollup ? null
     : user && snapshot.source.codeLines.some(source => source.month === month) ? user.monthlyCodeLines[month] ?? 0 : null;
   return isConfirmedClaudeNonUsage(email, {...usage, codeLines: lines}) ? 0 : lines;
 }

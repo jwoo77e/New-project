@@ -31,7 +31,7 @@ describe("buildProductivityExecutiveModel", () => {
 
   it("keeps September cost visible when usage sources still end in August", () => {
     const septemberModel = buildProductivityExecutiveModel({
-      monthlyActuals: initialDashboardData.monthlyActuals,
+      monthlyActuals: initialDashboardData.monthlyActuals.filter(row => row.month <= "2026-09"),
       approvalData: initialAiToolApprovalData,
       chatGptData: chatGptUsageData,
       claudeTeamData: initialClaudeTeamUsageData,

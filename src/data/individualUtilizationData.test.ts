@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { isCurrentEmployee } from "./activeRoster";
-import { claudeCodeLinesForMonth, claudeMonthlyCoverage, individualMonthlyRange, individualUtilizationData, isConfirmedClaudeNonUsage } from "./individualUtilizationData";
+import { claudeCodeLinesForMonth, claudeMonthlyCoverage, individualMonthlyRange, individualUtilizationData, isConfirmedClaudeNonUsage, isIndividualPeriodMeasured } from "./individualUtilizationData";
 import monthlySpendSnapshot from "./individualMonthlySpendSnapshot.json";
 import { codexUsageForRange, combinedAiUsage } from "./codexUsageData";
 import { gitlabCommittedCodeRatio, gitlabSummaryForRange, gitlabUserMetricsForRange } from "./gitlabActivityData";
@@ -9,6 +9,97 @@ const sumBy = <T,>(items: T[], selector: (item: T) => number) =>
   items.reduce((sum, item) => sum + selector(item), 0);
 
 describe("individualUtilizationData", () => {
+  it("aligns the November month-to-date exports to November 1–11 without changing weekly observations", () => {
+    const month = individualUtilizationData.monthlySpend["2026-11"]!;
+    expect(month.weeklyRollup).toBeUndefined();
+    expect(month.period).toBe("2026-11-01 ~ 2026-11-11");
+    expect(individualMonthlyRange("2026-11")).toEqual({startDate: "2026-11-01", endDate: "2026-11-11"});
+    expect(claudeCodeLinesForMonth("bigone@riskzero.kr", "2026-11")).toBe(12494);
+    expect(claudeCodeLinesForMonth("jaewoo.kim@riskzero.kr", "2026-11")).toBe(7714);
+    expect(claudeCodeLinesForMonth("sblim0519@riskzero.kr", "2026-11")).toBe(0);
+    expect(claudeCodeLinesForMonth("jyjo@riskzero.kr", "2026-11")).toBe(0);
+    expect(claudeMonthlyCoverage("bigone@riskzero.kr", "2026-11")).toEqual({
+      spendPeriod: "2026-11-01 ~ 2026-11-11", codePeriod: "2026-11-01 ~ 2026-11-11", complete: true,
+    });
+    const codex = codexUsageForRange("jaewoo.kim@riskzero.kr", "2026-11-01", "2026-11-11");
+    expect(codex).toMatchObject({collected: true, complete: true, periodAligned: true, overlapping: false});
+    expect(gitlabSummaryForRange("2026-11-01", "2026-11-11")).toMatchObject({commitCount: 650, mergeCommitCount: 149});
+    expect(individualMonthlyRange("2026-10")).toEqual({startDate: "2026-10-01", endDate: "2026-10-31"});
+    expect(individualMonthlyRange("2026-05")).toEqual({startDate: "2026-05-01", endDate: "2026-05-31"});
+    const combined = individualUtilizationData.users.map(user => combinedAiUsage(
+      month.users[user.email]?.totalTokens ?? (isConfirmedClaudeNonUsage(user.email, month.users[user.email]) ? 0 : null),
+      claudeCodeLinesForMonth(user.email, "2026-11"),
+      codexUsageForRange(user.email, "2026-11-01", "2026-11-11"),
+      claudeMonthlyCoverage(user.email, "2026-11").complete,
+    ));
+    expect(sumBy(combined, usage => usage.tokens ?? 0)).toBe(34918624827);
+    expect(sumBy(combined, usage => usage.codeLines ?? 0)).toBe(352009);
+    expect(individualUtilizationData.weeklyUsage["2026-11-W2"].totals.codeLines).toBe(119097);
+  });
+  it("reconciles November week two using cumulative accepted-line differences and aligned GitLab activity", () => {
+    const week = individualUtilizationData.weeklyUsage["2026-11-W2"];
+    expect(week).toMatchObject({startDate: "2026-11-05", endDate: "2026-11-11", coverage: "complete",
+      source: {currentSpendRows: 125, codePeriod: "2026-11-05 ~ 2026-11-11",
+        codeMethod: "current_cumulative_minus_previous_cumulative"},
+      totals: {requests: 74161, totalTokens: 18877356142, codeLines: 266511 - 147414, netSpendUsd: 0}});
+    expect(week.users["bigone@riskzero.kr"].codeLines).toBe(12494 - 4151);
+    expect(week.users["jaewoo.kim@riskzero.kr"].codeLines).toBe(7714 + 0 - 3985);
+    expect(week.users["kys0392@riskzero.kr"].codeLines).toBe(60343 - 23564);
+    const active = Object.entries(week.users).filter(([email]) => isCurrentEmployee(email)).map(([, usage]) => usage);
+    expect(sumBy(active, usage => usage.totalTokens)).toBe(18636312204);
+    expect(sumBy(active, usage => usage.requests)).toBe(73246);
+    const combined = individualUtilizationData.users.map(user => combinedAiUsage(
+      week.users[user.email]?.totalTokens ?? null,
+      isIndividualPeriodMeasured(user, week.users[user.email]) ? week.users[user.email]?.codeLines ?? null : null,
+      codexUsageForRange(user.email, week.startDate, week.endDate),
+    ));
+    expect(sumBy(combined, usage => usage.tokens ?? 0)).toBe(21669730365);
+    expect(sumBy(combined, usage => usage.codeLines ?? 0)).toBe(154686);
+    expect(gitlabSummaryForRange(week.startDate, week.endDate)).toMatchObject({commitCount: 444, mergeCommitCount: 106});
+    const november = individualUtilizationData.monthlySpend["2026-11"]!;
+    expect(november.coverage).toBe("partial");
+    expect(november.weeklyRollup).toBeUndefined();
+    expect(november.users["bigone@riskzero.kr"].sourcePeriod).toBe("2026-11-01 ~ 2026-11-11");
+    expect(november.users["bigone@riskzero.kr"].codeLines).toBe(12494);
+  });
+  it("uses the cross-month first November week and exposes new individual marketing observations", () => {
+    const week = individualUtilizationData.weeklyUsage["2026-11-W1"];
+    expect(week).toMatchObject({startDate: "2026-10-29", endDate: "2026-11-04", coverage: "complete",
+      totals: {requests: 74028, totalTokens: 18846856800, codeLines: 208090, netSpendUsd: 409.61}});
+    expect(week.users["wody@riskzero.kr"].codeLines).toBe(155735 - 116052 + 52385);
+    expect(week.users["bigone@riskzero.kr"].codeLines).toBe((42627 - 41565) + 4151 + (309 - 309));
+    for (const email of ["sblim0519@riskzero.kr", "jyjo@riskzero.kr"]) {
+      const user = individualUtilizationData.users.find(user => user.email === email)!;
+      expect(isIndividualPeriodMeasured(user, week.users[email])).toBe(true);
+      expect(isIndividualPeriodMeasured(user, individualUtilizationData.monthlySpend["2026-10"]?.users[email])).toBe(false);
+    }
+    expect(individualUtilizationData.monthlySpend["2026-11"]!.weeklyRollup).toBeUndefined();
+    const active = Object.entries(week.users).filter(([email]) => isCurrentEmployee(email)).map(([, usage]) => usage);
+    expect(sumBy(active, usage => usage.totalTokens)).toBe(18784977437);
+    expect(sumBy(active, usage => usage.requests)).toBe(73856);
+    const combined = individualUtilizationData.users.map(user => combinedAiUsage(
+      week.users[user.email]?.totalTokens ?? null,
+      isIndividualPeriodMeasured(user, week.users[user.email]) ? week.users[user.email]?.codeLines ?? null : null,
+      codexUsageForRange(user.email, week.startDate, week.endDate),
+    ));
+    expect(sumBy(combined, usage => usage.tokens ?? 0)).toBe(22434660588);
+    expect(sumBy(combined, usage => usage.codeLines ?? 0)).toBe(272801);
+  });
+  it("reconciles the full October exports across workspaces and resolves unsynced identities", () => {
+    const month = monthlySpendSnapshot.months.find(item => item.month === "2026-10")!;
+    const users = individualUtilizationData.monthlySpend["2026-10"]!.users;
+    expect(Object.keys(users)).toHaveLength(38);
+    expect(month.rowCount).toBe(253);
+    expect(users["(unsynced user)"]).toBeUndefined();
+    expect(users["jsc@riskzero.kr"]).toMatchObject({requests: 631, totalTokens: 66750312});
+    expect(users["bigone@riskzero.kr"]).toMatchObject({requests: 11197, totalTokens: 2934250336});
+    expect(claudeCodeLinesForMonth("bigone@riskzero.kr", "2026-10")).toBe(309 + 42627);
+    const active = Object.entries(users).filter(([email]) => isCurrentEmployee(email)).map(([, usage]) => usage);
+    expect(sumBy(active, usage => usage.requests)).toBe(229548);
+    expect(sumBy(active, usage => usage.totalTokens)).toBe(60059386331);
+    expect(sumBy(active, usage => usage.netSpendUsd)).toBeCloseTo(3631.56, 2);
+    expect(individualUtilizationData.weeklyUsage["2026-10-W5"]).toBeUndefined();
+  });
   it("reconciles all October week-four exports, including both Kim Daeil workspaces and Kim Daeyoung's first activity", () => {
     const week = individualUtilizationData.weeklyUsage["2026-10-W4"];
     expect(week).toMatchObject({
@@ -27,7 +118,7 @@ describe("individualUtilizationData", () => {
     ] as const) {
       expect(week.users[email]).toMatchObject({requests, totalTokens, codeLines, netSpendUsd: 0});
     }
-    expect(claudeCodeLinesForMonth("bigone@riskzero.kr", "2026-10")).toBe(41874);
+    expect(claudeCodeLinesForMonth("bigone@riskzero.kr", "2026-10")).toBe(42936);
     const active = Object.entries(week.users).filter(([email]) => isCurrentEmployee(email)).map(([, usage]) => usage);
     expect(sumBy(active, usage => usage.totalTokens)).toBe(15503625287);
     expect(sumBy(active, usage => usage.requests)).toBe(56607);
@@ -41,7 +132,7 @@ describe("individualUtilizationData", () => {
     expect(isConfirmedClaudeNonUsage(email, null)).toBe(true);
     expect(claudeCodeLinesForMonth(email, "2026-10")).toBe(0);
     expect(claudeMonthlyCoverage(email, "2026-10")).toEqual({
-      spendPeriod: "2026-10-01 ~ 2026-10-28", codePeriod: "2026-10-01 ~ 2026-10-28", complete: true,
+      spendPeriod: "2026-10-01 ~ 2026-10-31", codePeriod: "2026-10-01 ~ 2026-10-31", complete: true,
     });
     expect(combinedAiUsage(0, 0, codexUsageForRange(email, "2026-10-01", "2026-10-21")))
       .toEqual({tokens: 7139913, codeLines: 0, partial: false});
@@ -53,42 +144,44 @@ describe("individualUtilizationData", () => {
     expect(claudeCodeLinesForMonth("khoon@riskzero.kr", "2026-10")).toBeNull();
   });
 
-  it("extends October through week four with aligned Claude, Codex and GitLab coverage", () => {
+  it("uses the authoritative full October month once with aligned Claude, Codex and GitLab coverage", () => {
     const data = individualUtilizationData;
-    expect(data.months[data.months.length - 1]).toBe("2026-10");
+    expect(data.months).toContain("2026-10");
+    expect(data.months[data.months.length - 1]).toBe("2026-11");
     const month = data.monthlySpend["2026-10"]!;
     expect(month).toMatchObject({
-      period: "2026-10-01 ~ 2026-10-28", coverage: "partial",
-      weeklyRollup: {startDate: "2026-10-01", endDate: "2026-10-28", weekKeys: ["2026-10-W1", "2026-10-W2", "2026-10-W3", "2026-10-W4"]},
-      totals: {requests: 200595, promptTokens: 52054868501, completionTokens: 181225459, totalTokens: 52236093960, netSpendUsd: 3221.5},
+      period: "2026-10-01 ~ 2026-10-31", coverage: "complete",
+      totals: {requests: 230267, promptTokens: 59921196281, completionTokens: 209627993, totalTokens: 60130824274, netSpendUsd: 3631.56},
     });
+    expect(month.weeklyRollup).toBeUndefined();
     const range = individualMonthlyRange("2026-10");
-    expect(range).toEqual({startDate: "2026-10-01", endDate: "2026-10-28"});
+    expect(range).toEqual({startDate: "2026-10-01", endDate: "2026-10-31"});
     const combined = data.users.map(user => combinedAiUsage(month.users[user.email]?.totalTokens ?? null,
       claudeCodeLinesForMonth(user.email, "2026-10"), codexUsageForRange(user.email, range.startDate, range.endDate),
       claudeMonthlyCoverage(user.email, "2026-10").complete));
-    expect(sumBy(combined, usage => usage.tokens ?? 0)).toBe(64549107560);
-    expect(sumBy(combined, usage => usage.codeLines ?? 0)).toBe(803306);
+    expect(sumBy(combined, usage => usage.tokens ?? 0)).toBe(74171428670);
+    expect(sumBy(combined, usage => usage.codeLines ?? 0)).toBe(877043);
     expect(codexUsageForRange("wody@riskzero.kr", "2026-10-22", "2026-10-28"))
       .toMatchObject({collected: true, present: true, complete: true});
     expect(combinedAiUsage(month.users["wody@riskzero.kr"].totalTokens,
       claudeCodeLinesForMonth("wody@riskzero.kr", "2026-10"),
       codexUsageForRange("wody@riskzero.kr", range.startDate, range.endDate))).toMatchObject({partial: false});
-    expect(gitlabSummaryForRange(range.startDate, range.endDate)).toMatchObject({commitCount: 1276, mergeCommitCount: 350, additions: 1052365});
+    expect(gitlabSummaryForRange(range.startDate, range.endDate)).toMatchObject({commitCount: 1620, mergeCommitCount: 396, additions: 1388693});
     const email = "wody@riskzero.kr";
-    expect(data.users.find(user => user.email === email)?.monthEvaluations["2026-10"].codeLines).toBe(116052);
+    expect(data.users.find(user => user.email === email)?.monthEvaluations["2026-10"].codeLines).toBe(155735);
     expect(claudeMonthlyCoverage(email, "2026-10")).toEqual({
       spendPeriod: month.period, codePeriod: month.period, complete: true,
     });
-    expect(gitlabCommittedCodeRatio(190507, gitlabUserMetricsForRange(email, range.startDate, range.endDate).additions))
-      .toBeCloseTo(245203 / (116052 + 74455) * 100);
+    expect(gitlabCommittedCodeRatio(239933, gitlabUserMetricsForRange(email, range.startDate, range.endDate).additions))
+      .toBeCloseTo(391168 / (155735 + 84198) * 100);
     for (const [email, totalTokens, requests] of [
       ["day@riskzero.kr", 13789658, 80],
       ["woals1329@riskzero.kr", 7918755, 76],
     ] as const) {
       expect(month.users[email]).toMatchObject({
-        totalTokens, requests, codeLines: 0, netSpendUsd: 0, coverage: "complete", sourcePeriod: month.period,
+        totalTokens, requests, netSpendUsd: 0, coverage: "complete", sourcePeriod: month.period,
       });
+      expect(claudeCodeLinesForMonth(email, "2026-10")).toBe(0);
       expect(claudeMonthlyCoverage(email, "2026-10")).toEqual({
         spendPeriod: month.period, codePeriod: month.period, complete: true,
       });
@@ -111,9 +204,9 @@ describe("individualUtilizationData", () => {
     expect(data.totals.requests).toBe(161582);
     expect(data.totals.totalTokens).toBe(37099774050);
     expect(data.totals.netSpendUsd).toBeCloseTo(414.44, 2);
-    expect(data.source.codeLines).toHaveLength(5);
-    expect(sumBy(data.source.codeLines, (item) => item.totalLines)).toBe(1794413);
-    expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(1527909);
+    expect(data.source.codeLines).toHaveLength(7);
+    expect(sumBy(data.source.codeLines, (item) => item.totalLines)).toBe(2457213 + 266511);
+    expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(2189411 + 266511);
   });
 
   it("keeps activity metrics behind an explicit HR evidence gate", () => {
@@ -273,6 +366,8 @@ describe("individualUtilizationData", () => {
       "2026-10-W2",
       "2026-10-W3",
       "2026-10-W4",
+      "2026-11-W1",
+      "2026-11-W2",
     ]);
     const octoberThirdWeek = data.weeklyUsage["2026-10-W3"];
     expect(octoberThirdWeek).toMatchObject({
@@ -433,7 +528,7 @@ describe("individualUtilizationData", () => {
     expect(data.monthlySpend["2026-08"]?.totals.requests).toBeGreaterThan(
       sumBy(augustThroughFourthWeek, (week) => week.totals.requests),
     );
-    expect(data.weeklyUsageTrend).toHaveLength(13);
+    expect(data.weeklyUsageTrend).toHaveLength(15);
   });
 
   it("produces bounded peer-comparison scores for every user and period", () => {

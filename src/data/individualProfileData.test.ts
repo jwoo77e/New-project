@@ -14,6 +14,17 @@ import {
 } from "./individualProfileData";
 
 describe("kimJaewooProfileData", () => {
+  it("shows October prompt classifications and saved outputs for the selected month", () => {
+    const insight = kimJaewooProfileData.monthlyInsights?.["2026-10"];
+    expect(insight).toBeDefined();
+    expect(insight?.topicBasisLabel).toContain("173");
+    expect(insight?.topicBasisLabel).toContain("제목");
+    expect(insight?.promptTopics.reduce((sum, topic) => sum + topic.count, 0)).toBe(173);
+    expect(insight?.highlights).toHaveLength(5);
+    expect(insight?.highlights.map(item => item.title)).toContain("Way 2.0 운영사이트 QA 보고서");
+    expect(insight?.highlights.map(item => item.title)).toContain("ZeroBy 챗봇·한국어 설정 점검 자료");
+    expect(JSON.stringify(insight)).not.toContain("안전산업박람회");
+  });
   it("reconciles the exhaustive Drive inventory", () => {
     const data = kimJaewooProfileData;
 

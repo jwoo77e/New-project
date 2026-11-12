@@ -1,7 +1,7 @@
 import snapshot from "./codexUsageSnapshot.json";
 
-type CodexUsage = {tokens: number; codeLines: number};
-type Period = {startDate: string; endDate: string; users: Partial<Record<string, CodexUsage>>};
+type CodexUsage = {tokens: number; codeLines: number; estimatedCostUsd?: number};
+type Period = {startDate: string; endDate: string; costCurrency?: string; users: Partial<Record<string, CodexUsage>>};
 type MonthlyReconciliation = {
   startDate: string;
   endDate: string;
@@ -41,6 +41,7 @@ export function codexUsageForRange(email: string, startDate: string, endDate: st
     return {
       collected: true, complete: derived.periodAligned, overlapping: false,
       present: usage != null, tokens: usage?.tokens ?? 0, codeLines: usage?.codeLines ?? 0,
+      estimatedCostUsd: null,
       periodLabel: derived.usageRanges.map((p) => `${p.startDate} ~ ${p.endDate}`).join(", "),
       periodAligned: derived.periodAligned, note: derived.note,
     };
@@ -50,14 +51,18 @@ export function codexUsageForRange(email: string, startDate: string, endDate: st
   const contained = [
     ...months,
     ...periods.filter((p) => p.startDate >= startDate && p.endDate <= endDate &&
-      !months.some((m) => p.startDate >= m.startDate && p.endDate <= m.endDate)),
+      !months.some((m) => p.startDate <= m.endDate && p.endDate >= m.startDate)),
   ].sort((a, b) => a.startDate.localeCompare(b.startDate));
-  const overlapping = periods.some((p) => p.startDate <= endDate && p.endDate >= startDate && !contained.includes(p) &&
-    !months.some((m) => p.startDate >= m.startDate && p.endDate <= m.endDate));
   const matches = contained.flatMap((p) => p.users[account] ? [p.users[account]] : []);
+  const costCollected = contained.length > 0 && contained.every((p) => p.costCurrency === "USD" &&
+    (!p.users[account] || Number.isFinite(p.users[account]?.estimatedCostUsd)));
   const complete = contained.length > 0 && contained[0].startDate === startDate &&
     contained[contained.length - 1].endDate === endDate && contained.every((p, index) => index === 0 ||
       Date.parse(`${p.startDate}T00:00:00Z`) - Date.parse(`${contained[index - 1].endDate}T00:00:00Z`) === 86400000);
+  // A closed monthly source covers overlapping weekly observations. A week
+  // crossing that boundary cannot also be added or split without daily rows.
+  const overlapping = !complete && periods.some((p) => p.startDate <= endDate && p.endDate >= startDate && !contained.includes(p) &&
+    !months.some((m) => p.startDate >= m.startDate && p.endDate <= m.endDate));
   return {
     collected: contained.length > 0,
     complete,
@@ -65,6 +70,7 @@ export function codexUsageForRange(email: string, startDate: string, endDate: st
     present: matches.length > 0,
     tokens: matches.reduce((sum, u) => sum + u.tokens, 0),
     codeLines: matches.reduce((sum, u) => sum + u.codeLines, 0),
+    estimatedCostUsd: costCollected ? Number(matches.reduce((sum, u) => sum + (u.estimatedCostUsd ?? 0), 0).toFixed(6)) : null,
     periodLabel: contained.map((p) => `${p.startDate} ~ ${p.endDate}`).join(", "),
     periodAligned: true,
     note: reconciliationNote(account, startDate, endDate),

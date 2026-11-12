@@ -24,6 +24,14 @@ function fixture(run) {
 }
 
 describe("Codex observed-period import", () => {
+  it("retains reported USD additional costs, including an explicit zero", () => fixture(({invoke, input, read}) => {
+    writeFileSync(input, "Email,Tokens,Lines of code,Estimated costs,Estimated cost currency\na@example.com,40,5,7.81,USD\nb@example.com,0,0,0,USD\n");
+    invoke();
+    const period = JSON.parse(read()).periods[1];
+    expect(period.costCurrency).toBe("USD");
+    expect(period.users["a@example.com"].estimatedCostUsd).toBe(7.81);
+    expect(period.users["b@example.com"].estimatedCostUsd).toBe(0);
+  }));
   it("supersedes the estimate, preserves the month, and records source discrepancies without modifying observations", () => fixture(({invoke, read, input, baseline}) => {
     invoke();
     const first = read();

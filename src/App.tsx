@@ -93,6 +93,7 @@ import {
   claudeCodeLinesForMonth,
   individualMonthlyRange,
   isConfirmedClaudeNonUsage,
+  isIndividualPeriodMeasured,
   type IndividualPeriodMode,
   type IndividualUtilizationUser,
 } from "./data/individualUtilizationData";
@@ -4786,9 +4787,16 @@ function AdoptionView({
   const isWeekly = periodMode === "week";
   const selectedMonthlySpend = data.monthlySpend[selectedMonth] ?? null;
   const monthlyRange = individualMonthlyRange(selectedMonth);
+  const isReportedMonthToDate = !selectedMonthlySpend?.weeklyRollup && selectedMonthlySpend?.coverage === "partial" &&
+    selectedMonthlySpend.period === `${monthlyRange.startDate} ~ ${monthlyRange.endDate}`;
+  const firstMonthlyObservedDate = selectedMonthlySpend?.weeklyRollup?.weekKeys
+    .map(key => data.weeklyUsage[key]?.startDate).filter((date): date is string => Boolean(date)).sort()[0];
+  const monthlyCoverageGapNote = selectedMonthlySpend?.coverage === "partial" &&
+    firstMonthlyObservedDate && firstMonthlyObservedDate > monthlyRange.startDate
+      ? ` · 부분 집계 · ${firstMonthlyObservedDate}부터 수집` : "";
   const periodLabel = isWeekly
     ? selectedWeeklyUsage?.label ?? "주차 미선택"
-    : `${fullMonthLabel(selectedMonth)}${selectedMonthlySpend?.weeklyRollup ? ` · ${monthlyRange.endDate.slice(5)}까지 누적` : ""}`;
+    : `${fullMonthLabel(selectedMonth)}${selectedMonthlySpend?.weeklyRollup || isReportedMonthToDate ? ` · ${monthlyRange.endDate.slice(5)}까지 누적` : ""}`;
   const weeklyClaudeCollected = !isWeekly || selectedWeeklyUsage?.source.spendMethod !== "not_collected";
   const weeklyCodeCollected = !isWeekly || selectedWeeklyUsage?.source.codeMethod !== "not_collected";
   const weeklyCodePeriod = isWeekly ? selectedWeeklyUsage?.source.codePeriod : null;
@@ -4799,9 +4807,10 @@ function AdoptionView({
       : "주차별 원천 수집중"
     : selectedMonthlySpend
       ? selectedMonthlySpend.weeklyRollup
-        ? `Claude ${selectedMonthlySpend.period} · ${selectedMonthlySpend.weeklyRollup.throughLabel}까지 누적`
+        ? `Claude ${selectedMonthlySpend.period} · ${selectedMonthlySpend.weeklyRollup.throughLabel}까지 누적${monthlyCoverageGapNote}`
         : `Claude ${selectedMonthlySpend.period}${selectedMonthlySpend.preservedAccounts?.length
           ? ` · 별도 ${selectedMonthlySpend.preservedAccounts.length}계정 이전 자료 유지`
+          : isReportedMonthToDate ? ` · ${monthlyRange.endDate.slice(5)}까지 누적`
           : selectedMonthlySpend.coverage === "partial" ? " · 부분 집계" : ""}`
       : "월별 Spend 수집중";
   const periodStartDate = isWeekly
@@ -4825,13 +4834,13 @@ function AdoptionView({
         const weeklyUsage = selectedWeeklyUsage?.users[user.email] ?? null;
         const claudeUnused = isConfirmedClaudeNonUsage(user.email, {
           ...(isWeekly ? weeklyUsage : monthlySpend),
-          codeLines: isWeekly ? weeklyUsage?.codeLines : evaluation?.codeLines,
+          codeLines: isWeekly ? weeklyUsage?.codeLines : claudeCodeLinesForMonth(user.email, selectedMonth),
         });
         const codex = codexUsageForRange(user.email, periodStartDate, periodEndDate);
         const combined = combinedAiUsage(
           claudeUnused ? 0 : (isWeekly ? weeklyUsage?.totalTokens : monthlySpend?.totalTokens) ?? null,
-          claudeUnused ? 0 : user.measurementStatus === "measured"
-            ? (isWeekly ? weeklyCodeCollected ? weeklyUsage?.codeLines ?? null : null : evaluation?.codeLines ?? null)
+          claudeUnused ? 0 : isIndividualPeriodMeasured(user, isWeekly ? weeklyUsage : monthlySpend)
+            ? (isWeekly ? weeklyCodeCollected ? weeklyUsage?.codeLines ?? null : null : claudeCodeLinesForMonth(user.email, selectedMonth))
             : null,
           codex,
           claudeUnused || (isWeekly ? (weeklyUsage?.coverage ?? selectedWeeklyUsage?.coverage) === "complete" : claudeMonthlyCoverage(user.email, selectedMonth).complete),
@@ -4985,7 +4994,9 @@ function AdoptionView({
               ? !weeklyClaudeCollected
                 ? "Claude Spend와 Code Lines 원천은 미수집입니다. Codex의 실제 집계 범위는 위 기간과 아래 안내를 확인하세요."
                 : weeklyCodeCollected
-                ? selectedWeeklyUsage?.source.spendMethod === "current_cumulative_minus_previous_cumulative"
+                ? selectedWeeklyUsage?.source.codeMethod === "cross_month_october_delta_plus_november_period"
+                  ? "Claude 토큰·비용은 10/29~11/4 기간값입니다. Code Lines는 10/31 누적에서 10/28 누적을 뺀 값과 11/1~11/4 수락 라인(Lines accepted)을 합산했습니다."
+                : selectedWeeklyUsage?.source.spendMethod === "current_cumulative_minus_previous_cumulative"
                   ? `Claude 토큰·비용과 Code Lines는 월간 누적값에서 이전 누적값을 뺀 ${selectedWeeklyUsage.startDate} ~ ${selectedWeeklyUsage.endDate} 차액입니다. 새 파일에 없는 계정은 미수집입니다.`
                   : weeklyCodePeriod
                   ? selectedWeeklyUsage?.coverage === "complete"
@@ -5102,8 +5113,8 @@ function AdoptionView({
             <thead>
               <tr>
                 <th>사용자</th>
-                <th title="토큰과 순비용은 Claude Spend의 Chat·Claude Code·Cowork 등 수집된 제품 합계입니다. Code Lines는 Claude Code 누적 스냅샷 차이입니다.">Claude 토큰 · Code Lines · 순비용</th>
-                <th>Codex 토큰 · Code Lines</th>
+                <th title="토큰과 추가 비용은 Claude Spend의 Chat·Claude Code·Cowork 등 수집된 제품 합계입니다. Code Lines는 Claude Code 누적 스냅샷 차이입니다.">Claude 토큰 · Code Lines · 추가 비용</th>
+                <th title="추가 비용은 Codex CSV의 Estimated costs(USD) 추정값이며 월 고정 구독료와 별도입니다.">Codex 토큰 · Code Lines · 추가 비용</th>
                 <th title="Claude와 Codex 보고값의 합계입니다. 수집 기간이 다를 수 있으며 도구 간 중복 생성·수정 라인은 제거하지 않습니다.">전체 토큰 · Code Lines · 산출 밀도</th>
                 <th>GitLab 커밋 · 수정 라인 · 반영률</th>
                 <th>주요 사용 범위</th>
@@ -5122,7 +5133,7 @@ function AdoptionView({
                 selectedDensitySample,
                 gitlab,
               }, index) => {
-                const metricsMeasured = user.measurementStatus === "measured";
+                const metricsMeasured = isIndividualPeriodMeasured(user, isWeekly ? weeklyUsage : monthlySpend);
                 const unallocatedUsage = isWeekly ? selectedWeeklyUsage?.unallocatedUsage?.[user.email] : null;
                 const metricsUncollected = !metricsMeasured;
                 const toolUnpaid = user.allocationStatus === "unpaid";
@@ -5136,7 +5147,7 @@ function AdoptionView({
                 const scopeModels = claudeUnused ? [] : isWeekly ? periodModels ?? [] : periodModels?.length ? periodModels : user.models;
                 const generatedCodeLines = isWeekly
                   ? weeklyCodeCollected ? weeklyUsage?.codeLines ?? null : null
-                  : evaluation?.codeLines ?? null;
+                  : claudeCodeLinesForMonth(user.email, selectedMonth);
                 const teamGroup = individualTeamGroup(user.email);
                 const previousTeamGroup = index > 0
                   ? individualTeamGroup(rows[index - 1].user.email)
@@ -5191,7 +5202,7 @@ function AdoptionView({
                             ? <span className="state-pill neutral">Code Lines 수집중</span>
                             : <span>{numberFormat.format(generatedCodeLines)}줄</span>}
                           {(isWeekly ? weeklyUsage : monthlySpend) &&
-                            <small>순비용 {formatPreciseUsd((isWeekly ? weeklyUsage : monthlySpend)!.netSpendUsd)}</small>}
+                            <small>추가 비용 {formatPreciseUsd((isWeekly ? weeklyUsage : monthlySpend)!.netSpendUsd)}</small>}
                           {!isWeekly && monthlySpend?.coverage === "partial" &&
                             <small>{selectedMonthlySpend?.weeklyRollup ? "수집된 주차만 합산" : "기존 자료"} · {monthlySpend.sourcePeriod}</small>}
                           {isWeekly && weeklyUsage && weeklyUsage.netSpendUsd < 0 &&
@@ -5204,6 +5215,7 @@ function AdoptionView({
                           <div className="individual-combined-usage">
                             <strong title={`${numberFormat.format(codex.tokens)} 토큰`}>{formatTokens(codex.tokens)} <small>토큰</small></strong>
                             <span>{numberFormat.format(codex.codeLines)}줄</span>
+                            {codex.estimatedCostUsd !== null && <small title="원본 CSV의 Estimated costs(USD)">추가 비용 {formatPreciseUsd(codex.estimatedCostUsd)} (추정)</small>}
                             {!codex.periodAligned && <small title={codex.note}>월간 차액 · 기간 미분리</small>}
                           </div>
                         ) : <span className="state-pill neutral">미사용</span>
@@ -5316,12 +5328,13 @@ function IndividualGitlabProfileView({
     (period) => period.startDate === startDate && period.endDate === endDate,
   );
   const claudeUsage = weeklyPeriod ? weeklyPeriod.users[user.email] ?? null : monthlySpend;
-  const claudeCodeLines = weeklyPeriod ? weeklyPeriod.users[user.email]?.codeLines ?? null : evaluation?.codeLines ?? null;
+  const claudeCodeLines = weeklyPeriod ? weeklyPeriod.users[user.email]?.codeLines ?? null : claudeCodeLinesForMonth(user.email, selectedMonth);
   const claudeUnused = isConfirmedClaudeNonUsage(user.email, {...claudeUsage, codeLines: claudeCodeLines});
   const codex = codexUsageForRange(user.email, startDate, endDate);
+  const metricsMeasured = isIndividualPeriodMeasured(user, claudeUsage);
   const combined = combinedAiUsage(
-    claudeUnused ? 0 : user.measurementStatus === "measured" ? claudeUsage?.totalTokens ?? null : null,
-    claudeUnused ? 0 : user.measurementStatus === "measured" ? claudeCodeLines : null,
+    claudeUnused ? 0 : metricsMeasured ? claudeUsage?.totalTokens ?? null : null,
+    claudeUnused ? 0 : metricsMeasured ? claudeCodeLines : null,
     codex,
     claudeUnused || (weeklyPeriod ? (weeklyPeriod.users[user.email]?.coverage ?? weeklyPeriod.coverage) === "complete" : claudeMonthlyCoverage(user.email, selectedMonth).complete),
   );
@@ -5329,7 +5342,6 @@ function IndividualGitlabProfileView({
   const gitlabCoverage = gitlabRangeCoverage(startDate, endDate);
   const committedCodeRatio = gitlabCommittedCodeRatio((!codex.present || codex.periodAligned) && gitlabCoverage.available ? combined.codeLines : null, gitlab.additions);
   const gitlabUser = gitlabActivityData.userByEmail.get(user.email);
-  const metricsMeasured = user.measurementStatus === "measured";
   const groupUrl = `${gitlabActivityData.source.baseUrl}/${gitlabActivityData.source.group.path}`;
 
   return (
@@ -5358,12 +5370,13 @@ function IndividualGitlabProfileView({
         <article>
           <span><Activity size={17} />{periodLabel} 전체 토큰</span>
           <strong>{combined.tokens === null ? "수집중" : formatTokens(combined.tokens)}</strong>
-          <small>{claudeUnused ? "Claude 미사용" : metricsMeasured && claudeUsage ? `Claude ${numberFormat.format(claudeUsage.requests)}건 요청 · 순비용 ${formatPreciseUsd(claudeUsage.netSpendUsd)}` : "Claude 사용량 원천 연결 대기"}{codex.present ? " · Codex 포함" : ""}</small>
+          <small>{claudeUnused ? "Claude 미사용" : metricsMeasured && claudeUsage ? `Claude ${numberFormat.format(claudeUsage.requests)}건 요청 · 추가 비용 ${formatPreciseUsd(claudeUsage.netSpendUsd)}` : "Claude 사용량 원천 연결 대기"}{codex.present ? " · Codex 포함" : ""}</small>
         </article>
         <article>
           <span><FileText size={17} />Claude + Codex Code Lines</span>
           <strong>{combined.codeLines === null ? "수집중" : `${numberFormat.format(combined.codeLines)}줄`}</strong>
           <small>{combined.partial ? "확인분 합산" : "선택 기간 합산"}</small>
+          {codex.present && codex.estimatedCostUsd !== null && <small title="원본 CSV의 Estimated costs(USD)">Codex 추가 비용 {formatPreciseUsd(codex.estimatedCostUsd)} (추정)</small>}
         </article>
         <article>
           <span><GitCommitHorizontal size={17} />GitLab 커밋</span>
@@ -5424,7 +5437,7 @@ function IndividualProfileView({
   );
   const monthlyFixedKrw = approvalRecords.reduce((sum, record) => sum + record.monthlyKrw, 0);
   const monthlyFixedUsd = approvalRecords.reduce((sum, record) => sum + record.monthlyUsd, 0);
-  const metricsMeasured = user.measurementStatus === "measured";
+  const metricsMeasured = isIndividualPeriodMeasured(user, monthlySpend);
   const profileMeasurementPartial = metricsMeasured && (
     evaluation?.codeActivityDetailsMissing === true ||
     !claudeMonthlyCoverage(user.email, selectedMonth).complete

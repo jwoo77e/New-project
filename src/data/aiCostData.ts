@@ -1,4 +1,5 @@
 import { appendSeptemberCardSpend } from "./septemberCardSpend";
+import { appendOctoberCardSpend } from "./octoberCardSpend";
 
 export type MonthlyActual = {
   month: string;
@@ -323,4 +324,5 @@ const dashboardThroughAugust: DashboardData = {
   ],
 };
 
-export const initialDashboardData = appendSeptemberCardSpend(dashboardThroughAugust);
+export const dashboardThroughSeptember = appendSeptemberCardSpend(dashboardThroughAugust);
+export const initialDashboardData = appendOctoberCardSpend(dashboardThroughSeptember);

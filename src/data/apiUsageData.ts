@@ -16,6 +16,8 @@ export type ApiProviderUsage = {
   activeKeys: number;
   lastSynced: string;
   status: ApiProviderStatus;
+  // Collection completeness is separate from generation-key health warnings.
+  usageCollectionComplete?: boolean;
   note: string;
 };
 

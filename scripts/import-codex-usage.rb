@@ -13,6 +13,9 @@ abort "Usage: ruby scripts/import-codex-usage.rb CSV START END" unless file && s
 abort "Invalid period" if Date.iso8601(start_date) > Date.iso8601(end_date)
 rows = CSV.read(file, headers: true, encoding: "bom|utf-8")
 abort "Invalid Codex columns" unless ["Email", "Tokens", "Lines of code"].all? { |key| rows.headers.include?(key) }
+cost_columns = ["Estimated costs", "Estimated cost currency"]
+has_costs = cost_columns.all? { |key| rows.headers.include?(key) }
+abort "Incomplete Codex cost columns" if cost_columns.any? { |key| rows.headers.include?(key) } && !has_costs
 users = {}
 rows.each do |row|
   email = row.fetch("Email").strip.downcase
@@ -21,13 +24,20 @@ rows.each do |row|
   lines = Integer(row.fetch("Lines of code").delete(","))
   abort "Negative usage" if tokens < 0 || lines < 0
   users[email] = {"tokens" => tokens, "codeLines" => lines}
+  if has_costs
+    cost = Float(row.fetch("Estimated costs"))
+    abort "Invalid Codex USD cost" unless row.fetch("Estimated cost currency").strip == "USD" && cost.finite? && cost >= 0
+    users[email]["estimatedCostUsd"] = cost
+  end
 end
 abort "Empty Codex export" if users.empty?
 output = options.fetch("output")
 snapshot = File.exist?(output) ? JSON.parse(File.read(output)) : {"periods" => []}
 periods = snapshot.fetch("periods").reject { |p| p.fetch("startDate") == start_date && p.fetch("endDate") == end_date }
 abort "Overlapping Codex source periods" if periods.any? { |p| p.fetch("startDate") <= end_date && p.fetch("endDate") >= start_date }
-periods << {"startDate" => start_date, "endDate" => end_date, "fileName" => File.basename(file), "users" => users.sort.to_h}
+period = {"startDate" => start_date, "endDate" => end_date, "fileName" => File.basename(file), "users" => users.sort.to_h}
+period["costCurrency"] = "USD" if has_costs
+periods << period
 snapshot["periods"] = periods.sort_by { |p| p.fetch("startDate") }
 # Keep the old estimate as provenance; the explicit period supersedes it.
 snapshot.fetch("derivedPeriods", []).each do |derived|
