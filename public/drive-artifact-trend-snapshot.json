@@ -3,9 +3,9 @@
   "source": {
     "name": "Claude Drive 날짜별 저장 파일 증감",
     "status": "정상",
-    "collectedAt": "2026-11-13-20:57 KST",
-    "generatedAt": "2026-11-13T11:57:55.924Z",
-    "period": "2026-06-23 ~ 2026-11-13",
+    "collectedAt": "2026-11-14-20:59 KST",
+    "generatedAt": "2026-11-14T11:59:45.771Z",
+    "period": "2026-06-23 ~ 2026-11-14",
     "schedule": "매일 21:00 KST",
     "note": "김재우·이형배·전략사업팀·정재요·전우성·배현철 Drive 루트의 모든 하위 폴더를 읽기 전용으로 재귀 조회하고 파일 생성일을 한국시간 기준으로 집계합니다."
   },
@@ -16,10 +16,10 @@
       "folderUrl": "https://drive.google.com/drive/folders/1Q2OorOdMlPn8xRBzuHWyY5kqGHxRYpPZ?usp=drive_link",
       "artifacts": [],
       "inventory": {
-        "fileCount": 5306,
+        "fileCount": 5332,
         "directFileCount": 282,
-        "nestedFileCount": 5024,
-        "folderCount": 1923,
+        "nestedFileCount": 5050,
+        "folderCount": 1936,
         "maxDepth": 7,
         "metadataDateAnomalyCount": 85,
         "dailyCounts": [
@@ -570,6 +570,10 @@
           {
             "date": "2026-11-13",
             "count": 32
+          },
+          {
+            "date": "2026-11-14",
+            "count": 26
           }
         ]
       }
@@ -948,10 +952,10 @@
     }
   ],
   "totals": {
-    "files": 52706,
+    "files": 52732,
     "directFiles": 345,
-    "nestedFiles": 52361,
-    "folders": 5701,
+    "nestedFiles": 52387,
+    "folders": 5714,
     "metadataDateAnomalies": 85
   }
 }
