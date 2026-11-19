@@ -177,6 +177,7 @@ export type IndividualWeeklyUsageMetrics = IndividualUsageMetrics & {
 export type IndividualWeeklyUsageUser = IndividualWeeklyUsageMetrics & {
   products: string[];
   models: string[];
+  codeLinesCollected?: boolean;
   coverage?: "partial" | "complete";
 };
 

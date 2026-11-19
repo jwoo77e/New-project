@@ -4105,6 +4105,7 @@ function monthlyCodeDensitySamplesForUser(
   return individualUtilizationData.months.slice(0, selectedIndex + 1).flatMap((month) => {
     const spendPeriod = individualUtilizationData.monthlySpend[month];
     const usage = spendPeriod?.users[user.email];
+    if (usage?.codeLines === null) return [];
     const claudeLines = claudeCodeLinesForMonth(user.email, month);
     const claudeUnused = isConfirmedClaudeNonUsage(user.email, {...usage, codeLines: claudeLines});
     const codeSource = individualUtilizationData.source.codeLines.find((item) => item.month === month);
@@ -4144,6 +4145,7 @@ function weeklyCodeDensitySamplesForUser(
   return individualUtilizationData.usageWeeks.slice(0, selectedIndex + 1).flatMap((week) => {
     const period = individualUtilizationData.weeklyUsage[week];
     const usage = period?.users[email];
+    if (usage?.codeLinesCollected === false) return [];
     if (!period) return [];
     if (isConfirmedClaudeNonUsage(email, usage)) {
       const codex = codexUsageForRange(email, period.startDate, period.endDate);
@@ -4237,15 +4239,19 @@ function densityChangeLabel(trend: CodeOutputDensityTrend) {
 
 function IndividualCodeDensityCell({
   codeLines,
+  codeLinesPending = false,
   selectedSample,
   trend,
 }: {
   codeLines: number;
+  codeLinesPending?: boolean;
   selectedSample: CodeOutputDensitySample | null;
   trend: CodeOutputDensityTrend;
 }) {
   const currentPoint = trend.currentPoint;
-  const unavailableLabel = !selectedSample
+  const unavailableLabel = codeLinesPending
+    ? "코드라인 수집중"
+    : !selectedSample
     ? "토큰 수집중"
     : !selectedSample.periodAligned
       ? "기간 불일치"
@@ -4799,6 +4805,9 @@ function AdoptionView({
     : `${fullMonthLabel(selectedMonth)}${selectedMonthlySpend?.weeklyRollup || isReportedMonthToDate ? ` · ${monthlyRange.endDate.slice(5)}까지 누적` : ""}`;
   const weeklyClaudeCollected = !isWeekly || selectedWeeklyUsage?.source.spendMethod !== "not_collected";
   const weeklyCodeCollected = !isWeekly || selectedWeeklyUsage?.source.codeMethod !== "not_collected";
+  const pendingCodeAccounts = isWeekly
+    ? Object.values(selectedWeeklyUsage?.users ?? {}).filter(usage => usage.codeLinesCollected === false).length
+    : Object.values(selectedMonthlySpend?.users ?? {}).filter(usage => usage.codeLines === null).length;
   const weeklyCodePeriod = isWeekly ? selectedWeeklyUsage?.source.codePeriod : null;
   const unallocatedAccountCount = Object.keys(selectedWeeklyUsage?.unallocatedUsage ?? {}).length;
   const coverageNote = isWeekly
@@ -4840,7 +4849,7 @@ function AdoptionView({
         const combined = combinedAiUsage(
           claudeUnused ? 0 : (isWeekly ? weeklyUsage?.totalTokens : monthlySpend?.totalTokens) ?? null,
           claudeUnused ? 0 : isIndividualPeriodMeasured(user, isWeekly ? weeklyUsage : monthlySpend)
-            ? (isWeekly ? weeklyCodeCollected ? weeklyUsage?.codeLines ?? null : null : claudeCodeLinesForMonth(user.email, selectedMonth))
+            ? (isWeekly ? weeklyCodeCollected && weeklyUsage?.codeLinesCollected !== false ? weeklyUsage?.codeLines ?? null : null : claudeCodeLinesForMonth(user.email, selectedMonth))
             : null,
           codex,
           claudeUnused || (isWeekly ? (weeklyUsage?.coverage ?? selectedWeeklyUsage?.coverage) === "complete" : claudeMonthlyCoverage(user.email, selectedMonth).complete),
@@ -4987,7 +4996,7 @@ function AdoptionView({
           <div className="individual-period-title">
             <h2>{periodLabel} 개인별 AI 활동 근거</h2>
             <small>Codex: {codexPeriod.periodLabel || "해당 기간 수집중"} · 합산은 수집값 기준</small>
-            <span className="state-pill warning">{coverageNote}</span>
+            <span className="state-pill warning">{coverageNote}{pendingCodeAccounts ? ` · 코드라인 ${pendingCodeAccounts}계정 미수집` : ""}</span>
           </div>
           <p>
             {isWeekly
@@ -5146,8 +5155,9 @@ function AdoptionView({
                   : isWeekly ? periodProducts ?? [] : periodProducts?.length ? periodProducts : user.products;
                 const scopeModels = claudeUnused ? [] : isWeekly ? periodModels ?? [] : periodModels?.length ? periodModels : user.models;
                 const generatedCodeLines = isWeekly
-                  ? weeklyCodeCollected ? weeklyUsage?.codeLines ?? null : null
+                  ? weeklyCodeCollected && weeklyUsage?.codeLinesCollected !== false ? weeklyUsage?.codeLines ?? null : null
                   : claudeCodeLinesForMonth(user.email, selectedMonth);
+                const codeLinesPending = isWeekly ? weeklyUsage?.codeLinesCollected === false : monthlySpend?.codeLines === null;
                 const teamGroup = individualTeamGroup(user.email);
                 const previousTeamGroup = index > 0
                   ? individualTeamGroup(rows[index - 1].user.email)
@@ -5204,7 +5214,7 @@ function AdoptionView({
                           {(isWeekly ? weeklyUsage : monthlySpend) &&
                             <small>추가 비용 {formatPreciseUsd((isWeekly ? weeklyUsage : monthlySpend)!.netSpendUsd)}</small>}
                           {!isWeekly && monthlySpend?.coverage === "partial" &&
-                            <small>{selectedMonthlySpend?.weeklyRollup ? "수집된 주차만 합산" : "기존 자료"} · {monthlySpend.sourcePeriod}</small>}
+                            <small>{codeLinesPending ? "코드라인 미수집" : selectedMonthlySpend?.weeklyRollup ? "수집된 주차만 합산" : "기존 자료"} · {monthlySpend.sourcePeriod}</small>}
                           {isWeekly && weeklyUsage && weeklyUsage.netSpendUsd < 0 &&
                             <small>원천 비용 반올림 보정</small>}
                           {unallocatedUsage && <small title={`미분리 ${numberFormat.format(unallocatedUsage.totalTokens)}토큰 · ${numberFormat.format(unallocatedUsage.requests)}건 · ${unallocatedUsage.periods.join(" 및 ")}`}>기존 자료 {unallocatedUsage.baselinePeriod} · 주차 미확정</small>}
@@ -5227,6 +5237,7 @@ function AdoptionView({
                           {combined.codeLines === null ? <span>수집중</span> : (
                             <IndividualCodeDensityCell
                               codeLines={combined.codeLines}
+                              codeLinesPending={codeLinesPending}
                               selectedSample={selectedDensitySample}
                               trend={codeDensityTrend}
                             />
@@ -5237,7 +5248,7 @@ function AdoptionView({
                       <td>
                         {teamGroup === "development" && (
                           <IndividualGitlabActivityCell
-                            generatedCodeLines={!codex.present || codex.periodAligned ? combined.codeLines : null}
+                            generatedCodeLines={!codeLinesPending && (!codex.present || codex.periodAligned) ? combined.codeLines : null}
                             metrics={gitlab}
                             available={gitlabCoverage.available}
                           />
@@ -5328,7 +5339,8 @@ function IndividualGitlabProfileView({
     (period) => period.startDate === startDate && period.endDate === endDate,
   );
   const claudeUsage = weeklyPeriod ? weeklyPeriod.users[user.email] ?? null : monthlySpend;
-  const claudeCodeLines = weeklyPeriod ? weeklyPeriod.users[user.email]?.codeLines ?? null : claudeCodeLinesForMonth(user.email, selectedMonth);
+  const codeLinesPending = weeklyPeriod ? weeklyPeriod.users[user.email]?.codeLinesCollected === false : monthlySpend?.codeLines === null;
+  const claudeCodeLines = codeLinesPending ? null : weeklyPeriod ? weeklyPeriod.users[user.email]?.codeLines ?? null : claudeCodeLinesForMonth(user.email, selectedMonth);
   const claudeUnused = isConfirmedClaudeNonUsage(user.email, {...claudeUsage, codeLines: claudeCodeLines});
   const codex = codexUsageForRange(user.email, startDate, endDate);
   const metricsMeasured = isIndividualPeriodMeasured(user, claudeUsage);
@@ -5340,7 +5352,7 @@ function IndividualGitlabProfileView({
   );
   const gitlab = gitlabUserMetricsForRange(user.email, startDate, endDate);
   const gitlabCoverage = gitlabRangeCoverage(startDate, endDate);
-  const committedCodeRatio = gitlabCommittedCodeRatio((!codex.present || codex.periodAligned) && gitlabCoverage.available ? combined.codeLines : null, gitlab.additions);
+  const committedCodeRatio = gitlabCommittedCodeRatio(!codeLinesPending && (!codex.present || codex.periodAligned) && gitlabCoverage.available ? combined.codeLines : null, gitlab.additions);
   const gitlabUser = gitlabActivityData.userByEmail.get(user.email);
   const groupUrl = `${gitlabActivityData.source.baseUrl}/${gitlabActivityData.source.group.path}`;
 
@@ -5356,7 +5368,7 @@ function IndividualGitlabProfileView({
           <h2>{user.displayName}</h2>
           <p>{user.displayAccount ?? user.email} · {periodLabel}</p>
           {codex.note && <p>{codex.note}</p>}
-          {!weeklyPeriod && monthlySpend?.coverage === "partial" && <p>Claude {individualUtilizationData.monthlySpend[selectedMonth]?.weeklyRollup ? "수집된 주차만 합산" : "기존 자료 유지"} · {monthlySpend.sourcePeriod}</p>}
+          {!weeklyPeriod && monthlySpend?.coverage === "partial" && <p>Claude {codeLinesPending ? "코드라인 미수집" : individualUtilizationData.monthlySpend[selectedMonth]?.weeklyRollup ? "수집된 주차만 합산" : "기존 자료 유지"} · {monthlySpend.sourcePeriod}</p>}
           {weeklyPeriod?.unallocatedUsage?.[user.email] && <p>Claude 기간 분리 필요 · 기존 자료 {weeklyPeriod.unallocatedUsage[user.email].baselinePeriod}. 월간 차액은 주차 합계에서 제외했습니다.</p>}
         </div>
         <div className="individual-profile-drive-links">

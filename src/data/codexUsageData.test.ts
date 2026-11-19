@@ -6,6 +6,24 @@ import {calculateCodeOutputDensity} from "../lib/codeOutputDensity";
 import {gitlabCommittedCodeRatio, gitlabUserMetricsForRange} from "./gitlabActivityData";
 
 describe("Codex usage", () => {
+  it("adds the week-three export to the earlier November observation without overlapping weekly exports", () => {
+    const period = snapshot.periods.find(item => item.startDate === "2026-11-12")!;
+    expect(period.endDate).toBe("2026-11-18");
+    expect(Object.keys(period.users)).toHaveLength(15);
+    for (const [email, expected] of Object.entries(period.users)) {
+      expect(individualUtilizationData.users.some(user => user.email === email)).toBe(true);
+      expect(codexUsageForRange(email, period.startDate, period.endDate))
+        .toMatchObject({...expected, collected: true, complete: true, periodAligned: true, overlapping: false});
+    }
+    const weekly = Object.values(period.users);
+    expect(weekly.reduce((sum, user) => sum + user.tokens, 0)).toBe(3071135617);
+    expect(weekly.reduce((sum, user) => sum + user.codeLines, 0)).toBe(27264);
+    expect(weekly.reduce((sum, user) => sum + user.estimatedCostUsd, 0)).toBeCloseTo(105.88, 2);
+    const monthly = individualUtilizationData.users.map(user => codexUsageForRange(user.email, "2026-11-01", "2026-11-18"));
+    expect(monthly.every(user => user.complete && user.periodAligned && !user.overlapping)).toBe(true);
+    expect(monthly.reduce((sum, user) => sum + user.tokens, 0)).toBe(8058776592);
+    expect(monthly.reduce((sum, user) => sum + user.codeLines, 0)).toBe(112762);
+  });
   it("uses the confirmed November first-week dates without overlapping the closed October month", () => {
     const source = snapshot.periods.find(period => period.startDate === "2026-10-29")!;
     expect(source.fileName).toContain("2026-11-05.csv");

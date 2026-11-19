@@ -21,6 +21,13 @@ vi.mock("./data/individualUtilizationData", async (importOriginal) => {
 beforeEach(() => { reporting.month = null; });
 
 describe("dashboard startup", () => {
+  it("keeps marketing Claude Code lines unavailable when spend has Code activity but its accepted-line report is absent", () => {
+    const row = renderToString(<App />).split("</tr>").find(row => row.includes("sblim0519@riskzero.kr"))!;
+    expect(row.split("</td>")[1]).toContain("Code Lines 수집중");
+    expect(row).not.toContain("기간 불일치");
+    expect(row).not.toContain("1M 토큰당");
+    expect(row).not.toContain("기존 자료");
+  });
   it("loads the complete app and renders the initial page with current subscription data", () => {
     const html = renderToString(<App />);
     expect(html).toContain("AI CONTROL HUB");
@@ -29,10 +36,11 @@ describe("dashboard startup", () => {
     expect(html).toContain("추가 비용");
     expect(html).not.toContain("순비용");
     expect(html).toContain('<option value="2026-11" selected="">');
-    expect(html).toContain("352,009줄");
-    expect(html).toContain("34.9B");
-    expect(html).toContain("650건");
-    expect(html).toContain("2026-11-01 ~ 2026-11-11");
+    expect(html).toContain("564,225줄");
+    expect(html).toContain("58.5B");
+    expect(html).toContain("1,135건");
+    expect(html).toContain("2026-11-01 ~ 2026-11-18");
+    expect(html).toContain("코드라인 1계정 미수집");
     expect(html).not.toContain("2026-11-05부터 수집");
     expect(html).toContain("김대영 과장");
     expect(html).not.toContain("hchbae1001@riskzero.kr");
@@ -42,10 +50,10 @@ describe("dashboard startup", () => {
   it("renders the November report rows with estimated Codex costs and supported code totals", () => {
     const rows = renderToString(<App />).replace(/<!-- -->/g, "").split("</tr>");
     const park = rows.find(row => row.includes("crow326@riskzero.kr"));
-    expect(park).toContain("12,446줄");
-    expect(park).toContain("93줄");
+    expect(park).toContain("20,156줄");
+    expect(park).toContain("96줄");
     expect(park).toContain("추가 비용 $5.32 (추정)");
-    expect(park).toContain("12,539줄");
+    expect(park).toContain("20,252줄");
     expect(park).toContain("1M 토큰당");
     expect(park).not.toContain("기간 불일치");
     const lim = rows.find(row => row.includes("sblim0519@riskzero.kr"));
@@ -56,19 +64,19 @@ describe("dashboard startup", () => {
   it("calculates November density from matched month-to-date sources", () => {
     const rows = renderToString(<App />).replace(/<!-- -->/g, "").split("</tr>");
     const jaewoo = rows.find(row => row.includes("jaewoo.kim@riskzero.kr"));
-    expect(jaewoo).toContain("7,714줄");
-    expect(jaewoo).toContain("28,872줄");
-    expect(jaewoo).toContain("36,586줄");
-    expect(jaewoo).toContain("3,705,611,695 토큰");
+    expect(jaewoo).toContain("19,666줄");
+    expect(jaewoo).toContain("32,787줄");
+    expect(jaewoo).toContain("52,453줄");
+    expect(jaewoo).toContain("5,092,942,804 토큰");
     expect(jaewoo).toContain("1M 토큰당");
-    expect(jaewoo).toContain("9.87줄");
+    expect(jaewoo).toContain("10.3줄");
     expect(jaewoo).not.toContain("기간 불일치");
     expect(jaewoo).not.toContain("확인분 합산");
   });
 
-  it("uses measured monthly zero lines for Lim Seongbeom and Jo Juyeon", () => {
+  it("retains measured monthly zero lines for Jo Juyeon", () => {
     const rows = renderToString(<App />).replace(/<!-- -->/g, "").split("</tr>");
-    for (const email of ["sblim0519@riskzero.kr", "jyjo@riskzero.kr"]) {
+    for (const email of ["jyjo@riskzero.kr"]) {
       const row = rows.find(row => row.includes(email));
       expect(row).toBeDefined();
       const claudeCell = row!.split("</td>")[1];

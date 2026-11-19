@@ -1,10 +1,10 @@
 # AI Control Hub — Mac mini
 
-## Current deployment (2026-11-12)
+## Current deployment (2026-11-19)
 
 - Office URL: **http://192.168.0.15:4176/**.
 - Host: `riskzero@192.168.0.15`; Apple M4 Pro, macOS, native Node.js.
-- Application: `/Users/riskzero/aihub/current` points to `releases/20261112-executive-plans`. Previous releases, including `releases/20261112-november-alignment`, `releases/20261112-november-week2`, `releases/20261109-api-usage-sync-v2`, `releases/20261105-november-week1-cost`, `releases/20261103-october-card-cost` and the initial `releases/20261105-november-week1`, are retained for rollback.
+- Application: `/Users/riskzero/aihub/current` points to `releases/20261119-november-week3-v2`. Previous releases, including `releases/20261112-executive-plans`, `releases/20261112-november-alignment`, `releases/20261112-november-week2`, `releases/20261109-api-usage-sync-v2`, `releases/20261105-november-week1-cost`, `releases/20261103-october-card-cost` and the initial `releases/20261105-november-week1`, are retained for rollback.
 - LaunchDaemon: `/Library/LaunchDaemons/kr.riskzero.aihub.plist`, label `kr.riskzero.aihub`.
 - Listener is bound to `192.168.0.15`. Only actual TCP peers in `192.168.0.0/24` and loopback are allowed. Forwarded headers do not grant access.
 - Config: `/Users/riskzero/aihub/secrets/runtime.env` (0600), linked as `.env.local` inside the release. Do not put it in source control or a public directory.
@@ -15,6 +15,15 @@
 **Railway is controlled by the user.** The user said they would stop it manually in Railway Console after checking the new service. Do not stop, redeploy, remove, or alter Railway as part of Mac mini maintenance. Its health URL returned HTTP 404 on October 28; the cause was not investigated in this API refresh task. Git push alone still does not deploy a new Mac mini release.
 
 The user deferred DNS, then authorized public-IP access on October 24. The user will configure the router personally. See the pending public-IP preparation below. `aihub.riskzero.ai:8443` was discussed but is not configured. Existing Way 2.0, its Caddy settings, DNS and containers remain unchanged. On October 26 the user edited API credentials directly in `runtime.env`; the validated results are below.
+
+## November week-three individual activity (2026-11-19)
+
+- Imported five Claude spend exports for **November 12–18** (140 rows), the two workspaces' November 11/18 code snapshots, and the Codex weekly report (15 accounts). Current-roster Claude totals: **20,486,223,886 tokens / 184,952 known lines / $2.29 additional cost**. Codex: **3,071,135,617 tokens / 27,264 lines / $105.88 estimated additional cost**. Combined observed week: **23,557,359,503 tokens / 212,216 known lines**.
+- Claude accepted lines are summed by email across workspaces before subtraction: **451,463 − 266,511 = 184,952**. Codex already covers the week and is not differenced. Lim Seongbeom has Claude Code spend but no accepted-line row in the supplied snapshots. His Claude lines remain explicitly uncollected, with no density or GitLab ratio calculated from incomplete generated output. Completing this account requires the marketing workspace's November 1–18 accepted-line export; the prior November 1–11 marketing source reports no Code activity. All other verified zero and unmeasured-account distinctions are retained.
+- Extended the November monthly range through **November 18** by adding the disjoint week to the authoritative November 1–11 observation. Codex similarly combines the earlier month-to-date observation with the new weekly export, excluding overlapping weekly records. Current-roster combined month: **58,475,984,330 tokens / 564,225 known lines**. All earlier Claude weekly periods, closed months, Codex observations, subscription records and GitLab commits outside the new week are unchanged.
+- Read 108 GitLab projects without collection errors, using Korean authored dates November 12 00:00 through November 18 23:59:59.999. Week totals: **485 non-merge commits / 81 merges / 332,647 additions / 28,926 deletions / 14 authors**. All 566 project+SHA identities and date boundaries reconcile. Eleven oversized diffs have partial file details; authoritative commit stats are included. November cumulative: **1,135 non-merge / 230 merges**.
+- Independent Ruby/Python calculations matched every imported person and CSV row. All **298 tests across 40 files**, TypeScript and Vite passed in a clean candidate excluding unrelated local changes. Production month/week screens verified current and representative individual values, the missing-code notice, zero period-mismatch rows and no browser errors/warnings. Week two remains **154,686 lines / 21.7B tokens / 444 non-merge commits**; October remains **877,043 lines / 74.2B tokens / 1,620 non-merge commits**.
+- Frontend-only deployment verified health and four served file hashes while preserving 12 runtime snapshots, nine backend modules and private settings. Provenance: `current/november-week3-deployment.json`; backup: `/Users/riskzero/aihub/backups/20261119-november-week3-v2/`. Source manifests, reproducible import and independent audits, candidate checks and deployment verification: local `output/november-week3-20261119/`.
 
 ## Executive subscription records (2026-11-12)
 

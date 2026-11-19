@@ -594,6 +594,89 @@
         }
       },
       "costCurrency": "USD"
+    },
+    {
+      "startDate": "2026-11-12",
+      "endDate": "2026-11-18",
+      "fileName": "leaderboard-users_workspace-riskzero_2026-11-12-to-2026-11-18.csv",
+      "users": {
+        "crow326@riskzero.kr": {
+          "tokens": 67475126,
+          "codeLines": 3,
+          "estimatedCostUsd": 0.0
+        },
+        "dhlee@riskzero.kr": {
+          "tokens": 5068539,
+          "codeLines": 0,
+          "estimatedCostUsd": 0.0
+        },
+        "hb777lee@riskzero.kr": {
+          "tokens": 3612601,
+          "codeLines": 48,
+          "estimatedCostUsd": 0.0
+        },
+        "hhlee0227@riskzero.kr": {
+          "tokens": 123603719,
+          "codeLines": 12,
+          "estimatedCostUsd": 31.5
+        },
+        "jaewoo.kim@riskzero.kr": {
+          "tokens": 284512987,
+          "codeLines": 3915,
+          "estimatedCostUsd": 0.0
+        },
+        "jsc@riskzero.kr": {
+          "tokens": 21596331,
+          "codeLines": 211,
+          "estimatedCostUsd": 0.0
+        },
+        "kys0392@riskzero.kr": {
+          "tokens": 863540376,
+          "codeLines": 5730,
+          "estimatedCostUsd": 0.0
+        },
+        "mjkim1122@riskzero.kr": {
+          "tokens": 66565782,
+          "codeLines": 2124,
+          "estimatedCostUsd": 0.0
+        },
+        "mygu@riskzero.kr": {
+          "tokens": 8534972,
+          "codeLines": 0,
+          "estimatedCostUsd": 0.0
+        },
+        "sblim0519@riskzero.kr": {
+          "tokens": 508062,
+          "codeLines": 0,
+          "estimatedCostUsd": 0.0
+        },
+        "sjpark@riskzero.kr": {
+          "tokens": 58395457,
+          "codeLines": 0,
+          "estimatedCostUsd": 0.0
+        },
+        "staycurious@riskzero.kr": {
+          "tokens": 414732473,
+          "codeLines": 4129,
+          "estimatedCostUsd": 37.49
+        },
+        "wody@riskzero.kr": {
+          "tokens": 455162029,
+          "codeLines": 8899,
+          "estimatedCostUsd": 0.0
+        },
+        "woosung.jeon@riskzero.kr": {
+          "tokens": 28284236,
+          "codeLines": 0,
+          "estimatedCostUsd": 0.0
+        },
+        "ykchj1011@riskzero.kr": {
+          "tokens": 669542927,
+          "codeLines": 2193,
+          "estimatedCostUsd": 36.89
+        }
+      },
+      "costCurrency": "USD"
     }
   ],
   "monthlyPeriods": [

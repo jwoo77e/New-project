@@ -9,17 +9,42 @@ const sumBy = <T,>(items: T[], selector: (item: T) => number) =>
   items.reduce((sum, item) => sum + selector(item), 0);
 
 describe("individualUtilizationData", () => {
-  it("aligns the November month-to-date exports to November 1–11 without changing weekly observations", () => {
+  it("reconciles week three while keeping missing marketing accepted lines out of measured output", () => {
+    const week = individualUtilizationData.weeklyUsage["2026-11-W3"];
+    expect(week).toMatchObject({startDate: "2026-11-12", endDate: "2026-11-18", coverage: "partial",
+      source: {currentSpendRows: 140, codePeriod: "2026-11-12 ~ 2026-11-18",
+        codeMethod: "current_cumulative_minus_previous_cumulative"},
+      totals: {requests: 83363, totalTokens: 20941724495, codeLines: 451463 - 266511, netSpendUsd: 2.29}});
+    expect(week.users["bigone@riskzero.kr"].codeLines).toBe(25338 - 12494);
+    expect(week.users["jaewoo.kim@riskzero.kr"].codeLines).toBe(19666 - 7714);
+    expect(week.users["sblim0519@riskzero.kr"]).toMatchObject({
+      totalTokens: 183959743, codeLinesCollected: false, coverage: "partial",
+    });
+    const active = Object.entries(week.users).filter(([email]) => isCurrentEmployee(email)).map(([, usage]) => usage);
+    expect(sumBy(active, usage => usage.totalTokens)).toBe(20486223886);
+    expect(sumBy(active, usage => usage.requests)).toBe(81418);
+    const combined = individualUtilizationData.users.map(user => {
+      const usage = week.users[user.email];
+      return combinedAiUsage(usage?.totalTokens ?? null,
+        usage?.codeLinesCollected === false ? null : usage?.codeLines ?? null,
+        codexUsageForRange(user.email, week.startDate, week.endDate));
+    });
+    expect(sumBy(combined, usage => usage.tokens ?? 0)).toBe(23557359503);
+    expect(sumBy(combined, usage => usage.codeLines ?? 0)).toBe(212216);
+    expect(combinedAiUsage(183959743, null,
+      codexUsageForRange("sblim0519@riskzero.kr", week.startDate, week.endDate)).partial).toBe(true);
+  });
+  it("extends November month-to-date sources through the 18th without double-counting earlier observations", () => {
     const month = individualUtilizationData.monthlySpend["2026-11"]!;
     expect(month.weeklyRollup).toBeUndefined();
-    expect(month.period).toBe("2026-11-01 ~ 2026-11-11");
-    expect(individualMonthlyRange("2026-11")).toEqual({startDate: "2026-11-01", endDate: "2026-11-11"});
-    expect(claudeCodeLinesForMonth("bigone@riskzero.kr", "2026-11")).toBe(12494);
-    expect(claudeCodeLinesForMonth("jaewoo.kim@riskzero.kr", "2026-11")).toBe(7714);
-    expect(claudeCodeLinesForMonth("sblim0519@riskzero.kr", "2026-11")).toBe(0);
+    expect(month.period).toBe("2026-11-01 ~ 2026-11-18");
+    expect(individualMonthlyRange("2026-11")).toEqual({startDate: "2026-11-01", endDate: "2026-11-18"});
+    expect(claudeCodeLinesForMonth("bigone@riskzero.kr", "2026-11")).toBe(25338);
+    expect(claudeCodeLinesForMonth("jaewoo.kim@riskzero.kr", "2026-11")).toBe(19666);
+    expect(claudeCodeLinesForMonth("sblim0519@riskzero.kr", "2026-11")).toBeNull();
     expect(claudeCodeLinesForMonth("jyjo@riskzero.kr", "2026-11")).toBe(0);
     expect(claudeMonthlyCoverage("bigone@riskzero.kr", "2026-11")).toEqual({
-      spendPeriod: "2026-11-01 ~ 2026-11-11", codePeriod: "2026-11-01 ~ 2026-11-11", complete: true,
+      spendPeriod: "2026-11-01 ~ 2026-11-18", codePeriod: "2026-11-01 ~ 2026-11-18", complete: true,
     });
     const codex = codexUsageForRange("jaewoo.kim@riskzero.kr", "2026-11-01", "2026-11-11");
     expect(codex).toMatchObject({collected: true, complete: true, periodAligned: true, overlapping: false});
@@ -29,11 +54,11 @@ describe("individualUtilizationData", () => {
     const combined = individualUtilizationData.users.map(user => combinedAiUsage(
       month.users[user.email]?.totalTokens ?? (isConfirmedClaudeNonUsage(user.email, month.users[user.email]) ? 0 : null),
       claudeCodeLinesForMonth(user.email, "2026-11"),
-      codexUsageForRange(user.email, "2026-11-01", "2026-11-11"),
+      codexUsageForRange(user.email, "2026-11-01", "2026-11-18"),
       claudeMonthlyCoverage(user.email, "2026-11").complete,
     ));
-    expect(sumBy(combined, usage => usage.tokens ?? 0)).toBe(34918624827);
-    expect(sumBy(combined, usage => usage.codeLines ?? 0)).toBe(352009);
+    expect(sumBy(combined, usage => usage.tokens ?? 0)).toBe(58475984330);
+    expect(sumBy(combined, usage => usage.codeLines ?? 0)).toBe(564225);
     expect(individualUtilizationData.weeklyUsage["2026-11-W2"].totals.codeLines).toBe(119097);
   });
   it("reconciles November week two using cumulative accepted-line differences and aligned GitLab activity", () => {
@@ -59,8 +84,8 @@ describe("individualUtilizationData", () => {
     const november = individualUtilizationData.monthlySpend["2026-11"]!;
     expect(november.coverage).toBe("partial");
     expect(november.weeklyRollup).toBeUndefined();
-    expect(november.users["bigone@riskzero.kr"].sourcePeriod).toBe("2026-11-01 ~ 2026-11-11");
-    expect(november.users["bigone@riskzero.kr"].codeLines).toBe(12494);
+    expect(november.users["bigone@riskzero.kr"].sourcePeriod).toBe("2026-11-01 ~ 2026-11-18");
+    expect(november.users["bigone@riskzero.kr"].codeLines).toBe(25338);
   });
   it("uses the cross-month first November week and exposes new individual marketing observations", () => {
     const week = individualUtilizationData.weeklyUsage["2026-11-W1"];
@@ -205,8 +230,8 @@ describe("individualUtilizationData", () => {
     expect(data.totals.totalTokens).toBe(37099774050);
     expect(data.totals.netSpendUsd).toBeCloseTo(414.44, 2);
     expect(data.source.codeLines).toHaveLength(7);
-    expect(sumBy(data.source.codeLines, (item) => item.totalLines)).toBe(2457213 + 266511);
-    expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(2189411 + 266511);
+    expect(sumBy(data.source.codeLines, (item) => item.totalLines)).toBe(2457213 + 451463);
+    expect(sumBy(data.users, (user) => user.totalCodeLines)).toBe(2189411 + 451463);
   });
 
   it("keeps activity metrics behind an explicit HR evidence gate", () => {
@@ -368,6 +393,7 @@ describe("individualUtilizationData", () => {
       "2026-10-W4",
       "2026-11-W1",
       "2026-11-W2",
+      "2026-11-W3",
     ]);
     const octoberThirdWeek = data.weeklyUsage["2026-10-W3"];
     expect(octoberThirdWeek).toMatchObject({
@@ -528,7 +554,7 @@ describe("individualUtilizationData", () => {
     expect(data.monthlySpend["2026-08"]?.totals.requests).toBeGreaterThan(
       sumBy(augustThroughFourthWeek, (week) => week.totals.requests),
     );
-    expect(data.weeklyUsageTrend).toHaveLength(15);
+    expect(data.weeklyUsageTrend).toHaveLength(16);
   });
 
   it("produces bounded peer-comparison scores for every user and period", () => {
